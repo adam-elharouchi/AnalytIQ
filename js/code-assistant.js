@@ -68,16 +68,34 @@ function renderConversationHistory() {
   const list = document.getElementById('conversationList');
   if (!list) return;
   
-  if (conversationHistoryList.length === 0) {
+  // Filter out deleted conversations
+  const activeConversations = conversationHistoryList.filter(conv => !conv.deleted);
+  
+  if (activeConversations.length === 0) {
     list.innerHTML = '<p class="no-conversations">No previous conversations</p>';
     return;
   }
   
-  list.innerHTML = conversationHistoryList.map(conv => `
-    <div class="conversation-item ${conv.id === currentConversationId ? 'active' : ''}" 
-         onclick="loadConversation('${conv.id}')">
-      <div class="conversation-item-title">${conv.title}</div>
-      <div class="conversation-item-date">${conv.date}</div>
+  list.innerHTML = activeConversations.map(conv => `
+    <div class="conversation-item ${conv.id === currentConversationId ? 'active' : ''} ${conv.archived ? 'archived' : ''}">
+      <div class="conversation-item-content" onclick="loadConversation('${conv.id}')">
+        <div class="conversation-item-title">
+          ${conv.archived ? '📦 ' : ''}${escapeHtml(conv.title)}
+        </div>
+        <div class="conversation-item-date">${conv.date}</div>
+      </div>
+      <div class="conversation-item-actions">
+        <button class="conversation-action-btn archive-btn" 
+                onclick="event.stopPropagation(); archiveConversation('${conv.id}')" 
+                title="${conv.archived ? 'Unarchive' : 'Archive'}">
+          ${conv.archived ? '📤' : '📦'}
+        </button>
+        <button class="conversation-action-btn delete-btn" 
+                onclick="event.stopPropagation(); deleteConversation('${conv.id}')" 
+                title="Delete">
+          🗑️
+        </button>
+      </div>
     </div>
   `).join('');
 }
@@ -85,7 +103,7 @@ function renderConversationHistory() {
 // Load a conversation
 function loadConversation(conversationId) {
   const conversation = conversationHistoryList.find(c => c.id === conversationId);
-  if (!conversation) return;
+  if (!conversation || conversation.deleted) return;
   
   currentConversationId = conversationId;
   
@@ -111,10 +129,96 @@ function loadConversation(conversationId) {
   messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
 
+// Archive/Unarchive a conversation
+function archiveConversation(conversationId) {
+  event.stopPropagation();
+  const conversation = conversationHistoryList.find(c => c.id === conversationId);
+  if (!conversation) return;
+  
+  conversation.archived = !conversation.archived;
+  
+  // Save to localStorage
+  localStorage.setItem('conversationHistory', JSON.stringify(conversationHistoryList));
+  
+  // Update display
+  renderConversationHistory();
+}
+
+// Delete a conversation
+function deleteConversation(conversationId) {
+  event.stopPropagation();
+  
+  // Confirm deletion
+  if (!confirm('Are you sure you want to delete this conversation? This action cannot be undone.')) {
+    return;
+  }
+  
+  const conversation = conversationHistoryList.find(c => c.id === conversationId);
+  if (!conversation) return;
+  
+  // Mark as deleted instead of removing (for potential recovery)
+  conversation.deleted = true;
+  conversation.deletedAt = new Date().toISOString();
+  
+  // If this was the current conversation, start a new one
+  if (conversationId === currentConversationId) {
+    startNewConversation();
+  }
+  
+  // Save to localStorage
+  localStorage.setItem('conversationHistory', JSON.stringify(conversationHistoryList));
+  
+  // Update display
+  renderConversationHistory();
+}
+
 // Start new conversation
 function startNewConversation() {
   currentConversationId = Date.now().toString();
-  clearChat();
+  chatHistory = [];
+  lastGeneratedCode = null;
+  conversationContext = {
+    lastCode: null,
+    lastCodeType: null,
+    modifications: []
+  };
+  const messagesContainer = document.getElementById('chatMessages');
+  if (messagesContainer) {
+    // Check if welcome section already exists
+    let welcomeSection = document.getElementById('conversationStarters');
+    if (!welcomeSection) {
+      // Recreate welcome section if it doesn't exist
+      messagesContainer.innerHTML = `
+        <div class="welcome-section" id="conversationStarters">
+          <div class="welcome-message">
+            <p>Hello! I'm your Code Assistant. Just type your request or paste your code below!</p>
+          </div>
+          <div class="conversation-starters">
+            <div class="starter-grid">
+              <button class="starter-btn" onclick="useStarter('Analyze sales data and create visualizations')">
+                Analyze sales data and create visualizations
+              </button>
+              <button class="starter-btn" onclick="useStarter('Build a predictive model for customer churn')">
+                Build a predictive model for customer churn
+              </button>
+              <button class="starter-btn" onclick="useStarter('Perform statistical analysis on revenue trends')">
+                Perform statistical analysis on revenue trends
+              </button>
+              <button class="starter-btn" onclick="useStarter('Create a dashboard for business metrics')">
+                Create a dashboard for business metrics
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    } else {
+      // Just clear messages and show welcome section
+      messagesContainer.innerHTML = '';
+      messagesContainer.appendChild(welcomeSection);
+      welcomeSection.style.display = 'block';
+    }
+  }
+  renderConversationHistory();
 }
 
 const languageConfig = {
@@ -139,9 +243,65 @@ const languageConfig = {
 function updateLanguage() {
   const select = document.getElementById('languageSelect');
   currentLanguage = select.value;
+  localStorage.setItem('currentLanguage', currentLanguage);
+  
+  // Update the display
+  const display = document.getElementById('languageDisplay');
+  if (display) {
+    const languageNames = {
+      'python': 'Python',
+      'javascript': 'JavaScript',
+      'sql': 'SQL',
+      'java': 'Java',
+      'cpp': 'C++',
+      'r': 'R',
+      'go': 'Go',
+      'rust': 'Rust',
+      'html': 'HTML',
+      'css': 'CSS',
+      'typescript': 'TypeScript',
+      'php': 'PHP',
+      'ruby': 'Ruby',
+      'swift': 'Swift',
+      'kotlin': 'Kotlin'
+    };
+    display.textContent = languageNames[currentLanguage] || currentLanguage;
+  }
 }
 
 // Handle file upload
+// Update file input accept attribute based on file type selection
+function updateFileInputAccept() {
+  const fileTypeSelect = document.getElementById('fileTypeSelect');
+  const fileUpload = document.getElementById('fileUpload');
+  if (!fileTypeSelect || !fileUpload) return;
+  
+  const fileType = fileTypeSelect.value;
+  let accept = '';
+  
+  switch(fileType) {
+    case 'image':
+      accept = 'image/*';
+      break;
+    case 'text':
+      accept = '.txt,.csv,.json,.xml';
+      break;
+    case 'excel':
+      accept = '.xlsx,.xls';
+      break;
+    case 'ipynb':
+      accept = '.ipynb';
+      break;
+    case 'code':
+      accept = '.py,.js,.jsx,.ts,.tsx,.java,.cpp,.c,.h,.hpp,.r,.go,.rs,.html,.css,.php,.rb,.swift,.kt,.sql';
+      break;
+    default:
+      accept = ''; // All files
+  }
+  
+  fileUpload.setAttribute('accept', accept);
+}
+
 function handleFileUpload(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -149,13 +309,21 @@ function handleFileUpload(event) {
   uploadedFileName = file.name;
   const reader = new FileReader();
   
+  // Detect file type
+  const extension = '.' + file.name.split('.').pop().toLowerCase();
+  
+  // Binary file types that need special handling
+  const binaryExtensions = ['.xlsx', '.xls', '.ipynb', '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.pdf', '.zip', '.tar', '.gz'];
+  const isBinary = binaryExtensions.includes(extension);
+  
+  // Image file types
+  const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.svg', '.webp'];
+  const isImage = imageExtensions.includes(extension);
+  
   reader.onload = function(e) {
-    const content = e.target.result;
+    let content = e.target.result;
     
-    // Detect file type
-    const extension = '.' + file.name.split('.').pop().toLowerCase();
-    
-    // Detect language from extension
+    // Detect language from extension for code files
     for (const [lang, config] of Object.entries(languageConfig)) {
       if (config.extensions.includes(extension)) {
         document.getElementById('languageSelect').value = lang;
@@ -164,19 +332,59 @@ function handleFileUpload(event) {
       }
     }
     
-    // Parse data files
-    if (['.csv', '.json', '.txt'].includes(extension)) {
+    // Handle different file types
+    if (isImage) {
+      uploadedData = { type: 'image', dataUrl: content, fileName: file.name, extension: extension };
+      addMessage('user', `📎 Uploaded image: ${file.name}`);
+      addMessage('assistant', `Image uploaded successfully! I can help you:\n- Analyze the image\n- Generate code to work with image data\n- Create visualizations or image processing code\n\nWhat would you like to do with this image?`);
+    } else if (['.xlsx', '.xls'].includes(extension)) {
+      uploadedData = { type: 'excel', fileName: file.name, extension: extension, size: file.size };
+      addMessage('user', `📎 Uploaded Excel file: ${file.name}`);
+      addMessage('assistant', `Excel file uploaded successfully! I can help you:\n- Generate code to read and process Excel files (using pandas, openpyxl, etc.)\n- Analyze the data structure\n- Create data analysis code\n\nWhat would you like to do with this Excel file?`);
+    } else if (extension === '.ipynb') {
+      try {
+        const notebook = typeof content === 'string' ? JSON.parse(content) : content;
+        uploadedData = { type: 'notebook', content: notebook, fileName: file.name };
+        addMessage('user', `📎 Uploaded Jupyter notebook: ${file.name}`);
+        addMessage('assistant', `Jupyter notebook uploaded successfully! I can help you:\n- Analyze the notebook structure\n- Review and improve the code\n- Debug issues\n- Optimize the code\n\nWhat would you like to do with this notebook?`);
+      } catch (error) {
+        uploadedData = { type: 'notebook', fileName: file.name, extension: extension, size: file.size };
+        addMessage('user', `📎 Uploaded file: ${file.name}`);
+        addMessage('assistant', `File uploaded. I can help you work with this Jupyter notebook. What would you like to do with it?`);
+      }
+    } else if (['.csv', '.json', '.txt'].includes(extension)) {
       uploadedData = parseDataFile(content, extension);
       addMessage('user', `📎 Uploaded file: ${file.name}`);
       addMessage('assistant', `File uploaded successfully! I can help you:\n- Generate code to work with this data\n- Visualize the data (boxplots, histograms, etc.)\n- Analyze the data\n\nWhat would you like to do with this data?`);
+    } else if (isBinary && !['.ipynb'].includes(extension)) {
+      uploadedData = { type: 'binary', fileName: file.name, extension: extension, size: file.size };
+      addMessage('user', `📎 Uploaded file: ${file.name}`);
+      addMessage('assistant', `File uploaded successfully! I can help you:\n- Generate code to work with this file type\n- Analyze the file structure\n- Create processing scripts\n\nWhat would you like to do with this file?`);
     } else {
-      // Code file
-      addMessage('user', `📎 Uploaded code file: ${file.name}`);
-      addMessage('assistant', processCodeFile(content, extension));
+      if (content instanceof ArrayBuffer) {
+        uploadedData = { type: 'binary', fileName: file.name, extension: extension, size: file.size };
+        addMessage('user', `📎 Uploaded file: ${file.name}`);
+        addMessage('assistant', `File uploaded successfully! I can help you generate code to work with this file. What would you like to do?`);
+      } else {
+        addMessage('user', `📎 Uploaded file: ${file.name}`);
+        addMessage('assistant', processCodeFile(content, extension));
+      }
     }
   };
   
-  reader.readAsText(file);
+  // Use appropriate reading method based on file type
+  if (isImage) {
+    reader.readAsDataURL(file);
+  } else if (extension === '.ipynb') {
+    reader.readAsText(file);
+  } else if (['.xlsx', '.xls', '.pdf', '.zip', '.tar', '.gz'].includes(extension)) {
+    uploadedData = { type: 'binary', fileName: file.name, extension: extension, size: file.size };
+    addMessage('user', `📎 Uploaded file: ${file.name}`);
+    addMessage('assistant', `File uploaded successfully! I can help you:\n- Generate code to read and process this file\n- Analyze the file structure\n- Create data processing scripts\n\nWhat would you like to do with this file?`);
+    return;
+  } else {
+    reader.readAsText(file);
+  }
 }
 
 // Parse data file
@@ -255,6 +463,19 @@ function updateGeminiModel() {
   const select = document.getElementById('geminiModelSelect');
   geminiModel = select.value;
   localStorage.setItem('geminiModel', geminiModel);
+  
+  // Update the display
+  const display = document.getElementById('geminiModelDisplay');
+  if (display) {
+    // Show shortened model name
+    const modelNames = {
+      'gemini-2.5-flash': 'Gemini 2.5',
+      'gemini-3-pro-preview': 'Gemini 3 Pro',
+      'gemini-3-flash': 'Gemini 3',
+      'gemini-1.5-pro': 'Gemini 1.5 Pro'
+    };
+    display.textContent = modelNames[geminiModel] || 'Gemini';
+  }
   
   // Update the AI agent with new model
   if (aiAgentInitialized) {
@@ -1346,189 +1567,48 @@ function addMessage(role, content, updateVisualizeBtn = true) {
   setTimeout(() => {
     attachCopyButtons();
   }, 100);
-  
-  // Show visualize button if code is detected
-  if (updateVisualizeBtn && role === 'assistant') {
-    checkForCodeAndShowVisualizeButton(content);
-  }
-}
-
-// Check for code and show visualize button
-function checkForCodeAndShowVisualizeButton(content) {
-  const visualizeBtn = document.getElementById('visualizeBtn');
-  if (!visualizeBtn) return;
-  
-  // Check if content contains Python code (most common for visualization)
-  const hasPythonCode = content.includes('```python') || 
-                       content.includes('import matplotlib') || 
-                       content.includes('import seaborn') ||
-                       content.includes('import plotly') ||
-                       content.includes('plt.') ||
-                       content.includes('.plot(') ||
-                       content.includes('sns.') ||
-                       content.includes('px.') ||
-                       content.includes('go.Figure');
-  
-  if (hasPythonCode) {
-    visualizeBtn.style.display = 'inline-flex';
-    // Store the code for visualization
-    extractCodeForVisualization(content);
-  } else {
-    visualizeBtn.style.display = 'none';
-  }
-}
-
-// Extract code from message for visualization
-let visualizationCode = null;
-function extractCodeForVisualization(content) {
-  // Extract Python code blocks
-  const pythonCodeMatch = content.match(/```python\n([\s\S]*?)```/);
-  if (pythonCodeMatch) {
-    visualizationCode = pythonCodeMatch[1].trim();
-  } else {
-    // Try to extract any code block
-    const codeMatch = content.match(/```[\w]*\n([\s\S]*?)```/);
-    if (codeMatch) {
-      visualizationCode = codeMatch[1].trim();
-    }
-  }
-}
-
-// Open visualize popup
-function openVisualizePopup() {
-  const modal = document.getElementById('visualizeModal');
-  if (modal) {
-    modal.style.display = 'block';
-    // If no code extracted, try to get from last message
-    if (!visualizationCode) {
-      const lastMessage = document.querySelector('.assistant-message:last-child .message-content');
-      if (lastMessage) {
-        extractCodeForVisualization(lastMessage.innerHTML);
-      }
-    }
-  }
-}
-
-// Close visualize modal
-function closeVisualizeModal() {
-  const modal = document.getElementById('visualizeModal');
-  if (modal) {
-    modal.style.display = 'none';
-  }
-}
-
-// Run visualization code
-async function runVisualizationCode() {
-  const output = document.getElementById('visualizeOutput');
-  if (!output || !visualizationCode) {
-    output.innerHTML = '<div class="error">No code available to run. Please generate code first.</div>';
-    return;
-  }
-  
-  output.innerHTML = '<div class="success">Running code...</div>';
-  
-  try {
-    // Show the code and instructions for running
-    output.innerHTML = `
-      <div class="success">Code ready for visualization</div>
-      <pre>${escapeHtml(visualizationCode)}</pre>
-      <div style="margin-top: 1rem; padding: 1rem; background: var(--bg-secondary); border-radius: 0.5rem;">
-        <h4>To visualize this code:</h4>
-        <ol>
-          <li>Copy the code above</li>
-          <li>Paste it into <a href="https://colab.research.google.com" target="_blank" style="color: #60a5fa;">Google Colab</a></li>
-          <li>Run the code to see visualizations</li>
-        </ol>
-        <p><strong>Or</strong> use the code in your local Python environment with matplotlib/seaborn installed.</p>
-      </div>
-    `;
-    
-    // Try to create a simple visualization preview if possible
-    createSimpleVisualizationPreview(visualizationCode, output);
-  } catch (error) {
-    output.innerHTML = `<div class="error">Error: ${error.message}</div>`;
-  }
-}
-
-// Create simple visualization preview
-function createSimpleVisualizationPreview(code, output) {
-  // Try to detect what kind of visualization
-  if (code.includes('histogram') || code.includes('hist(')) {
-    // Create a sample histogram
-    const canvas = document.createElement('canvas');
-    canvas.width = 600;
-    canvas.height = 400;
-    canvas.style.margin = '1rem 0';
-    output.appendChild(canvas);
-    
-    const ctx = canvas.getContext('2d');
-    // Draw a sample histogram
-    ctx.fillStyle = '#60a5fa';
-    const data = [10, 20, 30, 25, 15, 35, 40, 30, 20, 15];
-    const barWidth = canvas.width / data.length;
-    const maxValue = Math.max(...data);
-    
-    data.forEach((value, index) => {
-      const barHeight = (value / maxValue) * (canvas.height - 40);
-      ctx.fillRect(index * barWidth, canvas.height - barHeight - 20, barWidth - 2, barHeight);
-    });
-    
-    ctx.fillStyle = '#e2e8f0';
-    ctx.font = '12px Arial';
-    ctx.fillText('Sample Histogram Preview', 10, 20);
-  } else if (code.includes('scatter') || code.includes('scatter(')) {
-    // Create a sample scatter plot
-    const canvas = document.createElement('canvas');
-    canvas.width = 600;
-    canvas.height = 400;
-    canvas.style.margin = '1rem 0';
-    output.appendChild(canvas);
-    
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#60a5fa';
-    
-    // Draw sample scatter points
-    for (let i = 0; i < 50; i++) {
-      const x = Math.random() * canvas.width;
-      const y = Math.random() * canvas.height;
-      ctx.beginPath();
-      ctx.arc(x, y, 3, 0, 2 * Math.PI);
-      ctx.fill();
-    }
-    
-    ctx.fillStyle = '#e2e8f0';
-    ctx.font = '12px Arial';
-    ctx.fillText('Sample Scatter Plot Preview', 10, 20);
-  }
-}
-
-// Clear visualization
-function clearVisualization() {
-  const output = document.getElementById('visualizeOutput');
-  if (output) {
-    output.innerHTML = '<p class="placeholder-text">Code output and visualizations will appear here...</p>';
-  }
-  visualizationCode = null;
 }
 
 // Toggle sidebar
 function toggleSidebar() {
   const sidebar = document.getElementById('conversationSidebar');
-  if (sidebar) {
+  const fullPage = document.getElementById('codeAssistantPage');
+  if (sidebar && fullPage) {
     sidebar.classList.toggle('hidden');
+    // Update full page class to reflect sidebar state
+    if (sidebar.classList.contains('hidden')) {
+      fullPage.classList.add('sidebar-hidden');
+      fullPage.classList.remove('sidebar-visible');
+    } else {
+      fullPage.classList.add('sidebar-visible');
+      fullPage.classList.remove('sidebar-hidden');
+    }
   }
 }
 
-// Close modal when clicking outside
-document.addEventListener('click', function(event) {
-  const modal = document.getElementById('visualizeModal');
-  if (event.target === modal) {
-    closeVisualizeModal();
-  }
-});
 
 // Format message content
 function formatMessageContent(content) {
+  // Remove # from text explanations (markdown headers) - but keep them in code blocks
+  // First, protect code blocks
+  const codeBlockPlaceholders = [];
+  let placeholderIndex = 0;
+  
+  content = content.replace(/```(\w+)?\n([\s\S]*?)```/g, (match) => {
+    const placeholder = `__CODE_BLOCK_${placeholderIndex}__`;
+    codeBlockPlaceholders[placeholderIndex] = match;
+    placeholderIndex++;
+    return placeholder;
+  });
+  
+  // Now remove # from text (outside code blocks)
+  content = content.replace(/^#+\s+/gm, '');
+  
+  // Restore code blocks
+  codeBlockPlaceholders.forEach((codeBlock, index) => {
+    content = content.replace(`__CODE_BLOCK_${index}__`, codeBlock);
+  });
+  
   // Handle code blocks - make them Colab-ready
   content = content.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
     // Clean the code for Colab
@@ -1544,12 +1624,12 @@ function formatMessageContent(content) {
     
     // Use pre tag to preserve whitespace and newlines
     return `<div class="code-block-container">
-      <div class="code-block-header">
-        <span>${language} - Ready for Google Colab</span>
-      </div>
       <pre class="code-block" data-language="${language}"><code>${escapedCode}</code></pre>
       <div class="code-block-footer">
-        <small>💡 Highlight and copy the code above, then paste it directly into a Google Colab cell</small>
+        <small>Highlight and copy the code above, then paste it</small>
+        <button class="btn-copy-code-footer" onclick="copyCodeFromFooter(this)" title="Copy code">
+          <span class="copy-icon">📋</span>
+        </button>
       </div>
     </div>`;
   });
@@ -1633,8 +1713,8 @@ function attachCopyButtons() {
   });
 }
 
-// Copy code function - optimized for Colab with proper newlines
-function copyCode(button) {
+// Copy code from footer button
+function copyCodeFromFooter(button) {
   const codeBlock = button.closest('.code-block-container').querySelector('.code-block');
   
   // Get the raw HTML content first to preserve formatting
