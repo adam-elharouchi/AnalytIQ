@@ -18,12 +18,12 @@
     </div>
     
     <div class="resource-categories">
-      <button class="category-btn active" onclick="filterByCategory('all')">All</button>
-      <button class="category-btn" onclick="filterByCategory('articles')">Articles</button>
-      <button class="category-btn" onclick="filterByCategory('videos')">Videos</button>
-      <button class="category-btn" onclick="filterByCategory('tools')">Tools</button>
-      <button class="category-btn" onclick="filterByCategory('books')">Books</button>
-      <button class="category-btn" onclick="filterByCategory('datasets')">Datasets</button>
+      <button class="category-btn active" onclick="filterByCategory('all', this)">All</button>
+      <button class="category-btn" onclick="filterByCategory('articles', this)">Articles</button>
+      <button class="category-btn" onclick="filterByCategory('videos', this)">Videos</button>
+      <button class="category-btn" onclick="filterByCategory('tools', this)">Tools</button>
+      <button class="category-btn" onclick="filterByCategory('books', this)">Books</button>
+      <button class="category-btn" onclick="filterByCategory('datasets', this)">Datasets</button>
     </div>
     
     <div class="resources-grid" id="resourcesGrid">
@@ -139,12 +139,24 @@
       });
     }
     
-    function filterByCategory(category) {
+    function filterByCategory(category, buttonElement) {
       const cards = document.querySelectorAll('.resource-card');
       const buttons = document.querySelectorAll('.category-btn');
       
       buttons.forEach(btn => btn.classList.remove('active'));
-      event.target.classList.add('active');
+      
+      // Use the passed button element or find the active one
+      if (buttonElement) {
+        buttonElement.classList.add('active');
+      } else {
+        // Fallback: find button by category
+        buttons.forEach(btn => {
+          if (btn.textContent.trim().toLowerCase() === category || 
+              (category === 'all' && btn.textContent.trim().toLowerCase() === 'all')) {
+            btn.classList.add('active');
+          }
+        });
+      }
       
       cards.forEach(card => {
         if (category === 'all' || card.dataset.category === category) {

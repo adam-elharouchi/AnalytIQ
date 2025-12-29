@@ -12,7 +12,10 @@ let conversationContext = {
 let aiProvider = 'gemini'; // Only Gemini supported
 let aiAgentInitialized = false;
 let geminiModel = 'gemini-2.5-flash'; // Default: Best Balance
-const GEMINI_API_KEY = 'AIzaSyAEj5b_MA3Y3oiyhkc1ZXaouRlHqk8C-fY'; // Pre-configured API key
+// API key should be loaded from environment variable or user input
+// For security, never hardcode API keys in source code
+// Users should configure their API key via settings or environment variables
+const GEMINI_API_KEY = localStorage.getItem('geminiApiKey') || '';
 let conversationHistoryList = []; // Store conversation history
 let currentConversationId = null;
 
@@ -499,7 +502,12 @@ function initializeGemini() {
   }
   
   // Set API key in localStorage
-  localStorage.setItem('aiApiKey', GEMINI_API_KEY);
+  // Store API key if provided, otherwise use existing one from localStorage
+  const apiKey = localStorage.getItem('geminiApiKey') || localStorage.getItem('aiApiKey') || GEMINI_API_KEY;
+  if (apiKey) {
+    localStorage.setItem('aiApiKey', apiKey);
+    localStorage.setItem('geminiApiKey', apiKey);
+  }
   localStorage.setItem('aiProvider', 'gemini');
   
   // Initialize AI agent
@@ -526,7 +534,7 @@ async function testOllamaConnection() {
 
 // Initialize AI Agent
 async function initializeAIAgent() {
-  const apiKey = localStorage.getItem('aiApiKey') || GEMINI_API_KEY;
+  const apiKey = localStorage.getItem('geminiApiKey') || localStorage.getItem('aiApiKey') || '';
   
   if (!apiKey) {
     console.error('Gemini API key not found');
@@ -612,7 +620,8 @@ async function saveAPISettings() {
     localStorage.setItem('aiProvider', provider);
     
     // Update provider selector
-    document.getElementById('aiProvider').value = provider;
+    // aiProvider element no longer exists - provider is hardcoded to 'gemini'
+    // No need to update UI element
     aiProvider = provider;
     
     closeAPISettings();
@@ -631,7 +640,8 @@ async function saveAPISettings() {
     localStorage.setItem('aiProvider', provider);
     
     // Update provider selector
-    document.getElementById('aiProvider').value = provider;
+    // aiProvider element no longer exists - provider is hardcoded to 'gemini'
+    // No need to update UI element
     aiProvider = provider;
     
     // Initialize agent
@@ -1945,13 +1955,18 @@ function useStarter(prompt) {
 document.addEventListener('DOMContentLoaded', function() {
   updateLanguage();
   
-  // Load saved AI provider
-  const savedProvider = localStorage.getItem('aiProvider') || 'local';
-  document.getElementById('aiProvider').value = savedProvider;
+  // Load saved AI provider (Gemini is the only supported provider)
+  const savedProvider = localStorage.getItem('aiProvider') || 'gemini';
   aiProvider = savedProvider;
   
+  // Check if API key is available
+  const apiKey = localStorage.getItem('geminiApiKey') || localStorage.getItem('aiApiKey') || '';
+  if (!apiKey) {
+    console.warn('Gemini API key not found. Please configure it in settings.');
+  }
+  
   // Initialize AI agent if configured
-  if (savedProvider !== 'local') {
+  if (savedProvider !== 'local' && apiKey) {
     initializeAIAgent();
   }
   
