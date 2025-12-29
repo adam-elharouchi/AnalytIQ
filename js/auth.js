@@ -20,7 +20,7 @@ class AuthManager {
   }
 
   // Sign up new user
-  signUp(name, email, password) {
+  async signUp(name, email, password) {
     // Check if user already exists
     const users = this.getUsers();
     if (users.find(u => u.email === email)) {
@@ -46,6 +46,16 @@ class AuthManager {
       name: user.name,
       email: user.email
     });
+
+    // Send welcome email
+    try {
+      if (typeof emailService !== 'undefined') {
+        await emailService.sendWelcomeEmail(email, name);
+      }
+    } catch (error) {
+      console.error('Failed to send welcome email:', error);
+      // Don't throw error - email failure shouldn't prevent signup
+    }
 
     return user;
   }
@@ -138,7 +148,7 @@ function handleSignIn(event) {
 }
 
 // Handle sign up
-function handleSignUp(event) {
+async function handleSignUp(event) {
   event.preventDefault();
   const name = document.getElementById('signupName').value;
   const email = document.getElementById('signupEmail').value;
@@ -157,13 +167,64 @@ function handleSignUp(event) {
   }
 
   try {
-    authManager.signUp(name, email, password);
-    // Redirect to home page
-    window.location.href = 'index.html';
+    // Show loading state
+    const submitButton = event.target.querySelector('button[type="submit"]');
+    const originalButtonText = submitButton.textContent;
+    submitButton.disabled = true;
+    submitButton.textContent = 'Creating account...';
+
+    await authManager.signUp(name, email, password);
+    
+    // Show success message about email
+    showEmailNotification(email);
+    
+    // Small delay to show notification, then redirect
+    setTimeout(() => {
+      window.location.href = 'index.html';
+    }, 2000);
   } catch (error) {
     errorDiv.textContent = error.message;
     errorDiv.style.display = 'block';
+    
+    // Re-enable button
+    const submitButton = event.target.querySelector('button[type="submit"]');
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = 'Sign Up';
+    }
   }
+}
+
+// Show email notification
+function showEmailNotification(email) {
+  // Create notification element
+  const notification = document.createElement('div');
+  notification.className = 'email-notification';
+  notification.innerHTML = `
+    <div class="email-notification-content">
+      <div class="email-notification-icon">📧</div>
+      <div class="email-notification-text">
+        <strong>Welcome email sent!</strong>
+        <p>We've sent a welcome email to <strong>${email}</strong>. Please check your inbox.</p>
+      </div>
+    </div>
+  `;
+  
+  // Add to page
+  document.body.appendChild(notification);
+  
+  // Show notification
+  setTimeout(() => {
+    notification.classList.add('show');
+  }, 10);
+  
+  // Hide and remove after 5 seconds
+  setTimeout(() => {
+    notification.classList.remove('show');
+    setTimeout(() => {
+      notification.remove();
+    }, 300);
+  }, 5000);
 }
 
 // Show tab
