@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Sign In - AnalyticaLearn</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-card">
+      <div class="login-header">
+        <h1>AnalyticaLearn</h1>
+        <p>Sign in to access the Code Assistant and learning resources</p>
+      </div>
+      
+      <div class="login-tabs">
+        <button class="login-tab active" onclick="showTab('signin')">Sign In</button>
+        <button class="login-tab" onclick="showTab('signup')">Sign Up</button>
+      </div>
+      
+      <div id="signinTab" class="login-tab-content active">
+        <form id="signinForm" onsubmit="handleSignIn(event)">
+          <div class="form-group">
+            <label for="signinEmail">Email</label>
+            <input type="email" id="signinEmail" required placeholder="your@email.com" />
+          </div>
+          <div class="form-group">
+            <label for="signinPassword">Password</label>
+            <input type="password" id="signinPassword" required placeholder="Enter your password" />
+          </div>
+          <button type="submit" class="btn btn-primary btn-full">Sign In</button>
+          <div id="signinError" class="error-message" style="display: none;"></div>
+        </form>
+      </div>
+      
+      <div id="signupTab" class="login-tab-content">
+        <form id="signupForm" onsubmit="handleSignUp(event)">
+          <div class="form-group">
+            <label for="signupName">Full Name</label>
+            <input type="text" id="signupName" required placeholder="John Doe" />
+          </div>
+          <div class="form-group">
+            <label for="signupEmail">Email</label>
+            <input type="email" id="signupEmail" required placeholder="your@email.com" />
+          </div>
+          <div class="form-group">
+            <label for="signupPassword">Password</label>
+            <input type="password" id="signupPassword" required placeholder="Create a password" minlength="6" />
+            <small>Minimum 6 characters</small>
+          </div>
+          <div class="form-group">
+            <label for="signupConfirmPassword">Confirm Password</label>
+            <input type="password" id="signupConfirmPassword" required placeholder="Confirm your password" />
+          </div>
+          <button type="submit" class="btn btn-primary btn-full">Sign Up</button>
+          <div id="signupError" class="error-message" style="display: none;"></div>
+        </form>
+      </div>
+      
+      <div class="login-footer">
+        <p>By signing in, you agree to our Terms of Service and Privacy Policy</p>
+      </div>
+    </div>
+  </div>
+  
+  <script src="js/auth.js"></script>
+</body>
+</html>
+

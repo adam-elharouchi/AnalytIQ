@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AnalyticaLearn - Data Analytics Learning Platform</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <nav class="navbar" id="navbar"></nav>
+  
+  <main class="container">
+    <div class="hero-section">
+      <h1>Welcome to AnalyticaLearn</h1>
+      <p>Your comprehensive platform for mastering data analytics. Learn, practice, and master data analytics skills with interactive tools and resources.</p>
+    </div>
+    
+    <div class="page-navigation-grid">
+      <a href="modules.html" class="page-nav-card">
+        <div class="page-nav-icon">📚</div>
+        <h2>Modules</h2>
+        <p>Structured learning paths from beginner to advanced, covering all aspects of data analytics and visualization.</p>
+      </a>
+      
+      <a href="practice.html" class="page-nav-card">
+        <div class="page-nav-icon">💻</div>
+        <h2>Practice</h2>
+        <p>Hands-on exercises and coding challenges to reinforce your learning and build practical skills.</p>
+      </a>
+      
+      <a href="resources.html" class="page-nav-card">
+        <div class="page-nav-icon">📖</div>
+        <h2>Resources</h2>
+        <p>Access to articles, videos, tools, books, and datasets to support your learning journey.</p>
+      </a>
+      
+      <a href="code-assistant.html" class="page-nav-card">
+        <div class="page-nav-icon">🔧</div>
+        <h2>Code Assistant</h2>
+        <p>AI-powered assistant that helps you write code, analyze data, derive insights, and create visualizations.</p>
+      </a>
+    </div>
+  </main>
+  
+  <script src="js/auth.js"></script>
+  <script src="js/navigation.js"></script>
+  <script>
+    // Require authentication for entire website
+    document.addEventListener('DOMContentLoaded', function() {
+      const authManager = new AuthManager();
+      if (!authManager.requireAuth()) {
+        return; // Will redirect to login
+      }
+    });
+  </script>
+</body>
+</html>

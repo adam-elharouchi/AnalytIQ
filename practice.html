@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Practice - AnalyticaLearn</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <nav class="navbar" id="navbar"></nav>
+  
+  <main class="container">
+    <h1>Practice Exercises</h1>
+    <p class="subtitle">Hone your data analytics skills with hands-on exercises</p>
+    
+    <div class="practice-grid">
+      <div class="practice-card">
+        <div class="practice-header">
+          <h2>Exercise 1: Basic Statistics</h2>
+          <span class="difficulty-badge easy">Easy</span>
+        </div>
+        <p class="practice-description">Calculate mean, median, and mode for a given dataset. Practice fundamental statistical calculations.</p>
+        <div class="practice-actions">
+          <button class="btn btn-primary" onclick="toggleSolution(this)">Show Solution</button>
+          <button class="btn btn-secondary">Start Exercise</button>
+        </div>
+        <div class="solution" style="display: none;">
+          <h3>Solution:</h3>
+          <pre><code>import numpy as np
+
+data = [10, 20, 30, 40, 50, 30, 30]
+mean = np.mean(data)
+median = np.median(data)
+mode = max(set(data), key=data.count)
+
+print(f"Mean: {mean}")
+print(f"Median: {median}")
+print(f"Mode: {mode}")</code></pre>
+        </div>
+      </div>
+      
+      <div class="practice-card">
+        <div class="practice-header">
+          <h2>Exercise 2: Data Cleaning</h2>
+          <span class="difficulty-badge medium">Medium</span>
+        </div>
+        <p class="practice-description">Clean a dataset with missing values and outliers. Apply appropriate techniques to handle data quality issues.</p>
+        <div class="practice-actions">
+          <button class="btn btn-primary" onclick="toggleSolution(this)">Show Solution</button>
+          <button class="btn btn-secondary">Start Exercise</button>
+        </div>
+        <div class="solution" style="display: none;">
+          <h3>Solution:</h3>
+          <pre><code>import pandas as pd
+
+# Load data
+df = pd.read_csv('data.csv')
+
+# Handle missing values
+df = df.fillna(df.mean())
+
+# Remove outliers using IQR method
+Q1 = df.quantile(0.25)
+Q3 = df.quantile(0.75)
+IQR = Q3 - Q1
+df = df[~((df < (Q1 - 1.5 * IQR)) | (df > (Q3 + 1.5 * IQR))).any(axis=1)]</code></pre>
+        </div>
+      </div>
+      
+      <div class="practice-card">
+        <div class="practice-header">
+          <h2>Exercise 3: Data Visualization</h2>
+          <span class="difficulty-badge medium">Medium</span>
+        </div>
+        <p class="practice-description">Create visualizations for sales data. Practice creating bar charts, line graphs, and pie charts.</p>
+        <div class="practice-actions">
+          <button class="btn btn-primary" onclick="toggleSolution(this)">Show Solution</button>
+          <button class="btn btn-secondary">Start Exercise</button>
+        </div>
+        <div class="solution" style="display: none;">
+          <h3>Solution:</h3>
+          <pre><code>import matplotlib.pyplot as plt
+import pandas as pd
+
+df = pd.read_csv('sales.csv')
+
+# Bar chart
+plt.bar(df['Month'], df['Sales'])
+plt.title('Monthly Sales')
+plt.xlabel('Month')
+plt.ylabel('Sales')
+plt.show()
+
+# Line chart
+plt.plot(df['Month'], df['Sales'])
+plt.title('Sales Trend')
+plt.show()</code></pre>
+        </div>
+      </div>
+      
+      <div class="practice-card">
+        <div class="practice-header">
+          <h2>Exercise 4: Correlation Analysis</h2>
+          <span class="difficulty-badge hard">Hard</span>
+        </div>
+        <p class="practice-description">Analyze correlations between variables in a dataset. Identify relationships and create correlation matrices.</p>
+        <div class="practice-actions">
+          <button class="btn btn-primary" onclick="toggleSolution(this)">Show Solution</button>
+          <button class="btn btn-secondary">Start Exercise</button>
+        </div>
+        <div class="solution" style="display: none;">
+          <h3>Solution:</h3>
+          <pre><code>import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+df = pd.read_csv('data.csv')
+
+# Calculate correlation matrix
+correlation_matrix = df.corr()
+
+# Visualize correlation matrix
+sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm')
+plt.title('Correlation Matrix')
+plt.show()</code></pre>
+        </div>
+      </div>
+      
+      <div class="practice-card">
+        <div class="practice-header">
+          <h2>Exercise 5: Time Series Analysis</h2>
+          <span class="difficulty-badge hard">Hard</span>
+        </div>
+        <p class="practice-description">Analyze time series data and identify trends. Practice forecasting and seasonal decomposition.</p>
+        <div class="practice-actions">
+          <button class="btn btn-primary" onclick="toggleSolution(this)">Show Solution</button>
+          <button class="btn btn-secondary">Start Exercise</button>
+        </div>
+        <div class="solution" style="display: none;">
+          <h3>Solution:</h3>
+          <pre><code>import pandas as pd
+from statsmodels.tsa.seasonal import seasonal_decompose
+
+df = pd.read_csv('timeseries.csv', parse_dates=['Date'], index_col='Date')
+
+# Decompose time series
+decomposition = seasonal_decompose(df['Value'], model='additive')
+decomposition.plot()
+plt.show()</code></pre>
+        </div>
+      </div>
+      
+      <div class="practice-card">
+        <div class="practice-header">
+          <h2>Exercise 6: Hypothesis Testing</h2>
+          <span class="difficulty-badge hard">Hard</span>
+        </div>
+        <p class="practice-description">Perform hypothesis testing on sample data. Practice t-tests, chi-square tests, and ANOVA.</p>
+        <div class="practice-actions">
+          <button class="btn btn-primary" onclick="toggleSolution(this)">Show Solution</button>
+          <button class="btn btn-secondary">Start Exercise</button>
+        </div>
+        <div class="solution" style="display: none;">
+          <h3>Solution:</h3>
+          <pre><code>from scipy import stats
+
+# One-sample t-test
+t_stat, p_value = stats.ttest_1samp(data, popmean=100)
+
+# Two-sample t-test
+t_stat, p_value = stats.ttest_ind(group1, group2)
+
+# Chi-square test
+chi2, p_value = stats.chisquare(observed, expected)
+
+print(f"P-value: {p_value}")
+if p_value < 0.05:
+    print("Reject null hypothesis")
+else:
+    print("Fail to reject null hypothesis")</code></pre>
+        </div>
+      </div>
+    </div>
+  </main>
+  
+  <script src="js/auth.js"></script>
+  <script src="js/navigation.js"></script>
+  <script>
+    // Require authentication
+    document.addEventListener('DOMContentLoaded', function() {
+      const authManager = new AuthManager();
+      if (!authManager.requireAuth()) {
+        return; // Will redirect to login
+      }
+    });
+  </script>
+  <script>
+    function toggleSolution(button) {
+      const solution = button.closest('.practice-card').querySelector('.solution');
+      if (solution.style.display === 'none') {
+        solution.style.display = 'block';
+        button.textContent = 'Hide Solution';
+      } else {
+        solution.style.display = 'none';
+        button.textContent = 'Show Solution';
+      }
+    }
+  </script>
+</body>
+</html>
+

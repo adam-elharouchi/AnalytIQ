@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Modules - AnalyticaLearn</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <nav class="navbar" id="navbar"></nav>
+  
+  <main class="container">
+    <h1>Learning Modules</h1>
+    <p class="subtitle">Master data analytics through structured learning paths</p>
+    
+    <div class="modules-grid">
+      <div class="module-card">
+        <div class="module-header">
+          <h2>Introduction to Data Analytics</h2>
+          <span class="module-badge beginner">Beginner</span>
+        </div>
+        <p class="module-description">Learn the fundamentals of data analytics, including data types, collection methods, and basic analysis techniques.</p>
+        <div class="module-progress">
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: 0%"></div>
+          </div>
+          <span class="progress-text">0% Complete</span>
+        </div>
+        <button class="btn btn-primary" onclick="expandModule(this)">View Details</button>
+        <div class="module-details" style="display: none;">
+          <h3>Topics Covered:</h3>
+          <ul>
+            <li>Understanding Data Types</li>
+            <li>Data Collection Methods</li>
+            <li>Basic Statistical Concepts</li>
+            <li>Introduction to Visualization</li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="module-card">
+        <div class="module-header">
+          <h2>Data Visualization</h2>
+          <span class="module-badge intermediate">Intermediate</span>
+        </div>
+        <p class="module-description">Master the art of creating compelling visualizations that tell data-driven stories.</p>
+        <div class="module-progress">
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: 25%"></div>
+          </div>
+          <span class="progress-text">25% Complete</span>
+        </div>
+        <button class="btn btn-primary" onclick="expandModule(this)">View Details</button>
+        <div class="module-details" style="display: none;">
+          <h3>Topics Covered:</h3>
+          <ul>
+            <li>Chart Types and When to Use Them</li>
+            <li>Design Principles for Dashboards</li>
+            <li>Interactive Visualizations</li>
+            <li>Tools and Libraries</li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="module-card">
+        <div class="module-header">
+          <h2>Statistical Analysis</h2>
+          <span class="module-badge intermediate">Intermediate</span>
+        </div>
+        <p class="module-description">Deep dive into statistical methods for data analysis and hypothesis testing.</p>
+        <div class="module-progress">
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: 0%"></div>
+          </div>
+          <span class="progress-text">0% Complete</span>
+        </div>
+        <button class="btn btn-primary" onclick="expandModule(this)">View Details</button>
+        <div class="module-details" style="display: none;">
+          <h3>Topics Covered:</h3>
+          <ul>
+            <li>Descriptive Statistics</li>
+            <li>Inferential Statistics</li>
+            <li>Hypothesis Testing</li>
+            <li>Regression Analysis</li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="module-card">
+        <div class="module-header">
+          <h2>Machine Learning Basics</h2>
+          <span class="module-badge advanced">Advanced</span>
+        </div>
+        <p class="module-description">Introduction to machine learning algorithms and their applications in data analytics.</p>
+        <div class="module-progress">
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: 0%"></div>
+          </div>
+          <span class="progress-text">0% Complete</span>
+        </div>
+        <button class="btn btn-primary" onclick="expandModule(this)">View Details</button>
+        <div class="module-details" style="display: none;">
+          <h3>Topics Covered:</h3>
+          <ul>
+            <li>Supervised Learning</li>
+            <li>Unsupervised Learning</li>
+            <li>Model Evaluation</li>
+            <li>Feature Engineering</li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="module-card">
+        <div class="module-header">
+          <h2>Data Cleaning & Preprocessing</h2>
+          <span class="module-badge beginner">Beginner</span>
+        </div>
+        <p class="module-description">Learn essential techniques for cleaning and preparing data for analysis.</p>
+        <div class="module-progress">
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: 50%"></div>
+          </div>
+          <span class="progress-text">50% Complete</span>
+        </div>
+        <button class="btn btn-primary" onclick="expandModule(this)">View Details</button>
+        <div class="module-details" style="display: none;">
+          <h3>Topics Covered:</h3>
+          <ul>
+            <li>Handling Missing Data</li>
+            <li>Data Transformation</li>
+            <li>Outlier Detection</li>
+            <li>Data Validation</li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="module-card">
+        <div class="module-header">
+          <h2>Advanced Analytics</h2>
+          <span class="module-badge advanced">Advanced</span>
+        </div>
+        <p class="module-description">Explore advanced analytical techniques including time series analysis and predictive modeling.</p>
+        <div class="module-progress">
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: 0%"></div>
+          </div>
+          <span class="progress-text">0% Complete</span>
+        </div>
+        <button class="btn btn-primary" onclick="expandModule(this)">View Details</button>
+        <div class="module-details" style="display: none;">
+          <h3>Topics Covered:</h3>
+          <ul>
+            <li>Time Series Analysis</li>
+            <li>Predictive Modeling</li>
+            <li>Advanced Visualization</li>
+            <li>Big Data Analytics</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </main>
+  
+  <script src="js/auth.js"></script>
+  <script src="js/navigation.js"></script>
+  <script>
+    // Require authentication
+    document.addEventListener('DOMContentLoaded', function() {
+      const authManager = new AuthManager();
+      if (!authManager.requireAuth()) {
+        return; // Will redirect to login
+      }
+    });
+  </script>
+  <script>
+    function expandModule(button) {
+      const details = button.nextElementSibling;
+      if (details.style.display === 'none') {
+        details.style.display = 'block';
+        button.textContent = 'Hide Details';
+      } else {
+        details.style.display = 'none';
+        button.textContent = 'View Details';
+      }
+    }
+  </script>
+</body>
+</html>
+

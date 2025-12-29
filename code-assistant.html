@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Code Assistant - AnalyticaLearn</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <nav class="navbar" id="navbar"></nav>
+  
+  <main class="code-assistant-fullpage" id="codeAssistantPage">
+    <!-- Conversation History Sidebar -->
+    <div class="conversation-sidebar" id="conversationSidebar">
+      <div class="sidebar-header">
+        <h3>Conversation History</h3>
+        <button class="sidebar-toggle" onclick="toggleSidebar()" title="Hide sidebar">←</button>
+      </div>
+      <div class="sidebar-content" id="sidebarContent">
+        <div class="conversation-list" id="conversationList">
+          <p class="no-conversations">No previous conversations</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Main Chat Area -->
+    <div class="chat-main-area">
+      <!-- Floating Control Buttons -->
+      <div class="floating-controls">
+        <button class="sidebar-toggle-btn floating-btn" onclick="toggleSidebar()" title="Show conversation history">☰</button>
+        <div class="floating-select-wrapper">
+          <select id="geminiModelSelect" class="floating-select" onchange="updateGeminiModel()" title="Gemini Model">
+            <option value="gemini-2.5-flash" selected>gemini-2.5-flash</option>
+            <option value="gemini-3-pro-preview">gemini-3-pro-preview</option>
+            <option value="gemini-3-flash">gemini-3-flash</option>
+            <option value="gemini-1.5-pro">gemini-1.5-pro</option>
+          </select>
+        </div>
+        <div class="floating-select-wrapper">
+          <select id="languageSelect" class="floating-select" onchange="updateLanguage()" title="Programming Language">
+            <option value="python">Python</option>
+            <option value="javascript">JavaScript</option>
+            <option value="sql">SQL</option>
+            <option value="java">Java</option>
+            <option value="cpp">C++</option>
+            <option value="r">R</option>
+            <option value="go">Go</option>
+            <option value="rust">Rust</option>
+            <option value="html">HTML</option>
+            <option value="css">CSS</option>
+            <option value="typescript">TypeScript</option>
+            <option value="php">PHP</option>
+            <option value="ruby">Ruby</option>
+            <option value="swift">Swift</option>
+            <option value="kotlin">Kotlin</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="chat-messages" id="chatMessages">
+        <div class="welcome-section" id="conversationStarters">
+          <div class="welcome-message">
+            <p>Hello! I'm your Code Assistant. Just type your request or paste your code below!</p>
+          </div>
+          <div class="conversation-starters">
+            <div class="starter-grid">
+              <button class="starter-btn" onclick="useStarter('Create a function to calculate factorial')">
+                Create a function to calculate factorial
+              </button>
+              <button class="starter-btn" onclick="useStarter('Write a REST API endpoint')">
+                Write a REST API endpoint
+              </button>
+              <button class="starter-btn" onclick="useStarter('Debug and fix errors in my code')">
+                Debug and fix errors
+              </button>
+              <button class="starter-btn" onclick="useStarter('Create a histogram visualization')">
+                Create a histogram visualization
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="chat-input-area-fixed">
+        <div class="input-container-compact">
+          <div class="input-actions-compact">
+            <label class="file-upload-chat-btn-compact" title="Upload file">
+              <input type="file" id="fileUpload" accept=".py,.js,.sql,.java,.cpp,.r,.go,.rs,.html,.css,.ts,.php,.rb,.swift,.kt,.txt,.json,.xml,.csv,.xlsx" onchange="handleFileUpload(event)" />
+              <span class="icon-text">📎 Upload</span>
+            </label>
+            <button class="btn-visualize-compact" onclick="openVisualizePopup()" title="Visualize code" id="visualizeBtn" style="display: none;">
+              <span class="icon-text">📊 Visualize</span>
+            </button>
+            <button class="btn-clear-compact" onclick="clearChat()" title="Clear chat">
+              <span class="icon-text">🗑️ Clear</span>
+            </button>
+          </div>
+          <div class="input-wrapper">
+            <textarea 
+              id="chatInput" 
+              class="chat-input-compact" 
+              placeholder="Type your message, paste code, or describe what you need..."
+              rows="2"
+              onkeydown="handleKeyDown(event)"
+            ></textarea>
+            <button class="btn-send-compact" onclick="sendMessage()" title="Send message">Send</button>
+          </div>
+        </div>
+      </div>
+    
+    <!-- Visualize Popup Modal -->
+    <div id="visualizeModal" class="modal" style="display: none;">
+      <div class="modal-content visualize-modal-content">
+        <span class="modal-close" onclick="closeVisualizeModal()">&times;</span>
+        <h2>Code Visualization</h2>
+        <div class="visualize-controls">
+          <button class="btn-run-code" onclick="runVisualizationCode()">Run Code</button>
+          <button class="btn-clear-viz" onclick="clearVisualization()">Clear</button>
+        </div>
+        <div class="visualize-output" id="visualizeOutput">
+          <p class="placeholder-text">Code output and visualizations will appear here...</p>
+        </div>
+      </div>
+    </div>
+    </div>
+  </main>
+  
+  <script src="js/auth.js"></script>
+  <script src="js/navigation.js"></script>
+  <script src="js/local-intelligence.js"></script>
+  <script src="js/ai-agent.js"></script>
+  <script src="js/code-assistant.js"></script>
+  <script>
+    // Require authentication for code assistant
+    document.addEventListener('DOMContentLoaded', function() {
+      const authManager = new AuthManager();
+      if (!authManager.requireAuth()) {
+        return; // Will redirect to login
+      }
+      // Initialize Gemini AI
+      initializeGemini();
+      
+      // Load conversation history
+      loadConversationHistory();
+      
+      // Initialize new conversation
+      if (!currentConversationId) {
+        startNewConversation();
+      }
+      
+      // Initialize sidebar state
+      const sidebar = document.getElementById('conversationSidebar');
+      const fullPage = document.getElementById('codeAssistantPage');
+      if (sidebar && fullPage) {
+        if (sidebar.classList.contains('hidden')) {
+          fullPage.classList.add('sidebar-hidden');
+        } else {
+          fullPage.classList.add('sidebar-visible');
+        }
+      }
+    });
+  </script>
+</body>
+</html>
