@@ -11,11 +11,23 @@
   <nav class="navbar" id="navbar"></nav>
   
   <main class="code-assistant-fullpage" id="codeAssistantPage">
+    <!-- Collapsed Sidebar (Always Visible) -->
+    <div class="collapsed-sidebar" id="collapsedSidebar">
+      <button class="sidebar-logo-toggle" onclick="toggleSidebar()" title="Toggle sidebar">
+        <span class="logo-iq">IQ</span>
+      </button>
+      <button class="sidebar-new-conversation-btn collapsed" onclick="startNewConversation()" title="New conversation">+</button>
+    </div>
+    
     <!-- Conversation History Sidebar -->
     <div class="conversation-sidebar" id="conversationSidebar">
       <div class="sidebar-header">
         <h3>Conversation History</h3>
         <button class="sidebar-toggle" onclick="toggleSidebar()" title="Hide sidebar">←</button>
+      </div>
+      <div class="sidebar-tabs">
+        <button class="sidebar-tab active" onclick="switchConversationTab('active')" id="activeTab">Active</button>
+        <button class="sidebar-tab" onclick="switchConversationTab('archived')" id="archivedTab">Archived</button>
       </div>
       <div class="sidebar-content" id="sidebarContent">
         <div class="conversation-list" id="conversationList">
@@ -26,11 +38,6 @@
     
     <!-- Main Chat Area -->
     <div class="chat-main-area">
-      <!-- Floating Control Buttons -->
-      <div class="floating-controls">
-        <button class="sidebar-toggle-btn floating-btn" onclick="toggleSidebar()" title="Show conversation history">☰</button>
-      </div>
-      
       <div class="chat-messages" id="chatMessages">
         <div class="welcome-section" id="conversationStarters">
           <div class="welcome-message">
@@ -130,15 +137,11 @@
         startNewConversation();
       }
       
-      // Initialize sidebar state
+      // Initialize sidebar state (start with sidebar hidden)
       const sidebar = document.getElementById('conversationSidebar');
       const fullPage = document.getElementById('codeAssistantPage');
       if (sidebar && fullPage) {
-        if (sidebar.classList.contains('hidden')) {
-          fullPage.classList.add('sidebar-hidden');
-        } else {
-          fullPage.classList.add('sidebar-visible');
-        }
+        sidebar.classList.add('hidden');
       }
       
       // Initialize displays
