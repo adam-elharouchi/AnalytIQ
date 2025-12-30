@@ -10,7 +10,7 @@ class EmailService {
   async sendWelcomeEmail(userEmail, userName) {
     const emailData = {
       to: userEmail,
-      subject: 'Welcome to AnalyticaLearn! 🎉',
+      subject: 'Welcome to AnalytIQ! 🎉',
       template: 'welcome',
       sentAt: new Date().toISOString(),
       userName: userName
@@ -73,17 +73,17 @@ class EmailService {
 <body>
   <div class="container">
     <div class="header">
-      <h1>Welcome to AnalyticaLearn! 🎉</h1>
+      <h1>Welcome to AnalytIQ! 🎉</h1>
     </div>
     <div class="content">
       <h2>Hello ${userName || 'there'}!</h2>
-      <p>We're thrilled to have you join the AnalyticaLearn community! You've taken the first step towards mastering data analytics.</p>
+      <p>We're thrilled to have you join the AnalytIQ community! You've taken the first step towards mastering data analytics.</p>
       
       <h3>What's Next?</h3>
       <ul>
         <li><strong>Explore Modules:</strong> Start with our structured learning paths from beginner to advanced</li>
         <li><strong>Practice Your Skills:</strong> Try hands-on exercises and coding challenges</li>
-        <li><strong>Use the Code Assistant:</strong> Get AI-powered help with your data analysis projects</li>
+        <li><strong>Use Code:</strong> Get AI-powered help with your data analysis projects</li>
         <li><strong>Access Resources:</strong> Browse our library of articles, videos, and datasets</li>
       </ul>
       
@@ -94,11 +94,11 @@ class EmailService {
       <p>If you have any questions or need help, don't hesitate to reach out. We're here to support your learning journey!</p>
       
       <p>Happy learning!<br>
-      <strong>The AnalyticaLearn Team</strong></p>
+      <strong>The AnalytIQ Team</strong></p>
     </div>
     <div class="footer">
-      <p>This email was sent to you because you created an account on AnalyticaLearn.</p>
-      <p>© ${new Date().getFullYear()} AnalyticaLearn. All rights reserved.</p>
+      <p>This email was sent to you because you created an account on AnalytIQ.</p>
+      <p>© ${new Date().getFullYear()} AnalytIQ. All rights reserved.</p>
     </div>
   </div>
 </body>

@@ -1,4 +1,4 @@
-// Navigation system for AnalyticaLearn
+// Navigation system for AnalytIQ
 document.addEventListener('DOMContentLoaded', function() {
   const navbar = document.getElementById('navbar');
   if (!navbar) return;
@@ -55,14 +55,16 @@ document.addEventListener('DOMContentLoaded', function() {
   
   const navHTML = `
     <div class="nav-container">
-      <a href="index.html" class="nav-brand">AnalyticaLearn</a>
+      <a href="index.html" class="nav-brand">
+        <span class="logo-analyt">Analyt</span><span class="logo-iq">IQ</span>
+      </a>
       <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">☰</button>
       <ul class="nav-links" id="navLinks">
         <li><a href="index.html" ${currentPage === 'index.html' ? 'class="active"' : ''}>Home</a></li>
         <li><a href="modules.html" ${currentPage === 'modules.html' ? 'class="active"' : ''}>Modules</a></li>
         <li><a href="practice.html" ${currentPage === 'practice.html' ? 'class="active"' : ''}>Practice</a></li>
         <li><a href="resources.html" ${currentPage === 'resources.html' ? 'class="active"' : ''}>Resources</a></li>
-        <li><a href="code-assistant.html" ${currentPage === 'code-assistant.html' ? 'class="active"' : ''}>Code Assistant</a></li>
+        <li><a href="code-assistant.html" ${currentPage === 'code-assistant.html' ? 'class="active"' : ''}>Code</a></li>
         ${userMenu}
       </ul>
     </div>

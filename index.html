@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>AnalyticaLearn - Data Analytics Learning Platform</title>
+  <title>AnalytIQ - Data Analytics Learning Platform</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="css/styles.css" />
 </head>
@@ -10,12 +10,14 @@
   <nav class="navbar" id="navbar"></nav>
   
   <main class="container">
-    <div class="hero-section">
-      <h1>Welcome to AnalyticaLearn</h1>
-      <p>Your comprehensive platform for mastering data analytics. Learn, practice, and master data analytics skills with interactive tools and resources.</p>
-    </div>
-    
-    <div class="page-navigation-grid">
+    <div class="home-layout">
+      <div class="home-content-left">
+        <div class="hero-section">
+          <h1>Welcome to <span class="logo-analyt">Analyt</span><span class="logo-iq">IQ</span></h1>
+          <p>Your comprehensive platform for mastering data analytics. Learn, practice, and master data analytics skills with interactive tools and resources.</p>
+        </div>
+        
+        <div class="page-navigation-grid">
       <a href="modules.html" class="page-nav-card">
         <div class="page-nav-icon">📚</div>
         <h2>Modules</h2>
@@ -36,11 +38,29 @@
       
       <a href="code-assistant.html" class="page-nav-card">
         <div class="page-nav-icon">🔧</div>
-        <h2>Code Assistant</h2>
+        <h2>Code</h2>
         <p>AI-powered assistant that helps you write code, analyze data, derive insights, and create visualizations.</p>
-      </a>
+        </a>
+        </div>
+      </div>
+      
+      <div class="home-content-right">
+        <div class="code-animation-container">
+          <div class="code-animation-header">
+            <span class="code-animation-dot"></span>
+            <span class="code-animation-dot"></span>
+            <span class="code-animation-dot"></span>
+            <span class="code-animation-filename">df_AnalytIQ</span>
+          </div>
+          <div class="code-animation-content">
+            <pre id="codeAnimation"><span class="code-line"></span></pre>
+          </div>
+        </div>
+      </div>
     </div>
   </main>
+  
+  <script src="js/home-animation.js"></script>
   
   <script src="js/auth.js"></script>
   <script src="js/navigation.js"></script>

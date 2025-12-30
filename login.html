@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Sign In - AnalyticaLearn</title>
+  <title>Sign In - AnalytIQ</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="css/styles.css" />
 </head>
@@ -10,13 +10,13 @@
   <div class="login-container">
     <div class="login-card">
       <div class="login-header">
-        <h1>AnalyticaLearn</h1>
-        <p>Sign in to access the Code Assistant and learning resources</p>
+        <h1><span class="logo-analyt">Analyt</span><span class="logo-iq">IQ</span></h1>
+        <p>Sign in to access Code and learning resources</p>
       </div>
       
       <div class="login-tabs">
-        <button class="login-tab active" onclick="showTab('signin')">Sign In</button>
-        <button class="login-tab" onclick="showTab('signup')">Sign Up</button>
+        <button class="login-tab active" onclick="showTab('signin', this)">Sign In</button>
+        <button class="login-tab" onclick="showTab('signup', this)">Sign Up</button>
       </div>
       
       <div id="signinTab" class="login-tab-content active">

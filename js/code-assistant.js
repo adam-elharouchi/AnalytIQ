@@ -191,7 +191,7 @@ function startNewConversation() {
       messagesContainer.innerHTML = `
         <div class="welcome-section" id="conversationStarters">
           <div class="welcome-message">
-            <p>Hello! I'm your Code Assistant. Just type your request or paste your code below!</p>
+            <p>Hello! I'm your Code. Just type your request or paste your code below!</p>
           </div>
           <div class="conversation-starters">
             <div class="starter-grid">
@@ -690,10 +690,23 @@ async function sendMessage() {
     }, 1000);
   } catch (error) {
     removeLoadingMessage(loadingId);
-    addMessage('assistant', `❌ Error: ${error.message}\n\nFalling back to local intelligence...`);
+    const errorMessage = `❌ Error: ${error.message}\n\nFalling back to local intelligence...`;
+    addMessage('assistant', errorMessage);
+    
+    // Add error message to chat history
+    chatHistory.push({ role: 'assistant', content: errorMessage });
+    
     // Fallback to enhanced local processing
     const localResponse = localIntelligence.processMessage(message, chatHistory, uploadedData, currentLanguage);
     addMessage('assistant', localResponse);
+    
+    // Add fallback response to chat history
+    chatHistory.push({ role: 'assistant', content: localResponse });
+    
+    // Auto-save conversation after a short delay
+    setTimeout(() => {
+      saveConversation();
+    }, 1000);
   }
 }
 
