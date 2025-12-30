@@ -47,16 +47,6 @@ class AuthManager {
       email: user.email
     });
 
-    // Send welcome email
-    try {
-      if (typeof emailService !== 'undefined') {
-        await emailService.sendWelcomeEmail(email, name);
-      }
-    } catch (error) {
-      console.error('Failed to send welcome email:', error);
-      // Don't throw error - email failure shouldn't prevent signup
-    }
-
     return user;
   }
 
@@ -175,9 +165,6 @@ async function handleSignUp(event) {
 
     await authManager.signUp(name, email, password);
     
-    // Show success message about email
-    showEmailNotification(email);
-    
     // Small delay to show notification, then redirect
     setTimeout(() => {
       window.location.href = 'index.html';
@@ -193,38 +180,6 @@ async function handleSignUp(event) {
       submitButton.textContent = 'Sign Up';
     }
   }
-}
-
-// Show email notification
-function showEmailNotification(email) {
-  // Create notification element
-  const notification = document.createElement('div');
-  notification.className = 'email-notification';
-  notification.innerHTML = `
-    <div class="email-notification-content">
-      <div class="email-notification-icon">📧</div>
-      <div class="email-notification-text">
-        <strong>Welcome email sent!</strong>
-        <p>We've sent a welcome email to <strong>${email}</strong>. Please check your inbox.</p>
-      </div>
-    </div>
-  `;
-  
-  // Add to page
-  document.body.appendChild(notification);
-  
-  // Show notification
-  setTimeout(() => {
-    notification.classList.add('show');
-  }, 10);
-  
-  // Hide and remove after 5 seconds
-  setTimeout(() => {
-    notification.classList.remove('show');
-    setTimeout(() => {
-      notification.remove();
-    }, 300);
-  }, 5000);
 }
 
 // Show tab
