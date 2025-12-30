@@ -228,7 +228,7 @@ function showEmailNotification(email) {
 }
 
 // Show tab
-function showTab(tabName) {
+function showTab(tabName, buttonElement) {
   // Hide all tabs
   document.querySelectorAll('.login-tab-content').forEach(tab => {
     tab.classList.remove('active');
@@ -239,7 +239,19 @@ function showTab(tabName) {
 
   // Show selected tab
   document.getElementById(tabName + 'Tab').classList.add('active');
-  event.target.classList.add('active');
+  
+  // Activate the clicked button
+  if (buttonElement) {
+    buttonElement.classList.add('active');
+  } else {
+    // Fallback: find button by tab name
+    const buttons = document.querySelectorAll('.login-tab');
+    buttons.forEach(btn => {
+      if (btn.textContent.trim().toLowerCase().includes(tabName.toLowerCase())) {
+        btn.classList.add('active');
+      }
+    });
+  }
 }
 
 // Check authentication on page load

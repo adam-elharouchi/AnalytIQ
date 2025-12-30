@@ -170,13 +170,25 @@ function handlePasswordChange(event) {
   const users = JSON.parse(localStorage.getItem('users') || '[]');
   const user = users.find(u => u.email === currentUser.email);
   
-  if (!user || user.password !== currentPassword) {
+  if (!user) {
+    alert('User not found');
+    return;
+  }
+  
+  // Hash the current password input for comparison
+  // Note: This uses the same simple hash as auth.js for consistency
+  // In production, use proper password hashing (bcrypt, etc.)
+  const authManager = new AuthManager();
+  const hashedCurrentPassword = authManager.hashPassword(currentPassword);
+  
+  if (user.password !== hashedCurrentPassword) {
     alert('Current password is incorrect');
     return;
   }
   
-  // Update password
-  user.password = newPassword;
+  // Update password with hashed version
+  const hashedNewPassword = authManager.hashPassword(newPassword);
+  user.password = hashedNewPassword;
   localStorage.setItem('users', JSON.stringify(users));
   
   // Clear form
