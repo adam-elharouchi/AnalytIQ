@@ -18,6 +18,7 @@ let geminiModel = 'gemini-2.5-flash'; // Default: Best Balance
 const GEMINI_API_KEY = localStorage.getItem('geminiApiKey') || '';
 let conversationHistoryList = []; // Store conversation history
 let currentConversationId = null;
+let currentConversationTab = 'active'; // Track current tab: 'active' or 'archived'
 
 // Save conversation to history
 function saveConversation() {
@@ -66,24 +67,56 @@ function loadConversationHistory() {
   renderConversationHistory();
 }
 
+// Switch conversation tab (active/archived)
+function switchConversationTab(tab) {
+  currentConversationTab = tab;
+  
+  // Update tab buttons
+  const activeTabBtn = document.getElementById('activeTab');
+  const archivedTabBtn = document.getElementById('archivedTab');
+  
+  if (activeTabBtn && archivedTabBtn) {
+    if (tab === 'active') {
+      activeTabBtn.classList.add('active');
+      archivedTabBtn.classList.remove('active');
+    } else {
+      archivedTabBtn.classList.add('active');
+      activeTabBtn.classList.remove('active');
+    }
+  }
+  
+  // Re-render conversation list
+  renderConversationHistory();
+}
+
 // Render conversation history
 function renderConversationHistory() {
   const list = document.getElementById('conversationList');
   if (!list) return;
   
-  // Filter out deleted conversations
-  const activeConversations = conversationHistoryList.filter(conv => !conv.deleted);
+  // Filter conversations based on current tab
+  let filteredConversations;
+  if (currentConversationTab === 'archived') {
+    // Show only archived and not deleted conversations
+    filteredConversations = conversationHistoryList.filter(conv => !conv.deleted && conv.archived);
+  } else {
+    // Show only active (not archived and not deleted) conversations
+    filteredConversations = conversationHistoryList.filter(conv => !conv.deleted && !conv.archived);
+  }
   
-  if (activeConversations.length === 0) {
-    list.innerHTML = '<p class="no-conversations">No previous conversations</p>';
+  if (filteredConversations.length === 0) {
+    const message = currentConversationTab === 'archived' 
+      ? 'No archived conversations' 
+      : 'No previous conversations';
+    list.innerHTML = `<p class="no-conversations">${message}</p>`;
     return;
   }
   
-  list.innerHTML = activeConversations.map(conv => `
-    <div class="conversation-item ${conv.id === currentConversationId ? 'active' : ''} ${conv.archived ? 'archived' : ''}">
+  list.innerHTML = filteredConversations.map(conv => `
+    <div class="conversation-item ${conv.id === currentConversationId ? 'active' : ''}">
       <div class="conversation-item-content" onclick="loadConversation('${conv.id}')">
         <div class="conversation-item-title">
-          ${conv.archived ? '📦 ' : ''}${escapeHtml(conv.title)}
+          ${escapeHtml(conv.title)}
         </div>
         <div class="conversation-item-date">${conv.date}</div>
       </div>
@@ -140,6 +173,11 @@ function archiveConversation(conversationId) {
   
   conversation.archived = !conversation.archived;
   
+  // If unarchiving, switch to active tab
+  if (!conversation.archived && currentConversationTab === 'archived') {
+    switchConversationTab('active');
+  }
+  
   // Save to localStorage
   localStorage.setItem('conversationHistory', JSON.stringify(conversationHistoryList));
   
@@ -185,6 +223,12 @@ function startNewConversation() {
     lastCodeType: null,
     modifications: []
   };
+  
+  // Switch to active tab if we're on archived tab
+  if (currentConversationTab === 'archived') {
+    switchConversationTab('active');
+  }
+  
   const messagesContainer = document.getElementById('chatMessages');
   if (messagesContainer) {
     // Check if welcome section already exists
@@ -1600,11 +1644,9 @@ function toggleSidebar() {
     sidebar.classList.toggle('hidden');
     // Update full page class to reflect sidebar state
     if (sidebar.classList.contains('hidden')) {
-      fullPage.classList.add('sidebar-hidden');
-      fullPage.classList.remove('sidebar-visible');
+      fullPage.classList.remove('sidebar-open');
     } else {
-      fullPage.classList.add('sidebar-visible');
-      fullPage.classList.remove('sidebar-hidden');
+      fullPage.classList.add('sidebar-open');
     }
   }
 }
