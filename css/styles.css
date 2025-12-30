@@ -56,11 +56,11 @@ body {
 }
 
 .logo-analyt {
-  color: #1e293b; /* Dark blue/charcoal for "Analyt" */
+  color: #222c3e; /* Dark gray blue for "Analyt" */
 }
 
 .logo-iq {
-  color: #3b82f6; /* Vibrant blue for "IQ" */
+  color: #2569f4; /* Vivid blue for "IQ" */
 }
 
 .nav-links {
@@ -79,12 +79,12 @@ body {
 }
 
 .nav-links a:hover {
-  color: #60a5fa;
+  color: #2569f4;
 }
 
 .nav-links a.active {
-  color: #60a5fa;
-  border-bottom: 2px solid #60a5fa;
+  color: #2569f4;
+  border-bottom: 2px solid #2569f4;
 }
 
 .user-menu {
@@ -264,7 +264,7 @@ body {
 }
 
 .login-header h1 {
-  color: #60a5fa;
+  color: #2569f4;
   font-size: 2rem;
   margin-bottom: 0.5rem;
 }
@@ -299,8 +299,8 @@ body {
 }
 
 .login-tab.active {
-  color: #60a5fa;
-  border-bottom-color: #60a5fa;
+  color: #2569f4;
+  border-bottom-color: #2569f4;
 }
 
 .login-tab-content {
@@ -335,8 +335,8 @@ body {
 
 .login-tab-content .form-group input:focus {
   outline: none;
-  border-color: #60a5fa;
-  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+  border-color: #2569f4;
+  box-shadow: 0 0 0 3px rgba(37, 105, 244, 0.1);
 }
 
 .login-tab-content .form-group input::placeholder {
@@ -396,7 +396,7 @@ body {
 h1 {
   font-size: 2.5rem;
   margin-bottom: 0.5rem;
-  color: #60a5fa;
+  color: #2569f4;
 }
 
 .subtitle {
@@ -419,12 +419,12 @@ h1 {
 }
 
 .btn-primary {
-  background-color: var(--primary-color);
-  color: white;
+  background-color: #2569f4;
+  color: #1e293b;
 }
 
 .btn-primary:hover {
-  background-color: var(--primary-dark);
+  background-color: #2569f4;
   transform: translateY(-1px);
   box-shadow: var(--shadow-lg);
 }
@@ -436,8 +436,8 @@ h1 {
 }
 
 .btn-secondary:hover {
-  background-color: #334155;
-  border-color: #475569;
+  background-color: #222c3e;
+  border-color: #222c3e;
 }
 
 .btn-large {
@@ -465,13 +465,13 @@ h1 {
 .dashboard-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
-  border-color: #475569;
+  border-color: #222c3e;
 }
 
 .dashboard-card h2 {
   font-size: 1.5rem;
   margin-bottom: 1rem;
-  color: #60a5fa;
+  color: #2569f4;
 }
 
 .dashboard-card canvas {
@@ -498,7 +498,7 @@ h1 {
 .module-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
-  border-color: #475569;
+  border-color: #222c3e;
 }
 
 .module-header {
@@ -601,7 +601,7 @@ h1 {
 .practice-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
-  border-color: #475569;
+  border-color: #222c3e;
 }
 
 .practice-header {
@@ -714,7 +714,7 @@ h1 {
 }
 
 .category-btn:hover {
-  background-color: #334155;
+  background-color: #222c3e;
   color: var(--text-primary);
 }
 
@@ -743,7 +743,7 @@ h1 {
 .resource-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
-  border-color: #475569;
+  border-color: #222c3e;
 }
 
 .resource-icon {
@@ -762,7 +762,7 @@ h1 {
 }
 
 .resource-link {
-  color: #60a5fa;
+  color: #2569f4;
   text-decoration: none;
   font-weight: 500;
   display: inline-block;
@@ -1136,7 +1136,7 @@ h1 {
 
 .modal-content h2 {
   margin-top: 0;
-  color: #60a5fa;
+  color: #2569f4;
 }
 
 .api-settings-form {
@@ -1168,8 +1168,8 @@ h1 {
 .form-group input:focus,
 .form-group select:focus {
   outline: none;
-  border-color: #60a5fa;
-  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+  border-color: #2569f4;
+  box-shadow: 0 0 0 3px rgba(37, 105, 244, 0.1);
 }
 
 .form-group small {
@@ -1260,7 +1260,7 @@ h1 {
 }
 
 .chat-messages::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: #222c3e;
 }
 
 .message {
@@ -1763,7 +1763,7 @@ h1 {
 .chat-input:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  box-shadow: 0 0 0 3px rgba(37, 105, 244, 0.1);
 }
 
 .btn-send {
@@ -1914,7 +1914,7 @@ h1 {
 .input-panel h2 {
   font-size: 1.25rem;
   margin-bottom: 1rem;
-  color: #60a5fa;
+  color: #2569f4;
 }
 
 .input-panel textarea {
@@ -2108,7 +2108,7 @@ h1 {
 .tab-content h2 {
   font-size: 1.25rem;
   margin-bottom: 1rem;
-  color: #60a5fa;
+  color: #2569f4;
 }
 
 .insights-container {
@@ -2127,7 +2127,7 @@ h1 {
 .insight-card h3 {
   font-size: 1rem;
   margin-bottom: 0.5rem;
-  color: #60a5fa;
+  color: #2569f4;
 }
 
 .insight-card p {
@@ -2367,7 +2367,7 @@ h1 {
 
 .code-animation-content {
   padding: 1.5rem;
-  background: #1e293b;
+  background: #222c3e;
   flex: 1;
   overflow: hidden;
   border-radius: 0 0 0.75rem 0.75rem;
@@ -2407,7 +2407,7 @@ h1 {
 
 .code-animation-content .cursor {
   animation: blink 1s infinite;
-  color: #3b82f6;
+  color: #2569f4;
   margin-left: 2px;
 }
 
@@ -2503,7 +2503,7 @@ h1 {
 .feature-card:hover {
   transform: translateY(-4px);
   box-shadow: var(--shadow-lg);
-  border-color: #475569;
+  border-color: #222c3e;
 }
 
 .feature-icon {
@@ -2542,8 +2542,8 @@ h1 {
 .quick-link-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
-  border-color: #475569;
-  color: #60a5fa;
+  border-color: #222c3e;
+  color: #2569f4;
 }
 
 .quick-link-card h3 {
@@ -2578,7 +2578,7 @@ h1 {
 .page-nav-card:hover {
   transform: translateY(-3px);
   box-shadow: var(--shadow-lg);
-  border-color: #60a5fa;
+  border-color: #2569f4;
 }
 
 .page-nav-icon {
@@ -2590,7 +2590,7 @@ h1 {
 .page-nav-card h2 {
   font-size: 1.125rem;
   margin-bottom: 0.5rem;
-  color: #60a5fa;
+  color: #2569f4;
   font-weight: 600;
 }
 
@@ -2840,9 +2840,9 @@ h1 {
 }
 
 .chat-container.design2 .user-message {
-  background: #2563eb;
+  background: #2569f4;
   color: white;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
+  box-shadow: 0 2px 8px rgba(37, 105, 244, 0.2);
   border: none;
   padding: 1.25rem 1.5rem;
 }
@@ -2870,28 +2870,28 @@ h1 {
 }
 
 .chat-container.design2 .chat-input:focus {
-  border-color: #2563eb;
+  border-color: #2569f4;
   background: white;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  box-shadow: 0 0 0 3px rgba(37, 105, 244, 0.1);
 }
 
 .chat-container.design2 .btn-send {
-  background: #2563eb;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+  background: #2569f4;
+  box-shadow: 0 2px 8px rgba(37, 105, 244, 0.3);
   font-weight: 500;
 }
 
 .chat-container.design2 .btn-send:hover {
-  background: #1d4ed8;
+  background: #2569f4;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+  box-shadow: 0 4px 12px rgba(37, 105, 244, 0.4);
 }
 
 .chat-container.design2 .file-upload-chat-btn,
 .chat-container.design2 .btn-clear {
   background: #f1f5f9;
   border: 1px solid #e2e8f0;
-  color: #475569;
+  color: #222c3e;
 }
 
 .chat-container.design2 .file-upload-chat-btn:hover,
@@ -2902,7 +2902,7 @@ h1 {
 
 .chat-container.design2 .message-content h3,
 .chat-container.design2 .message-content h4 {
-  color: #2563eb;
+  color: #2569f4;
 }
 
 /* DESIGN 3: Dark Professional */
@@ -2922,14 +2922,14 @@ h1 {
 }
 
 .chat-container.design3 .chat-header h1 {
-  color: #60a5fa;
+  color: #2569f4;
   font-weight: 600;
 }
 
 .chat-container.design3 .user-message {
-  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  background: linear-gradient(135deg, #2569f4 0%, #8b5cf6 100%);
   color: white;
-  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 20px rgba(37, 105, 244, 0.3);
   border: none;
 }
 
@@ -2955,9 +2955,9 @@ h1 {
 }
 
 .chat-container.design3 .chat-input:focus {
-  border-color: #3b82f6;
+  border-color: #2569f4;
   background: #ffffff;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+  box-shadow: 0 0 0 3px rgba(37, 105, 244, 0.2);
 }
 
 .chat-container.design3 .chat-input::placeholder {
@@ -2965,48 +2965,48 @@ h1 {
 }
 
 .chat-container.design3 .btn-send {
-  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
-  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+  background: linear-gradient(135deg, #2569f4 0%, #8b5cf6 100%);
+  box-shadow: 0 4px 15px rgba(37, 105, 244, 0.3);
 }
 
 .chat-container.design3 .btn-send:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 6px 20px rgba(37, 105, 244, 0.4);
 }
 
 .chat-container.design3 .file-upload-chat-btn,
 .chat-container.design3 .btn-clear {
-  background: #334155;
-  border: 1px solid #475569;
+  background: #222c3e;
+  border: 1px solid #222c3e;
   color: #94a3b8;
 }
 
 .chat-container.design3 .file-upload-chat-btn:hover,
 .chat-container.design3 .btn-clear:hover {
-  background: #475569;
+  background: #222c3e;
   color: #e2e8f0;
 }
 
 .chat-container.design3 .message-content h3,
 .chat-container.design3 .message-content h4 {
-  color: #60a5fa;
+  color: #2569f4;
 }
 
 .chat-container.design3 .message-content pre {
   background: #ffffff;
-  border: 1px solid #334155;
+  border: 1px solid #222c3e;
   color: #e2e8f0;
 }
 
 .chat-container.design3 .code-block {
   background: #ffffff;
-  border: 1px solid #334155;
+  border: 1px solid #222c3e;
   color: #e2e8f0;
 }
 
 .chat-container.design3 .code-block-header {
   background: #ffffff;
-  border-bottom: 1px solid #334155;
+  border-bottom: 1px solid #222c3e;
   color: #94a3b8;
 }
 
@@ -3038,7 +3038,7 @@ h1 {
 }
 
 .conversation-starters h3 {
-  color: #60a5fa;
+  color: #2569f4;
   font-size: 1rem;
   margin-bottom: 1rem;
   font-weight: 600;
@@ -3066,8 +3066,8 @@ h1 {
 }
 
 .starter-btn:hover {
-  background: #334155;
-  border-color: #475569;
+  background: #222c3e;
+  border-color: #222c3e;
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
@@ -3209,7 +3209,7 @@ h1 {
 .form-textarea:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+  box-shadow: 0 0 0 2px rgba(37, 105, 244, 0.1);
 }
 
 .form-textarea {
@@ -3224,8 +3224,8 @@ h1 {
 
 .btn-primary {
   padding: 0.75rem 1.5rem;
-  background: var(--primary-color);
-  color: white;
+  background: #2569f4;
+  color: #1e293b;
   border: none;
   border-radius: 0.5rem;
   font-size: 0.875rem;
@@ -3236,7 +3236,7 @@ h1 {
 }
 
 .btn-primary:hover {
-  background: var(--primary-dark);
+  background: #2569f4;
 }
 
 .btn-secondary {
@@ -3502,12 +3502,12 @@ h1 {
 }
 
 .chat-container.design3 .btn-copy-code {
-  background: #3b82f6;
+  background: #2569f4;
   color: white;
 }
 
 .chat-container.design3 .btn-copy-code:hover {
-  background: #2563eb;
+  background: #2569f4;
 }
 
 /* Apply white theme to all pages */
