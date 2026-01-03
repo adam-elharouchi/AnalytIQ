@@ -22,16 +22,50 @@
       <button class="category-btn" onclick="filterByCategory('articles', this)">Articles</button>
       <button class="category-btn" onclick="filterByCategory('videos', this)">Videos</button>
       <button class="category-btn" onclick="filterByCategory('tools', this)">Tools</button>
-      <button class="category-btn" onclick="filterByCategory('books', this)">Books</button>
       <button class="category-btn" onclick="filterByCategory('datasets', this)">Datasets</button>
     </div>
     
     <div class="resources-grid" id="resourcesGrid">
       <div class="resource-card" data-category="articles">
         <div class="resource-icon">📄</div>
-        <h3>Introduction to Data Analytics</h3>
-        <p>Comprehensive guide covering the fundamentals of data analytics and its applications.</p>
-        <a href="https://example.com/article1" target="_blank" class="resource-link">Read Article →</a>
+        <h3>Chapter 2: Business Analytics Foundations</h3>
+        <p>Introduction to business analytics fundamentals and core concepts for data-driven decision making.</p>
+        <a href="Course Content/Vissapragada_Business_Analytics01E_Ch02_1PP.pdf" target="_blank" class="resource-link">Read Chapter →</a>
+      </div>
+      
+      <div class="resource-card" data-category="articles">
+        <div class="resource-icon">📄</div>
+        <h3>Chapter 4: Data Collection and Preparation</h3>
+        <p>Learn essential techniques for collecting, organizing, and preparing data for business analytics.</p>
+        <a href="Course Content/Vissapragada_Business_Analytics01E_Ch04_1PP.pdf" target="_blank" class="resource-link">Read Chapter →</a>
+      </div>
+      
+      <div class="resource-card" data-category="articles">
+        <div class="resource-icon">📄</div>
+        <h3>Chapter 7: Data Visualization</h3>
+        <p>Master the art of creating compelling visualizations that communicate business insights effectively.</p>
+        <a href="Course Content/Vissapragada_Business_Analytics01E_Ch07_1PP.pdf" target="_blank" class="resource-link">Read Chapter →</a>
+      </div>
+      
+      <div class="resource-card" data-category="articles">
+        <div class="resource-icon">📄</div>
+        <h3>Chapter 8: Statistical Analysis</h3>
+        <p>Deep dive into statistical methods for business analytics and data-driven decision making.</p>
+        <a href="Course Content/Vissapragada_Business_Analytics01E_Ch08_1PP.pdf" target="_blank" class="resource-link">Read Chapter →</a>
+      </div>
+      
+      <div class="resource-card" data-category="articles">
+        <div class="resource-icon">📄</div>
+        <h3>Chapter 12: Advanced Analytics Techniques</h3>
+        <p>Explore advanced analytical techniques and their applications in business contexts.</p>
+        <a href="Course Content/Vissapragada_Business_Analytics01E_Ch12_1PP.pdf" target="_blank" class="resource-link">Read Chapter →</a>
+      </div>
+      
+      <div class="resource-card" data-category="articles">
+        <div class="resource-icon">📄</div>
+        <h3>Chapter 23: Advanced Topics in Business Analytics</h3>
+        <p>Comprehensive coverage of advanced business analytics topics and cutting-edge techniques.</p>
+        <a href="Course Content/Vissapragada_Business_Analytics01E_Ch23_1PP.pdf" target="_blank" class="resource-link">Read Chapter →</a>
       </div>
       
       <div class="resource-card" data-category="videos">
@@ -41,18 +75,32 @@
         <a href="https://example.com/video1" target="_blank" class="resource-link">Watch Video →</a>
       </div>
       
-      <div class="resource-card" data-category="tools">
-        <div class="resource-icon">🛠️</div>
-        <h3>Python for Data Analysis</h3>
-        <p>Essential Python libraries and tools for data analytics: pandas, numpy, matplotlib.</p>
-        <a href="https://pandas.pydata.org" target="_blank" class="resource-link">Visit Tool →</a>
+      <div class="resource-card" data-category="videos">
+        <div class="resource-icon">🎥</div>
+        <h3>Machine Learning Basics</h3>
+        <p>Introduction to machine learning algorithms and their use in analytics.</p>
+        <a href="https://example.com/video2" target="_blank" class="resource-link">Watch Video →</a>
       </div>
       
-      <div class="resource-card" data-category="books">
-        <div class="resource-icon">📚</div>
-        <h3>"Data Science Handbook"</h3>
-        <p>Comprehensive book covering data science concepts, techniques, and real-world applications.</p>
-        <a href="https://example.com/book1" target="_blank" class="resource-link">View Book →</a>
+      <div class="resource-card" data-category="videos">
+        <div class="resource-icon">🎥</div>
+        <h3>SQL for Data Analysis</h3>
+        <p>Complete SQL tutorial for querying and analyzing databases.</p>
+        <a href="https://example.com/video3" target="_blank" class="resource-link">Watch Video →</a>
+      </div>
+      
+      <div class="resource-card" data-category="tools">
+        <div class="resource-icon">🛠️</div>
+        <h3>Google Colab</h3>
+        <p>Free cloud-based Jupyter notebook environment for data analysis and machine learning.</p>
+        <a href="https://colab.research.google.com" target="_blank" class="resource-link">Visit Tool →</a>
+      </div>
+      
+      <div class="resource-card" data-category="tools">
+        <div class="resource-icon">🛠️</div>
+        <h3>Code Assistant</h3>
+        <p>AI-powered assistant that helps you write code, analyze data, derive insights, and create visualizations.</p>
+        <a href="code-assistant.html" class="resource-link">Open Code Assistant →</a>
       </div>
       
       <div class="resource-card" data-category="datasets">
@@ -62,34 +110,6 @@
         <a href="https://www.kaggle.com/datasets" target="_blank" class="resource-link">Browse Datasets →</a>
       </div>
       
-      <div class="resource-card" data-category="articles">
-        <div class="resource-icon">📄</div>
-        <h3>Statistical Methods Explained</h3>
-        <p>Deep dive into statistical methods used in data analytics with practical examples.</p>
-        <a href="https://example.com/article2" target="_blank" class="resource-link">Read Article →</a>
-      </div>
-      
-      <div class="resource-card" data-category="videos">
-        <div class="resource-icon">🎥</div>
-        <h3>Machine Learning Basics</h3>
-        <p>Introduction to machine learning algorithms and their use in analytics.</p>
-        <a href="https://example.com/video2" target="_blank" class="resource-link">Watch Video →</a>
-      </div>
-      
-      <div class="resource-card" data-category="tools">
-        <div class="resource-icon">🛠️</div>
-        <h3>Tableau Public</h3>
-        <p>Free data visualization tool for creating interactive dashboards and reports.</p>
-        <a href="https://public.tableau.com" target="_blank" class="resource-link">Visit Tool →</a>
-      </div>
-      
-      <div class="resource-card" data-category="books">
-        <div class="resource-icon">📚</div>
-        <h3>"The Art of Data Science"</h3>
-        <p>Learn the art and science of extracting insights from data through practical examples.</p>
-        <a href="https://example.com/book2" target="_blank" class="resource-link">View Book →</a>
-      </div>
-      
       <div class="resource-card" data-category="datasets">
         <div class="resource-icon">💾</div>
         <h3>UCI Machine Learning Repository</h3>
@@ -97,18 +117,18 @@
         <a href="https://archive.ics.uci.edu" target="_blank" class="resource-link">Browse Datasets →</a>
       </div>
       
-      <div class="resource-card" data-category="articles">
-        <div class="resource-icon">📄</div>
-        <h3>Data Cleaning Techniques</h3>
-        <p>Best practices for cleaning and preprocessing data before analysis.</p>
-        <a href="https://example.com/article3" target="_blank" class="resource-link">Read Article →</a>
+      <div class="resource-card" data-category="datasets">
+        <div class="resource-icon">💾</div>
+        <h3>NYC Open Data</h3>
+        <p>Official repository of public data from New York City government agencies and departments.</p>
+        <a href="https://opendata.cityofnewyork.us" target="_blank" class="resource-link">Browse Datasets →</a>
       </div>
       
-      <div class="resource-card" data-category="videos">
-        <div class="resource-icon">🎥</div>
-        <h3>SQL for Data Analysis</h3>
-        <p>Complete SQL tutorial for querying and analyzing databases.</p>
-        <a href="https://example.com/video3" target="_blank" class="resource-link">Watch Video →</a>
+      <div class="resource-card" data-category="datasets">
+        <div class="resource-icon">💾</div>
+        <h3>World Bank Open Data</h3>
+        <p>Free and open access to global development data, including economic, social, and environmental indicators.</p>
+        <a href="https://data.worldbank.org" target="_blank" class="resource-link">Browse Datasets →</a>
       </div>
     </div>
   </main>

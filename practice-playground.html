@@ -683,8 +683,10 @@
       
       // Display exercise info
       document.getElementById('exerciseTitle').textContent = exerciseData.title;
-      document.getElementById('exerciseDescription').textContent = 
-        exerciseData.description || `Complete the exercise: ${exerciseData.title}`;
+      
+      // Create a meaningful description based on the exercise title
+      const description = generateExerciseDescription(exerciseData.title, exerciseData.difficulty);
+      document.getElementById('exerciseDescription').textContent = description;
       
       const difficultyBadge = document.getElementById('exerciseDifficulty');
       difficultyBadge.textContent = exerciseData.difficulty.charAt(0).toUpperCase() + exerciseData.difficulty.slice(1);
@@ -693,6 +695,58 @@
       // Set initial code template (optional - could be empty or have starter code)
       document.getElementById('codeEditor').value = '';
       updateLineNumbers();
+    }
+    
+    function generateExerciseDescription(title, difficulty) {
+      // Generate contextual descriptions based on exercise titles
+      const titleLower = title.toLowerCase();
+      
+      if (titleLower.includes('loading') || titleLower.includes('dataset')) {
+        return 'Goal: Load and explore the California Housing dataset. You need to import the dataset using sklearn, access its features and target variables, and examine the data structure.';
+      } else if (titleLower.includes('exploring') || titleLower.includes('structure')) {
+        return 'Goal: Explore the dataset structure. You need to access column names, target variable names, and understand the data format.';
+      } else if (titleLower.includes('dataframe') || titleLower.includes('creation')) {
+        return 'Goal: Create a pandas DataFrame from the dataset. You need to convert the data into a DataFrame, add the target variable as a column, and examine the resulting structure.';
+      } else if (titleLower.includes('exploration') || titleLower.includes('shape')) {
+        return 'Goal: Explore the dataset dimensions. You need to examine the shape of the DataFrame to understand how many rows and columns it contains.';
+      } else if (titleLower.includes('data types') || titleLower.includes('types')) {
+        return 'Goal: Examine and modify data types. You need to check the data types of each column and convert appropriate columns to categorical type.';
+      } else if (titleLower.includes('missing values') || titleLower.includes('missing')) {
+        return 'Goal: Handle missing values in the dataset. You need to identify missing values, visualize their distribution, and apply appropriate imputation strategies (mean, mode, or deletion).';
+      } else if (titleLower.includes('outlier') || titleLower.includes('detection')) {
+        return 'Goal: Detect and remove outliers from the dataset. You need to identify outliers using the IQR method, visualize them with boxplots, and clean the data accordingly.';
+      } else if (titleLower.includes('standardization') || titleLower.includes('standard')) {
+        return 'Goal: Standardize the dataset features. You need to apply standardization (z-score normalization) to normalize the data distribution using sklearn\'s StandardScaler.';
+      } else if (titleLower.includes('normalization') || titleLower.includes('normal')) {
+        return 'Goal: Normalize the dataset features. You need to apply min-max normalization to scale the data to a 0-1 range using sklearn\'s MinMaxScaler.';
+      } else if (titleLower.includes('histogram') || titleLower.includes('univariate')) {
+        return 'Goal: Create histograms for univariate analysis. You need to visualize the distribution of each variable using histograms to understand the data patterns.';
+      } else if (titleLower.includes('boxplot') || titleLower.includes('distribution')) {
+        return 'Goal: Create boxplots for distribution analysis. You need to visualize the distribution, quartiles, and outliers for each variable using boxplots.';
+      } else if (titleLower.includes('scatterplot') || titleLower.includes('bivariate')) {
+        return 'Goal: Create scatterplots for bivariate analysis. You need to visualize relationships between pairs of variables to identify correlations and patterns.';
+      } else if (titleLower.includes('correlation')) {
+        return 'Goal: Analyze correlations between variables. You need to calculate the correlation matrix and visualize it using a heatmap to identify relationships.';
+      } else if (titleLower.includes('pairwise') || titleLower.includes('pairplot')) {
+        return 'Goal: Create pairwise relationship visualizations. You need to use pairplots to visualize relationships between all pairs of variables simultaneously.';
+      } else if (titleLower.includes('multivariate')) {
+        return 'Goal: Create multivariate visualizations. You need to create plots that show relationships between multiple variables simultaneously, using color or size to represent additional dimensions.';
+      } else if (titleLower.includes('descriptive statistics') || titleLower.includes('statistic')) {
+        return 'Goal: Calculate descriptive statistics. You need to compute mean, median, standard deviation, and other summary statistics for the dataset variables.';
+      } else if (titleLower.includes('simple linear regression')) {
+        return 'Goal: Build a simple linear regression model. You need to use a single predictor variable to predict the target, split the data, train the model, and evaluate its performance.';
+      } else if (titleLower.includes('multiple linear regression')) {
+        return 'Goal: Build a multiple linear regression model. You need to use multiple predictor variables to predict the target, train the model, and evaluate its performance using metrics like MSE and R².';
+      } else if (titleLower.includes('coefficients')) {
+        return 'Goal: Analyze model coefficients. You need to examine the regression coefficients, interpret their significance, and understand which features are most important.';
+      } else if (titleLower.includes('diagnostics') || titleLower.includes('residuals')) {
+        return 'Goal: Perform model diagnostics. You need to analyze residuals, check their distribution, and evaluate whether the model assumptions are met.';
+      } else if (titleLower.includes('improvement') || titleLower.includes('model improvement')) {
+        return 'Goal: Improve the regression model. You need to try different techniques like standardization, normalization, feature selection, or removing variables to improve model performance.';
+      }
+      
+      // Default description
+      return `Goal: Complete the ${title.toLowerCase()} exercise. Follow best practices for ${difficulty} level programming and ensure your code is clean and well-commented.`;
     }
     
     function updateLineNumbers() {
