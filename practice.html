@@ -14,170 +14,1111 @@
     <p class="subtitle">Hone your data analytics skills with hands-on exercises</p>
     
     <div class="practice-grid">
+      <div class="chapter-section" style="grid-column: 1 / -1; margin-bottom: 2rem;">
+        <h2 style="margin-top: 2rem; margin-bottom: 0.5rem; color: #222c3e; font-size: 1.75rem; border-bottom: 2px solid #2569f4; padding-bottom: 0.5rem;">Chapter 2: Business Analytics Foundations</h2>
+        <p style="margin-bottom: 2rem; color: #64748b; font-size: 1rem;">Learn to import datasets, explore data structures, and understand basic data operations.</p>
+      </div>
       <div class="practice-card">
         <div class="practice-header">
-          <h2>Exercise 1: Basic Statistics</h2>
+          <h2>Loading California Housing Dataset</h2>
           <span class="difficulty-badge easy">Easy</span>
         </div>
-        <p class="practice-description">Calculate mean, median, and mode for a given dataset. Practice fundamental statistical calculations.</p>
+        <p class="practice-description">Practice exercise from Chapter 2: Business Analytics Foundations</p>
         <div class="practice-actions">
+          <button class="btn btn-secondary" onclick="startExercise(this)" style="margin-right: 0.5rem;">Start Exercise</button>
           <button class="btn btn-primary" onclick="toggleSolution(this)">Show Solution</button>
-          <button class="btn btn-secondary">Start Exercise</button>
         </div>
         <div class="solution" style="display: none;">
-          <h3>Solution:</h3>
-          <pre><code>import numpy as np
+          <h3>Solution Code:</h3>
+          <pre><code>from sklearn.datasets import fetch_california_housing
 
-data = [10, 20, 30, 40, 50, 30, 30]
-mean = np.mean(data)
-median = np.median(data)
-mode = max(set(data), key=data.count)
+# Fetch the California Housing dataset
+california_housing = fetch_california_housing()
 
-print(f"Mean: {mean}")
-print(f"Median: {median}")
-print(f"Mode: {mode}")</code></pre>
+# The dataset is returned as a dictionary-like object
+# You can access the features and target variables using the keys &#x27;data&#x27; and &#x27;target&#x27;
+X = california_housing.data  # Features (input variables)
+y = california_housing.target  # Target variable (median house value)
+
+print(X)
+print(y)</code></pre>
         </div>
       </div>
-      
       <div class="practice-card">
         <div class="practice-header">
-          <h2>Exercise 2: Data Cleaning</h2>
-          <span class="difficulty-badge medium">Medium</span>
+          <h2>Exploring Dataset Structure</h2>
+          <span class="difficulty-badge easy">Easy</span>
         </div>
-        <p class="practice-description">Clean a dataset with missing values and outliers. Apply appropriate techniques to handle data quality issues.</p>
+        <p class="practice-description">Practice exercise from Chapter 2: Business Analytics Foundations</p>
         <div class="practice-actions">
+          <button class="btn btn-secondary" onclick="startExercise(this)" style="margin-right: 0.5rem;">Start Exercise</button>
           <button class="btn btn-primary" onclick="toggleSolution(this)">Show Solution</button>
-          <button class="btn btn-secondary">Start Exercise</button>
         </div>
         <div class="solution" style="display: none;">
-          <h3>Solution:</h3>
+          <h3>Solution Code:</h3>
+          <pre><code>columns = california_housing.feature_names
+print(columns)
+
+target = california_housing.target_names
+print(target)</code></pre>
+        </div>
+      </div>
+      <div class="practice-card">
+        <div class="practice-header">
+          <h2>DataFrame Creation</h2>
+          <span class="difficulty-badge easy">Easy</span>
+        </div>
+        <p class="practice-description">Practice exercise from Chapter 2: Business Analytics Foundations</p>
+        <div class="practice-actions">
+          <button class="btn btn-secondary" onclick="startExercise(this)" style="margin-right: 0.5rem;">Start Exercise</button>
+          <button class="btn btn-primary" onclick="toggleSolution(this)">Show Solution</button>
+        </div>
+        <div class="solution" style="display: none;">
+          <h3>Solution Code:</h3>
           <pre><code>import pandas as pd
 
-# Load data
-df = pd.read_csv('data.csv')
+california_df = pd.DataFrame(data = X, columns= columns)
 
-# Handle missing values
-df = df.fillna(df.mean())
+california_df.head(10)
 
-# Remove outliers using IQR method
-Q1 = df.quantile(0.25)
-Q3 = df.quantile(0.75)
-IQR = Q3 - Q1
-df = df[~((df < (Q1 - 1.5 * IQR)) | (df > (Q3 + 1.5 * IQR))).any(axis=1)]</code></pre>
+california_df[&#x27;MedInc&#x27;]
+
+california_df[&#x27;Population&#x27;]
+
+california_df[&#x27;MedHouseVal&#x27;] = y
+
+california_df.head(10)</code></pre>
         </div>
       </div>
-      
       <div class="practice-card">
         <div class="practice-header">
-          <h2>Exercise 3: Data Visualization</h2>
-          <span class="difficulty-badge medium">Medium</span>
+          <h2>Dataset Exploration</h2>
+          <span class="difficulty-badge easy">Easy</span>
         </div>
-        <p class="practice-description">Create visualizations for sales data. Practice creating bar charts, line graphs, and pie charts.</p>
+        <p class="practice-description">Practice exercise from Chapter 2: Business Analytics Foundations</p>
         <div class="practice-actions">
+          <button class="btn btn-secondary" onclick="startExercise(this)" style="margin-right: 0.5rem;">Start Exercise</button>
           <button class="btn btn-primary" onclick="toggleSolution(this)">Show Solution</button>
-          <button class="btn btn-secondary">Start Exercise</button>
         </div>
         <div class="solution" style="display: none;">
-          <h3>Solution:</h3>
-          <pre><code>import matplotlib.pyplot as plt
+          <h3>Solution Code:</h3>
+          <pre><code>california_df.shape</code></pre>
+        </div>
+      </div>
+      <div class="practice-card">
+        <div class="practice-header">
+          <h2>Data Types and Structure</h2>
+          <span class="difficulty-badge easy">Easy</span>
+        </div>
+        <p class="practice-description">Practice exercise from Chapter 2: Business Analytics Foundations</p>
+        <div class="practice-actions">
+          <button class="btn btn-secondary" onclick="startExercise(this)" style="margin-right: 0.5rem;">Start Exercise</button>
+          <button class="btn btn-primary" onclick="toggleSolution(this)">Show Solution</button>
+        </div>
+        <div class="solution" style="display: none;">
+          <h3>Solution Code:</h3>
+          <pre><code>california_df.dtypes
+
+california_df[&#x27;Latitude&#x27;] = california_df[&#x27;Latitude&#x27;].astype(&#x27;category&#x27;)
+california_df[&#x27;Longitude&#x27;] = california_df[&#x27;Longitude&#x27;].astype(&#x27;category&#x27;)
+
+california_df.dtypes</code></pre>
+        </div>
+      </div>
+      <div class="chapter-section" style="grid-column: 1 / -1; margin-bottom: 2rem;">
+        <h2 style="margin-top: 2rem; margin-bottom: 0.5rem; color: #222c3e; font-size: 1.75rem; border-bottom: 2px solid #2569f4; padding-bottom: 0.5rem;">Chapter 4: Data Collection and Preparation</h2>
+        <p style="margin-bottom: 2rem; color: #64748b; font-size: 1rem;">Master data cleaning techniques including handling missing values, outliers, standardization, and normalization.</p>
+      </div>
+      <div class="practice-card">
+        <div class="practice-header">
+          <h2>Handling Missing Values</h2>
+          <span class="difficulty-badge medium">Medium</span>
+        </div>
+        <p class="practice-description">Practice exercise from Chapter 4: Data Collection and Preparation</p>
+        <div class="practice-actions">
+          <button class="btn btn-secondary" onclick="startExercise(this)" style="margin-right: 0.5rem;">Start Exercise</button>
+          <button class="btn btn-primary" onclick="toggleSolution(this)">Show Solution</button>
+        </div>
+        <div class="solution" style="display: none;">
+          <h3>Solution Code:</h3>
+          <pre><code>california_df.isnull()
+
+california_df.isnull().sum()
+
+california_df.isna()
+
+california_df.isna().sum()
+
+import numpy as np
+
+# Function to randomly set a fraction of values to NaN in a DataFrame
+def introduce_missing_values(df, fraction_missing, random_state=None):
+    np.random.seed(random_state)
+    mask = np.random.rand(*df.shape) &lt; fraction_missing
+    df_with_missing = df.mask(mask)
+    return df_with_missing
+
+# Introduce missing values randomly with a fraction of 0.2 (20% missing)
+df_with_missing = introduce_missing_values(california_df, 0.2, random_state=42)
+
+print(&quot;Original DataFrame:&quot;)
+print(california_df.head())  # Assuming you want to print the first few rows for comparison
+
+print(&quot;
+DataFrame with random missing values:&quot;)
+print(df_with_missing.head())  # Assuming you want to print the first few rows for comparison
+
+df_with_missing.head(10)
+
+df_with_missing.isna().sum()
+
 import pandas as pd
-
-df = pd.read_csv('sales.csv')
-
-# Bar chart
-plt.bar(df['Month'], df['Sales'])
-plt.title('Monthly Sales')
-plt.xlabel('Month')
-plt.ylabel('Sales')
-plt.show()
-
-# Line chart
-plt.plot(df['Month'], df['Sales'])
-plt.title('Sales Trend')
-plt.show()</code></pre>
-        </div>
-      </div>
-      
-      <div class="practice-card">
-        <div class="practice-header">
-          <h2>Exercise 4: Correlation Analysis</h2>
-          <span class="difficulty-badge hard">Hard</span>
-        </div>
-        <p class="practice-description">Analyze correlations between variables in a dataset. Identify relationships and create correlation matrices.</p>
-        <div class="practice-actions">
-          <button class="btn btn-primary" onclick="toggleSolution(this)">Show Solution</button>
-          <button class="btn btn-secondary">Start Exercise</button>
-        </div>
-        <div class="solution" style="display: none;">
-          <h3>Solution:</h3>
-          <pre><code>import pandas as pd
-import seaborn as sns
 import matplotlib.pyplot as plt
 
-df = pd.read_csv('data.csv')
+# Assuming df_with_missing is your DataFrame with missing values
+
+# Calculate the proportion of missing values for each column
+missing_proportion = df_with_missing.isnull().mean()
+
+# Calculate the total number of rows
+total_rows = len(df_with_missing)
+
+# Calculate the count of missing values for each column
+missing_count = df_with_missing.isnull().sum()
+
+# Create a DataFrame for the count of missing values
+missing_count_df = pd.DataFrame({&#x27;Missing Count&#x27;: missing_count})
+
+# Create a stacked bar plot
+plt.figure(figsize=(10, 6))
+plt.bar(missing_proportion.index, total_rows, color=&#x27;lightcoral&#x27;)
+plt.bar(missing_proportion.index, missing_count_df[&#x27;Missing Count&#x27;], color=&#x27;skyblue&#x27;)
+plt.title(&#x27;Proportion of Missing Values in Each Column&#x27;)
+plt.xlabel(&#x27;Columns&#x27;)
+plt.ylabel(&#x27;Count&#x27;)
+plt.xticks(rotation=45)
+plt.legend([&#x27;Total Rows&#x27;, &#x27;Missing Values&#x27;])
+plt.tight_layout()
+plt.show()
+
+df_with_missing.dropna(subset=[&#x27;AveBedrms&#x27;],inplace=True)
+print(df_with_missing.isna().sum())
+print(df_with_missing.shape)
+
+df_with_missing.drop(&#x27;AveOccup&#x27;, axis = 1, inplace = True)
+print(df_with_missing.isna().sum())
+print(df_with_missing.head(10))
+
+lat_mode = df_with_missing[&#x27;Latitude&#x27;].mode()[0]
+print(lat_mode)
+df_with_missing[&#x27;Latitude&#x27;].fillna(lat_mode,inplace = True)
+print(df_with_missing.isna().sum())
+
+df_with_missing[&#x27;HouseAge&#x27;].hist()
+print(df_with_missing[&#x27;HouseAge&#x27;].mean())
+print(df_with_missing[&#x27;HouseAge&#x27;].mode())
+print(df_with_missing[&#x27;HouseAge&#x27;].median())
+
+mean_houseage = df_with_missing[&#x27;HouseAge&#x27;].mean()
+print(mean_houseage)
+df_with_missing[&#x27;HouseAge&#x27;].fillna(mean_houseage,inplace = True)
+print(df_with_missing.isna().sum())
+print(df_with_missing[&#x27;HouseAge&#x27;].mean())
+
+df_with_missing[&#x27;HouseAge&#x27;].hist()</code></pre>
+        </div>
+      </div>
+      <div class="practice-card">
+        <div class="practice-header">
+          <h2>Outlier Detection and Removal</h2>
+          <span class="difficulty-badge medium">Medium</span>
+        </div>
+        <p class="practice-description">Practice exercise from Chapter 4: Data Collection and Preparation</p>
+        <div class="practice-actions">
+          <button class="btn btn-secondary" onclick="startExercise(this)" style="margin-right: 0.5rem;">Start Exercise</button>
+          <button class="btn btn-primary" onclick="toggleSolution(this)">Show Solution</button>
+        </div>
+        <div class="solution" style="display: none;">
+          <h3>Solution Code:</h3>
+          <pre><code># Create a boxplot
+california_df.boxplot()
+
+# Set labels and rotation for x-axis ticks
+plt.xticks(rotation=45, ha=&#x27;right&#x27;)
+
+# Show the plot
+plt.show()
+
+# Define a function to count outliers in a column
+def count_outliers(column):
+    if pd.api.types.is_numeric_dtype(column):
+        Q1 = column.quantile(0.25)
+        Q3 = column.quantile(0.75)
+        IQR = Q3 - Q1
+
+        # Calculate the lower and upper bounds for outliers
+        lower_bound = Q1 - 1.5 * IQR
+        upper_bound = Q3 + 1.5 * IQR
+
+        # Count outliers
+        outliers = column[(column &lt; lower_bound) | (column &gt; upper_bound)]
+        return outliers.shape[0]
+    else:
+        return 0  # For non-numeric columns, consider 0 outliers
+
+# Filter numeric columns
+numeric_columns = california_df.select_dtypes(include=[&#x27;number&#x27;])
+
+# Count outliers in each numeric column
+outliers_count = numeric_columns.apply(count_outliers)
+
+# Display the number of outliers in each numeric column
+print(&quot;Number of outliers in each numeric column:&quot;)
+print(outliers_count)
+
+# Define a function to remove outliers in a column
+def remove_outliers(column):
+    # Calculate IQR
+    Q1 = column.quantile(0.25)
+    Q3 = column.quantile(0.75)
+    IQR = Q3 - Q1
+
+    # Calculate the lower and upper bounds for outliers
+    lower_bound = Q1 - 1.5 * IQR
+    upper_bound = Q3 + 1.5 * IQR
+
+    # Remove outliers
+    column = column[(column &gt;= lower_bound) &amp; (column &lt;= upper_bound)]
+
+    return column
+
+# Create a copy of the DataFrame to avoid modifying the original data
+california_df_clean = california_df.copy()
+
+# Remove outliers from each numeric column
+for column in california_df_clean.select_dtypes(include=[&#x27;number&#x27;]):
+    california_df_clean[column] = remove_outliers(california_df_clean[column])
+
+# Drop rows with NaN values
+california_df_clean = california_df_clean.dropna()
+
+# Display the cleaned DataFrame
+print(&quot;
+DataFrame after removing outliers:&quot;)
+print(california_df_clean)
+
+import matplotlib.pyplot as plt
+
+# Create a boxplot for each numeric column
+california_df_clean.boxplot(figsize=(10, 6))
+
+# Set title and labels
+plt.title(&#x27;Boxplot of Numeric Columns&#x27;)
+plt.xlabel(&#x27;Columns&#x27;)
+plt.ylabel(&#x27;Values&#x27;)
+
+# Show the plot
+plt.xticks(rotation=45)  # Rotate x-axis labels for better readability
+plt.tight_layout()  # Adjust layout to prevent clipping of labels
+plt.show()
+
+california_df_copy = california_df.copy()
+
+# Create a boxplot
+california_df_copy.boxplot()
+
+# Set labels and rotation for x-axis ticks
+plt.xticks(rotation=45, ha=&#x27;right&#x27;)
+
+# Show the plot
+plt.show()
+
+# Subset the DataFrame for rows where &#x27;Population&#x27; is less than 10000
+california_df_copy = california_df_copy[california_df_copy[&#x27;Population&#x27;] &lt; 10000]
+
+# Create a boxplot
+california_df_copy.boxplot()
+
+# Set labels and rotation for x-axis ticks
+plt.xticks(rotation=45, ha=&#x27;right&#x27;)
+
+# Show the plot
+plt.show()
+
+california_df_copy.shape</code></pre>
+        </div>
+      </div>
+      <div class="practice-card">
+        <div class="practice-header">
+          <h2>Data Standardization</h2>
+          <span class="difficulty-badge medium">Medium</span>
+        </div>
+        <p class="practice-description">Practice exercise from Chapter 4: Data Collection and Preparation</p>
+        <div class="practice-actions">
+          <button class="btn btn-secondary" onclick="startExercise(this)" style="margin-right: 0.5rem;">Start Exercise</button>
+          <button class="btn btn-primary" onclick="toggleSolution(this)">Show Solution</button>
+        </div>
+        <div class="solution" style="display: none;">
+          <h3>Solution Code:</h3>
+          <pre><code>import pandas as pd
+from sklearn.preprocessing import StandardScaler
+
+# Create a StandardScaler object
+scaler = StandardScaler()
+
+# Select only the numeric columns for scaling
+numeric_columns = california_df.select_dtypes(include=&#x27;number&#x27;)
+
+# Fit the scaler to the data and transform it
+california_df_standardized = scaler.fit_transform(numeric_columns)
+
+# Convert the standardized array back to a DataFrame
+california_df_standardized = pd.DataFrame(california_df_standardized, columns=numeric_columns.columns)
+
+# Display the standardized DataFrame
+print(&quot;Standardized California DataFrame:&quot;)
+print(california_df_standardized)
+
+# Create a boxplot
+california_df_standardized.boxplot()
+
+# Set labels and rotation for x-axis ticks
+plt.xticks(rotation=45, ha=&#x27;right&#x27;)
+
+# Show the plot
+plt.show()</code></pre>
+        </div>
+      </div>
+      <div class="practice-card">
+        <div class="practice-header">
+          <h2>Data Normalization</h2>
+          <span class="difficulty-badge medium">Medium</span>
+        </div>
+        <p class="practice-description">Practice exercise from Chapter 4: Data Collection and Preparation</p>
+        <div class="practice-actions">
+          <button class="btn btn-secondary" onclick="startExercise(this)" style="margin-right: 0.5rem;">Start Exercise</button>
+          <button class="btn btn-primary" onclick="toggleSolution(this)">Show Solution</button>
+        </div>
+        <div class="solution" style="display: none;">
+          <h3>Solution Code:</h3>
+          <pre><code>from sklearn.preprocessing import MinMaxScaler
+
+# Create a MinMaxScaler object
+scaler = MinMaxScaler()
+
+# Select only the numeric columns for scaling
+numeric_columns = california_df.select_dtypes(include=&#x27;number&#x27;)
+
+# Fit the scaler to the data and transform it
+california_df_scaled = scaler.fit_transform(numeric_columns)
+
+# Convert the scaled array back to a DataFrame
+california_df_scaled = pd.DataFrame(california_df_scaled, columns=numeric_columns.columns)
+
+# Display the scaled DataFrame
+print(&quot;Scaled California DataFrame:&quot;)
+print(california_df_scaled)
+
+# Create a boxplot
+california_df_scaled.boxplot()
+
+# Set labels and rotation for x-axis ticks
+plt.xticks(rotation=45, ha=&#x27;right&#x27;)
+
+# Show the plot
+plt.show()
+
+X = california_df_scaled.drop([&#x27;MedHouseVal&#x27;], axis = 1)
+y = california_df_scaled[&#x27;MedHouseVal&#x27;]
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, random_state = 42)
+
+model = LinearRegression()
+
+model.fit(X_train, y_train)
+
+y_pred = model.predict(X_test)
+
+mse = mean_squared_error(y_pred, y_test)
+print(mse)
+r2 = r2_score(y_test, y_pred)
+print(r2)</code></pre>
+        </div>
+      </div>
+      <div class="chapter-section" style="grid-column: 1 / -1; margin-bottom: 2rem;">
+        <h2 style="margin-top: 2rem; margin-bottom: 0.5rem; color: #222c3e; font-size: 1.75rem; border-bottom: 2px solid #2569f4; padding-bottom: 0.5rem;">Chapter 7: Data Visualization</h2>
+        <p style="margin-bottom: 2rem; color: #64748b; font-size: 1rem;">Create compelling visualizations including histograms, boxplots, scatterplots, correlation matrices, and multivariate plots.</p>
+      </div>
+      <div class="practice-card">
+        <div class="practice-header">
+          <h2>Histograms and Univariate Analysis</h2>
+          <span class="difficulty-badge medium">Medium</span>
+        </div>
+        <p class="practice-description">Practice exercise from Chapter 7: Data Visualization</p>
+        <div class="practice-actions">
+          <button class="btn btn-secondary" onclick="startExercise(this)" style="margin-right: 0.5rem;">Start Exercise</button>
+          <button class="btn btn-primary" onclick="toggleSolution(this)">Show Solution</button>
+        </div>
+        <div class="solution" style="display: none;">
+          <h3>Solution Code:</h3>
+          <pre><code>california_df[&#x27;MedInc&#x27;].hist()
+
+import matplotlib.pyplot as plt
+
+california_df[&#x27;MedInc&#x27;].hist()
+
+plt.title(&#x27;Histogram of Median Income in California&#x27;)
+plt.xlabel(&#x27;Median Income&#x27;)
+plt.ylabel(&#x27;Frequency&#x27;)
+plt.show()
+
+california_df[&#x27;HouseAge&#x27;].hist(color=&#x27;red&#x27;)
+
+plt.title(&#x27;Histogram of House Age in California&#x27;)
+plt.xlabel(&#x27;House Age&#x27;)
+plt.ylabel(&#x27;Frequency&#x27;)
+
+plt.show()
+
+california_df[&#x27;AveRooms&#x27;].hist(color=&#x27;blue&#x27;)
+
+plt.title(&#x27;Histogram of Average Rooms in California&#x27;)
+plt.xlabel(&#x27;Average Rooms&#x27;)
+plt.ylabel(&#x27;Frequency&#x27;)
+
+plt.show()
+
+california_df[&#x27;AveBedrms&#x27;].hist(color=&#x27;green&#x27;)
+
+plt.title(&#x27;Histogram of Average Bedrooms in California&#x27;)
+plt.xlabel(&#x27;Average Bedrooms&#x27;)
+plt.ylabel(&#x27;Frequency&#x27;)
+
+plt.show()
+
+california_df[&#x27;Population&#x27;].hist(color=&#x27;orange&#x27;)
+
+plt.title(&#x27;Histogram of Population in California&#x27;)
+plt.xlabel(&#x27;Population&#x27;)
+plt.ylabel(&#x27;Frequency&#x27;)
+
+plt.show()
+
+california_df[&#x27;AveOccup&#x27;].hist(color=&#x27;purple&#x27;)
+
+plt.title(&#x27;Histogram of Average Occupancy in California&#x27;)
+plt.xlabel(&#x27;Average Occupancy&#x27;)
+plt.ylabel(&#x27;Frequency&#x27;)
+
+plt.show()
+
+california_df[&#x27;MedHouseVal&#x27;].hist(color=&#x27;darkred&#x27;)
+
+plt.title(&#x27;Histogram of Median House Value in California&#x27;)
+plt.xlabel(&#x27;Median House Value&#x27;)
+plt.ylabel(&#x27;Frequency&#x27;)
+
+plt.show()
+
+california_df.hist(figsize=(15, 10), color=&#x27;skyblue&#x27;, bins=20)
+plt.suptitle(&#x27;Histograms of California Housing Variables&#x27;, x=0.5, y=0.92)
+plt.show()</code></pre>
+        </div>
+      </div>
+      <div class="practice-card">
+        <div class="practice-header">
+          <h2>Boxplots and Distribution Analysis</h2>
+          <span class="difficulty-badge medium">Medium</span>
+        </div>
+        <p class="practice-description">Practice exercise from Chapter 7: Data Visualization</p>
+        <div class="practice-actions">
+          <button class="btn btn-secondary" onclick="startExercise(this)" style="margin-right: 0.5rem;">Start Exercise</button>
+          <button class="btn btn-primary" onclick="toggleSolution(this)">Show Solution</button>
+        </div>
+        <div class="solution" style="display: none;">
+          <h3>Solution Code:</h3>
+          <pre><code>california_df.boxplot(&#x27;MedInc&#x27;)
+
+import matplotlib.pyplot as plt
+
+plt.figure(figsize=(8, 6))
+plt.boxplot(california_df[&#x27;MedInc&#x27;])
+
+plt.title(&#x27;Boxplot of Median Income in California&#x27;)
+plt.xlabel(&#x27;Median Income&#x27;)
+plt.ylabel(&#x27;Value&#x27;)
+
+plt.show()
+
+import matplotlib.pyplot as plt
+
+plt.figure(figsize=(8, 6))
+plt.boxplot(california_df[&#x27;HouseAge&#x27;], patch_artist=True, boxprops=dict(facecolor=&#x27;lightgreen&#x27;))
+
+plt.title(&#x27;Boxplot of House Age in California&#x27;)
+plt.xlabel(&#x27;House Age&#x27;)
+plt.ylabel(&#x27;Value&#x27;)
+
+plt.show()
+
+import matplotlib.pyplot as plt
+
+plt.figure(figsize=(8, 6))
+plt.boxplot(california_df[&#x27;AveRooms&#x27;], patch_artist=True, boxprops=dict(facecolor=&#x27;lightblue&#x27;))
+
+plt.title(&#x27;Boxplot of Average Rooms in California&#x27;)
+plt.xlabel(&#x27;Average Rooms&#x27;)
+plt.ylabel(&#x27;Value&#x27;)
+
+plt.show()
+
+import matplotlib.pyplot as plt
+
+plt.figure(figsize=(8, 6))
+plt.boxplot(california_df[&#x27;AveBedrms&#x27;], patch_artist=True, boxprops=dict(facecolor=&#x27;lightcoral&#x27;))
+
+plt.title(&#x27;Boxplot of Average Bedrooms in California&#x27;)
+plt.xlabel(&#x27;Average Bedrooms&#x27;)
+plt.ylabel(&#x27;Value&#x27;)
+
+plt.show()
+
+import matplotlib.pyplot as plt
+
+plt.figure(figsize=(8, 6))
+plt.boxplot(california_df[&#x27;Population&#x27;], patch_artist=True, boxprops=dict(facecolor=&#x27;lightyellow&#x27;))
+
+plt.title(&#x27;Boxplot of Population in California&#x27;)
+plt.xlabel(&#x27;Population&#x27;)
+plt.ylabel(&#x27;Value&#x27;)
+
+plt.show()
+
+import matplotlib.pyplot as plt
+
+plt.figure(figsize=(8, 6))
+plt.boxplot(california_df[&#x27;AveOccup&#x27;], patch_artist=True, boxprops=dict(facecolor=&#x27;lightgreen&#x27;))
+
+plt.title(&#x27;Boxplot of Average Occupancy in California&#x27;)
+plt.xlabel(&#x27;Average Occupancy&#x27;)
+plt.ylabel(&#x27;Value&#x27;)
+
+plt.show()
+
+import matplotlib.pyplot as plt
+
+plt.figure(figsize=(8, 6))
+plt.boxplot(california_df[&#x27;MedHouseVal&#x27;], patch_artist=True, boxprops=dict(facecolor=&#x27;lightblue&#x27;))
+
+plt.title(&#x27;Boxplot of Median House Value in California&#x27;)
+plt.xlabel(&#x27;Median House Value&#x27;)
+plt.ylabel(&#x27;Value&#x27;)
+
+plt.show()
+
+import matplotlib.pyplot as plt
+
+# Get numeric columns
+numeric_columns = california_df.select_dtypes(include=[&#x27;int64&#x27;, &#x27;float64&#x27;]).columns
+
+# Create a boxplot for each numeric column
+plt.figure(figsize=(12, 8))
+plt.boxplot(california_df[numeric_columns].values, patch_artist=True)
+plt.xticks(range(1, len(numeric_columns) + 1), numeric_columns, rotation=45)
+plt.title(&#x27;Boxplots of Numeric Columns in California&#x27;)
+plt.xlabel(&#x27;Variables&#x27;)
+plt.ylabel(&#x27;Value&#x27;)
+plt.tight_layout()
+
+# Show the plot
+plt.show()
+
+latitude_values = california_df[&#x27;Latitude&#x27;].value_counts()
+
+latitude_values.head(10)
+
+latitude_values.shape
+
+top_50_categories = latitude_values.head(50)
+
+plt.figure(figsize=(20, 6))
+top_50_categories.plot(kind=&#x27;bar&#x27;, color=&#x27;skyblue&#x27;)
+
+plt.title(&#x27;Count of Houses by Latitude Category (Top 50)&#x27;)
+plt.xlabel(&#x27;Latitude&#x27;)
+plt.ylabel(&#x27;Count&#x27;)
+plt.xticks(rotation=45)  # Rotate x-axis labels by 45 degrees
+
+plt.show()
+
+import matplotlib.pyplot as plt
+
+# Get the top 50 categories based on count for longitude
+top_50_categories = california_df[&#x27;Longitude&#x27;].value_counts().head(50)
+
+plt.figure(figsize=(20, 6))
+plt.bar(range(len(top_50_categories)), top_50_categories.values, color=&#x27;skyblue&#x27;)
+
+plt.title(&#x27;Count of Houses by Longitude Category (Top 50)&#x27;)
+plt.xlabel(&#x27;Longitude&#x27;)
+plt.ylabel(&#x27;Count&#x27;)
+plt.xticks(range(len(top_50_categories)), top_50_categories.index, rotation=45)  # Rotate x-axis labels by 45 degrees
+
+plt.tight_layout()  # Adjust layout to prevent labels from overlapping
+plt.show()
+
+top_50_latitude = california_df[&#x27;Latitude&#x27;].value_counts().head(50)
+top_50_longitude = california_df[&#x27;Longitude&#x27;].value_counts().head(50)
+
+
+plt.figure(figsize=(20, 6))
+
+# Plot for latitude
+plt.subplot(1, 2, 1)
+plt.bar(range(len(top_50_latitude)), top_50_latitude.values, color=&#x27;skyblue&#x27;)
+plt.title(&#x27;Count of Houses by Latitude Category (Top 50)&#x27;)
+plt.xlabel(&#x27;Latitude&#x27;)
+plt.ylabel(&#x27;Count&#x27;)
+plt.xticks(range(len(top_50_latitude)), top_50_latitude.index, rotation=45)
+
+# Plot for longitude
+plt.subplot(1, 2, 2)
+plt.bar(range(len(top_50_longitude)), top_50_longitude.values, color=&#x27;lightgreen&#x27;)
+plt.title(&#x27;Count of Houses by Longitude Category (Top 50)&#x27;)
+plt.xlabel(&#x27;Longitude&#x27;)
+plt.ylabel(&#x27;Count&#x27;)
+plt.xticks(range(len(top_50_longitude)), top_50_longitude.index, rotation=45)
+
+plt.tight_layout()  # Adjust layout to prevent labels from overlapping
+plt.show()</code></pre>
+        </div>
+      </div>
+      <div class="practice-card">
+        <div class="practice-header">
+          <h2>Scatterplots and Bivariate Analysis</h2>
+          <span class="difficulty-badge medium">Medium</span>
+        </div>
+        <p class="practice-description">Practice exercise from Chapter 7: Data Visualization</p>
+        <div class="practice-actions">
+          <button class="btn btn-secondary" onclick="startExercise(this)" style="margin-right: 0.5rem;">Start Exercise</button>
+          <button class="btn btn-primary" onclick="toggleSolution(this)">Show Solution</button>
+        </div>
+        <div class="solution" style="display: none;">
+          <h3>Solution Code:</h3>
+          <pre><code>california_df.plot.scatter(x=&#x27;MedInc&#x27;, y=&#x27;MedHouseVal&#x27;, figsize=(10, 6), alpha=0.5, color=&#x27;blue&#x27;)
+
+plt.title(&#x27;Median Income vs. Median House Value&#x27;)
+plt.xlabel(&#x27;Median Income&#x27;)
+plt.ylabel(&#x27;Median House Value&#x27;)
+
+plt.show()
+
+plt.figure(figsize=(10, 6))
+plt.scatter(california_df[&#x27;MedInc&#x27;], california_df[&#x27;MedHouseVal&#x27;], alpha=0.5, color=&#x27;red&#x27;)
+
+plt.title(&#x27;Median Income vs. Median House Value&#x27;)
+plt.xlabel(&#x27;Median Income&#x27;)
+plt.ylabel(&#x27;Median House Value&#x27;)
+
+plt.show()
+
+california_df.dtypes
+
+plt.figure(figsize=(10, 6))
+plt.scatter(california_df[&#x27;AveRooms&#x27;], california_df[&#x27;AveBedrms&#x27;], alpha=0.5, color=&#x27;red&#x27;)
+
+plt.title(&#x27;AveRooms vs. AveBedrms&#x27;)
+plt.xlabel(&#x27;AveRooms&#x27;)
+plt.ylabel(&#x27;AveBedrms&#x27;)
+
+plt.show()
+
+plt.figure(figsize=(10, 6))
+plt.scatter(california_df[&#x27;MedHouseVal&#x27;], california_df[&#x27;MedInc&#x27;], alpha=0.5, color=&#x27;blue&#x27;)
+
+plt.title(&#x27;MedHouseVal vs. MedInc&#x27;)
+plt.xlabel(&#x27;MedHouseVal&#x27;)
+plt.ylabel(&#x27;MedInc&#x27;)
+
+plt.show()
+
+plt.figure(figsize=(10, 6))
+plt.scatter(california_df[&#x27;HouseAge&#x27;], california_df[&#x27;Population&#x27;], alpha=0.5, color=&#x27;green&#x27;)
+
+plt.title(&#x27;HouseAge vs. Population&#x27;)
+plt.xlabel(&#x27;HouseAge&#x27;)
+plt.ylabel(&#x27;Population&#x27;)
+
+plt.show()
+
+plt.figure(figsize=(10, 6))
+plt.scatter(california_df[&#x27;AveRooms&#x27;], california_df[&#x27;HouseAge&#x27;], alpha=0.5, color=&#x27;purple&#x27;)
+
+plt.title(&#x27;AveRooms vs. HouseAge&#x27;)
+plt.xlabel(&#x27;AveRooms&#x27;)
+plt.ylabel(&#x27;HouseAge&#x27;)
+
+plt.show()</code></pre>
+        </div>
+      </div>
+      <div class="practice-card">
+        <div class="practice-header">
+          <h2>Correlation Analysis</h2>
+          <span class="difficulty-badge medium">Medium</span>
+        </div>
+        <p class="practice-description">Practice exercise from Chapter 7: Data Visualization</p>
+        <div class="practice-actions">
+          <button class="btn btn-secondary" onclick="startExercise(this)" style="margin-right: 0.5rem;">Start Exercise</button>
+          <button class="btn btn-primary" onclick="toggleSolution(this)">Show Solution</button>
+        </div>
+        <div class="solution" style="display: none;">
+          <h3>Solution Code:</h3>
+          <pre><code>california_df.corr(numeric_only=True)
+
+import seaborn as sns
 
 # Calculate correlation matrix
-correlation_matrix = df.corr()
+correlation_matrix = california_df.corr(numeric_only=True)
 
-# Visualize correlation matrix
-sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm')
-plt.title('Correlation Matrix')
+# Plot heatmap
+plt.figure(figsize=(10, 8))
+sns.heatmap(correlation_matrix, annot=True, cmap=&#x27;coolwarm&#x27;, fmt=&quot;.2f&quot;)
+plt.title(&#x27;Correlation Matrix&#x27;)
 plt.show()</code></pre>
         </div>
       </div>
-      
       <div class="practice-card">
         <div class="practice-header">
-          <h2>Exercise 5: Time Series Analysis</h2>
-          <span class="difficulty-badge hard">Hard</span>
+          <h2>Pairwise Relationship Analysis</h2>
+          <span class="difficulty-badge medium">Medium</span>
         </div>
-        <p class="practice-description">Analyze time series data and identify trends. Practice forecasting and seasonal decomposition.</p>
+        <p class="practice-description">Practice exercise from Chapter 7: Data Visualization</p>
         <div class="practice-actions">
+          <button class="btn btn-secondary" onclick="startExercise(this)" style="margin-right: 0.5rem;">Start Exercise</button>
           <button class="btn btn-primary" onclick="toggleSolution(this)">Show Solution</button>
-          <button class="btn btn-secondary">Start Exercise</button>
         </div>
         <div class="solution" style="display: none;">
-          <h3>Solution:</h3>
-          <pre><code>import pandas as pd
-from statsmodels.tsa.seasonal import seasonal_decompose
-
-df = pd.read_csv('timeseries.csv', parse_dates=['Date'], index_col='Date')
-
-# Decompose time series
-decomposition = seasonal_decompose(df['Value'], model='additive')
-decomposition.plot()
+          <h3>Solution Code:</h3>
+          <pre><code>sns.pairplot(california_df)
 plt.show()</code></pre>
         </div>
       </div>
-      
       <div class="practice-card">
         <div class="practice-header">
-          <h2>Exercise 6: Hypothesis Testing</h2>
-          <span class="difficulty-badge hard">Hard</span>
+          <h2>Multivariate Visualization</h2>
+          <span class="difficulty-badge medium">Medium</span>
         </div>
-        <p class="practice-description">Perform hypothesis testing on sample data. Practice t-tests, chi-square tests, and ANOVA.</p>
+        <p class="practice-description">Practice exercise from Chapter 7: Data Visualization</p>
         <div class="practice-actions">
+          <button class="btn btn-secondary" onclick="startExercise(this)" style="margin-right: 0.5rem;">Start Exercise</button>
           <button class="btn btn-primary" onclick="toggleSolution(this)">Show Solution</button>
-          <button class="btn btn-secondary">Start Exercise</button>
         </div>
         <div class="solution" style="display: none;">
-          <h3>Solution:</h3>
-          <pre><code>from scipy import stats
+          <h3>Solution Code:</h3>
+          <pre><code>import matplotlib.pyplot as plt
+import numpy as np
 
-# One-sample t-test
-t_stat, p_value = stats.ttest_1samp(data, popmean=100)
+# Normalize &#x27;HouseAge&#x27; values
+houseage_min = california_df[&#x27;HouseAge&#x27;].min()
+houseage_max = california_df[&#x27;HouseAge&#x27;].max()
+normalized_houseage = (california_df[&#x27;HouseAge&#x27;] - houseage_min) / (houseage_max - houseage_min)
 
-# Two-sample t-test
-t_stat, p_value = stats.ttest_ind(group1, group2)
+# Assuming california_df is your DataFrame
+top_70_categories = california_df.groupby(&#x27;Latitude&#x27;).size().nlargest(70)
 
-# Chi-square test
-chi2, p_value = stats.chisquare(observed, expected)
+plt.figure(figsize=(20, 6))
+bars = top_70_categories.plot(kind=&#x27;bar&#x27;, color=plt.cm.coolwarm(normalized_houseage))
 
-print(f"P-value: {p_value}")
-if p_value < 0.05:
-    print("Reject null hypothesis")
-else:
-    print("Fail to reject null hypothesis")</code></pre>
+# Add colorbar
+cbar = plt.colorbar(plt.cm.ScalarMappable(cmap=&#x27;coolwarm&#x27;), ax=plt.gca())
+cbar.set_label(&#x27;HouseAge&#x27;)
+
+# Add legend
+legend_labels = [f&#x27;{houseage_min:.2f}&#x27;, f&#x27;{houseage_max:.2f}&#x27;]
+cbar.set_ticks([0, 1])
+cbar.set_ticklabels(legend_labels)
+
+plt.title(&#x27;Count of Houses by Latitude Category (Top 50)&#x27;)
+plt.xlabel(&#x27;Latitude&#x27;)
+plt.ylabel(&#x27;Count&#x27;)
+plt.xticks(rotation=45)  # Rotate x-axis labels by 45 degrees
+
+plt.show()
+
+import matplotlib.pyplot as plt
+
+# Scatter plot with HouseAge as the color
+scatter = plt.scatter(x=&#x27;MedInc&#x27;, y=&#x27;MedHouseVal&#x27;, c=&#x27;HouseAge&#x27;, data=california_df, cmap=&#x27;viridis&#x27;, alpha=0.5)
+
+# Add colorbar
+plt.colorbar(scatter, label=&#x27;House Age&#x27;)
+
+# Add title and labels
+plt.title(&#x27;Median Income vs. Median House Value&#x27;)
+plt.xlabel(&#x27;Median Income&#x27;)
+plt.ylabel(&#x27;Median House Value&#x27;)
+
+plt.show()
+
+import matplotlib.pyplot as plt
+
+# Scatter plot with HouseAge as the color
+scatter = plt.scatter(x=&#x27;MedInc&#x27;, y=&#x27;MedHouseVal&#x27;, c=&#x27;Latitude&#x27;, data=california_df, cmap=&#x27;viridis&#x27;, alpha=0.5)
+
+# Add colorbar
+plt.colorbar(scatter, label=&#x27;Latitude&#x27;)
+
+# Add title and labels
+plt.title(&#x27;Median Income vs. Median House Value&#x27;)
+plt.xlabel(&#x27;Median Income&#x27;)
+plt.ylabel(&#x27;Median House Value&#x27;)
+
+plt.show()</code></pre>
+        </div>
+      </div>
+      <div class="chapter-section" style="grid-column: 1 / -1; margin-bottom: 2rem;">
+        <h2 style="margin-top: 2rem; margin-bottom: 0.5rem; color: #222c3e; font-size: 1.75rem; border-bottom: 2px solid #2569f4; padding-bottom: 0.5rem;">Chapter 8: Statistical Analysis</h2>
+        <p style="margin-bottom: 2rem; color: #64748b; font-size: 1rem;">Perform statistical analysis and build regression models to predict housing prices.</p>
+      </div>
+      <div class="practice-card">
+        <div class="practice-header">
+          <h2>Descriptive Statistics</h2>
+          <span class="difficulty-badge hard">Hard</span>
+        </div>
+        <p class="practice-description">Practice exercise from Chapter 8: Statistical Analysis</p>
+        <div class="practice-actions">
+          <button class="btn btn-secondary" onclick="startExercise(this)" style="margin-right: 0.5rem;">Start Exercise</button>
+          <button class="btn btn-primary" onclick="toggleSolution(this)">Show Solution</button>
+        </div>
+        <div class="solution" style="display: none;">
+          <h3>Solution Code:</h3>
+          <pre><code>california_df[&#x27;MedInc&#x27;].mean()
+
+california_df[&#x27;MedInc&#x27;].median()
+
+california_df[&#x27;MedInc&#x27;].std()
+
+california_df.describe(include=&#x27;all&#x27;)
+
+california_df.describe(include=&#x27;number&#x27;)
+
+california_df.describe(include=&#x27;category&#x27;)
+
+california_df.describe()</code></pre>
+        </div>
+      </div>
+      <div class="practice-card">
+        <div class="practice-header">
+          <h2>Simple Linear Regression</h2>
+          <span class="difficulty-badge hard">Hard</span>
+        </div>
+        <p class="practice-description">Practice exercise from Chapter 8: Statistical Analysis</p>
+        <div class="practice-actions">
+          <button class="btn btn-secondary" onclick="startExercise(this)" style="margin-right: 0.5rem;">Start Exercise</button>
+          <button class="btn btn-primary" onclick="toggleSolution(this)">Show Solution</button>
+        </div>
+        <div class="solution" style="display: none;">
+          <h3>Solution Code:</h3>
+          <pre><code>from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error, r2_score
+
+X = california_df[&#x27;MedInc&#x27;]
+y = california_df[&#x27;MedHouseVal&#x27;]
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, random_state = 42)
+
+X_train_reshaped = X_train.values.reshape(-1, 1)
+X_test_reshaped = X_test.values.reshape(-1, 1)
+
+model = LinearRegression()
+
+model.fit(X_train_reshaped, y_train)
+
+model.intercept_ #b value
+
+model.coef_ #slope or m value
+
+y_pred = model.predict(X_test_reshaped)
+
+mse = mean_squared_error(y_pred, y_test)
+print(mse)
+r2 = r2_score(y_test, y_pred)
+print(r2)</code></pre>
+        </div>
+      </div>
+      <div class="practice-card">
+        <div class="practice-header">
+          <h2>Multiple Linear Regression</h2>
+          <span class="difficulty-badge hard">Hard</span>
+        </div>
+        <p class="practice-description">Practice exercise from Chapter 8: Statistical Analysis</p>
+        <div class="practice-actions">
+          <button class="btn btn-secondary" onclick="startExercise(this)" style="margin-right: 0.5rem;">Start Exercise</button>
+          <button class="btn btn-primary" onclick="toggleSolution(this)">Show Solution</button>
+        </div>
+        <div class="solution" style="display: none;">
+          <h3>Solution Code:</h3>
+          <pre><code>X = california_df.drop([&#x27;MedHouseVal&#x27;], axis = 1)
+y = california_df[&#x27;MedHouseVal&#x27;]
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, random_state = 42)
+
+model = LinearRegression()
+
+model.fit(X_train, y_train)
+
+model.intercept_ #b value
+
+model.coef_ #slope or m value
+
+y_pred = model.predict(X_test)
+
+mse = mean_squared_error(y_pred, y_test)
+print(mse)
+r2 = r2_score(y_test, y_pred)
+print(r2)</code></pre>
+        </div>
+      </div>
+      <div class="practice-card">
+        <div class="practice-header">
+          <h2>Model Coefficients Analysis</h2>
+          <span class="difficulty-badge hard">Hard</span>
+        </div>
+        <p class="practice-description">Practice exercise from Chapter 8: Statistical Analysis</p>
+        <div class="practice-actions">
+          <button class="btn btn-secondary" onclick="startExercise(this)" style="margin-right: 0.5rem;">Start Exercise</button>
+          <button class="btn btn-primary" onclick="toggleSolution(this)">Show Solution</button>
+        </div>
+        <div class="solution" style="display: none;">
+          <h3>Solution Code:</h3>
+          <pre><code># Get the names of the coefficients
+coef_names = california_df.drop(columns=[&#x27;MedHouseVal&#x27;]).columns
+
+# Print coefficients with their names
+for name, coef in zip(coef_names, model.coef_):
+    print(f&quot;{name}: {coef}&quot;)
+
+print(&quot;Intercept (model intercept):&quot;, model.intercept_)
+
+equation = &quot;y = &quot;
+for name, coef in zip(coef_names, model.coef_):
+    equation += f&quot;{coef:.4f} * {name} + &quot;
+equation += f&quot;{model.intercept_:.4f}&quot;
+print(&quot;Regression equation:&quot;, equation)
+
+# Rank coefficients based on absolute values
+sorted_coefs = sorted(zip(coef_names, model.coef_), key=lambda x: abs(x[1]), reverse=True)
+
+# Print coefficients with their names
+for name, coef in sorted_coefs:
+    print(f&quot;{name}: {coef:.4f}&quot;)
+
+import statsmodels.api as sm
+
+# Add a constant term to the independent variables
+X = sm.add_constant(california_df.drop(columns=[&#x27;MedHouseVal&#x27;]))
+
+# Fit the multiple linear regression model
+model = sm.OLS(california_df[&#x27;MedHouseVal&#x27;], X).fit()
+
+# Get the p-values
+p_values = model.pvalues
+
+# Print the p-values
+print(&quot;P-values for the coefficients:&quot;)
+print(p_values)</code></pre>
+        </div>
+      </div>
+      <div class="practice-card">
+        <div class="practice-header">
+          <h2>Model Diagnostics</h2>
+          <span class="difficulty-badge hard">Hard</span>
+        </div>
+        <p class="practice-description">Practice exercise from Chapter 8: Statistical Analysis</p>
+        <div class="practice-actions">
+          <button class="btn btn-secondary" onclick="startExercise(this)" style="margin-right: 0.5rem;">Start Exercise</button>
+          <button class="btn btn-primary" onclick="toggleSolution(this)">Show Solution</button>
+        </div>
+        <div class="solution" style="display: none;">
+          <h3>Solution Code:</h3>
+          <pre><code>residuals = y_test - y_pred
+
+residuals.hist()
+plt.title(&#x27;Histogram of Model Residuals&#x27;)
+plt.xlabel(&#x27;Residuals&#x27;)
+plt.ylabel(&#x27;Frequency&#x27;)
+plt.show()
+
+plt.figure(figsize=(8, 6))
+plt.boxplot(residuals)
+plt.title(&#x27;Boxplot of Model Residuals&#x27;)
+plt.xlabel(&#x27;Residuals&#x27;)
+plt.ylabel(&#x27;Values&#x27;)
+plt.show()
+
+residuals.describe()</code></pre>
+        </div>
+      </div>
+      <div class="practice-card">
+        <div class="practice-header">
+          <h2>Model Improvement Techniques</h2>
+          <span class="difficulty-badge hard">Hard</span>
+        </div>
+        <p class="practice-description">Practice exercise from Chapter 8: Statistical Analysis</p>
+        <div class="practice-actions">
+          <button class="btn btn-secondary" onclick="startExercise(this)" style="margin-right: 0.5rem;">Start Exercise</button>
+          <button class="btn btn-primary" onclick="toggleSolution(this)">Show Solution</button>
+        </div>
+        <div class="solution" style="display: none;">
+          <h3>Solution Code:</h3>
+          <pre><code>X = california_df_standardized.drop([&#x27;MedHouseVal&#x27;], axis = 1)
+y = california_df_standardized[&#x27;MedHouseVal&#x27;]
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, random_state = 42)
+
+model = LinearRegression()
+
+model.fit(X_train, y_train)
+
+y_pred = model.predict(X_test)
+
+mse = mean_squared_error(y_pred, y_test)
+print(mse)
+r2 = r2_score(y_test, y_pred)
+print(r2)
+
+X = california_df.drop([&#x27;MedHouseVal&#x27;, &#x27;Population&#x27;], axis = 1)
+y = california_df[&#x27;MedHouseVal&#x27;]
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, random_state = 42)
+
+model = LinearRegression()
+
+model.fit(X_train, y_train)
+
+y_pred = model.predict(X_test)
+
+mse = mean_squared_error(y_pred, y_test)
+print(mse)
+r2 = r2_score(y_test, y_pred)
+print(r2)
+
+X = california_df_scaled.drop([&#x27;MedHouseVal&#x27;,&#x27;Population&#x27;], axis = 1)
+y = california_df_scaled[&#x27;MedHouseVal&#x27;]
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, random_state = 42)
+
+model = LinearRegression()
+
+model.fit(X_train, y_train)
+
+y_pred = model.predict(X_test)
+
+mse = mean_squared_error(y_pred, y_test)
+print(mse)
+r2 = r2_score(y_test, y_pred)
+print(r2)</code></pre>
         </div>
       </div>
     </div>
@@ -204,6 +1145,33 @@ else:
         solution.style.display = 'none';
         button.textContent = 'Show Solution';
       }
+    }
+    
+    function startExercise(button) {
+      const card = button.closest('.practice-card');
+      const title = card.querySelector('.practice-header h2').textContent;
+      const description = card.querySelector('.practice-description').textContent;
+      const solution = card.querySelector('.solution code');
+      const solutionCode = solution ? solution.textContent : '';
+      
+      // Get difficulty from badge
+      const difficultyBadge = card.querySelector('.difficulty-badge');
+      const difficulty = difficultyBadge ? difficultyBadge.className.replace('difficulty-badge ', '').trim() : 'easy';
+      
+      // Create unique ID from title
+      const exerciseId = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      
+      // Build URL with encoded parameters
+      const params = new URLSearchParams({
+        id: exerciseId,
+        title: title,
+        description: description,
+        difficulty: difficulty,
+        code: solutionCode
+      });
+      
+      // Navigate to playground page
+      window.location.href = `practice-playground.html?${params.toString()}`;
     }
   </script>
 </body>
