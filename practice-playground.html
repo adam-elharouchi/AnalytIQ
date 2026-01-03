@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Practice Playground - AnalytIQ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    .playground-container {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 0 2rem;
+    }
+    
+    .playground-header {
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid #2569f4;
+    }
+    
+    .playground-header h1 {
+      color: #222c3e;
+      margin-bottom: 0.5rem;
+    }
+    
+    .exercise-info {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.5rem;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    
+    .exercise-info h2 {
+      color: #222c3e;
+      margin-bottom: 0.5rem;
+    }
+    
+    .exercise-info .difficulty-badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 0.25rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+    
+    .exercise-info .difficulty-badge.easy {
+      background-color: #d1fae5;
+      color: #065f46;
+    }
+    
+    .exercise-info .difficulty-badge.medium {
+      background-color: #fef3c7;
+      color: #92400e;
+    }
+    
+    .exercise-info .difficulty-badge.hard {
+      background-color: #fee2e2;
+      color: #991b1b;
+    }
+    
+    .exercise-description {
+      color: #64748b;
+      line-height: 1.6;
+      margin-top: 1rem;
+    }
+    
+    .code-editor-section {
+      margin-bottom: 2rem;
+    }
+    
+    .code-editor-section h3 {
+      color: #222c3e;
+      margin-bottom: 0.75rem;
+    }
+    
+    .code-editor-wrapper {
+      border: 1px solid #1e293b;
+      border-radius: 0.5rem;
+      overflow: hidden;
+      background: #1e293b;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .code-editor-header {
+      background: #0f172a;
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #334155;
+    }
+    
+    .code-editor-header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .code-editor-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    
+    .code-editor-dot.red {
+      background: #ef4444;
+    }
+    
+    .code-editor-dot.yellow {
+      background: #f59e0b;
+    }
+    
+    .code-editor-dot.green {
+      background: #10b981;
+    }
+    
+    .code-editor-title {
+      color: #94a3b8;
+      font-size: 0.75rem;
+      font-weight: 500;
+      font-family: system-ui, sans-serif;
+    }
+    
+    .code-editor-container {
+      position: relative;
+      background: #1e293b;
+    }
+    
+    .code-editor-line-numbers {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 50px;
+      padding: 1rem 0.5rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.875rem;
+      line-height: 1.6;
+      color: #475569;
+      background: #0f172a;
+      border-right: 1px solid #334155;
+      user-select: none;
+      text-align: right;
+      overflow: hidden;
+    }
+    
+    .code-editor {
+      width: 100%;
+      min-height: 400px;
+      padding: 1rem 1rem 1rem 4rem;
+      border: none;
+      font-family: 'Courier New', 'Monaco', 'Menlo', monospace;
+      font-size: 0.875rem;
+      line-height: 1.6;
+      resize: vertical;
+      background: #1e293b;
+      color: #e2e8f0;
+      tab-size: 2;
+      white-space: pre;
+      overflow-wrap: normal;
+      overflow-x: auto;
+    }
+    
+    .code-editor::placeholder {
+      color: #64748b;
+    }
+    
+    .code-editor:focus {
+      outline: none;
+      background: #1e293b;
+    }
+    
+    .code-editor:disabled {
+      background: #0f172a;
+      color: #64748b;
+      cursor: not-allowed;
+    }
+    
+    .code-editor:disabled + .code-editor-line-numbers {
+      background: #0a0f1a;
+      color: #334155;
+    }
+    
+    .playground-actions {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    
+    .btn-submit {
+      background-color: #2569f4;
+      color: #1e293b;
+      border: none;
+      padding: 0.75rem 2rem;
+      border-radius: 0.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    
+    .btn-submit:hover:not(:disabled) {
+      background-color: #1d4ed8;
+    }
+    
+    .btn-submit:disabled {
+      background-color: #cbd5e1;
+      cursor: not-allowed;
+    }
+    
+    .btn-reset {
+      background-color: #f8fafc;
+      color: #64748b;
+      border: 1px solid #e2e8f0;
+      padding: 0.75rem 2rem;
+      border-radius: 0.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .btn-reset:hover {
+      background-color: #f1f5f9;
+      border-color: #cbd5e1;
+    }
+    
+    .solution-section {
+      display: none;
+      margin-top: 2rem;
+      padding-top: 2rem;
+      border-top: 2px solid #e2e8f0;
+    }
+    
+    .solution-section.show {
+      display: block;
+    }
+    
+    .solution-section h3 {
+      color: #222c3e;
+      margin-bottom: 1rem;
+    }
+    
+    .solution-code {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.5rem;
+      padding: 1.5rem;
+      overflow-x: auto;
+    }
+    
+    .solution-code pre {
+      margin: 0;
+      font-family: 'Courier New', monospace;
+      font-size: 0.875rem;
+      line-height: 1.6;
+      color: #1e293b;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    
+    .submission-message {
+      display: none;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    
+    .submission-message.show {
+      display: block;
+    }
+    
+    .submission-message.success {
+      background-color: #d1fae5;
+      color: #065f46;
+      border: 1px solid #86efac;
+    }
+    
+    .submission-message.info {
+      background-color: #dbeafe;
+      color: #1e40af;
+      border: 1px solid #93c5fd;
+    }
+    
+    /* Code Assistant Popup */
+    .chat-widget-button {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background-color: #222c3e;
+      color: white;
+      border: none;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: 700;
+      z-index: 1002;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .chat-widget-button .logo-iq {
+      color: #2569f4;
+    }
+    
+    .chat-widget-button:hover {
+      transform: scale(1.1);
+      box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+    
+    .chat-widget-button.hidden {
+      display: none;
+    }
+    
+    .chat-widget-container {
+      display: none;
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      width: 380px;
+      height: 600px;
+      max-height: calc(100vh - 4rem);
+      background: white;
+      border-radius: 0.75rem;
+      box-shadow: 0 20px 25px rgba(0, 0, 0, 0.15), 0 10px 10px rgba(0, 0, 0, 0.04);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      z-index: 1001;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+    }
+    
+    .chat-widget-container.show {
+      display: flex;
+      transform: translateY(0);
+      opacity: 1;
+    }
+    
+    .chat-modal {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    
+    .chat-modal-header {
+      background: #2569f4;
+      color: white;
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    
+    .chat-modal-header h3 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+    
+    .chat-modal-close {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 0.25rem;
+      transition: background-color 0.2s;
+      line-height: 1;
+    }
+    
+    .chat-modal-close:hover {
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+    
+    .chat-modal-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: #f8fafc;
+      min-height: 0;
+    }
+    
+    .chat-messages-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      min-height: 0;
+    }
+    
+    .chat-message {
+      padding: 0.625rem 0.75rem;
+      border-radius: 0.5rem;
+      max-width: 85%;
+      word-wrap: break-word;
+      font-size: 0.875rem;
+      line-height: 1.4;
+    }
+    
+    .chat-message.user {
+      background: #2569f4;
+      color: white;
+      align-self: flex-end;
+      margin-left: auto;
+    }
+    
+    .chat-message.assistant {
+      background: white;
+      color: #1e293b;
+      border: 1px solid #e2e8f0;
+      align-self: flex-start;
+    }
+    
+    .chat-input-container {
+      border-top: 1px solid #e2e8f0;
+      padding: 0.75rem;
+      background: white;
+      display: flex;
+      gap: 0.5rem;
+      flex-shrink: 0;
+    }
+    
+    .chat-input-field {
+      flex: 1;
+      padding: 0.625rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      resize: none;
+      min-height: 36px;
+      max-height: 100px;
+      font-family: inherit;
+    }
+    
+    .chat-input-field:focus {
+      outline: none;
+      border-color: #2569f4;
+      box-shadow: 0 0 0 3px rgba(37, 105, 244, 0.1);
+    }
+    
+    .chat-send-button {
+      padding: 0.625rem 1rem;
+      background: #2569f4;
+      color: white;
+      border: none;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.875rem;
+      transition: background-color 0.2s;
+      align-self: flex-end;
+    }
+    
+    .chat-send-button:hover:not(:disabled) {
+      background: #1d4ed8;
+    }
+    
+    .chat-send-button:disabled {
+      background: #cbd5e1;
+      cursor: not-allowed;
+    }
+    
+    .chat-loading {
+      display: none;
+      padding: 0.75rem 1rem;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.5rem;
+      align-self: flex-start;
+      max-width: 80px;
+    }
+    
+    .chat-loading.show {
+      display: block;
+    }
+    
+    .chat-loading-dots {
+      display: flex;
+      gap: 0.25rem;
+    }
+    
+    .chat-loading-dot {
+      width: 8px;
+      height: 8px;
+      background: #64748b;
+      border-radius: 50%;
+      animation: bounce 1.4s infinite ease-in-out both;
+    }
+    
+    .chat-loading-dot:nth-child(1) { animation-delay: -0.32s; }
+    .chat-loading-dot:nth-child(2) { animation-delay: -0.16s; }
+    
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0); }
+      40% { transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar" id="navbar"></nav>
+  
+  <!-- Code Assistant Chat Widget -->
+  <button class="chat-widget-button" id="chatWidgetButton" onclick="toggleChatWidget()" title="Ask a question">
+    <span class="logo-iq">IQ</span>
+  </button>
+  
+  <div class="chat-widget-container" id="chatWidgetContainer">
+    <div class="chat-modal">
+      <div class="chat-modal-header">
+        <h3>Code Assistant</h3>
+        <button class="chat-modal-close" onclick="toggleChatWidget()">×</button>
+      </div>
+      <div class="chat-modal-body">
+        <div class="chat-messages-container" id="chatMessagesContainer">
+          <div class="chat-message assistant">
+            Hi! I'm here to help you with questions about this exercise. What would you like to know?
+          </div>
+        </div>
+        <div class="chat-loading" id="chatLoading">
+          <div class="chat-loading-dots">
+            <div class="chat-loading-dot"></div>
+            <div class="chat-loading-dot"></div>
+            <div class="chat-loading-dot"></div>
+          </div>
+        </div>
+        <div class="chat-input-container">
+          <textarea 
+            class="chat-input-field" 
+            id="chatInputField" 
+            placeholder="Ask a question..."
+            rows="1"
+            onkeydown="handleChatInputKeydown(event)"
+          ></textarea>
+          <button class="chat-send-button" id="chatSendButton" onclick="sendChatMessage()">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <main class="container">
+    <div class="playground-container">
+      <div class="playground-header">
+        <h1>Practice Playground</h1>
+        <a href="practice.html" class="btn btn-secondary" style="text-decoration: none; display: inline-block; margin-top: 0.5rem;">← Back to Practice</a>
+      </div>
+      
+      <div class="exercise-info" id="exerciseInfo">
+        <h2 id="exerciseTitle">Loading exercise...</h2>
+        <span class="difficulty-badge" id="exerciseDifficulty">Easy</span>
+        <div class="exercise-description" id="exerciseDescription">
+          Loading exercise description...
+        </div>
+      </div>
+      
+      <div class="submission-message" id="submissionMessage"></div>
+      
+      <div class="code-editor-section">
+        <h3>Your Code</h3>
+        <div class="code-editor-wrapper">
+          <div class="code-editor-header">
+            <div class="code-editor-header-left">
+              <div class="code-editor-dot red"></div>
+              <div class="code-editor-dot yellow"></div>
+              <div class="code-editor-dot green"></div>
+              <span class="code-editor-title">main.py</span>
+            </div>
+          </div>
+          <div class="code-editor-container">
+            <div class="code-editor-line-numbers" id="lineNumbers"></div>
+            <textarea 
+              id="codeEditor" 
+              class="code-editor" 
+              placeholder="Write your code here..."
+              spellcheck="false"
+              onscroll="syncLineNumbers()"
+              oninput="updateLineNumbers()"
+            ></textarea>
+          </div>
+        </div>
+      </div>
+      
+      <div class="playground-actions">
+        <button class="btn-submit" id="submitBtn" onclick="submitSolution()">Submit Solution</button>
+        <button class="btn-reset" onclick="resetCode()">Reset Code</button>
+      </div>
+      
+      <div class="solution-section" id="solutionSection">
+        <h3>Solution</h3>
+        <div class="solution-code">
+          <pre id="solutionCode"></pre>
+        </div>
+      </div>
+    </div>
+  </main>
+  
+  <script src="js/auth.js"></script>
+  <script src="js/navigation.js"></script>
+  <script src="js/local-intelligence.js"></script>
+  <script src="js/ai-agent.js"></script>
+  <script>
+    // Initialize AI Agent for chat
+    let chatAIAgent = null;
+    let chatHistory = [];
+    
+    // Require authentication
+    document.addEventListener('DOMContentLoaded', function() {
+      const authManager = new AuthManager();
+      if (!authManager.requireAuth()) {
+        return; // Will redirect to login
+      }
+      
+      // Load exercise data from URL parameters
+      loadExerciseFromURL();
+      
+      // Initialize chat input auto-resize
+      const chatInput = document.getElementById('chatInputField');
+      chatInput.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+      });
+      
+      // Initialize AI Agent if API key is available
+      initializeChatAI();
+    });
+    
+    async function initializeChatAI() {
+      const apiKey = localStorage.getItem('geminiApiKey') || localStorage.getItem('aiApiKey') || '';
+      if (apiKey) {
+        try {
+          chatAIAgent = new CodeWriterAgent();
+          await chatAIAgent.initialize(apiKey, 'gemini', 'gemini-2.5-flash');
+        } catch (error) {
+          console.log('AI agent not available, using local intelligence');
+        }
+      }
+    }
+    
+    let exerciseData = null;
+    let hasSubmitted = false;
+    
+    function loadExerciseFromURL() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const exerciseId = urlParams.get('id');
+      const exerciseTitle = urlParams.get('title');
+      const exerciseDescription = urlParams.get('description');
+      const exerciseDifficulty = urlParams.get('difficulty');
+      const exerciseCode = urlParams.get('code');
+      
+      if (!exerciseId || !exerciseTitle || !exerciseCode) {
+        showError('Invalid exercise. Please select an exercise from the practice page.');
+        return;
+      }
+      
+      // Decode URL-encoded data
+      exerciseData = {
+        id: exerciseId,
+        title: decodeURIComponent(exerciseTitle),
+        description: decodeURIComponent(exerciseDescription || ''),
+        difficulty: exerciseDifficulty || 'easy',
+        code: decodeURIComponent(exerciseCode)
+      };
+      
+      // Display exercise info
+      document.getElementById('exerciseTitle').textContent = exerciseData.title;
+      document.getElementById('exerciseDescription').textContent = 
+        exerciseData.description || `Complete the exercise: ${exerciseData.title}`;
+      
+      const difficultyBadge = document.getElementById('exerciseDifficulty');
+      difficultyBadge.textContent = exerciseData.difficulty.charAt(0).toUpperCase() + exerciseData.difficulty.slice(1);
+      difficultyBadge.className = 'difficulty-badge ' + exerciseData.difficulty;
+      
+      // Set initial code template (optional - could be empty or have starter code)
+      document.getElementById('codeEditor').value = '';
+      updateLineNumbers();
+    }
+    
+    function updateLineNumbers() {
+      const editor = document.getElementById('codeEditor');
+      const lineNumbers = document.getElementById('lineNumbers');
+      const lines = editor.value.split('\n').length || 1;
+      const minLines = Math.max(lines, 20); // Show at least 20 lines
+      
+      let lineNumbersHTML = '';
+      for (let i = 1; i <= minLines; i++) {
+        lineNumbersHTML += i + '<br>';
+      }
+      lineNumbers.innerHTML = lineNumbersHTML;
+    }
+    
+    function syncLineNumbers() {
+      const editor = document.getElementById('codeEditor');
+      const lineNumbers = document.getElementById('lineNumbers');
+      lineNumbers.scrollTop = editor.scrollTop;
+    }
+    
+    function submitSolution() {
+      const codeEditor = document.getElementById('codeEditor');
+      const userCode = codeEditor.value.trim();
+      
+      if (!userCode) {
+        showSubmissionMessage('Please write some code before submitting.', 'info');
+        return;
+      }
+      
+      // Mark as submitted
+      hasSubmitted = true;
+      
+      // Disable code editor
+      codeEditor.disabled = true;
+      
+      // Disable submit button
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitted';
+      
+      // Show submission message
+      showSubmissionMessage('Solution submitted! You can now view the solution below.', 'success');
+      
+      // Show solution
+      const solutionSection = document.getElementById('solutionSection');
+      const solutionCode = document.getElementById('solutionCode');
+      solutionCode.textContent = exerciseData.code;
+      solutionSection.classList.add('show');
+      
+      // Scroll to solution
+      solutionSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    
+    function resetCode() {
+      if (hasSubmitted) {
+        if (!confirm('Resetting will allow you to submit again. Continue?')) {
+          return;
+        }
+      }
+      
+      const codeEditor = document.getElementById('codeEditor');
+      codeEditor.value = '';
+      codeEditor.disabled = false;
+      updateLineNumbers();
+      
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Submit Solution';
+      
+      const solutionSection = document.getElementById('solutionSection');
+      solutionSection.classList.remove('show');
+      
+      const submissionMessage = document.getElementById('submissionMessage');
+      submissionMessage.classList.remove('show');
+      
+      hasSubmitted = false;
+      
+      codeEditor.focus();
+    }
+    
+    function showSubmissionMessage(message, type) {
+      const messageEl = document.getElementById('submissionMessage');
+      messageEl.textContent = message;
+      messageEl.className = 'submission-message ' + type + ' show';
+      
+      // Auto-hide after 5 seconds for info messages
+      if (type === 'info') {
+        setTimeout(() => {
+          messageEl.classList.remove('show');
+        }, 5000);
+      }
+    }
+    
+    function showError(message) {
+      const container = document.querySelector('.playground-container');
+      container.innerHTML = `
+        <div class="playground-header">
+          <h1>Error</h1>
+        </div>
+        <div class="exercise-info">
+          <p style="color: #dc2626;">${message}</p>
+          <a href="practice.html" class="btn btn-primary" style="margin-top: 1rem; text-decoration: none; display: inline-block;">Go Back to Practice</a>
+        </div>
+      `;
+    }
+    
+    // Code Assistant Chat Functions
+    function toggleChatWidget() {
+      const container = document.getElementById('chatWidgetContainer');
+      const button = document.getElementById('chatWidgetButton');
+      
+      container.classList.toggle('show');
+      
+      if (container.classList.contains('show')) {
+        button.classList.add('hidden');
+        setTimeout(() => {
+          document.getElementById('chatInputField').focus();
+        }, 300);
+      } else {
+        button.classList.remove('hidden');
+      }
+    }
+    
+    function handleChatInputKeydown(event) {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        sendChatMessage();
+      }
+    }
+    
+    async function sendChatMessage() {
+      const input = document.getElementById('chatInputField');
+      const message = input.value.trim();
+      
+      if (!message) return;
+      
+      // Add user message to chat
+      addChatMessage('user', message);
+      input.value = '';
+      input.style.height = 'auto';
+      
+      // Show loading
+      const loading = document.getElementById('chatLoading');
+      loading.classList.add('show');
+      
+      // Disable send button
+      const sendButton = document.getElementById('chatSendButton');
+      sendButton.disabled = true;
+      
+      try {
+        // Add to chat history
+        chatHistory.push({ role: 'user', content: message });
+        
+        // Get response
+        const response = await getChatResponse(message);
+        
+        // Add to chat history
+        chatHistory.push({ role: 'assistant', content: response });
+        
+        // Hide loading
+        loading.classList.remove('show');
+        
+        // Add assistant response
+        addChatMessage('assistant', response);
+      } catch (error) {
+        loading.classList.remove('show');
+        addChatMessage('assistant', 'Sorry, I encountered an error. Please try again.');
+        console.error('Chat error:', error);
+      } finally {
+        sendButton.disabled = false;
+        input.focus();
+      }
+    }
+    
+    function addChatMessage(role, content) {
+      const container = document.getElementById('chatMessagesContainer');
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `chat-message ${role}`;
+      messageDiv.textContent = content;
+      container.appendChild(messageDiv);
+      container.scrollTop = container.scrollHeight;
+    }
+    
+    async function getChatResponse(message) {
+      try {
+        // Try to use AI agent if available
+        if (chatAIAgent) {
+          const response = await chatAIAgent.processMessage(message);
+          return response;
+        }
+        
+        // Fallback to local intelligence
+        if (typeof localIntelligence !== 'undefined') {
+          return localIntelligence.processMessage(message, chatHistory, null, 'python');
+        }
+        
+        // Final fallback
+        return `I understand you're asking about: "${message}". This is a practice exercise. I can help you understand concepts, provide hints, and explain code. What would you like to know?`;
+      } catch (error) {
+        console.error('Chat error:', error);
+        // Use local intelligence as fallback
+        if (typeof localIntelligence !== 'undefined') {
+          return localIntelligence.processMessage(message, chatHistory, null, 'python');
+        }
+        return 'Sorry, I encountered an error. Please try again or rephrase your question.';
+      }
+    }
+  </script>
+</body>
+</html>
+
