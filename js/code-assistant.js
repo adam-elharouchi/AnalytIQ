@@ -13,7 +13,7 @@ let aiProvider = 'gemini'; // Only Gemini supported
 let aiAgentInitialized = false;
 let geminiModel = 'gemini-2.5-flash'; // Default: Best Balance
 // Default API key - accessible to all users
-const GEMINI_API_KEY = 'REDACTED_GEMINI_API_KEY';
+const GEMINI_API_KEY = 'AIzaSyAEj5b_MA3Y3oiyhkc1ZXaouRlHqk8C-fY';
 let conversationHistoryList = []; // Store conversation history
 let currentConversationId = null;
 let currentConversationTab = 'active'; // Track current tab: 'active' or 'archived'
