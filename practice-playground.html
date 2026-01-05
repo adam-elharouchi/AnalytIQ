@@ -645,14 +645,13 @@
     });
     
     async function initializeChatAI() {
-      const apiKey = localStorage.getItem('geminiApiKey') || localStorage.getItem('aiApiKey') || '';
-      if (apiKey) {
-        try {
-          chatAIAgent = new CodeWriterAgent();
-          await chatAIAgent.initialize(apiKey, 'gemini', 'gemini-2.5-flash');
-        } catch (error) {
-          console.log('AI agent not available, using local intelligence');
-        }
+      // Use hardcoded API key directly
+      const GEMINI_API_KEY = 'AIzaSyDURc7Q5UxgJZs_L9H3DaJzQD9Rysme_Ws';
+      try {
+        chatAIAgent = new CodeWriterAgent();
+        await chatAIAgent.initialize(GEMINI_API_KEY, 'gemini', 'gemini-2.5-flash');
+      } catch (error) {
+        console.log('AI agent not available, using local intelligence');
       }
     }
     
