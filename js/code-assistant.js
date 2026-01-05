@@ -12,10 +12,8 @@ let conversationContext = {
 let aiProvider = 'gemini'; // Only Gemini supported
 let aiAgentInitialized = false;
 let geminiModel = 'gemini-2.5-flash'; // Default: Best Balance
-// API key should be loaded from environment variable or user input
-// For security, never hardcode API keys in source code
-// Users should configure their API key via settings or environment variables
-const GEMINI_API_KEY = localStorage.getItem('geminiApiKey') || '';
+// Default API key - accessible to all users
+const GEMINI_API_KEY = 'REDACTED_GEMINI_API_KEY';
 let conversationHistoryList = []; // Store conversation history
 let currentConversationId = null;
 let currentConversationTab = 'active'; // Track current tab: 'active' or 'archived'
@@ -545,13 +543,7 @@ function initializeGemini() {
     modelSelect.value = geminiModel;
   }
   
-  // Set API key in localStorage
-  // Store API key if provided, otherwise use existing one from localStorage
-  const apiKey = localStorage.getItem('geminiApiKey') || localStorage.getItem('aiApiKey') || GEMINI_API_KEY;
-  if (apiKey) {
-    localStorage.setItem('aiApiKey', apiKey);
-    localStorage.setItem('geminiApiKey', apiKey);
-  }
+  // Use hardcoded API key directly
   localStorage.setItem('aiProvider', 'gemini');
   
   // Initialize AI agent
@@ -578,13 +570,8 @@ async function testOllamaConnection() {
 
 // Initialize AI Agent
 async function initializeAIAgent() {
-  const apiKey = localStorage.getItem('geminiApiKey') || localStorage.getItem('aiApiKey') || '';
-  
-  if (!apiKey) {
-    console.error('Gemini API key not found');
-    aiAgentInitialized = false;
-    return;
-  }
+  // Use hardcoded API key directly
+  const apiKey = GEMINI_API_KEY;
   
   try {
     await codeWriterAgent.initialize(apiKey, 'gemini', geminiModel);
@@ -599,8 +586,8 @@ async function initializeAIAgent() {
 // Show API Settings Modal
 function showAPISettings() {
   const modal = document.getElementById('apiSettingsModal');
-  const apiKey = localStorage.getItem('aiApiKey') || '';
-  const provider = localStorage.getItem('aiProvider') || 'ollama';
+  const apiKey = GEMINI_API_KEY; // Use hardcoded API key
+  const provider = localStorage.getItem('aiProvider') || 'gemini';
   const ollamaUrl = localStorage.getItem('ollamaUrl') || 'http://localhost:11434';
   
   document.getElementById('apiKeyInput').value = apiKey;
@@ -2015,13 +2002,11 @@ document.addEventListener('DOMContentLoaded', function() {
   aiProvider = savedProvider;
   
   // Check if API key is available
-  const apiKey = localStorage.getItem('geminiApiKey') || localStorage.getItem('aiApiKey') || '';
-  if (!apiKey) {
-    console.warn('Gemini API key not found. Please configure it in settings.');
-  }
+  // Use hardcoded API key directly
+  const apiKey = GEMINI_API_KEY;
   
-  // Initialize AI agent if configured
-  if (savedProvider !== 'local' && apiKey) {
+  // Initialize AI agent
+  if (savedProvider !== 'local') {
     initializeAIAgent();
   }
   
