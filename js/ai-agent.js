@@ -51,13 +51,58 @@ class CodeWriterAgent {
   async loadDigest() {
     try {
       const digest = await aiAgentAPI.getDigest();
-      this.digest = digest;
+      // Transform API response to match internal format
+      // API returns: goal, constraints, decisions, current_state, open_questions (as strings or arrays)
+      // Internal format expects: userGoal, constraints, decisionsMade, currentState, openQuestions (as arrays)
+      
+      // Helper function to ensure value is an array
+      const ensureArray = (value) => {
+        if (Array.isArray(value)) return value;
+        if (typeof value === 'string') {
+          // If it's a JSON string, try to parse it
+          try {
+            const parsed = JSON.parse(value);
+            return Array.isArray(parsed) ? parsed : (parsed ? [parsed] : []);
+          } catch (e) {
+            // If parsing fails, treat as empty or single value
+            return value.trim() ? [value.trim()] : [];
+          }
+        }
+        return [];
+      };
+      
+      this.digest = {
+        userGoal: digest.goal || digest.userGoal || '',
+        constraints: ensureArray(digest.constraints || []),
+        decisionsMade: ensureArray(digest.decisions || digest.decisionsMade || []),
+        currentState: ensureArray(digest.current_state || digest.currentState || []),
+        openQuestions: ensureArray(digest.open_questions || digest.openQuestions || [])
+      };
     } catch (error) {
       console.error('Error loading digest:', error);
       // Fallback to localStorage
       const saved = localStorage.getItem('codeWriterDigest');
       if (saved) {
-        this.digest = JSON.parse(saved);
+        try {
+          const parsed = JSON.parse(saved);
+          // Ensure arrays are arrays
+          this.digest = {
+            userGoal: parsed.userGoal || '',
+            constraints: Array.isArray(parsed.constraints) ? parsed.constraints : [],
+            decisionsMade: Array.isArray(parsed.decisionsMade) ? parsed.decisionsMade : [],
+            currentState: Array.isArray(parsed.currentState) ? parsed.currentState : [],
+            openQuestions: Array.isArray(parsed.openQuestions) ? parsed.openQuestions : []
+          };
+        } catch (e) {
+          // If parsing fails, initialize with defaults
+          this.digest = {
+            userGoal: '',
+            constraints: [],
+            decisionsMade: [],
+            currentState: [],
+            openQuestions: []
+          };
+        }
       }
     }
   }
@@ -65,11 +110,26 @@ class CodeWriterAgent {
   // Save digest to API
   async saveDigest() {
     try {
-      await aiAgentAPI.saveDigest(this.digest);
+      // Ensure digest has correct format before saving
+      const digestToSave = {
+        goal: this.digest.userGoal || '',
+        constraints: Array.isArray(this.digest.constraints) ? this.digest.constraints : [],
+        decisions: Array.isArray(this.digest.decisionsMade) ? this.digest.decisionsMade : [],
+        current_state: Array.isArray(this.digest.currentState) ? this.digest.currentState : [],
+        open_questions: Array.isArray(this.digest.openQuestions) ? this.digest.openQuestions : []
+      };
+      await aiAgentAPI.saveDigest(digestToSave);
     } catch (error) {
       console.error('Error saving digest:', error);
-      // Fallback to localStorage
-      localStorage.setItem('codeWriterDigest', JSON.stringify(this.digest));
+      // Fallback to localStorage - ensure arrays are arrays
+      const digestToSave = {
+        userGoal: this.digest.userGoal || '',
+        constraints: Array.isArray(this.digest.constraints) ? this.digest.constraints : [],
+        decisionsMade: Array.isArray(this.digest.decisionsMade) ? this.digest.decisionsMade : [],
+        currentState: Array.isArray(this.digest.currentState) ? this.digest.currentState : [],
+        openQuestions: Array.isArray(this.digest.openQuestions) ? this.digest.openQuestions : []
+      };
+      localStorage.setItem('codeWriterDigest', JSON.stringify(digestToSave));
     }
   }
 
@@ -77,13 +137,20 @@ class CodeWriterAgent {
   async loadMemory() {
     try {
       const memory = await aiAgentAPI.getMemory();
-      this.memory = memory;
+      this.memory = Array.isArray(memory) ? memory : [];
     } catch (error) {
       console.error('Error loading memory:', error);
       // Fallback to localStorage
       const saved = localStorage.getItem('codeWriterMemory');
       if (saved) {
-        this.memory = JSON.parse(saved);
+        try {
+          const parsed = JSON.parse(saved);
+          this.memory = Array.isArray(parsed) ? parsed : [];
+        } catch (e) {
+          this.memory = [];
+        }
+      } else {
+        this.memory = [];
       }
     }
   }
@@ -101,6 +168,20 @@ class CodeWriterAgent {
 
   // Update digest from conversation
   updateDigest(userMessage, assistantResponse) {
+    // Ensure all digest arrays exist and are arrays
+    if (!Array.isArray(this.digest.constraints)) {
+      this.digest.constraints = [];
+    }
+    if (!Array.isArray(this.digest.decisionsMade)) {
+      this.digest.decisionsMade = [];
+    }
+    if (!Array.isArray(this.digest.currentState)) {
+      this.digest.currentState = [];
+    }
+    if (!Array.isArray(this.digest.openQuestions)) {
+      this.digest.openQuestions = [];
+    }
+    
     // Extract goal
     const goalMatch = userMessage.match(/goal:\s*(.+)/i) || 
                      userMessage.match(/I want to (.+)/i) ||
@@ -121,8 +202,9 @@ class CodeWriterAgent {
     constraintPatterns.forEach(pattern => {
       const matches = userMessage.matchAll(pattern);
       for (const match of matches) {
-        if (!this.digest.constraints.includes(match[1].trim())) {
-          this.digest.constraints.push(match[1].trim());
+        const constraint = match[1].trim();
+        if (constraint && !this.digest.constraints.includes(constraint)) {
+          this.digest.constraints.push(constraint);
         }
       }
     });
@@ -136,8 +218,9 @@ class CodeWriterAgent {
     decisionPatterns.forEach(pattern => {
       const matches = assistantResponse.matchAll(pattern);
       for (const match of matches) {
-        if (!this.digest.decisionsMade.includes(match[1].trim())) {
-          this.digest.decisionsMade.push(match[1].trim());
+        const decision = match[1].trim();
+        if (decision && !this.digest.decisionsMade.includes(decision)) {
+          this.digest.decisionsMade.push(decision);
         }
       }
     });
@@ -149,20 +232,26 @@ class CodeWriterAgent {
 
   // Build system prompt
   buildSystemPrompt() {
+    // Ensure all digest fields are arrays before calling .map()
+    const constraints = Array.isArray(this.digest.constraints) ? this.digest.constraints : [];
+    const decisionsMade = Array.isArray(this.digest.decisionsMade) ? this.digest.decisionsMade : [];
+    const currentState = Array.isArray(this.digest.currentState) ? this.digest.currentState : [];
+    const openQuestions = Array.isArray(this.digest.openQuestions) ? this.digest.openQuestions : [];
+    
     const digestText = `
 DIGEST:
 <UserGoal>${this.digest.userGoal || 'Not set'}</UserGoal>
 <Constraints>
-${this.digest.constraints.map(c => `- ${c}`).join('\n') || '- None'}
+${constraints.length > 0 ? constraints.map(c => `- ${c}`).join('\n') : '- None'}
 </Constraints>
 <DecisionsMade>
-${this.digest.decisionsMade.map(d => `- ${d}`).join('\n') || '- None'}
+${decisionsMade.length > 0 ? decisionsMade.map(d => `- ${d}`).join('\n') : '- None'}
 </DecisionsMade>
 <CurrentState>
-${this.digest.currentState.map(s => `- ${s}`).join('\n') || '- Not detected'}
+${currentState.length > 0 ? currentState.map(s => `- ${s}`).join('\n') : '- Not detected'}
 </CurrentState>
 <OpenQuestions>
-${this.digest.openQuestions.map(q => `- ${q}`).join('\n') || '- None'}
+${openQuestions.length > 0 ? openQuestions.map(q => `- ${q}`).join('\n') : '- None'}
 </OpenQuestions>
 `;
 
