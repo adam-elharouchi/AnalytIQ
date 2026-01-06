@@ -717,6 +717,7 @@
   
   <script src="js/auth.js"></script>
   <script src="js/navigation.js"></script>
+  <script src="js/api-helper.js"></script>
   <script src="js/local-intelligence.js"></script>
   <script src="js/ai-agent.js"></script>
   <script>
@@ -962,9 +963,61 @@
         'success'
       );
       
+      // Save score to backend
+      saveExerciseScore(exerciseData.id, exerciseData.title, score, accuracy, elapsedSeconds);
+      
       // Hide solution section (we're showing it in the editor now)
       const solutionSection = document.getElementById('solutionSection');
       solutionSection.style.display = 'none';
+    }
+    
+    async function saveExerciseScore(exerciseId, exerciseTitle, score, accuracy, timeSpent) {
+      try {
+        const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        if (!currentUser.id) {
+          console.warn('No user logged in, score not saved');
+          return;
+        }
+        
+        // Get API base URL
+        const API_BASE_URL = (() => {
+          if (window.location.protocol === 'file:') {
+            return 'http://localhost:5001/api';
+          }
+          if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            return 'http://localhost:5001/api';
+          }
+          return '/api';
+        })();
+        
+        const response = await fetch(`${API_BASE_URL}/users/practice-progress`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            user_id: currentUser.id,
+            exercise_id: exerciseId,
+            exercise_title: exerciseTitle,
+            score: score,
+            accuracy: accuracy,
+            time_spent: timeSpent,
+            progress_data: {
+              exercise_title: exerciseTitle
+            }
+          })
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.is_new_best) {
+            console.log('New personal best!');
+          }
+        }
+      } catch (error) {
+        console.error('Error saving exercise score:', error);
+        // Silently fail - score not saved but exercise still works
+      }
     }
     
     function compareCode(userCode, solutionCode) {
