@@ -974,8 +974,12 @@
     async function saveExerciseScore(exerciseId, exerciseTitle, score, accuracy, timeSpent) {
       try {
         const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-        if (!currentUser.id) {
-          console.warn('No user logged in, score not saved');
+        
+        // Get user_id - check both 'id' and 'user_id' fields for compatibility
+        const userId = currentUser.user_id || currentUser.id;
+        
+        if (!userId) {
+          console.warn('No user logged in, score not saved to database');
           return;
         }
         
@@ -990,18 +994,20 @@
           return '/api';
         })();
         
+        console.log('Saving exercise score:', { userId, exerciseId, score, accuracy, timeSpent });
+        
         const response = await fetch(`${API_BASE_URL}/users/practice-progress`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            user_id: currentUser.id,
+            user_id: String(userId),  // Ensure it's a string
             exercise_id: exerciseId,
             exercise_title: exerciseTitle,
-            score: score,
-            accuracy: accuracy,
-            time_spent: timeSpent,
+            score: Math.round(score),
+            accuracy: parseFloat(accuracy.toFixed(2)),
+            time_spent: Math.round(timeSpent),
             progress_data: {
               exercise_title: exerciseTitle
             }
@@ -1010,13 +1016,17 @@
         
         if (response.ok) {
           const data = await response.json();
+          console.log('Score saved successfully:', data);
           if (data.is_new_best) {
-            console.log('New personal best!');
+            console.log('🎉 New personal best!');
           }
+        } else {
+          const errorData = await response.json().catch(() => ({}));
+          console.error('Failed to save score:', response.status, errorData);
         }
       } catch (error) {
         console.error('Error saving exercise score:', error);
-        // Silently fail - score not saved but exercise still works
+        // Log but don't interrupt user experience
       }
     }
     
