@@ -183,6 +183,100 @@
       color: #334155;
     }
     
+    .code-display {
+      width: 100%;
+      min-height: 400px;
+      padding: 1rem 1rem 1rem 4rem;
+      border: none;
+      font-family: 'Courier New', 'Monaco', 'Menlo', monospace;
+      font-size: 0.875rem;
+      line-height: 1.6;
+      background: #1e293b;
+      color: #e2e8f0;
+      white-space: pre-wrap;
+      overflow-wrap: break-word;
+      overflow-x: auto;
+      display: none;
+    }
+    
+    .code-display.show {
+      display: block;
+    }
+    
+    .code-line {
+      display: block;
+      padding: 2px 0;
+    }
+    
+    .code-correct {
+      background-color: rgba(16, 185, 129, 0.2);
+      color: #6ee7b7;
+      border-left: 3px solid #10b981;
+      padding-left: 0.5rem;
+      margin-left: -0.5rem;
+    }
+    
+    .code-incorrect {
+      background-color: rgba(239, 68, 68, 0.2);
+      color: #fca5a5;
+      border-left: 3px solid #ef4444;
+      padding-left: 0.5rem;
+      margin-left: -0.5rem;
+    }
+    
+    .code-missing {
+      background-color: rgba(245, 158, 11, 0.2);
+      color: #fcd34d;
+      border-left: 3px solid #f59e0b;
+      padding-left: 0.5rem;
+      margin-left: -0.5rem;
+      font-style: italic;
+    }
+    
+    .playground-stats {
+      display: flex;
+      gap: 2rem;
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.5rem;
+      align-items: center;
+    }
+    
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    
+    .stat-label {
+      font-size: 0.75rem;
+      color: #64748b;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #222c3e;
+    }
+    
+    .stat-value.timer {
+      color: #2569f4;
+      font-family: 'Courier New', monospace;
+    }
+    
+    .stat-value.score {
+      color: #10b981;
+    }
+    
+    .stat-value.accuracy {
+      color: #f59e0b;
+    }
+    
     .playground-actions {
       display: flex;
       gap: 1rem;
@@ -575,8 +669,23 @@
       
       <div class="submission-message" id="submissionMessage"></div>
       
+      <div class="playground-stats" id="playgroundStats" style="display: none;">
+        <div class="stat-item">
+          <span class="stat-label">Time</span>
+          <span class="stat-value timer" id="timerDisplay">00:00</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Accuracy</span>
+          <span class="stat-value accuracy" id="accuracyDisplay">0%</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Score</span>
+          <span class="stat-value score" id="scoreDisplay">0</span>
+        </div>
+      </div>
+      
       <div class="code-editor-section">
-        <h3>Your Code</h3>
+        <h3 id="codeEditorTitle">Your Code</h3>
         <div class="code-editor-wrapper">
           <div class="code-editor-header">
             <div class="code-editor-header-left">
@@ -596,6 +705,7 @@
               onscroll="syncLineNumbers()"
               oninput="updateLineNumbers()"
             ></textarea>
+            <div id="codeDisplay" class="code-display"></div>
           </div>
         </div>
       </div>
@@ -658,6 +768,9 @@
     
     let exerciseData = null;
     let hasSubmitted = false;
+    let startTime = null;
+    let timerInterval = null;
+    let elapsedSeconds = 0;
     
     function loadExerciseFromURL() {
       const urlParams = new URLSearchParams(window.location.search);
@@ -695,6 +808,41 @@
       // Set initial code template (optional - could be empty or have starter code)
       document.getElementById('codeEditor').value = '';
       updateLineNumbers();
+      
+      // Start timer
+      startTimer();
+    }
+    
+    function startTimer() {
+      startTime = Date.now();
+      elapsedSeconds = 0;
+      document.getElementById('playgroundStats').style.display = 'flex';
+      updateTimerDisplay();
+      
+      timerInterval = setInterval(() => {
+        elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+        updateTimerDisplay();
+      }, 1000);
+    }
+    
+    function stopTimer() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+    }
+    
+    function updateTimerDisplay() {
+      const minutes = Math.floor(elapsedSeconds / 60);
+      const seconds = elapsedSeconds % 60;
+      document.getElementById('timerDisplay').textContent = 
+        `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+    
+    function formatTime(seconds) {
+      const minutes = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      return `${minutes}:${secs.toString().padStart(2, '0')}`;
     }
     
     function generateExerciseDescription(title, difficulty) {
@@ -751,8 +899,17 @@
     
     function updateLineNumbers() {
       const editor = document.getElementById('codeEditor');
+      const codeDisplay = document.getElementById('codeDisplay');
       const lineNumbers = document.getElementById('lineNumbers');
-      const lines = editor.value.split('\n').length || 1;
+      
+      // Get line count from either editor or display
+      let lines = 1;
+      if (codeDisplay.classList.contains('show')) {
+        lines = codeDisplay.querySelectorAll('.code-line').length || 1;
+      } else {
+        lines = editor.value.split('\n').length || 1;
+      }
+      
       const minLines = Math.max(lines, 20); // Show at least 20 lines
       
       let lineNumbersHTML = '';
@@ -777,28 +934,213 @@
         return;
       }
       
+      // Stop timer
+      stopTimer();
+      
       // Mark as submitted
       hasSubmitted = true;
       
-      // Disable code editor
-      codeEditor.disabled = true;
+      // Calculate accuracy and score
+      const comparison = compareCode(userCode, exerciseData.code);
+      const accuracy = comparison.accuracy;
+      const score = calculateScore(elapsedSeconds, accuracy);
+      
+      // Update stats display
+      document.getElementById('accuracyDisplay').textContent = `${Math.round(accuracy)}%`;
+      document.getElementById('scoreDisplay').textContent = score;
+      
+      // Hide code editor and show formatted code display
+      codeEditor.style.display = 'none';
+      const codeDisplay = document.getElementById('codeDisplay');
+      codeDisplay.classList.add('show');
+      
+      // Render formatted code with highlighting
+      renderFormattedCode(comparison);
+      
+      // Update title
+      document.getElementById('codeEditorTitle').textContent = 'Solution Comparison';
       
       // Disable submit button
       const submitBtn = document.getElementById('submitBtn');
       submitBtn.disabled = true;
       submitBtn.textContent = 'Submitted';
       
-      // Show submission message
-      showSubmissionMessage('Solution submitted! You can now view the solution below.', 'success');
+      // Show submission message with score
+      showSubmissionMessage(
+        `Solution submitted! Accuracy: ${Math.round(accuracy)}% | Score: ${score} | Time: ${formatTime(elapsedSeconds)}`,
+        'success'
+      );
       
-      // Show solution
+      // Hide solution section (we're showing it in the editor now)
       const solutionSection = document.getElementById('solutionSection');
-      const solutionCode = document.getElementById('solutionCode');
-      solutionCode.textContent = exerciseData.code;
-      solutionSection.classList.add('show');
+      solutionSection.style.display = 'none';
+    }
+    
+    function compareCode(userCode, solutionCode) {
+      // Normalize code for comparison
+      const normalizeCode = (code) => {
+        return code
+          .split('\n')
+          .map(line => line.trim())
+          .filter(line => line.length > 0 && !line.startsWith('#'))
+          .join('\n')
+          .replace(/\s+/g, ' ')
+          .toLowerCase();
+      };
       
-      // Scroll to solution
-      solutionSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      // Split into lines for detailed comparison
+      const userLines = userCode.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+      const solutionLines = solutionCode.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+      
+      // Line-by-line comparison
+      const comparison = {
+        userLines: [],
+        solutionLines: [],
+        matchedLines: 0,
+        totalSolutionLines: solutionLines.length,
+        accuracy: 0
+      };
+      
+      // Normalize for similarity check
+      const normalizedUser = normalizeCode(userCode);
+      const normalizedSolution = normalizeCode(solutionCode);
+      
+      // Calculate overall similarity using longest common subsequence approach
+      let matchingChars = 0;
+      const maxLength = Math.max(normalizedUser.length, normalizedSolution.length);
+      
+      if (maxLength > 0) {
+        // Simple character-by-character comparison
+        const minLength = Math.min(normalizedUser.length, normalizedSolution.length);
+        for (let i = 0; i < minLength; i++) {
+          if (normalizedUser[i] === normalizedSolution[i]) {
+            matchingChars++;
+          }
+        }
+        // Also check for similar patterns
+        const similarityRatio = (matchingChars * 2) / (normalizedUser.length + normalizedSolution.length);
+        comparison.accuracy = Math.min(100, Math.max(0, similarityRatio * 100));
+      }
+      
+      // Detailed line comparison
+      const maxLines = Math.max(userLines.length, solutionLines.length);
+      for (let i = 0; i < maxLines; i++) {
+        const userLine = i < userLines.length ? userLines[i] : null;
+        const solutionLine = i < solutionLines.length ? solutionLines[i] : null;
+        
+        const normalizedUserLine = userLine ? normalizeCode(userLine) : '';
+        const normalizedSolutionLine = solutionLine ? normalizeCode(solutionLine) : '';
+        
+        let matchStatus = 'missing';
+        if (userLine && solutionLine) {
+          // Check if lines are similar
+          const similarity = calculateLineSimilarity(normalizedUserLine, normalizedSolutionLine);
+          if (similarity > 0.7) {
+            matchStatus = 'correct';
+            comparison.matchedLines++;
+          } else {
+            matchStatus = 'incorrect';
+          }
+        } else if (!userLine && solutionLine) {
+          matchStatus = 'missing';
+        } else if (userLine && !solutionLine) {
+          matchStatus = 'extra';
+        }
+        
+        comparison.userLines.push({
+          text: userLine || '',
+          status: matchStatus === 'correct' ? 'correct' : matchStatus === 'incorrect' ? 'incorrect' : 'extra'
+        });
+        
+        comparison.solutionLines.push({
+          text: solutionLine || '',
+          status: matchStatus === 'missing' ? 'missing' : matchStatus === 'correct' ? 'correct' : 'incorrect'
+        });
+      }
+      
+      return comparison;
+    }
+    
+    function calculateLineSimilarity(line1, line2) {
+      if (line1 === line2) return 1.0;
+      if (line1.length === 0 || line2.length === 0) return 0.0;
+      
+      // Calculate Levenshtein distance similarity
+      const maxLength = Math.max(line1.length, line2.length);
+      const distance = levenshteinDistance(line1, line2);
+      return 1 - (distance / maxLength);
+    }
+    
+    function levenshteinDistance(str1, str2) {
+      const m = str1.length;
+      const n = str2.length;
+      const dp = Array(m + 1).fill(null).map(() => Array(n + 1).fill(0));
+      
+      for (let i = 0; i <= m; i++) dp[i][0] = i;
+      for (let j = 0; j <= n; j++) dp[0][j] = j;
+      
+      for (let i = 1; i <= m; i++) {
+        for (let j = 1; j <= n; j++) {
+          if (str1[i - 1] === str2[j - 1]) {
+            dp[i][j] = dp[i - 1][j - 1];
+          } else {
+            dp[i][j] = Math.min(
+              dp[i - 1][j] + 1,
+              dp[i][j - 1] + 1,
+              dp[i - 1][j - 1] + 1
+            );
+          }
+        }
+      }
+      
+      return dp[m][n];
+    }
+    
+    function renderFormattedCode(comparison) {
+      const codeDisplay = document.getElementById('codeDisplay');
+      const maxLines = Math.max(comparison.userLines.length, comparison.solutionLines.length);
+      let html = '';
+      
+      for (let i = 0; i < maxLines; i++) {
+        const userLine = comparison.userLines[i] || { text: '', status: 'missing' };
+        const solutionLine = comparison.solutionLines[i] || { text: '', status: 'missing' };
+        
+        // Show solution line with appropriate highlighting
+        if (solutionLine.status === 'correct' && userLine.status === 'correct') {
+          html += `<div class="code-line code-correct">${escapeHtml(solutionLine.text)}</div>`;
+        } else if (solutionLine.status === 'missing' || (userLine.status === 'incorrect' && solutionLine.text)) {
+          html += `<div class="code-line code-missing">${escapeHtml(solutionLine.text || '(Missing line)')}</div>`;
+        } else if (userLine.status === 'incorrect') {
+          html += `<div class="code-line code-incorrect">${escapeHtml(solutionLine.text)}</div>`;
+        } else {
+          html += `<div class="code-line">${escapeHtml(solutionLine.text)}</div>`;
+        }
+      }
+      
+      codeDisplay.innerHTML = html;
+      updateLineNumbers();
+    }
+    
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    function calculateScore(timeSeconds, accuracy) {
+      // Base score from accuracy (0-70 points)
+      const accuracyScore = (accuracy / 100) * 70;
+      
+      // Time bonus (faster = more points, max 30 points)
+      // Base time for bonus calculation: 5 minutes (300 seconds)
+      const baseTime = 300;
+      let timeBonus = 0;
+      if (timeSeconds <= baseTime) {
+        timeBonus = 30 * (1 - (timeSeconds / baseTime));
+      }
+      
+      // Round to nearest integer
+      return Math.round(accuracyScore + timeBonus);
     }
     
     function resetCode() {
@@ -808,10 +1150,25 @@
         }
       }
       
+      // Reset timer
+      stopTimer();
+      startTimer();
+      
       const codeEditor = document.getElementById('codeEditor');
+      const codeDisplay = document.getElementById('codeDisplay');
+      
       codeEditor.value = '';
       codeEditor.disabled = false;
+      codeEditor.style.display = 'block';
+      codeDisplay.classList.remove('show');
+      codeDisplay.innerHTML = '';
+      
       updateLineNumbers();
+      
+      // Reset stats
+      document.getElementById('accuracyDisplay').textContent = '0%';
+      document.getElementById('scoreDisplay').textContent = '0';
+      document.getElementById('codeEditorTitle').textContent = 'Your Code';
       
       const submitBtn = document.getElementById('submitBtn');
       submitBtn.disabled = false;
@@ -819,6 +1176,7 @@
       
       const solutionSection = document.getElementById('solutionSection');
       solutionSection.classList.remove('show');
+      solutionSection.style.display = 'block';
       
       const submissionMessage = document.getElementById('submissionMessage');
       submissionMessage.classList.remove('show');
