@@ -55,14 +55,28 @@ class AuthManager {
         throw new Error(data.error || 'Sign up failed');
       }
 
-      // Auto sign in
-      this.saveUser({
-        id: data.id || data.user?.id || Date.now().toString(),
+      // Extract user ID - use user_id if available, otherwise fall back to id
+      const userId = data.user_id || data.id || data.user?.user_id || data.user?.id || Date.now().toString();
+      
+      // Auto sign in - save user with consistent user_id
+      const userData = {
+        id: userId,  // Store as 'id' for compatibility with existing code
+        user_id: userId,  // Also store as 'user_id' for clarity
         name: data.name || data.user?.name || name,
         email: data.email || data.user?.email || email
+      };
+      
+      this.saveUser(userData);
+      
+      // Log successful signup for debugging
+      console.log('User signed up successfully:', { 
+        userId: userId, 
+        name: userData.name, 
+        email: userData.email,
+        savedToDB: data.success !== false 
       });
 
-      return data;
+      return { ...data, user: userData };
     } catch (error) {
       // Fallback to localStorage if API fails (works without Flask)
       console.warn('API not available, using localStorage fallback:', error.message);
@@ -117,12 +131,18 @@ class AuthManager {
         throw new Error(data.error || 'Sign in failed');
       }
 
-      // Save current user (without password)
-      this.saveUser({
-        id: data.id || data.user?.id,
+      // Extract user ID - use user_id if available, otherwise fall back to id
+      const userId = data.user_id || data.id || data.user?.user_id || data.user?.id;
+      
+      // Save current user (without password) - store user_id consistently
+      const userData = {
+        id: userId,  // Store as 'id' for compatibility with existing code
+        user_id: userId,  // Also store as 'user_id' for clarity
         name: data.name || data.user?.name,
         email: data.email || data.user?.email
-      });
+      };
+      
+      this.saveUser(userData);
 
       return this.currentUser;
     } catch (error) {
