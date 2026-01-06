@@ -10,7 +10,7 @@ from datetime import datetime
 # Load environment variables
 load_dotenv()
 
-app = Flask(__name__, static_folder='.', static_url_path='')
+app = Flask(__name__)
 
 # Configure CORS to allow requests from your production domain
 # Update this list with your actual production domains
@@ -935,65 +935,6 @@ def update_practice_progress():
 def health():
     """Health check endpoint"""
     return jsonify({'status': 'ok'}), 200
-
-# ============================================================================
-# Frontend Routes - Serve HTML Files
-# ============================================================================
-
-@app.route('/')
-def index():
-    """Serve index.html"""
-    from flask import send_file
-    return send_file('index.html')
-
-@app.route('/login.html')
-def login():
-    """Serve login.html"""
-    from flask import send_file
-    return send_file('login.html')
-
-@app.route('/code-assistant.html')
-def code_assistant():
-    """Serve code-assistant.html"""
-    from flask import send_file
-    return send_file('code-assistant.html')
-
-@app.route('/profile.html')
-def profile():
-    """Serve profile.html"""
-    from flask import send_file
-    return send_file('profile.html')
-
-@app.route('/modules.html')
-def modules():
-    """Serve modules.html"""
-    from flask import send_file
-    return send_file('modules.html')
-
-@app.route('/practice.html')
-def practice():
-    """Serve practice.html"""
-    from flask import send_file
-    return send_file('practice.html')
-
-@app.route('/resources.html')
-def resources():
-    """Serve resources.html"""
-    from flask import send_file
-    return send_file('resources.html')
-
-# Serve static files (CSS, JS, images, etc.)
-@app.route('/<path:filename>')
-def serve_static(filename):
-    """Serve static files"""
-    from flask import send_from_directory
-    # Don't serve API routes or Python files
-    if filename.startswith('api/') or filename.endswith('.py') or filename.startswith('.env'):
-        return "Not Found", 404
-    try:
-        return send_from_directory('.', filename)
-    except:
-        return "File not found", 404
 
 if __name__ == '__main__':
     import sys
