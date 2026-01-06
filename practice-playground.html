@@ -1016,25 +1016,22 @@
       const normalizedUser = normalizeCode(userCode);
       const normalizedSolution = normalizeCode(solutionCode);
       
-      // Calculate overall similarity using longest common subsequence approach
-      let matchingChars = 0;
-      const maxLength = Math.max(normalizedUser.length, normalizedSolution.length);
+      // Calculate accuracy using multiple methods and average them
+      let accuracyMethods = [];
       
-      if (maxLength > 0) {
-        // Simple character-by-character comparison
-        const minLength = Math.min(normalizedUser.length, normalizedSolution.length);
-        for (let i = 0; i < minLength; i++) {
-          if (normalizedUser[i] === normalizedSolution[i]) {
-            matchingChars++;
-          }
-        }
-        // Also check for similar patterns
-        const similarityRatio = (matchingChars * 2) / (normalizedUser.length + normalizedSolution.length);
-        comparison.accuracy = Math.min(100, Math.max(0, similarityRatio * 100));
+      // Method 1: Overall code similarity using Levenshtein distance
+      if (normalizedSolution.length > 0) {
+        const distance = levenshteinDistance(normalizedUser, normalizedSolution);
+        const maxLength = Math.max(normalizedUser.length, normalizedSolution.length);
+        const similarity1 = maxLength > 0 ? (1 - (distance / maxLength)) * 100 : 0;
+        accuracyMethods.push(similarity1);
       }
       
-      // Detailed line comparison
+      // Method 2: Line-by-line comparison (more accurate for code structure)
+      let matchedLines = 0;
+      let totalLineSimilarity = 0;
       const maxLines = Math.max(userLines.length, solutionLines.length);
+      
       for (let i = 0; i < maxLines; i++) {
         const userLine = i < userLines.length ? userLines[i] : null;
         const solutionLine = i < solutionLines.length ? solutionLines[i] : null;
@@ -1043,19 +1040,27 @@
         const normalizedSolutionLine = solutionLine ? normalizeCode(solutionLine) : '';
         
         let matchStatus = 'missing';
+        let lineSimilarity = 0;
+        
         if (userLine && solutionLine) {
           // Check if lines are similar
-          const similarity = calculateLineSimilarity(normalizedUserLine, normalizedSolutionLine);
-          if (similarity > 0.7) {
+          lineSimilarity = calculateLineSimilarity(normalizedUserLine, normalizedSolutionLine);
+          
+          if (lineSimilarity > 0.85) {
             matchStatus = 'correct';
-            comparison.matchedLines++;
+            matchedLines++;
+          } else if (lineSimilarity > 0.5) {
+            matchStatus = 'incorrect'; // Partial match
           } else {
             matchStatus = 'incorrect';
           }
+          totalLineSimilarity += lineSimilarity;
         } else if (!userLine && solutionLine) {
           matchStatus = 'missing';
+          lineSimilarity = 0;
         } else if (userLine && !solutionLine) {
           matchStatus = 'extra';
+          lineSimilarity = 0;
         }
         
         comparison.userLines.push({
@@ -1067,6 +1072,32 @@
           text: solutionLine || '',
           status: matchStatus === 'missing' ? 'missing' : matchStatus === 'correct' ? 'correct' : 'incorrect'
         });
+      }
+      
+      // Calculate line-based accuracy
+      if (solutionLines.length > 0) {
+        const lineAccuracy = (matchedLines / solutionLines.length) * 100;
+        accuracyMethods.push(lineAccuracy);
+        
+        // Also use average line similarity
+        const avgLineSimilarity = totalLineSimilarity / Math.max(maxLines, 1) * 100;
+        accuracyMethods.push(avgLineSimilarity);
+      }
+      
+      // Weighted average: 40% overall similarity, 40% line matching, 20% average line similarity
+      if (accuracyMethods.length > 0) {
+        let weightedSum = 0;
+        if (accuracyMethods.length >= 3) {
+          weightedSum = (accuracyMethods[0] * 0.4) + (accuracyMethods[1] * 0.4) + (accuracyMethods[2] * 0.2);
+        } else if (accuracyMethods.length === 2) {
+          weightedSum = (accuracyMethods[0] * 0.5) + (accuracyMethods[1] * 0.5);
+        } else {
+          weightedSum = accuracyMethods[0];
+        }
+        comparison.accuracy = Math.min(100, Math.max(0, weightedSum));
+        comparison.matchedLines = matchedLines;
+      } else {
+        comparison.accuracy = 0;
       }
       
       return comparison;
@@ -1236,18 +1267,27 @@
     
     function calculateScore(timeSeconds, accuracy) {
       // Base score from accuracy (0-70 points)
-      const accuracyScore = (accuracy / 100) * 70;
+      // Accuracy is already a percentage (0-100)
+      const accuracyScore = Math.max(0, Math.min(70, (accuracy / 100) * 70));
       
       // Time bonus (faster = more points, max 30 points)
       // Base time for bonus calculation: 5 minutes (300 seconds)
       const baseTime = 300;
       let timeBonus = 0;
-      if (timeSeconds <= baseTime) {
+      
+      if (timeSeconds > 0 && timeSeconds <= baseTime) {
+        // Linear bonus from 30 points at 0 seconds to 0 points at baseTime
         timeBonus = 30 * (1 - (timeSeconds / baseTime));
       }
       
+      // Cap time bonus at 30 points
+      timeBonus = Math.max(0, Math.min(30, timeBonus));
+      
+      // Total score: accuracy (0-70) + time bonus (0-30) = 0-100 points
+      const totalScore = accuracyScore + timeBonus;
+      
       // Round to nearest integer
-      return Math.round(accuracyScore + timeBonus);
+      return Math.round(totalScore);
     }
     
     function resetCode() {
