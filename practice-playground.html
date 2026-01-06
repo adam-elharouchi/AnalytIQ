@@ -206,30 +206,21 @@
     .code-line {
       display: block;
       padding: 2px 0;
+      color: #e2e8f0;
     }
     
-    .code-correct {
-      background-color: rgba(16, 185, 129, 0.2);
-      color: #6ee7b7;
-      border-left: 3px solid #10b981;
-      padding-left: 0.5rem;
-      margin-left: -0.5rem;
+    .code-text-correct {
+      color: #10b981;
+      font-weight: 500;
     }
     
-    .code-incorrect {
-      background-color: rgba(239, 68, 68, 0.2);
-      color: #fca5a5;
-      border-left: 3px solid #ef4444;
-      padding-left: 0.5rem;
-      margin-left: -0.5rem;
+    .code-text-incorrect {
+      color: #ef4444;
+      text-decoration: line-through;
     }
     
-    .code-missing {
-      background-color: rgba(245, 158, 11, 0.2);
-      color: #fcd34d;
-      border-left: 3px solid #f59e0b;
-      padding-left: 0.5rem;
-      margin-left: -0.5rem;
+    .code-text-missing {
+      color: #f59e0b;
       font-style: italic;
     }
     
@@ -1119,42 +1110,122 @@
     function renderFormattedCode(comparison) {
       const codeDisplay = document.getElementById('codeDisplay');
       const solutionCode = exerciseData.code;
+      const userCode = document.getElementById('codeEditor').value.trim();
       
-      // Render solution code with comments included, but only highlight non-comment lines
-      const solutionLines = solutionCode.split('\n');
+      // Filter out comment lines from solution
+      const solutionLines = solutionCode
+        .split('\n')
+        .filter(line => {
+          const trimmed = line.trim();
+          return trimmed.length > 0 && !trimmed.startsWith('#');
+        });
+      
+      // Filter out comment lines from user code
+      const userLines = userCode
+        .split('\n')
+        .filter(line => {
+          const trimmed = line.trim();
+          return trimmed.length > 0 && !trimmed.startsWith('#');
+        })
+        .map(line => line.trim());
+      
       let html = '';
-      let solutionLineIndex = 0;
       
+      // Compare line by line and highlight text
       for (let i = 0; i < solutionLines.length; i++) {
-        const line = solutionLines[i].trim();
-        const isComment = line.startsWith('#');
+        const solutionLine = solutionLines[i].trim();
+        const userLine = i < userLines.length ? userLines[i] : null;
         
-        if (isComment) {
-          // Show comments in normal style (not highlighted)
-          html += `<div class="code-line" style="color: #94a3b8; font-style: italic;">${escapeHtml(solutionLines[i])}</div>`;
-        } else if (line.length === 0) {
-          // Empty line
-          html += `<div class="code-line">&nbsp;</div>`;
+        if (userLine) {
+          // Compare characters/words in the line
+          const highlighted = highlightLineComparison(solutionLine, userLine);
+          html += `<div class="code-line">${highlighted}</div>`;
         } else {
-          // Actual code line - check if it matches
-          const solutionLine = comparison.solutionLines[solutionLineIndex];
-          if (solutionLine) {
-            if (solutionLine.status === 'correct') {
-              html += `<div class="code-line code-correct">${escapeHtml(solutionLines[i])}</div>`;
-            } else if (solutionLine.status === 'incorrect') {
-              html += `<div class="code-line code-incorrect">${escapeHtml(solutionLines[i])}</div>`;
-            } else {
-              html += `<div class="code-line code-missing">${escapeHtml(solutionLines[i])}</div>`;
-            }
-            solutionLineIndex++;
-          } else {
-            html += `<div class="code-line code-missing">${escapeHtml(solutionLines[i])}</div>`;
-          }
+          // Missing line - show in orange
+          html += `<div class="code-line"><span class="code-text-missing">${escapeHtml(solutionLine)}</span></div>`;
         }
       }
       
       codeDisplay.innerHTML = html;
       updateLineNumbers();
+    }
+    
+    function highlightLineComparison(solutionLine, userLine) {
+      // Normalize for comparison (remove extra whitespace, convert to lowercase)
+      const normalize = (str) => str.replace(/\s+/g, ' ').trim().toLowerCase();
+      
+      const normalizedSolution = normalize(solutionLine);
+      const normalizedUser = normalize(userLine);
+      
+      // Simple approach: if lines are very similar, mark as correct
+      if (normalizedSolution === normalizedUser) {
+        // Exact match - all green
+        return `<span class="code-text-correct">${escapeHtml(solutionLine)}</span>`;
+      } else {
+        // Compare word by word
+        const solutionWords = solutionLine.split(/(\s+)/);
+        const userWords = userLine.split(/(\s+)/);
+        
+        let result = '';
+        let userWordIndex = 0;
+        
+        for (let i = 0; i < solutionWords.length; i++) {
+          const solutionWord = solutionWords[i];
+          
+          // Skip whitespace-only tokens but preserve them
+          if (/^\s+$/.test(solutionWord)) {
+            result += solutionWord;
+            continue;
+          }
+          
+          // Find matching word in user code
+          let found = false;
+          let matchType = 'missing';
+          
+          // Look ahead in user code for matching word
+          for (let j = userWordIndex; j < Math.min(userWordIndex + 3, userWords.length); j++) {
+            const normalizedSolutionWord = normalize(solutionWord);
+            const normalizedUserWord = normalize(userWords[j]);
+            
+            if (normalizedSolutionWord === normalizedUserWord) {
+              found = true;
+              matchType = 'correct';
+              userWordIndex = j + 1;
+              break;
+            } else if (normalizedSolutionWord.includes(normalizedUserWord) || normalizedUserWord.includes(normalizedSolutionWord)) {
+              // Partial match - could be correct or incorrect
+              matchType = 'incorrect';
+            }
+          }
+          
+          if (!found) {
+            // Check if this word appears later in user code (misordered)
+            const normalizedSolutionWord = normalize(solutionWord);
+            for (let j = userWordIndex; j < userWords.length; j++) {
+              if (normalize(userWords[j]) === normalizedSolutionWord) {
+                matchType = 'incorrect'; // Wrong position
+                break;
+              }
+            }
+          }
+          
+          // Apply appropriate highlighting
+          if (matchType === 'correct') {
+            result += `<span class="code-text-correct">${escapeHtml(solutionWord)}</span>`;
+          } else if (matchType === 'incorrect') {
+            result += `<span class="code-text-incorrect">${escapeHtml(solutionWord)}</span>`;
+          } else {
+            result += `<span class="code-text-missing">${escapeHtml(solutionWord)}</span>`;
+          }
+          
+          if (!found && matchType !== 'incorrect') {
+            // Word not found - don't advance user index
+            continue;
+          }
+        }
+        
+        return result;
+      }
     }
     
     function escapeHtml(text) {
