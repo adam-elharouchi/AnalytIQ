@@ -1,16 +1,78 @@
 // Profile Management JavaScript
+const API_BASE_URL = 'http://localhost:5001/api';
+
 document.addEventListener('DOMContentLoaded', function() {
   loadProfileData();
   setupEventListeners();
 });
 
 // Load user profile data
-function loadProfileData() {
+async function loadProfileData() {
+  try {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    
+    if (!currentUser.id) {
+      console.error('No user logged in');
+      return;
+    }
+
+    try {
+      // Fetch profile from API
+      const response = await fetch(`${API_BASE_URL}/users/profile?user_id=${currentUser.id}`);
+      const profileData = await response.json();
+
+      if (response.ok) {
+        // Load personal information
+        if (profileData.fullName || profileData.name) {
+          document.getElementById('fullName').value = profileData.fullName || profileData.name;
+        }
+        
+        if (profileData.email) {
+          document.getElementById('email').value = profileData.email;
+        }
+        
+        if (profileData.bio) {
+          document.getElementById('bio').value = profileData.bio;
+        }
+        
+        // Load profile picture
+        if (profileData.profilePicture) {
+          document.getElementById('profilePicture').src = profileData.profilePicture;
+        } else {
+          // Default avatar
+          document.getElementById('profilePicture').src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzMzNDE1NSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjQwIiBmaWxsPSIjOTRhM2I4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+8J+RpTwvdGV4dD48L3N2Zz4=';
+        }
+
+        // Load settings
+        const settingsResponse = await fetch(`${API_BASE_URL}/users/settings?user_id=${currentUser.id}`);
+        const settings = await settingsResponse.json();
+        
+        if (settingsResponse.ok) {
+          if (settings.emailNotifications !== undefined) {
+            document.getElementById('emailNotifications').checked = settings.emailNotifications;
+          }
+          if (settings.darkMode !== undefined) {
+            document.getElementById('darkMode').checked = settings.darkMode;
+          }
+        }
+      }
+    } catch (apiError) {
+      console.error('Error fetching from API, using localStorage fallback:', apiError);
+      // Fallback to localStorage if API fails
+      loadFromLocalStorage();
+    }
+  } catch (e) {
+    console.error('Error loading profile data:', e);
+    loadFromLocalStorage();
+  }
+}
+
+// Fallback: Load from localStorage
+function loadFromLocalStorage() {
   try {
     const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
     const profileData = JSON.parse(localStorage.getItem('userProfile') || '{}');
     
-    // Load personal information
     if (currentUser.name) {
       document.getElementById('fullName').value = currentUser.name;
     } else if (profileData.fullName) {
@@ -27,16 +89,13 @@ function loadProfileData() {
       document.getElementById('bio').value = profileData.bio;
     }
     
-    // Load profile picture - check currentUser first, then profileData
     const profilePicture = currentUser.profilePicture || profileData.profilePicture;
     if (profilePicture) {
       document.getElementById('profilePicture').src = profilePicture;
     } else {
-      // Default avatar
       document.getElementById('profilePicture').src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzMzNDE1NSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjQwIiBmaWxsPSIjOTRhM2I4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+8J+RpTwvdGV4dD48L3N2Zz4=';
     }
     
-    // Load settings
     const settings = JSON.parse(localStorage.getItem('userSettings') || '{}');
     if (settings.emailNotifications !== undefined) {
       document.getElementById('emailNotifications').checked = settings.emailNotifications;
@@ -45,7 +104,7 @@ function loadProfileData() {
       document.getElementById('darkMode').checked = settings.darkMode;
     }
   } catch (e) {
-    console.error('Error loading profile data:', e);
+    console.error('Error loading from localStorage:', e);
   }
 }
 
@@ -65,7 +124,7 @@ function setupEventListeners() {
 }
 
 // Handle profile picture upload
-function handleProfilePictureUpload(event) {
+async function handleProfilePictureUpload(event) {
   const file = event.target.files[0];
   if (!file) return;
   
@@ -82,35 +141,60 @@ function handleProfilePictureUpload(event) {
   }
   
   const reader = new FileReader();
-  reader.onload = function(e) {
+  reader.onload = async function(e) {
     const imageData = e.target.result;
     document.getElementById('profilePicture').src = imageData;
     
-    // Save to localStorage
-    const profileData = JSON.parse(localStorage.getItem('userProfile') || '{}');
-    profileData.profilePicture = imageData;
-    localStorage.setItem('userProfile', JSON.stringify(profileData));
-    
-    // Update current user
     const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-    currentUser.profilePicture = imageData;
-    localStorage.setItem('currentUser', JSON.stringify(currentUser));
-    
-    // Update navigation profile picture if function exists
-    if (typeof updateNavProfilePicture === 'function') {
-      updateNavProfilePicture();
+    if (!currentUser.id) {
+      alert('Please log in to update your profile picture');
+      return;
     }
-    
-    // Dispatch custom event to update navigation on other pages
-    window.dispatchEvent(new CustomEvent('profilePictureUpdated'));
-    
-    showNotification('Profile picture updated successfully!', 'success');
+
+    try {
+      // Update via API
+      const response = await fetch(`${API_BASE_URL}/users/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          user_id: currentUser.id,
+          profilePicture: imageData
+        })
+      });
+
+      if (response.ok) {
+        // Also update localStorage for session
+        currentUser.profilePicture = imageData;
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        
+        // Update navigation profile picture if function exists
+        if (typeof updateNavProfilePicture === 'function') {
+          updateNavProfilePicture();
+        }
+        
+        window.dispatchEvent(new CustomEvent('profilePictureUpdated'));
+        showNotification('Profile picture updated successfully!', 'success');
+      } else {
+        throw new Error('Failed to update profile picture');
+      }
+    } catch (error) {
+      console.error('Error updating profile picture:', error);
+      // Fallback to localStorage
+      const profileData = JSON.parse(localStorage.getItem('userProfile') || '{}');
+      profileData.profilePicture = imageData;
+      localStorage.setItem('userProfile', JSON.stringify(profileData));
+      currentUser.profilePicture = imageData;
+      localStorage.setItem('currentUser', JSON.stringify(currentUser));
+      showNotification('Profile picture updated (saved locally)', 'success');
+    }
   };
   reader.readAsDataURL(file);
 }
 
 // Handle personal information form submission
-function handlePersonalInfoSubmit(event) {
+async function handlePersonalInfoSubmit(event) {
   event.preventDefault();
   
   const fullName = document.getElementById('fullName').value.trim();
@@ -123,24 +207,55 @@ function handlePersonalInfoSubmit(event) {
     return;
   }
   
-  // Save to localStorage
-  const profileData = JSON.parse(localStorage.getItem('userProfile') || '{}');
-  profileData.fullName = fullName;
-  profileData.email = email;
-  profileData.bio = bio;
-  localStorage.setItem('userProfile', JSON.stringify(profileData));
-  
-  // Update current user
   const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-  if (fullName) currentUser.name = fullName;
-  if (email) currentUser.email = email;
-  localStorage.setItem('currentUser', JSON.stringify(currentUser));
-  
-  showNotification('Profile information updated successfully!', 'success');
+  if (!currentUser.id) {
+    alert('Please log in to update your profile');
+    return;
+  }
+
+  try {
+    // Update via API
+    const response = await fetch(`${API_BASE_URL}/users/profile`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        user_id: currentUser.id,
+        fullName: fullName,
+        email: email,
+        bio: bio
+      })
+    });
+
+    if (response.ok) {
+      // Update localStorage for session
+      if (fullName) currentUser.name = fullName;
+      if (email) currentUser.email = email;
+      localStorage.setItem('currentUser', JSON.stringify(currentUser));
+      
+      showNotification('Profile information updated successfully!', 'success');
+    } else {
+      const data = await response.json();
+      throw new Error(data.error || 'Failed to update profile');
+    }
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    // Fallback to localStorage
+    const profileData = JSON.parse(localStorage.getItem('userProfile') || '{}');
+    profileData.fullName = fullName;
+    profileData.email = email;
+    profileData.bio = bio;
+    localStorage.setItem('userProfile', JSON.stringify(profileData));
+    if (fullName) currentUser.name = fullName;
+    if (email) currentUser.email = email;
+    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    showNotification('Profile updated (saved locally)', 'success');
+  }
 }
 
 // Handle password change
-function handlePasswordChange(event) {
+async function handlePasswordChange(event) {
   event.preventDefault();
   
   const currentPassword = document.getElementById('currentPassword').value;
@@ -165,51 +280,84 @@ function handlePasswordChange(event) {
     return;
   }
   
-  // Verify current password
   const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-  const users = JSON.parse(localStorage.getItem('users') || '[]');
-  const user = users.find(u => u.email === currentUser.email);
-  
-  if (!user) {
-    alert('User not found');
+  if (!currentUser.id) {
+    alert('Please log in to change your password');
     return;
   }
-  
-  // Hash the current password input for comparison
-  // Note: This uses the same simple hash as auth.js for consistency
-  // In production, use proper password hashing (bcrypt, etc.)
-  const authManager = new AuthManager();
-  const hashedCurrentPassword = authManager.hashPassword(currentPassword);
-  
-  if (user.password !== hashedCurrentPassword) {
-    alert('Current password is incorrect');
-    return;
+
+  try {
+    // Update password via API
+    const response = await fetch(`${API_BASE_URL}/users/password`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        user_id: currentUser.id,
+        currentPassword: currentPassword,
+        newPassword: newPassword
+      })
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      // Clear form
+      document.getElementById('passwordForm').reset();
+      showNotification('Password updated successfully!', 'success');
+    } else {
+      throw new Error(data.error || 'Failed to update password');
+    }
+  } catch (error) {
+    alert(error.message || 'Failed to update password');
   }
-  
-  // Update password with hashed version
-  const hashedNewPassword = authManager.hashPassword(newPassword);
-  user.password = hashedNewPassword;
-  localStorage.setItem('users', JSON.stringify(users));
-  
-  // Clear form
-  document.getElementById('passwordForm').reset();
-  
-  showNotification('Password updated successfully!', 'success');
 }
 
 // Save settings
-function saveSettings() {
+async function saveSettings() {
   const settings = {
     emailNotifications: document.getElementById('emailNotifications').checked,
     darkMode: document.getElementById('darkMode').checked
   };
   
-  localStorage.setItem('userSettings', JSON.stringify(settings));
-  showNotification('Settings saved successfully!', 'success');
+  const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+  if (!currentUser.id) {
+    alert('Please log in to save settings');
+    return;
+  }
+
+  try {
+    // Save via API
+    const response = await fetch(`${API_BASE_URL}/users/settings`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        user_id: currentUser.id,
+        emailNotifications: settings.emailNotifications,
+        darkMode: settings.darkMode
+      })
+    });
+
+    if (response.ok) {
+      // Also save to localStorage for session
+      localStorage.setItem('userSettings', JSON.stringify(settings));
+      showNotification('Settings saved successfully!', 'success');
+    } else {
+      throw new Error('Failed to save settings');
+    }
+  } catch (error) {
+    console.error('Error saving settings:', error);
+    // Fallback to localStorage
+    localStorage.setItem('userSettings', JSON.stringify(settings));
+    showNotification('Settings saved (saved locally)', 'success');
+  }
 }
 
 // Delete account
-function deleteAccount() {
+async function deleteAccount() {
   if (!confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
     return;
   }
@@ -218,19 +366,33 @@ function deleteAccount() {
     return;
   }
   
-  // Remove user from users list
   const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-  const users = JSON.parse(localStorage.getItem('users') || '[]');
-  const filteredUsers = users.filter(u => u.email !== currentUser.email);
-  localStorage.setItem('users', JSON.stringify(filteredUsers));
-  
-  // Clear user data
-  localStorage.removeItem('currentUser');
-  localStorage.removeItem('userProfile');
-  localStorage.removeItem('userSettings');
-  
-  // Redirect to login
-  window.location.href = 'login.html';
+  if (!currentUser.id) {
+    alert('Please log in to delete your account');
+    return;
+  }
+
+  try {
+    // Delete via API
+    const response = await fetch(`${API_BASE_URL}/users/delete?user_id=${currentUser.id}`, {
+      method: 'DELETE'
+    });
+
+    if (response.ok) {
+      // Clear local data
+      localStorage.removeItem('currentUser');
+      localStorage.removeItem('userProfile');
+      localStorage.removeItem('userSettings');
+      
+      // Redirect to login
+      window.location.href = 'login.html';
+    } else {
+      const data = await response.json();
+      throw new Error(data.error || 'Failed to delete account');
+    }
+  } catch (error) {
+    alert(error.message || 'Failed to delete account');
+  }
 }
 
 // Helper function to validate email
@@ -268,4 +430,3 @@ function showNotification(message, type = 'success') {
     }, 300);
   }, 3000);
 }
-

@@ -1,11 +1,13 @@
 // Authentication System
+const API_BASE_URL = 'http://localhost:5001/api';
+
 class AuthManager {
   constructor() {
     this.currentUser = null;
     this.loadUser();
   }
 
-  // Load user from localStorage
+  // Load user from localStorage (for session persistence)
   loadUser() {
     const userStr = localStorage.getItem('currentUser');
     if (userStr) {
@@ -13,7 +15,7 @@ class AuthManager {
     }
   }
 
-  // Save user to localStorage
+  // Save user to localStorage (for session persistence)
   saveUser(user) {
     localStorage.setItem('currentUser', JSON.stringify(user));
     this.currentUser = user;
@@ -21,56 +23,71 @@ class AuthManager {
 
   // Sign up new user
   async signUp(name, email, password) {
-    // Check if user already exists
-    const users = this.getUsers();
-    if (users.find(u => u.email === email)) {
-      throw new Error('Email already registered');
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/signup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: name,
+          email: email,
+          password: password
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Sign up failed');
+      }
+
+      // Auto sign in
+      this.saveUser({
+        id: data.id,
+        name: data.name,
+        email: data.email
+      });
+
+      return data;
+    } catch (error) {
+      // Fallback: if API is not available, show error
+      throw new Error(error.message || 'Unable to connect to server. Please ensure the backend server is running.');
     }
-
-    // Create new user
-    const user = {
-      id: Date.now().toString(),
-      name: name,
-      email: email,
-      password: this.hashPassword(password), // Simple hash for demo
-      createdAt: new Date().toISOString()
-    };
-
-    // Save user
-    users.push(user);
-    localStorage.setItem('users', JSON.stringify(users));
-
-    // Auto sign in
-    this.saveUser({
-      id: user.id,
-      name: user.name,
-      email: user.email
-    });
-
-    return user;
   }
 
   // Sign in user
-  signIn(email, password) {
-    const users = this.getUsers();
-    const user = users.find(u => u.email === email);
-    
-    if (!user) {
-      throw new Error('Email not found');
+  async signIn(email, password) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/signin`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email: email,
+          password: password
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Sign in failed');
+      }
+
+      // Save current user (without password)
+      this.saveUser({
+        id: data.id,
+        name: data.name,
+        email: data.email
+      });
+
+      return this.currentUser;
+    } catch (error) {
+      // Fallback: if API is not available, show error
+      throw new Error(error.message || 'Unable to connect to server. Please ensure the backend server is running.');
     }
-
-    if (user.password !== this.hashPassword(password)) {
-      throw new Error('Incorrect password');
-    }
-
-    // Save current user (without password)
-    this.saveUser({
-      id: user.id,
-      name: user.name,
-      email: user.email
-    });
-
-    return this.currentUser;
   }
 
   // Sign out
@@ -89,13 +106,14 @@ class AuthManager {
     return this.currentUser;
   }
 
-  // Get all users (for demo purposes)
+  // Get all users (for demo purposes) - Not used with API
   getUsers() {
-    const usersStr = localStorage.getItem('users');
-    return usersStr ? JSON.parse(usersStr) : [];
+    // This method is kept for backward compatibility but returns empty array
+    // Users are now stored in the database
+    return [];
   }
 
-  // Simple password hash (for demo - in production use proper hashing)
+  // Simple password hash (same as backend for compatibility)
   hashPassword(password) {
     // Simple hash for demo purposes
     let hash = 0;
@@ -121,14 +139,14 @@ class AuthManager {
 const authManager = new AuthManager();
 
 // Handle sign in
-function handleSignIn(event) {
+async function handleSignIn(event) {
   event.preventDefault();
   const email = document.getElementById('signinEmail').value;
   const password = document.getElementById('signinPassword').value;
   const errorDiv = document.getElementById('signinError');
 
   try {
-    authManager.signIn(email, password);
+    await authManager.signIn(email, password);
     // Redirect to home page
     window.location.href = 'index.html';
   } catch (error) {
@@ -226,4 +244,3 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 });
-
