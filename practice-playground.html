@@ -988,8 +988,11 @@
           .map(line => line.trim())
           .filter(line => line.length > 0)
           .join('\n')
-          .replace(/\s+/g, ' ')
-          .toLowerCase();
+          .replace(/\s+/g, ' ') // Normalize whitespace
+          .replace(/[=(),]/g, ' ') // Normalize operators/punctuation spacing
+          .replace(/\s+/g, ' ') // Clean up extra spaces
+          .toLowerCase()
+          .trim();
       };
       
       // Split into lines for detailed comparison (excluding comments)
@@ -1046,7 +1049,8 @@
           // Check if lines are similar
           lineSimilarity = calculateLineSimilarity(normalizedUserLine, normalizedSolutionLine);
           
-          if (lineSimilarity > 0.85) {
+          // More lenient matching: 80% similarity = correct (accounts for minor formatting differences)
+          if (lineSimilarity >= 0.80) {
             matchStatus = 'correct';
             matchedLines++;
           } else if (lineSimilarity > 0.5) {
@@ -1084,13 +1088,16 @@
         accuracyMethods.push(avgLineSimilarity);
       }
       
-      // Weighted average: 40% overall similarity, 40% line matching, 20% average line similarity
+      // Weighted average: Prioritize line matching (most accurate for code)
+      // 30% overall similarity, 50% line matching, 20% average line similarity
       if (accuracyMethods.length > 0) {
         let weightedSum = 0;
         if (accuracyMethods.length >= 3) {
-          weightedSum = (accuracyMethods[0] * 0.4) + (accuracyMethods[1] * 0.4) + (accuracyMethods[2] * 0.2);
+          // Line matching is most important (50%), then overall similarity (30%), then avg similarity (20%)
+          weightedSum = (accuracyMethods[0] * 0.3) + (accuracyMethods[1] * 0.5) + (accuracyMethods[2] * 0.2);
         } else if (accuracyMethods.length === 2) {
-          weightedSum = (accuracyMethods[0] * 0.5) + (accuracyMethods[1] * 0.5);
+          // If we have line matching, prioritize it more (60%)
+          weightedSum = (accuracyMethods[0] * 0.4) + (accuracyMethods[1] * 0.6);
         } else {
           weightedSum = accuracyMethods[0];
         }
