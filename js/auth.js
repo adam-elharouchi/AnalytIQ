@@ -57,15 +57,43 @@ class AuthManager {
 
       // Auto sign in
       this.saveUser({
-        id: data.id,
-        name: data.name,
-        email: data.email
+        id: data.id || data.user?.id || Date.now().toString(),
+        name: data.name || data.user?.name || name,
+        email: data.email || data.user?.email || email
       });
 
       return data;
     } catch (error) {
-      // Fallback: if API is not available, show error
-      throw new Error(error.message || 'Unable to connect to server. Please ensure the backend server is running.');
+      // Fallback to localStorage if API fails (works without Flask)
+      console.warn('API not available, using localStorage fallback:', error.message);
+      
+      // Check if user already exists in localStorage
+      const users = JSON.parse(localStorage.getItem('users') || '[]');
+      const existingUser = users.find(u => u.email === email);
+      if (existingUser) {
+        throw new Error('Email already registered');
+      }
+      
+      // Create user in localStorage
+      const userId = Date.now().toString();
+      const newUser = {
+        id: userId,
+        name: name,
+        email: email,
+        passwordHash: this.hashPassword(password)
+      };
+      
+      users.push(newUser);
+      localStorage.setItem('users', JSON.stringify(users));
+      
+      // Auto sign in
+      this.saveUser({
+        id: userId,
+        name: name,
+        email: email
+      });
+
+      return { success: true, user: newUser };
     }
   }
 
