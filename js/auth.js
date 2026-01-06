@@ -1,25 +1,16 @@
 // Authentication System
-// Detect environment and set appropriate API URL
 const API_BASE_URL = (() => {
   // If using file:// protocol (opening HTML file directly), use localhost
   if (window.location.protocol === 'file:') {
-    console.warn('⚠️ File protocol detected. Please use http://localhost:8080 instead!');
-    console.warn('   Start the server with: ./start_all.sh');
-    // Use localhost for file:// protocol (fallback)
-    return 'http://localhost:5001/api';
+    return 'http://localhost:5000/api';
   }
   
   // Check if we're running on localhost (development)
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    // If port is 8080, use the proxy server which forwards to Flask
-    if (window.location.port === '8080') {
-      return '/api'; // Relative URL works with proxy server
-    }
-    // Direct Flask connection on other ports
-    return 'http://localhost:5001/api';
+    return 'http://localhost:5000/api';
   }
   
-  // Production: use relative URL (backend on same domain)
+  // Production domain: use relative URL (will work with reverse proxy)
   return '/api';
 })();
 
