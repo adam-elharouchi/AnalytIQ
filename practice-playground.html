@@ -980,18 +980,22 @@
           .join('\n');
       };
       
-      // Normalize code for comparison (without comments)
+      // Normalize code for comparison (without comments) - format-agnostic
       const normalizeCode = (code) => {
         const codeWithoutComments = filterComments(code);
         return codeWithoutComments
           .split('\n')
           .map(line => line.trim())
           .filter(line => line.length > 0)
-          .join('\n')
-          .replace(/\s+/g, ' ') // Normalize whitespace
-          .replace(/[=(),]/g, ' ') // Normalize operators/punctuation spacing
-          .replace(/\s+/g, ' ') // Clean up extra spaces
-          .toLowerCase()
+          .map(line => {
+            // Remove all formatting - focus only on code logic
+            return line
+              .replace(/\s+/g, '') // Remove ALL whitespace
+              .replace(/[=(),\[\]{}:]/g, '|') // Normalize operators/punctuation to single separator
+              .toLowerCase();
+          })
+          .join('|') // Use separator between lines
+          .replace(/\|+/g, '|') // Collapse multiple separators
           .trim();
       };
       
@@ -1046,17 +1050,37 @@
         let lineSimilarity = 0;
         
         if (userLine && solutionLine) {
-          // Check if lines are similar
-          lineSimilarity = calculateLineSimilarity(normalizedUserLine, normalizedSolutionLine);
+          // Normalize lines for format-agnostic comparison
+          const normalizeLine = (line) => {
+            return line
+              .trim()
+              .replace(/\s+/g, '') // Remove ALL whitespace
+              .replace(/[=(),\[\]{}:]/g, '|') // Normalize operators/punctuation
+              .toLowerCase()
+              .replace(/\|+/g, '|'); // Collapse separators
+          };
           
-          // More lenient matching: 80% similarity = correct (accounts for minor formatting differences)
-          if (lineSimilarity >= 0.80) {
+          const normalizedUserLineNoFormat = normalizeLine(userLine);
+          const normalizedSolutionLineNoFormat = normalizeLine(solutionLine);
+          
+          // Check if lines are identical when formatting is ignored
+          if (normalizedUserLineNoFormat === normalizedSolutionLineNoFormat) {
             matchStatus = 'correct';
             matchedLines++;
-          } else if (lineSimilarity > 0.5) {
-            matchStatus = 'incorrect'; // Partial match
+            lineSimilarity = 1.0;
           } else {
-            matchStatus = 'incorrect';
+            // Check similarity (more lenient now that formatting is normalized)
+            lineSimilarity = calculateLineSimilarity(normalizedUserLineNoFormat, normalizedSolutionLineNoFormat);
+            
+            // Very lenient matching: 75% similarity = correct (only logical differences matter now)
+            if (lineSimilarity >= 0.75) {
+              matchStatus = 'correct';
+              matchedLines++;
+            } else if (lineSimilarity > 0.5) {
+              matchStatus = 'incorrect'; // Partial match
+            } else {
+              matchStatus = 'incorrect';
+            }
           }
           totalLineSimilarity += lineSimilarity;
         } else if (!userLine && solutionLine) {
