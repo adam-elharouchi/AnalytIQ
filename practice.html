@@ -31,13 +31,10 @@
           <h3>Solution Code:</h3>
           <pre><code>from sklearn.datasets import fetch_california_housing
 
-# Fetch the California Housing dataset
 california_housing = fetch_california_housing()
 
-# The dataset is returned as a dictionary-like object
-# You can access the features and target variables using the keys &#x27;data&#x27; and &#x27;target&#x27;
-X = california_housing.data  # Features (input variables)
-y = california_housing.target  # Target variable (median house value)
+X = california_housing.data
+y = california_housing.target
 
 print(X)
 print(y)</code></pre>
@@ -78,11 +75,11 @@ california_df = pd.DataFrame(data = X, columns= columns)
 
 california_df.head(10)
 
-california_df[&#x27;MedInc&#x27;]
+california_df[&
 
-california_df[&#x27;Population&#x27;]
+california_df[&
 
-california_df[&#x27;MedHouseVal&#x27;] = y
+california_df[&
 
 california_df.head(10)</code></pre>
         </div>
@@ -114,8 +111,8 @@ california_df.head(10)</code></pre>
           <h3>Solution Code:</h3>
           <pre><code>california_df.dtypes
 
-california_df[&#x27;Latitude&#x27;] = california_df[&#x27;Latitude&#x27;].astype(&#x27;category&#x27;)
-california_df[&#x27;Longitude&#x27;] = california_df[&#x27;Longitude&#x27;].astype(&#x27;category&#x27;)
+california_df[&
+california_df[&
 
 california_df.dtypes</code></pre>
         </div>
@@ -145,21 +142,19 @@ california_df.isna().sum()
 
 import numpy as np
 
-# Function to randomly set a fraction of values to NaN in a DataFrame
 def introduce_missing_values(df, fraction_missing, random_state=None):
     np.random.seed(random_state)
     mask = np.random.rand(*df.shape) &lt; fraction_missing
     df_with_missing = df.mask(mask)
     return df_with_missing
 
-# Introduce missing values randomly with a fraction of 0.2 (20% missing)
 df_with_missing = introduce_missing_values(california_df, 0.2, random_state=42)
 
 print(&quot;Original DataFrame:&quot;)
-print(california_df.head())  # Assuming you want to print the first few rows for comparison
+print(california_df.head())
 
 print(&quot;\nDataFrame with random missing values:&quot;)
-print(df_with_missing.head())  # Assuming you want to print the first few rows for comparison
+print(df_with_missing.head())
 
 df_with_missing.head(10)
 
@@ -168,57 +163,50 @@ df_with_missing.isna().sum()
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# Assuming df_with_missing is your DataFrame with missing values
-
-# Calculate the proportion of missing values for each column
 missing_proportion = df_with_missing.isnull().mean()
 
-# Calculate the total number of rows
 total_rows = len(df_with_missing)
 
-# Calculate the count of missing values for each column
 missing_count = df_with_missing.isnull().sum()
 
-# Create a DataFrame for the count of missing values
-missing_count_df = pd.DataFrame({&#x27;Missing Count&#x27;: missing_count})
+missing_count_df = pd.DataFrame({&
 
-# Create a stacked bar plot
 plt.figure(figsize=(10, 6))
-plt.bar(missing_proportion.index, total_rows, color=&#x27;lightcoral&#x27;)
-plt.bar(missing_proportion.index, missing_count_df[&#x27;Missing Count&#x27;], color=&#x27;skyblue&#x27;)
-plt.title(&#x27;Proportion of Missing Values in Each Column&#x27;)
-plt.xlabel(&#x27;Columns&#x27;)
-plt.ylabel(&#x27;Count&#x27;)
+plt.bar(missing_proportion.index, total_rows, color=&
+plt.bar(missing_proportion.index, missing_count_df[&
+plt.title(&
+plt.xlabel(&
+plt.ylabel(&
 plt.xticks(rotation=45)
-plt.legend([&#x27;Total Rows&#x27;, &#x27;Missing Values&#x27;])
+plt.legend([&
 plt.tight_layout()
 plt.show()
 
-df_with_missing.dropna(subset=[&#x27;AveBedrms&#x27;],inplace=True)
+df_with_missing.dropna(subset=[&
 print(df_with_missing.isna().sum())
 print(df_with_missing.shape)
 
-df_with_missing.drop(&#x27;AveOccup&#x27;, axis = 1, inplace = True)
+df_with_missing.drop(&
 print(df_with_missing.isna().sum())
 print(df_with_missing.head(10))
 
-lat_mode = df_with_missing[&#x27;Latitude&#x27;].mode()[0]
+lat_mode = df_with_missing[&
 print(lat_mode)
-df_with_missing[&#x27;Latitude&#x27;].fillna(lat_mode,inplace = True)
+df_with_missing[&
 print(df_with_missing.isna().sum())
 
-df_with_missing[&#x27;HouseAge&#x27;].hist()
-print(df_with_missing[&#x27;HouseAge&#x27;].mean())
-print(df_with_missing[&#x27;HouseAge&#x27;].mode())
-print(df_with_missing[&#x27;HouseAge&#x27;].median())
+df_with_missing[&
+print(df_with_missing[&
+print(df_with_missing[&
+print(df_with_missing[&
 
-mean_houseage = df_with_missing[&#x27;HouseAge&#x27;].mean()
+mean_houseage = df_with_missing[&
 print(mean_houseage)
-df_with_missing[&#x27;HouseAge&#x27;].fillna(mean_houseage,inplace = True)
+df_with_missing[&
 print(df_with_missing.isna().sum())
-print(df_with_missing[&#x27;HouseAge&#x27;].mean())
+print(df_with_missing[&
 
-df_with_missing[&#x27;HouseAge&#x27;].hist()</code></pre>
+df_with_missing[&</code></pre>
         </div>
       </div>
       <div class="practice-card">
@@ -232,109 +220,82 @@ df_with_missing[&#x27;HouseAge&#x27;].hist()</code></pre>
         </div>
         <div class="solution" style="display: none;">
           <h3>Solution Code:</h3>
-          <pre><code># Create a boxplot
-california_df.boxplot()
+          <pre><code>california_df.boxplot()
 
-# Set labels and rotation for x-axis ticks
-plt.xticks(rotation=45, ha=&#x27;right&#x27;)
+plt.xticks(rotation=45, ha=&
 
-# Show the plot
 plt.show()
 
-# Define a function to count outliers in a column
 def count_outliers(column):
     if pd.api.types.is_numeric_dtype(column):
         Q1 = column.quantile(0.25)
         Q3 = column.quantile(0.75)
         IQR = Q3 - Q1
 
-        # Calculate the lower and upper bounds for outliers
         lower_bound = Q1 - 1.5 * IQR
         upper_bound = Q3 + 1.5 * IQR
 
-        # Count outliers
         outliers = column[(column &lt; lower_bound) | (column &gt; upper_bound)]
         return outliers.shape[0]
     else:
-        return 0  # For non-numeric columns, consider 0 outliers
+        return 0
 
-# Filter numeric columns
-numeric_columns = california_df.select_dtypes(include=[&#x27;number&#x27;])
+numeric_columns = california_df.select_dtypes(include=[&
 
-# Count outliers in each numeric column
 outliers_count = numeric_columns.apply(count_outliers)
 
-# Display the number of outliers in each numeric column
 print(&quot;Number of outliers in each numeric column:&quot;)
 print(outliers_count)
 
-# Define a function to remove outliers in a column
 def remove_outliers(column):
-    # Calculate IQR
     Q1 = column.quantile(0.25)
     Q3 = column.quantile(0.75)
     IQR = Q3 - Q1
 
-    # Calculate the lower and upper bounds for outliers
     lower_bound = Q1 - 1.5 * IQR
     upper_bound = Q3 + 1.5 * IQR
 
-    # Remove outliers
     column = column[(column &gt;= lower_bound) &amp; (column &lt;= upper_bound)]
 
     return column
 
-# Create a copy of the DataFrame to avoid modifying the original data
 california_df_clean = california_df.copy()
 
-# Remove outliers from each numeric column
-for column in california_df_clean.select_dtypes(include=[&#x27;number&#x27;]):
+for column in california_df_clean.select_dtypes(include=[&
     california_df_clean[column] = remove_outliers(california_df_clean[column])
 
-# Drop rows with NaN values
 california_df_clean = california_df_clean.dropna()
 
-# Display the cleaned DataFrame
 print(&quot;
 DataFrame after removing outliers:&quot;)
 print(california_df_clean)
 
 import matplotlib.pyplot as plt
 
-# Create a boxplot for each numeric column
 california_df_clean.boxplot(figsize=(10, 6))
 
-# Set title and labels
-plt.title(&#x27;Boxplot of Numeric Columns&#x27;)
-plt.xlabel(&#x27;Columns&#x27;)
-plt.ylabel(&#x27;Values&#x27;)
+plt.title(&
+plt.xlabel(&
+plt.ylabel(&
 
-# Show the plot
-plt.xticks(rotation=45)  # Rotate x-axis labels for better readability
-plt.tight_layout()  # Adjust layout to prevent clipping of labels
+plt.xticks(rotation=45)
+plt.tight_layout()
 plt.show()
 
 california_df_copy = california_df.copy()
 
-# Create a boxplot
 california_df_copy.boxplot()
 
-# Set labels and rotation for x-axis ticks
-plt.xticks(rotation=45, ha=&#x27;right&#x27;)
+plt.xticks(rotation=45, ha=&
 
-# Show the plot
 plt.show()
 
-# Subset the DataFrame for rows where &#x27;Population&#x27; is less than 10000
-california_df_copy = california_df_copy[california_df_copy[&#x27;Population&#x27;] &lt; 10000]
+california_df_copy = california_df_copy[california_df_copy[&
 
-# Create a boxplot
 california_df_copy.boxplot()
 
-# Set labels and rotation for x-axis ticks
-plt.xticks(rotation=45, ha=&#x27;right&#x27;)
+plt.xticks(rotation=45, ha=&
 
-# Show the plot
 plt.show()
 
 california_df_copy.shape</code></pre>
@@ -354,29 +315,21 @@ california_df_copy.shape</code></pre>
           <pre><code>import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
-# Create a StandardScaler object
 scaler = StandardScaler()
 
-# Select only the numeric columns for scaling
-numeric_columns = california_df.select_dtypes(include=&#x27;number&#x27;)
+numeric_columns = california_df.select_dtypes(include=&
 
-# Fit the scaler to the data and transform it
 california_df_standardized = scaler.fit_transform(numeric_columns)
 
-# Convert the standardized array back to a DataFrame
 california_df_standardized = pd.DataFrame(california_df_standardized, columns=numeric_columns.columns)
 
-# Display the standardized DataFrame
 print(&quot;Standardized California DataFrame:&quot;)
 print(california_df_standardized)
 
-# Create a boxplot
 california_df_standardized.boxplot()
 
-# Set labels and rotation for x-axis ticks
-plt.xticks(rotation=45, ha=&#x27;right&#x27;)
+plt.xticks(rotation=45, ha=&
 
-# Show the plot
 plt.show()</code></pre>
         </div>
       </div>
@@ -393,33 +346,25 @@ plt.show()</code></pre>
           <h3>Solution Code:</h3>
           <pre><code>from sklearn.preprocessing import MinMaxScaler
 
-# Create a MinMaxScaler object
 scaler = MinMaxScaler()
 
-# Select only the numeric columns for scaling
-numeric_columns = california_df.select_dtypes(include=&#x27;number&#x27;)
+numeric_columns = california_df.select_dtypes(include=&
 
-# Fit the scaler to the data and transform it
 california_df_scaled = scaler.fit_transform(numeric_columns)
 
-# Convert the scaled array back to a DataFrame
 california_df_scaled = pd.DataFrame(california_df_scaled, columns=numeric_columns.columns)
 
-# Display the scaled DataFrame
 print(&quot;Scaled California DataFrame:&quot;)
 print(california_df_scaled)
 
-# Create a boxplot
 california_df_scaled.boxplot()
 
-# Set labels and rotation for x-axis ticks
-plt.xticks(rotation=45, ha=&#x27;right&#x27;)
+plt.xticks(rotation=45, ha=&
 
-# Show the plot
 plt.show()
 
-X = california_df_scaled.drop([&#x27;MedHouseVal&#x27;], axis = 1)
-y = california_df_scaled[&#x27;MedHouseVal&#x27;]
+X = california_df_scaled.drop([&
+y = california_df_scaled[&
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, random_state = 42)
 
@@ -450,67 +395,67 @@ print(r2)</code></pre>
         </div>
         <div class="solution" style="display: none;">
           <h3>Solution Code:</h3>
-          <pre><code>california_df[&#x27;MedInc&#x27;].hist()
+          <pre><code>california_df[&
 
 import matplotlib.pyplot as plt
 
-california_df[&#x27;MedInc&#x27;].hist()
+california_df[&
 
-plt.title(&#x27;Histogram of Median Income in California&#x27;)
-plt.xlabel(&#x27;Median Income&#x27;)
-plt.ylabel(&#x27;Frequency&#x27;)
+plt.title(&
+plt.xlabel(&
+plt.ylabel(&
 plt.show()
 
-california_df[&#x27;HouseAge&#x27;].hist(color=&#x27;red&#x27;)
+california_df[&
 
-plt.title(&#x27;Histogram of House Age in California&#x27;)
-plt.xlabel(&#x27;House Age&#x27;)
-plt.ylabel(&#x27;Frequency&#x27;)
-
-plt.show()
-
-california_df[&#x27;AveRooms&#x27;].hist(color=&#x27;blue&#x27;)
-
-plt.title(&#x27;Histogram of Average Rooms in California&#x27;)
-plt.xlabel(&#x27;Average Rooms&#x27;)
-plt.ylabel(&#x27;Frequency&#x27;)
+plt.title(&
+plt.xlabel(&
+plt.ylabel(&
 
 plt.show()
 
-california_df[&#x27;AveBedrms&#x27;].hist(color=&#x27;green&#x27;)
+california_df[&
 
-plt.title(&#x27;Histogram of Average Bedrooms in California&#x27;)
-plt.xlabel(&#x27;Average Bedrooms&#x27;)
-plt.ylabel(&#x27;Frequency&#x27;)
-
-plt.show()
-
-california_df[&#x27;Population&#x27;].hist(color=&#x27;orange&#x27;)
-
-plt.title(&#x27;Histogram of Population in California&#x27;)
-plt.xlabel(&#x27;Population&#x27;)
-plt.ylabel(&#x27;Frequency&#x27;)
+plt.title(&
+plt.xlabel(&
+plt.ylabel(&
 
 plt.show()
 
-california_df[&#x27;AveOccup&#x27;].hist(color=&#x27;purple&#x27;)
+california_df[&
 
-plt.title(&#x27;Histogram of Average Occupancy in California&#x27;)
-plt.xlabel(&#x27;Average Occupancy&#x27;)
-plt.ylabel(&#x27;Frequency&#x27;)
-
-plt.show()
-
-california_df[&#x27;MedHouseVal&#x27;].hist(color=&#x27;darkred&#x27;)
-
-plt.title(&#x27;Histogram of Median House Value in California&#x27;)
-plt.xlabel(&#x27;Median House Value&#x27;)
-plt.ylabel(&#x27;Frequency&#x27;)
+plt.title(&
+plt.xlabel(&
+plt.ylabel(&
 
 plt.show()
 
-california_df.hist(figsize=(15, 10), color=&#x27;skyblue&#x27;, bins=20)
-plt.suptitle(&#x27;Histograms of California Housing Variables&#x27;, x=0.5, y=0.92)
+california_df[&
+
+plt.title(&
+plt.xlabel(&
+plt.ylabel(&
+
+plt.show()
+
+california_df[&
+
+plt.title(&
+plt.xlabel(&
+plt.ylabel(&
+
+plt.show()
+
+california_df[&
+
+plt.title(&
+plt.xlabel(&
+plt.ylabel(&
+
+plt.show()
+
+california_df.hist(figsize=(15, 10), color=&
+plt.suptitle(&
 plt.show()</code></pre>
         </div>
       </div>
@@ -525,103 +470,100 @@ plt.show()</code></pre>
         </div>
         <div class="solution" style="display: none;">
           <h3>Solution Code:</h3>
-          <pre><code>california_df.boxplot(&#x27;MedInc&#x27;)
+          <pre><code>california_df.boxplot(&
 
 import matplotlib.pyplot as plt
 
 plt.figure(figsize=(8, 6))
-plt.boxplot(california_df[&#x27;MedInc&#x27;])
+plt.boxplot(california_df[&
 
-plt.title(&#x27;Boxplot of Median Income in California&#x27;)
-plt.xlabel(&#x27;Median Income&#x27;)
-plt.ylabel(&#x27;Value&#x27;)
+plt.title(&
+plt.xlabel(&
+plt.ylabel(&
 
 plt.show()
 
 import matplotlib.pyplot as plt
 
 plt.figure(figsize=(8, 6))
-plt.boxplot(california_df[&#x27;HouseAge&#x27;], patch_artist=True, boxprops=dict(facecolor=&#x27;lightgreen&#x27;))
+plt.boxplot(california_df[&
 
-plt.title(&#x27;Boxplot of House Age in California&#x27;)
-plt.xlabel(&#x27;House Age&#x27;)
-plt.ylabel(&#x27;Value&#x27;)
-
-plt.show()
-
-import matplotlib.pyplot as plt
-
-plt.figure(figsize=(8, 6))
-plt.boxplot(california_df[&#x27;AveRooms&#x27;], patch_artist=True, boxprops=dict(facecolor=&#x27;lightblue&#x27;))
-
-plt.title(&#x27;Boxplot of Average Rooms in California&#x27;)
-plt.xlabel(&#x27;Average Rooms&#x27;)
-plt.ylabel(&#x27;Value&#x27;)
+plt.title(&
+plt.xlabel(&
+plt.ylabel(&
 
 plt.show()
 
 import matplotlib.pyplot as plt
 
 plt.figure(figsize=(8, 6))
-plt.boxplot(california_df[&#x27;AveBedrms&#x27;], patch_artist=True, boxprops=dict(facecolor=&#x27;lightcoral&#x27;))
+plt.boxplot(california_df[&
 
-plt.title(&#x27;Boxplot of Average Bedrooms in California&#x27;)
-plt.xlabel(&#x27;Average Bedrooms&#x27;)
-plt.ylabel(&#x27;Value&#x27;)
-
-plt.show()
-
-import matplotlib.pyplot as plt
-
-plt.figure(figsize=(8, 6))
-plt.boxplot(california_df[&#x27;Population&#x27;], patch_artist=True, boxprops=dict(facecolor=&#x27;lightyellow&#x27;))
-
-plt.title(&#x27;Boxplot of Population in California&#x27;)
-plt.xlabel(&#x27;Population&#x27;)
-plt.ylabel(&#x27;Value&#x27;)
+plt.title(&
+plt.xlabel(&
+plt.ylabel(&
 
 plt.show()
 
 import matplotlib.pyplot as plt
 
 plt.figure(figsize=(8, 6))
-plt.boxplot(california_df[&#x27;AveOccup&#x27;], patch_artist=True, boxprops=dict(facecolor=&#x27;lightgreen&#x27;))
+plt.boxplot(california_df[&
 
-plt.title(&#x27;Boxplot of Average Occupancy in California&#x27;)
-plt.xlabel(&#x27;Average Occupancy&#x27;)
-plt.ylabel(&#x27;Value&#x27;)
+plt.title(&
+plt.xlabel(&
+plt.ylabel(&
 
 plt.show()
 
 import matplotlib.pyplot as plt
 
 plt.figure(figsize=(8, 6))
-plt.boxplot(california_df[&#x27;MedHouseVal&#x27;], patch_artist=True, boxprops=dict(facecolor=&#x27;lightblue&#x27;))
+plt.boxplot(california_df[&
 
-plt.title(&#x27;Boxplot of Median House Value in California&#x27;)
-plt.xlabel(&#x27;Median House Value&#x27;)
-plt.ylabel(&#x27;Value&#x27;)
+plt.title(&
+plt.xlabel(&
+plt.ylabel(&
 
 plt.show()
 
 import matplotlib.pyplot as plt
 
-# Get numeric columns
-numeric_columns = california_df.select_dtypes(include=[&#x27;int64&#x27;, &#x27;float64&#x27;]).columns
+plt.figure(figsize=(8, 6))
+plt.boxplot(california_df[&
 
-# Create a boxplot for each numeric column
+plt.title(&
+plt.xlabel(&
+plt.ylabel(&
+
+plt.show()
+
+import matplotlib.pyplot as plt
+
+plt.figure(figsize=(8, 6))
+plt.boxplot(california_df[&
+
+plt.title(&
+plt.xlabel(&
+plt.ylabel(&
+
+plt.show()
+
+import matplotlib.pyplot as plt
+
+numeric_columns = california_df.select_dtypes(include=[&
+
 plt.figure(figsize=(12, 8))
 plt.boxplot(california_df[numeric_columns].values, patch_artist=True)
 plt.xticks(range(1, len(numeric_columns) + 1), numeric_columns, rotation=45)
-plt.title(&#x27;Boxplots of Numeric Columns in California&#x27;)
-plt.xlabel(&#x27;Variables&#x27;)
-plt.ylabel(&#x27;Value&#x27;)
+plt.title(&
+plt.xlabel(&
+plt.ylabel(&
 plt.tight_layout()
 
-# Show the plot
 plt.show()
 
-latitude_values = california_df[&#x27;Latitude&#x27;].value_counts()
+latitude_values = california_df[&
 
 latitude_values.head(10)
 
@@ -630,54 +572,50 @@ latitude_values.shape
 top_50_categories = latitude_values.head(50)
 
 plt.figure(figsize=(20, 6))
-top_50_categories.plot(kind=&#x27;bar&#x27;, color=&#x27;skyblue&#x27;)
+top_50_categories.plot(kind=&
 
-plt.title(&#x27;Count of Houses by Latitude Category (Top 50)&#x27;)
-plt.xlabel(&#x27;Latitude&#x27;)
-plt.ylabel(&#x27;Count&#x27;)
-plt.xticks(rotation=45)  # Rotate x-axis labels by 45 degrees
+plt.title(&
+plt.xlabel(&
+plt.ylabel(&
+plt.xticks(rotation=45)
 
 plt.show()
 
 import matplotlib.pyplot as plt
 
-# Get the top 50 categories based on count for longitude
-top_50_categories = california_df[&#x27;Longitude&#x27;].value_counts().head(50)
+top_50_categories = california_df[&
 
 plt.figure(figsize=(20, 6))
-plt.bar(range(len(top_50_categories)), top_50_categories.values, color=&#x27;skyblue&#x27;)
+plt.bar(range(len(top_50_categories)), top_50_categories.values, color=&
 
-plt.title(&#x27;Count of Houses by Longitude Category (Top 50)&#x27;)
-plt.xlabel(&#x27;Longitude&#x27;)
-plt.ylabel(&#x27;Count&#x27;)
-plt.xticks(range(len(top_50_categories)), top_50_categories.index, rotation=45)  # Rotate x-axis labels by 45 degrees
+plt.title(&
+plt.xlabel(&
+plt.ylabel(&
+plt.xticks(range(len(top_50_categories)), top_50_categories.index, rotation=45)
 
-plt.tight_layout()  # Adjust layout to prevent labels from overlapping
+plt.tight_layout()
 plt.show()
 
-top_50_latitude = california_df[&#x27;Latitude&#x27;].value_counts().head(50)
-top_50_longitude = california_df[&#x27;Longitude&#x27;].value_counts().head(50)
-
+top_50_latitude = california_df[&
+top_50_longitude = california_df[&
 
 plt.figure(figsize=(20, 6))
 
-# Plot for latitude
 plt.subplot(1, 2, 1)
-plt.bar(range(len(top_50_latitude)), top_50_latitude.values, color=&#x27;skyblue&#x27;)
-plt.title(&#x27;Count of Houses by Latitude Category (Top 50)&#x27;)
-plt.xlabel(&#x27;Latitude&#x27;)
-plt.ylabel(&#x27;Count&#x27;)
+plt.bar(range(len(top_50_latitude)), top_50_latitude.values, color=&
+plt.title(&
+plt.xlabel(&
+plt.ylabel(&
 plt.xticks(range(len(top_50_latitude)), top_50_latitude.index, rotation=45)
 
-# Plot for longitude
 plt.subplot(1, 2, 2)
-plt.bar(range(len(top_50_longitude)), top_50_longitude.values, color=&#x27;lightgreen&#x27;)
-plt.title(&#x27;Count of Houses by Longitude Category (Top 50)&#x27;)
-plt.xlabel(&#x27;Longitude&#x27;)
-plt.ylabel(&#x27;Count&#x27;)
+plt.bar(range(len(top_50_longitude)), top_50_longitude.values, color=&
+plt.title(&
+plt.xlabel(&
+plt.ylabel(&
 plt.xticks(range(len(top_50_longitude)), top_50_longitude.index, rotation=45)
 
-plt.tight_layout()  # Adjust layout to prevent labels from overlapping
+plt.tight_layout()
 plt.show()</code></pre>
         </div>
       </div>
@@ -692,58 +630,58 @@ plt.show()</code></pre>
         </div>
         <div class="solution" style="display: none;">
           <h3>Solution Code:</h3>
-          <pre><code>california_df.plot.scatter(x=&#x27;MedInc&#x27;, y=&#x27;MedHouseVal&#x27;, figsize=(10, 6), alpha=0.5, color=&#x27;blue&#x27;)
+          <pre><code>california_df.plot.scatter(x=&
 
-plt.title(&#x27;Median Income vs. Median House Value&#x27;)
-plt.xlabel(&#x27;Median Income&#x27;)
-plt.ylabel(&#x27;Median House Value&#x27;)
+plt.title(&
+plt.xlabel(&
+plt.ylabel(&
 
 plt.show()
 
 plt.figure(figsize=(10, 6))
-plt.scatter(california_df[&#x27;MedInc&#x27;], california_df[&#x27;MedHouseVal&#x27;], alpha=0.5, color=&#x27;red&#x27;)
+plt.scatter(california_df[&
 
-plt.title(&#x27;Median Income vs. Median House Value&#x27;)
-plt.xlabel(&#x27;Median Income&#x27;)
-plt.ylabel(&#x27;Median House Value&#x27;)
+plt.title(&
+plt.xlabel(&
+plt.ylabel(&
 
 plt.show()
 
 california_df.dtypes
 
 plt.figure(figsize=(10, 6))
-plt.scatter(california_df[&#x27;AveRooms&#x27;], california_df[&#x27;AveBedrms&#x27;], alpha=0.5, color=&#x27;red&#x27;)
+plt.scatter(california_df[&
 
-plt.title(&#x27;AveRooms vs. AveBedrms&#x27;)
-plt.xlabel(&#x27;AveRooms&#x27;)
-plt.ylabel(&#x27;AveBedrms&#x27;)
-
-plt.show()
-
-plt.figure(figsize=(10, 6))
-plt.scatter(california_df[&#x27;MedHouseVal&#x27;], california_df[&#x27;MedInc&#x27;], alpha=0.5, color=&#x27;blue&#x27;)
-
-plt.title(&#x27;MedHouseVal vs. MedInc&#x27;)
-plt.xlabel(&#x27;MedHouseVal&#x27;)
-plt.ylabel(&#x27;MedInc&#x27;)
+plt.title(&
+plt.xlabel(&
+plt.ylabel(&
 
 plt.show()
 
 plt.figure(figsize=(10, 6))
-plt.scatter(california_df[&#x27;HouseAge&#x27;], california_df[&#x27;Population&#x27;], alpha=0.5, color=&#x27;green&#x27;)
+plt.scatter(california_df[&
 
-plt.title(&#x27;HouseAge vs. Population&#x27;)
-plt.xlabel(&#x27;HouseAge&#x27;)
-plt.ylabel(&#x27;Population&#x27;)
+plt.title(&
+plt.xlabel(&
+plt.ylabel(&
 
 plt.show()
 
 plt.figure(figsize=(10, 6))
-plt.scatter(california_df[&#x27;AveRooms&#x27;], california_df[&#x27;HouseAge&#x27;], alpha=0.5, color=&#x27;purple&#x27;)
+plt.scatter(california_df[&
 
-plt.title(&#x27;AveRooms vs. HouseAge&#x27;)
-plt.xlabel(&#x27;AveRooms&#x27;)
-plt.ylabel(&#x27;HouseAge&#x27;)
+plt.title(&
+plt.xlabel(&
+plt.ylabel(&
+
+plt.show()
+
+plt.figure(figsize=(10, 6))
+plt.scatter(california_df[&
+
+plt.title(&
+plt.xlabel(&
+plt.ylabel(&
 
 plt.show()</code></pre>
         </div>
@@ -763,13 +701,11 @@ plt.show()</code></pre>
 
 import seaborn as sns
 
-# Calculate correlation matrix
 correlation_matrix = california_df.corr(numeric_only=True)
 
-# Plot heatmap
 plt.figure(figsize=(10, 8))
-sns.heatmap(correlation_matrix, annot=True, cmap=&#x27;coolwarm&#x27;, fmt=&quot;.2f&quot;)
-plt.title(&#x27;Correlation Matrix&#x27;)
+sns.heatmap(correlation_matrix, annot=True, cmap=&
+plt.title(&
 plt.show()</code></pre>
         </div>
       </div>
@@ -802,60 +738,50 @@ plt.show()</code></pre>
           <pre><code>import matplotlib.pyplot as plt
 import numpy as np
 
-# Normalize &#x27;HouseAge&#x27; values
-houseage_min = california_df[&#x27;HouseAge&#x27;].min()
-houseage_max = california_df[&#x27;HouseAge&#x27;].max()
-normalized_houseage = (california_df[&#x27;HouseAge&#x27;] - houseage_min) / (houseage_max - houseage_min)
+houseage_min = california_df[&
+houseage_max = california_df[&
+normalized_houseage = (california_df[&
 
-# Assuming california_df is your DataFrame
-top_70_categories = california_df.groupby(&#x27;Latitude&#x27;).size().nlargest(70)
+top_70_categories = california_df.groupby(&
 
 plt.figure(figsize=(20, 6))
-bars = top_70_categories.plot(kind=&#x27;bar&#x27;, color=plt.cm.coolwarm(normalized_houseage))
+bars = top_70_categories.plot(kind=&
 
-# Add colorbar
-cbar = plt.colorbar(plt.cm.ScalarMappable(cmap=&#x27;coolwarm&#x27;), ax=plt.gca())
-cbar.set_label(&#x27;HouseAge&#x27;)
+cbar = plt.colorbar(plt.cm.ScalarMappable(cmap=&
+cbar.set_label(&
 
-# Add legend
-legend_labels = [f&#x27;{houseage_min:.2f}&#x27;, f&#x27;{houseage_max:.2f}&#x27;]
+legend_labels = [f&
 cbar.set_ticks([0, 1])
 cbar.set_ticklabels(legend_labels)
 
-plt.title(&#x27;Count of Houses by Latitude Category (Top 50)&#x27;)
-plt.xlabel(&#x27;Latitude&#x27;)
-plt.ylabel(&#x27;Count&#x27;)
-plt.xticks(rotation=45)  # Rotate x-axis labels by 45 degrees
+plt.title(&
+plt.xlabel(&
+plt.ylabel(&
+plt.xticks(rotation=45)
 
 plt.show()
 
 import matplotlib.pyplot as plt
 
-# Scatter plot with HouseAge as the color
-scatter = plt.scatter(x=&#x27;MedInc&#x27;, y=&#x27;MedHouseVal&#x27;, c=&#x27;HouseAge&#x27;, data=california_df, cmap=&#x27;viridis&#x27;, alpha=0.5)
+scatter = plt.scatter(x=&
 
-# Add colorbar
-plt.colorbar(scatter, label=&#x27;House Age&#x27;)
+plt.colorbar(scatter, label=&
 
-# Add title and labels
-plt.title(&#x27;Median Income vs. Median House Value&#x27;)
-plt.xlabel(&#x27;Median Income&#x27;)
-plt.ylabel(&#x27;Median House Value&#x27;)
+plt.title(&
+plt.xlabel(&
+plt.ylabel(&
 
 plt.show()
 
 import matplotlib.pyplot as plt
 
-# Scatter plot with HouseAge as the color
-scatter = plt.scatter(x=&#x27;MedInc&#x27;, y=&#x27;MedHouseVal&#x27;, c=&#x27;Latitude&#x27;, data=california_df, cmap=&#x27;viridis&#x27;, alpha=0.5)
+scatter = plt.scatter(x=&
 
-# Add colorbar
-plt.colorbar(scatter, label=&#x27;Latitude&#x27;)
+plt.colorbar(scatter, label=&
 
-# Add title and labels
-plt.title(&#x27;Median Income vs. Median House Value&#x27;)
-plt.xlabel(&#x27;Median Income&#x27;)
-plt.ylabel(&#x27;Median House Value&#x27;)
+plt.title(&
+plt.xlabel(&
+plt.ylabel(&
 
 plt.show()</code></pre>
         </div>
@@ -875,17 +801,17 @@ plt.show()</code></pre>
         </div>
         <div class="solution" style="display: none;">
           <h3>Solution Code:</h3>
-          <pre><code>california_df[&#x27;MedInc&#x27;].mean()
+          <pre><code>california_df[&
 
-california_df[&#x27;MedInc&#x27;].median()
+california_df[&
 
-california_df[&#x27;MedInc&#x27;].std()
+california_df[&
 
-california_df.describe(include=&#x27;all&#x27;)
+california_df.describe(include=&
 
-california_df.describe(include=&#x27;number&#x27;)
+california_df.describe(include=&
 
-california_df.describe(include=&#x27;category&#x27;)
+california_df.describe(include=&
 
 california_df.describe()</code></pre>
         </div>
@@ -905,8 +831,8 @@ california_df.describe()</code></pre>
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, r2_score
 
-X = california_df[&#x27;MedInc&#x27;]
-y = california_df[&#x27;MedHouseVal&#x27;]
+X = california_df[&
+y = california_df[&
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, random_state = 42)
 
@@ -917,9 +843,9 @@ model = LinearRegression()
 
 model.fit(X_train_reshaped, y_train)
 
-model.intercept_ #b value
+model.intercept_
 
-model.coef_ #slope or m value
+model.coef_
 
 y_pred = model.predict(X_test_reshaped)
 
@@ -940,8 +866,8 @@ print(r2)</code></pre>
         </div>
         <div class="solution" style="display: none;">
           <h3>Solution Code:</h3>
-          <pre><code>X = california_df.drop([&#x27;MedHouseVal&#x27;], axis = 1)
-y = california_df[&#x27;MedHouseVal&#x27;]
+          <pre><code>X = california_df.drop([&
+y = california_df[&
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, random_state = 42)
 
@@ -949,9 +875,9 @@ model = LinearRegression()
 
 model.fit(X_train, y_train)
 
-model.intercept_ #b value
+model.intercept_
 
-model.coef_ #slope or m value
+model.coef_
 
 y_pred = model.predict(X_test)
 
@@ -972,10 +898,8 @@ print(r2)</code></pre>
         </div>
         <div class="solution" style="display: none;">
           <h3>Solution Code:</h3>
-          <pre><code># Get the names of the coefficients
-coef_names = california_df.drop(columns=[&#x27;MedHouseVal&#x27;]).columns
+          <pre><code>coef_names = california_df.drop(columns=[&
 
-# Print coefficients with their names
 for name, coef in zip(coef_names, model.coef_):
     print(f&quot;{name}: {coef}&quot;)
 
@@ -987,25 +911,19 @@ for name, coef in zip(coef_names, model.coef_):
 equation += f&quot;{model.intercept_:.4f}&quot;
 print(&quot;Regression equation:&quot;, equation)
 
-# Rank coefficients based on absolute values
 sorted_coefs = sorted(zip(coef_names, model.coef_), key=lambda x: abs(x[1]), reverse=True)
 
-# Print coefficients with their names
 for name, coef in sorted_coefs:
     print(f&quot;{name}: {coef:.4f}&quot;)
 
 import statsmodels.api as sm
 
-# Add a constant term to the independent variables
-X = sm.add_constant(california_df.drop(columns=[&#x27;MedHouseVal&#x27;]))
+X = sm.add_constant(california_df.drop(columns=[&
 
-# Fit the multiple linear regression model
-model = sm.OLS(california_df[&#x27;MedHouseVal&#x27;], X).fit()
+model = sm.OLS(california_df[&
 
-# Get the p-values
 p_values = model.pvalues
 
-# Print the p-values
 print(&quot;P-values for the coefficients:&quot;)
 print(p_values)</code></pre>
         </div>
@@ -1024,16 +942,16 @@ print(p_values)</code></pre>
           <pre><code>residuals = y_test - y_pred
 
 residuals.hist()
-plt.title(&#x27;Histogram of Model Residuals&#x27;)
-plt.xlabel(&#x27;Residuals&#x27;)
-plt.ylabel(&#x27;Frequency&#x27;)
+plt.title(&
+plt.xlabel(&
+plt.ylabel(&
 plt.show()
 
 plt.figure(figsize=(8, 6))
 plt.boxplot(residuals)
-plt.title(&#x27;Boxplot of Model Residuals&#x27;)
-plt.xlabel(&#x27;Residuals&#x27;)
-plt.ylabel(&#x27;Values&#x27;)
+plt.title(&
+plt.xlabel(&
+plt.ylabel(&
 plt.show()
 
 residuals.describe()</code></pre>
@@ -1050,8 +968,8 @@ residuals.describe()</code></pre>
         </div>
         <div class="solution" style="display: none;">
           <h3>Solution Code:</h3>
-          <pre><code>X = california_df_standardized.drop([&#x27;MedHouseVal&#x27;], axis = 1)
-y = california_df_standardized[&#x27;MedHouseVal&#x27;]
+          <pre><code>X = california_df_standardized.drop([&
+y = california_df_standardized[&
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, random_state = 42)
 
@@ -1066,8 +984,8 @@ print(mse)
 r2 = r2_score(y_test, y_pred)
 print(r2)
 
-X = california_df.drop([&#x27;MedHouseVal&#x27;, &#x27;Population&#x27;], axis = 1)
-y = california_df[&#x27;MedHouseVal&#x27;]
+X = california_df.drop([&
+y = california_df[&
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, random_state = 42)
 
@@ -1082,8 +1000,8 @@ print(mse)
 r2 = r2_score(y_test, y_pred)
 print(r2)
 
-X = california_df_scaled.drop([&#x27;MedHouseVal&#x27;,&#x27;Population&#x27;], axis = 1)
-y = california_df_scaled[&#x27;MedHouseVal&#x27;]
+X = california_df_scaled.drop([&
+y = california_df_scaled[&
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, random_state = 42)
 
