@@ -855,7 +855,8 @@ def get_practice_progress():
         
         if exercise_id:
             cursor.execute("""
-                SELECT exercise_id, exercise_type, status, score, time_spent, attempts, completed_at, progress_data
+                SELECT exercise_id, exercise_title, best_score, best_accuracy, best_time, 
+                       total_attempts, last_attempt_score, completed, last_completed_at
                 FROM practice_progress
                 WHERE user_id = %s AND exercise_id = %s
             """, (user_id, exercise_id))
@@ -863,34 +864,36 @@ def get_practice_progress():
             if result:
                 return jsonify({
                     'exercise_id': result[0],
-                    'exercise_type': result[1],
-                    'status': result[2],
-                    'score': result[3],
-                    'time_spent': result[4],
-                    'attempts': result[5],
-                    'completed_at': result[6].isoformat() if result[6] else None,
-                    'progress_data': result[7]
+                    'exercise_title': result[1],
+                    'best_score': result[2] or 0,
+                    'best_accuracy': float(result[3]) if result[3] else 0,
+                    'best_time': result[4],
+                    'total_attempts': result[5] or 0,
+                    'last_attempt_score': result[6] or 0,
+                    'completed': result[7] or False,
+                    'last_completed_at': result[8].isoformat() if result[8] else None
                 }), 200
             else:
                 return jsonify({}), 200
         else:
             cursor.execute("""
-                SELECT exercise_id, exercise_type, status, score, time_spent, attempts, completed_at
+                SELECT exercise_id, exercise_title, best_score, best_accuracy, 
+                       total_attempts, completed, last_completed_at
                 FROM practice_progress
                 WHERE user_id = %s
-                ORDER BY updated_at DESC
+                ORDER BY exercise_id
             """, (user_id,))
             
             progress = []
             for row in cursor.fetchall():
                 progress.append({
                     'exercise_id': row[0],
-                    'exercise_type': row[1],
-                    'status': row[2],
-                    'score': row[3],
-                    'time_spent': row[4],
-                    'attempts': row[5],
-                    'completed_at': row[6].isoformat() if row[6] else None
+                    'exercise_title': row[1],
+                    'best_score': row[2] or 0,
+                    'best_accuracy': float(row[3]) if row[3] else 0,
+                    'total_attempts': row[4] or 0,
+                    'completed': row[5] or False,
+                    'last_completed_at': row[6].isoformat() if row[6] else None
                 })
             
             cursor.close()
@@ -907,12 +910,14 @@ def update_practice_progress():
         data = request.json
         user_id = data.get('user_id')
         exercise_id = data.get('exercise_id')
-        exercise_type = data.get('exercise_type')
-        status = data.get('status')
-        score = data.get('score')
-        time_spent = data.get('time_spent')
-        attempts = data.get('attempts')
-        progress_data = data.get('progress_data')
+        exercise_title = data.get('exercise_title', '')
+        score = data.get('score', 0)
+        accuracy = data.get('accuracy', 0)
+        time_spent = data.get('time_spent', 0)
+        progress_data = data.get('progress_data', {})
+        
+        if progress_data:
+            exercise_title = progress_data.get('exercise_title', exercise_title)
         
         if not user_id or not exercise_id:
             return jsonify({'error': 'Missing user_id or exercise_id'}), 400
@@ -920,31 +925,202 @@ def update_practice_progress():
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        import json as json_lib
-        progress_json = json_lib.dumps(progress_data) if progress_data else None
+        # Get current best score if exists
+        cursor.execute("""
+            SELECT best_score, total_attempts FROM practice_progress 
+            WHERE user_id = %s AND exercise_id = %s
+        """, (user_id, exercise_id))
         
+        existing = cursor.fetchone()
+        current_best_score = existing[0] if existing and existing[0] else 0
+        current_attempts = existing[1] if existing and existing[1] else 0
+        
+        # Determine if this is a new best
+        is_new_best = score > current_best_score
+        new_best_score = max(score, current_best_score)
+        
+        # Get accuracy and time from progress_data if provided
+        accuracy = progress_data.get('accuracy', 0) if progress_data else 0
+        time_spent_seconds = time_spent if time_spent else 0
+        
+        # Insert or update practice progress
         cursor.execute("""
             INSERT INTO practice_progress 
-                (user_id, exercise_id, exercise_type, status, score, time_spent, attempts, progress_data, completed_at, updated_at)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s::jsonb, 
-                    CASE WHEN %s = 'completed' THEN CURRENT_TIMESTAMP ELSE NULL END,
+                (user_id, exercise_id, exercise_title, best_score, best_accuracy, best_time, 
+                 total_attempts, last_attempt_score, last_attempt_accuracy, last_attempt_time,
+                 completed, last_completed_at, updated_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 
+                    CASE WHEN %s >= 50 THEN CURRENT_TIMESTAMP ELSE NULL END,
                     CURRENT_TIMESTAMP)
             ON CONFLICT (user_id, exercise_id) DO UPDATE SET
-                exercise_type = EXCLUDED.exercise_type,
-                status = EXCLUDED.status,
-                score = EXCLUDED.score,
-                time_spent = EXCLUDED.time_spent,
-                attempts = EXCLUDED.attempts,
-                progress_data = EXCLUDED.progress_data,
-                completed_at = CASE WHEN EXCLUDED.status = 'completed' THEN COALESCE(practice_progress.completed_at, CURRENT_TIMESTAMP) ELSE practice_progress.completed_at END,
+                best_score = GREATEST(practice_progress.best_score, EXCLUDED.best_score),
+                best_accuracy = CASE 
+                    WHEN EXCLUDED.best_score > practice_progress.best_score THEN EXCLUDED.best_accuracy
+                    ELSE practice_progress.best_accuracy
+                END,
+                best_time = CASE 
+                    WHEN EXCLUDED.best_score > practice_progress.best_score THEN EXCLUDED.best_time
+                    ELSE practice_progress.best_time
+                END,
+                total_attempts = practice_progress.total_attempts + 1,
+                last_attempt_score = EXCLUDED.last_attempt_score,
+                last_attempt_accuracy = EXCLUDED.last_attempt_accuracy,
+                last_attempt_time = EXCLUDED.last_attempt_time,
+                completed = CASE WHEN EXCLUDED.best_score >= 50 THEN true ELSE practice_progress.completed END,
+                last_completed_at = CASE 
+                    WHEN EXCLUDED.best_score >= 50 THEN COALESCE(EXCLUDED.last_completed_at, CURRENT_TIMESTAMP)
+                    ELSE practice_progress.last_completed_at
+                END,
                 updated_at = CURRENT_TIMESTAMP
-        """, (user_id, exercise_id, exercise_type, status, score, time_spent, attempts, progress_json, status))
+        """, (user_id, exercise_id, progress_data.get('exercise_title', exercise_id) if progress_data else exercise_id,
+              new_best_score, accuracy if is_new_best else None, time_spent_seconds if is_new_best else None,
+              current_attempts + 1, score, accuracy, time_spent_seconds,
+              score >= 50, score))
+        
+        # Record this attempt in exercise_attempts table
+        cursor.execute("""
+            INSERT INTO exercise_attempts (user_id, exercise_id, score, accuracy, time_spent, attempt_number)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (user_id, exercise_id, score, accuracy, time_spent_seconds, current_attempts + 1))
         
         conn.commit()
         cursor.close()
         conn.close()
         
-        return jsonify({'success': True}), 200
+        return jsonify({
+            'success': True,
+            'is_new_best': is_new_best,
+            'best_score': new_best_score
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/exercises/progress', methods=['GET'])
+def get_all_progress():
+    """Get progress for all exercises for current user"""
+    try:
+        user_id = request.headers.get('X-User-Id') or request.args.get('user_id')
+        if not user_id:
+            return jsonify({'error': 'User ID required'}), 400
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT exercise_id, exercise_title, best_score, best_accuracy, 
+                   total_attempts, completed, last_completed_at
+            FROM practice_progress
+            WHERE user_id = %s
+            ORDER BY exercise_id
+        """, (user_id,))
+        
+        results = cursor.fetchall()
+        progress = []
+        for row in results:
+            progress.append({
+                'exercise_id': row[0],
+                'exercise_title': row[1],
+                'best_score': row[2] or 0,
+                'best_accuracy': float(row[3]) if row[3] else 0,
+                'total_attempts': row[4] or 0,
+                'completed': row[5] or False,
+                'last_completed_at': row[6].isoformat() if row[6] else None
+            })
+        
+        cursor.close()
+        conn.close()
+        
+        return jsonify({'progress': progress}), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/exercises/<exercise_id>/leaderboard', methods=['GET'])
+def get_exercise_leaderboard(exercise_id):
+    """Get leaderboard for a specific exercise"""
+    try:
+        limit = int(request.args.get('limit', 10))
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT u.name, u.email, pp.best_score, pp.best_accuracy, 
+                   pp.best_time, pp.total_attempts, pp.last_completed_at
+            FROM practice_progress pp
+            JOIN users u ON pp.user_id = u.user_id
+            WHERE pp.exercise_id = %s AND pp.best_score > 0
+            ORDER BY pp.best_score DESC, pp.best_time ASC
+            LIMIT %s
+        """, (exercise_id, limit))
+        
+        results = cursor.fetchall()
+        leaderboard = []
+        rank = 1
+        for row in results:
+            leaderboard.append({
+                'rank': rank,
+                'name': row[0],
+                'email': row[1],
+                'best_score': row[2],
+                'best_accuracy': float(row[3]) if row[3] else 0,
+                'best_time': row[4],
+                'total_attempts': row[5] or 0
+            })
+            rank += 1
+        
+        cursor.close()
+        conn.close()
+        
+        return jsonify({'leaderboard': leaderboard}), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/leaderboard/grand', methods=['GET'])
+def get_grand_leaderboard():
+    """Get grand leaderboard - ranked by average score across all exercises"""
+    try:
+        limit = int(request.args.get('limit', 10))
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT u.user_id, u.name, u.email,
+                   COUNT(DISTINCT pp.exercise_id) as exercises_completed,
+                   AVG(pp.best_score) as average_score,
+                   SUM(pp.best_score) as total_score,
+                   MAX(pp.last_completed_at) as last_activity
+            FROM users u
+            JOIN practice_progress pp ON u.user_id = pp.user_id
+            WHERE pp.completed = true AND pp.best_score >= 50
+            GROUP BY u.user_id, u.name, u.email
+            HAVING COUNT(DISTINCT pp.exercise_id) > 0
+            ORDER BY average_score DESC, exercises_completed DESC
+            LIMIT %s
+        """, (limit,))
+        
+        results = cursor.fetchall()
+        leaderboard = []
+        rank = 1
+        for row in results:
+            leaderboard.append({
+                'rank': rank,
+                'user_id': row[0],
+                'name': row[1],
+                'email': row[2],
+                'exercises_completed': row[3],
+                'average_score': float(row[4]) if row[4] else 0,
+                'total_score': int(row[5]) if row[5] else 0
+            })
+            rank += 1
+        
+        cursor.close()
+        conn.close()
+        
+        return jsonify({'leaderboard': leaderboard}), 200
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500

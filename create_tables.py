@@ -115,22 +115,39 @@ def create_tables():
             );
         """)
         
-        # Create practice_progress table (for future practice/exercise tracking)
+        # Create practice_progress table (track exercise scores and progress)
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS practice_progress (
                 id SERIAL PRIMARY KEY,
                 user_id VARCHAR(255) NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
                 exercise_id VARCHAR(255) NOT NULL,
-                exercise_type VARCHAR(100),
-                status VARCHAR(50),
-                score INTEGER,
-                time_spent INTEGER,
-                attempts INTEGER DEFAULT 0,
-                completed_at TIMESTAMP,
-                progress_data JSONB,
+                exercise_title VARCHAR(500),
+                best_score INTEGER DEFAULT 0,
+                best_accuracy DECIMAL(5,2) DEFAULT 0,
+                best_time INTEGER,
+                total_attempts INTEGER DEFAULT 0,
+                last_attempt_score INTEGER,
+                last_attempt_accuracy DECIMAL(5,2),
+                last_attempt_time INTEGER,
+                completed BOOLEAN DEFAULT false,
+                last_completed_at TIMESTAMP,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE(user_id, exercise_id)
+            );
+        """)
+        
+        # Create exercise_attempts table (track all attempts for detailed history)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS exercise_attempts (
+                id SERIAL PRIMARY KEY,
+                user_id VARCHAR(255) NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+                exercise_id VARCHAR(255) NOT NULL,
+                score INTEGER NOT NULL,
+                accuracy DECIMAL(5,2) NOT NULL,
+                time_spent INTEGER NOT NULL,
+                attempt_number INTEGER NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         """)
         

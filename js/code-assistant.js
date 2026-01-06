@@ -44,10 +44,10 @@ async function saveConversation() {
     }
     
     // Also update local list for immediate UI update
-    const conversation = {
+  const conversation = {
       id: conversationId,
-      title: title,
-      date: new Date().toLocaleString(),
+    title: title,
+    date: new Date().toLocaleString(),
       messages: messageList
     };
     
@@ -69,17 +69,17 @@ async function saveConversation() {
       date: new Date().toLocaleString(),
       messages: messageList
     };
-    const existing = JSON.parse(localStorage.getItem('conversationHistory') || '[]');
+  const existing = JSON.parse(localStorage.getItem('conversationHistory') || '[]');
     const index = existing.findIndex(c => c.id === conversationId);
-    if (index >= 0) {
-      existing[index] = conversation;
-    } else {
-      existing.push(conversation);
-    }
-    const recent = existing.slice(-50);
-    localStorage.setItem('conversationHistory', JSON.stringify(recent));
-    conversationHistoryList = recent;
-    renderConversationHistory();
+  if (index >= 0) {
+    existing[index] = conversation;
+  } else {
+    existing.push(conversation);
+  }
+  const recent = existing.slice(-50);
+  localStorage.setItem('conversationHistory', JSON.stringify(recent));
+  conversationHistoryList = recent;
+  renderConversationHistory();
   }
 }
 
@@ -102,10 +102,10 @@ async function loadConversationHistory() {
       renderConversationHistory();
     } else {
       // Fallback to localStorage if API not available
-      const saved = localStorage.getItem('conversationHistory');
-      if (saved) {
-        conversationHistoryList = JSON.parse(saved);
-      }
+  const saved = localStorage.getItem('conversationHistory');
+  if (saved) {
+    conversationHistoryList = JSON.parse(saved);
+  }
       renderConversationHistory();
     }
   } catch (error) {
@@ -203,28 +203,28 @@ async function loadConversation(conversationId) {
       loadLocalConversation(localConv);
       return;
     }
-    
-    currentConversationId = conversationId;
-    
-    // Clear current chat
-    const messagesContainer = document.getElementById('chatMessages');
-    messagesContainer.innerHTML = '';
-    
-    // Hide welcome section
-    const welcomeSection = document.getElementById('conversationStarters');
-    if (welcomeSection) {
-      welcomeSection.style.display = 'none';
-    }
-    
-    // Load messages
-    conversation.messages.forEach(msg => {
-      addMessage(msg.role, msg.content, false);
-    });
-    
-    // Update history display
-    renderConversationHistory();
-    
-    // Scroll to bottom
+  
+  currentConversationId = conversationId;
+  
+  // Clear current chat
+  const messagesContainer = document.getElementById('chatMessages');
+  messagesContainer.innerHTML = '';
+  
+  // Hide welcome section
+  const welcomeSection = document.getElementById('conversationStarters');
+  if (welcomeSection) {
+    welcomeSection.style.display = 'none';
+  }
+  
+  // Load messages
+  conversation.messages.forEach(msg => {
+    addMessage(msg.role, msg.content, false);
+  });
+  
+  // Update history display
+  renderConversationHistory();
+  
+  // Scroll to bottom
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
   } catch (error) {
     console.error('Error loading conversation:', error);
@@ -267,7 +267,7 @@ async function archiveConversation(conversationId) {
     }
     
     conversation.archived = newArchivedState;
-    
+  
     // If unarchiving, switch to active tab
     if (!conversation.archived && currentConversationTab === 'archived') {
       switchConversationTab('active');
@@ -278,8 +278,8 @@ async function archiveConversation(conversationId) {
     console.error('Error archiving conversation:', error);
     // Fallback to localStorage
     conversation.archived = newArchivedState;
-    localStorage.setItem('conversationHistory', JSON.stringify(conversationHistoryList));
-    renderConversationHistory();
+  localStorage.setItem('conversationHistory', JSON.stringify(conversationHistoryList));
+  renderConversationHistory();
   }
 }
 
@@ -300,12 +300,12 @@ async function deleteConversation(conversationId) {
     
     // Remove from local list
     conversationHistoryList = conversationHistoryList.filter(c => c.id !== conversationId);
-    
-    // If this was the current conversation, start a new one
-    if (conversationId === currentConversationId) {
-      startNewConversation();
-    }
-    
+  
+  // If this was the current conversation, start a new one
+  if (conversationId === currentConversationId) {
+    startNewConversation();
+  }
+  
     renderConversationHistory();
   } catch (error) {
     console.error('Error deleting conversation:', error);
@@ -314,11 +314,11 @@ async function deleteConversation(conversationId) {
     if (conversation) {
       conversation.deleted = true;
       conversation.deletedAt = new Date().toISOString();
-      localStorage.setItem('conversationHistory', JSON.stringify(conversationHistoryList));
+  localStorage.setItem('conversationHistory', JSON.stringify(conversationHistoryList));
       if (conversationId === currentConversationId) {
         startNewConversation();
       }
-      renderConversationHistory();
+  renderConversationHistory();
     }
   }
 }
@@ -407,7 +407,7 @@ async function updateLanguage() {
   } catch (error) {
     console.error('Error saving language preference:', error);
     // Fallback to localStorage
-    localStorage.setItem('currentLanguage', currentLanguage);
+  localStorage.setItem('currentLanguage', currentLanguage);
   }
   
   // Update the display
@@ -627,14 +627,14 @@ function processCodeFile(content, extension) {
 async function updateGeminiModel() {
   const select = document.getElementById('geminiModelSelect');
   if (select) {
-    geminiModel = select.value;
+  geminiModel = select.value;
     
     // Save to API (if available)
     try {
       if (typeof preferencesAPI !== 'undefined') {
         await preferencesAPI.update({ geminiModel: geminiModel });
       } else {
-        localStorage.setItem('geminiModel', geminiModel);
+  localStorage.setItem('geminiModel', geminiModel);
       }
     } catch (error) {
       console.error('Error saving model preference:', error);
@@ -813,22 +813,22 @@ async function saveAPISettings() {
   
   const provider = apiProviderSelect.value;
   const apiKey = apiKeyInput.value.trim();
-  
-  if (!apiKey) {
-    alert('Please enter an API key');
-    return;
-  }
-  
-  localStorage.setItem('aiApiKey', apiKey);
-  localStorage.setItem('aiProvider', provider);
-  
-  // Update provider selector
-  // aiProvider element no longer exists - provider is hardcoded to 'gemini'
-  // No need to update UI element
-  aiProvider = provider;
-  
-  // Initialize agent
-  await initializeAIAgent();
+    
+    if (!apiKey) {
+      alert('Please enter an API key');
+      return;
+    }
+    
+    localStorage.setItem('aiApiKey', apiKey);
+    localStorage.setItem('aiProvider', provider);
+    
+    // Update provider selector
+    // aiProvider element no longer exists - provider is hardcoded to 'gemini'
+    // No need to update UI element
+    aiProvider = provider;
+    
+    // Initialize agent
+    await initializeAIAgent();
   
   closeAPISettings();
 }
