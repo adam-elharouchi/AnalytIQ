@@ -4,13 +4,31 @@ import psycopg2
 from dotenv import load_dotenv
 import os
 import hashlib
+import json
 from datetime import datetime
 
 # Load environment variables
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+
+# Configure CORS to allow requests from your production domain
+# Update this list with your actual production domains
+ALLOWED_ORIGINS = [
+    'http://localhost:*',
+    'https://localhost:*',
+    'http://127.0.0.1:*',
+    'https://127.0.0.1:*',
+    'https://www.myanalytiq.org',
+    'http://www.myanalytiq.org',
+    'https://myanalytiq.org',
+    'http://myanalytiq.org',
+    'https://adamelharouchi5-blip.github.io',
+    'http://adamelharouchi5-blip.github.io',
+]
+
+# Enable CORS with specific origins
+CORS(app, origins=ALLOWED_ORIGINS, supports_credentials=True)
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
@@ -575,18 +593,29 @@ def get_ai_digest():
         if not result:
             return jsonify({
                 'goal': '',
-                'constraints': '',
-                'decisions': '',
-                'current_state': '',
-                'open_questions': ''
+                'constraints': [],
+                'decisions': [],
+                'current_state': [],
+                'open_questions': []
             }), 200
+        
+        # Helper function to parse array from TEXT field
+        def parse_array(value):
+            if not value:
+                return []
+            try:
+                parsed = json.loads(value)
+                return parsed if isinstance(parsed, list) else []
+            except (json.JSONDecodeError, TypeError):
+                # If not JSON, treat as single value in array or empty
+                return [value] if value else []
         
         return jsonify({
             'goal': result[0] or '',
-            'constraints': result[1] or '',
-            'decisions': result[2] or '',
-            'current_state': result[3] or '',
-            'open_questions': result[4] or ''
+            'constraints': parse_array(result[1]),
+            'decisions': parse_array(result[2]),
+            'current_state': parse_array(result[3]),
+            'open_questions': parse_array(result[4])
         }), 200
         
     except Exception as e:
@@ -606,6 +635,20 @@ def update_ai_digest():
         conn = get_db_connection()
         cursor = conn.cursor()
         
+        # Helper function to serialize array to JSON string
+        def serialize_array(value):
+            if isinstance(value, list):
+                return json.dumps(value)
+            if isinstance(value, str):
+                try:
+                    # If it's already JSON, validate it
+                    json.loads(value)
+                    return value
+                except json.JSONDecodeError:
+                    # If not JSON, wrap in array
+                    return json.dumps([value] if value else [])
+            return json.dumps([])
+        
         cursor.execute("""
             INSERT INTO ai_agent_digest (user_id, goal, constraints, decisions, current_state, open_questions, updated_at)
             VALUES (%s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
@@ -619,10 +662,10 @@ def update_ai_digest():
         """, (
             user_id,
             digest.get('goal', ''),
-            digest.get('constraints', ''),
-            digest.get('decisions', ''),
-            digest.get('current_state', ''),
-            digest.get('open_questions', '')
+            serialize_array(digest.get('constraints', [])),
+            serialize_array(digest.get('decisions', [])),
+            serialize_array(digest.get('current_state', [])),
+            serialize_array(digest.get('open_questions', []))
         ))
         
         conn.commit()
