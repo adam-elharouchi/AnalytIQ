@@ -1,5 +1,13 @@
 // Authentication System
-const API_BASE_URL = 'http://localhost:5001/api';
+// Detect environment and set appropriate API URL
+const API_BASE_URL = (() => {
+  // Check if we're running on localhost (development)
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return 'http://localhost:5001/api';
+  }
+  // Production: use relative URL (backend on same domain)
+  return '/api';
+})();
 
 class AuthManager {
   constructor() {
