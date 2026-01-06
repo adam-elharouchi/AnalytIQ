@@ -1,13 +1,13 @@
 // Authentication System
 const API_BASE_URL = (() => {
-  // If using file:// protocol (opening HTML file directly), use localhost
+  // If using file:// protocol (opening HTML file directly), use localhost:5001
   if (window.location.protocol === 'file:') {
-    return 'http://localhost:5000/api';
+    return 'http://localhost:5001/api';
   }
   
   // Check if we're running on localhost (development)
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    return 'http://localhost:5000/api';
+    return 'http://localhost:5001/api';
   }
   
   // Production domain: use relative URL (will work with reverse proxy)
