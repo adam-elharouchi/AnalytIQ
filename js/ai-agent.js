@@ -47,30 +47,56 @@ class CodeWriterAgent {
     this.repoContext = context;
   }
 
-  // Load digest from localStorage
+  // Load digest from API
   async loadDigest() {
-    const saved = localStorage.getItem('codeWriterDigest');
-    if (saved) {
-      this.digest = JSON.parse(saved);
+    try {
+      const digest = await aiAgentAPI.getDigest();
+      this.digest = digest;
+    } catch (error) {
+      console.error('Error loading digest:', error);
+      // Fallback to localStorage
+      const saved = localStorage.getItem('codeWriterDigest');
+      if (saved) {
+        this.digest = JSON.parse(saved);
+      }
     }
   }
 
-  // Save digest to localStorage
+  // Save digest to API
   async saveDigest() {
-    localStorage.setItem('codeWriterDigest', JSON.stringify(this.digest));
-  }
-
-  // Load memory from localStorage
-  async loadMemory() {
-    const saved = localStorage.getItem('codeWriterMemory');
-    if (saved) {
-      this.memory = JSON.parse(saved);
+    try {
+      await aiAgentAPI.saveDigest(this.digest);
+    } catch (error) {
+      console.error('Error saving digest:', error);
+      // Fallback to localStorage
+      localStorage.setItem('codeWriterDigest', JSON.stringify(this.digest));
     }
   }
 
-  // Save memory to localStorage
+  // Load memory from API
+  async loadMemory() {
+    try {
+      const memory = await aiAgentAPI.getMemory();
+      this.memory = memory;
+    } catch (error) {
+      console.error('Error loading memory:', error);
+      // Fallback to localStorage
+      const saved = localStorage.getItem('codeWriterMemory');
+      if (saved) {
+        this.memory = JSON.parse(saved);
+      }
+    }
+  }
+
+  // Save memory to API
   async saveMemory() {
-    localStorage.setItem('codeWriterMemory', JSON.stringify(this.memory));
+    try {
+      await aiAgentAPI.saveMemory(this.memory);
+    } catch (error) {
+      console.error('Error saving memory:', error);
+      // Fallback to localStorage
+      localStorage.setItem('codeWriterMemory', JSON.stringify(this.memory));
+    }
   }
 
   // Update digest from conversation
@@ -145,58 +171,33 @@ RelevantMemory:
 ${this.memory.slice(0, 5).map(m => `- ${m}`).join('\n')}
 ` : '';
 
-    return `You are Code Writer, a pragmatic coding agent inside Cursor.
-Your job: implement the user's request in their repository with minimal, correct changes.
+    return `You are a senior-level AI code assistant whose goal is to deliver correct, maintainable, production-ready solutions while communicating clearly and efficiently.
 
-CRITICAL FORMATTING RULES:
-1. ALL code must be in markdown code blocks (triple backticks with language). Never write code as plain text.
-2. Break down code into logical sections. Each section (e.g., "Univariate Analysis", "Bivariate Analysis", "Data Cleaning") should be:
-   - First: A code block with ONLY the code for that section
-   - Then: Text explanation/analysis of that code section
-   - Then: Next section's code block
-   - Then: Text explanation for that section
-   - And so on...
-3. Example format:
-   Code block with Section 1: Univariate Analysis code
-   Explanation text here about what the code does and what it shows.
-   Code block with Section 2: Bivariate Analysis code
-   Explanation text here about this section.
-4. Do NOT write code outside of code blocks. All code must be wrapped in triple backtick code blocks.
-5. Keep explanations concise and focused on what the code does and what insights it provides.
+For every request, first identify the user's end goal, constraints (such as language, framework, performance, style, or platform), inputs and outputs, and any ambiguity. If missing information would materially affect correctness, ask concise clarifying questions; otherwise, make reasonable assumptions and state them explicitly.
 
-Always follow this response format unless user asks otherwise:
-1) Goal (one sentence)
-2) Plan (2-7 bullets)
-3) Changes (file-by-file, with code patches or full file blocks)
-4) How to run/verify (commands)
-5) Notes (tradeoffs, edge cases, next steps)
+Structure responses by briefly restating the goal, explaining the chosen approach and reasoning, providing the implementation (code or steps), validating the result with examples, tests, or edge cases, and noting pitfalls and best practices.
 
-Rules:
-- Prefer smallest correct diff.
-- Read existing code before writing new code.
-- Do not assume libraries/APIs; verify in repo files or implement behind an interface.
-- If blocked, ask at most ONE clarifying question; otherwise proceed with stated assumptions.
-- Write idiomatic code, matching existing project style.
-- Update or add tests when practical.
-- Never fabricate results of commands; if you can run commands, run them. If not, say what would be run.
-- Maintain a running DIGEST of the conversation and project facts. Use it to stay consistent.
+When writing code:
+- Use modern idiomatic syntax
+- Prioritize readability and correctness
+- Handle errors and edge cases
+- Avoid premature optimization
+- Comment on why rather than what
+- Include usage examples or tests when appropriate
+- Do not output pseudocode unless explicitly requested
+- ALL code must be in markdown code blocks (triple backticks with language). Never write code as plain text.
 - Code blocks should be ready to copy-paste into Google Colab or any IDE.
 
+Use computation tools when accuracy matters, browsing tools for time-sensitive or factual information, cite external sources when used, and never guess on critical facts.
+
+Communicate in a professional, calm, and supportive tone, use structured formatting when helpful, adapt depth to the user's expertise, and avoid unnecessary filler. Use minimal spacing between sentences and paragraphs. Keep spacing between code blocks and following text to a minimum (no extra blank lines).
+
+When debugging, identify the root cause, explain why it occurs, propose one or more fixes, and explain tradeoffs rather than patching symptoms.
+
+Clearly label assumptions and constraints when they exist, and do not end responses with open loops unless follow-up questions are required for correctness.
+
 ${digestText}
-${memoryText}
-
-Before making changes:
-- Identify the relevant files.
-- Summarize what you found.
-- Then patch.
-
-When patching:
-- Use apply_patch style diffs when possible.
-- Keep changes tight; avoid drive-by refactors.
-
-After patching:
-- Provide commands to run.
-- Mention any config/env vars needed.`;
+${memoryText}`;
   }
 
   // Call OpenAI API
@@ -254,7 +255,14 @@ After patching:
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.error?.message || 'Gemini API error');
+      const errorMessage = error.error?.message || 'Gemini API error';
+      
+      // Check for specific API not enabled error
+      if (errorMessage.includes('has not been used') || errorMessage.includes('it is disabled') || errorMessage.includes('Enable it by visiting')) {
+        throw new Error(`Generative Language API is not enabled for this API key's project. Please enable the API in Google Cloud Console: https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com`);
+      }
+      
+      throw new Error(errorMessage);
     }
 
     const data = await response.json();

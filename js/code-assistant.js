@@ -13,13 +13,13 @@ let aiProvider = 'gemini'; // Only Gemini supported
 let aiAgentInitialized = false;
 let geminiModel = 'gemini-2.5-flash'; // Default: Best Balance
 // Default API key - accessible to all users
-const GEMINI_API_KEY = 'AIzaSyAEj5b_MA3Y3oiyhkc1ZXaouRlHqk8C-fY';
+const GEMINI_API_KEY = 'AIzaSyDURc7Q5UxgJZs_L9H3DaJzQD9Rysme_Ws';
 let conversationHistoryList = []; // Store conversation history
 let currentConversationId = null;
 let currentConversationTab = 'active'; // Track current tab: 'active' or 'archived'
 
 // Save conversation to history
-function saveConversation() {
+async function saveConversation() {
   const messages = document.querySelectorAll('.message');
   if (messages.length === 0) return;
   
@@ -27,42 +27,96 @@ function saveConversation() {
   if (!firstUserMessage) return;
   
   const title = firstUserMessage.querySelector('.message-content')?.textContent?.substring(0, 50) || 'New Conversation';
-  const conversation = {
-    id: currentConversationId || Date.now().toString(),
-    title: title,
-    date: new Date().toLocaleString(),
-    messages: Array.from(messages).map(msg => ({
-      role: msg.classList.contains('user-message') ? 'user' : 'assistant',
-      content: msg.querySelector('.message-content')?.innerHTML || ''
-    }))
-  };
+  const conversationId = currentConversationId || Date.now().toString();
+  const messageList = Array.from(messages).map(msg => ({
+    role: msg.classList.contains('user-message') ? 'user' : 'assistant',
+    content: msg.querySelector('.message-content')?.innerHTML || ''
+  }));
   
-  // Load existing conversations
-  const existing = JSON.parse(localStorage.getItem('conversationHistory') || '[]');
-  
-  // Update or add conversation
-  const index = existing.findIndex(c => c.id === conversation.id);
-  if (index >= 0) {
-    existing[index] = conversation;
-  } else {
-    existing.push(conversation);
+  try {
+    // Save to API (if available)
+    if (typeof conversationAPI !== 'undefined') {
+      await conversationAPI.create(conversationId, title);
+      await conversationAPI.update(conversationId, {
+        title: title,
+        messages: messageList
+      });
+    }
+    
+    // Also update local list for immediate UI update
+    const conversation = {
+      id: conversationId,
+      title: title,
+      date: new Date().toLocaleString(),
+      messages: messageList
+    };
+    
+    const index = conversationHistoryList.findIndex(c => c.id === conversationId);
+    if (index >= 0) {
+      conversationHistoryList[index] = conversation;
+    } else {
+      conversationHistoryList.push(conversation);
+    }
+    
+    currentConversationId = conversationId;
+    renderConversationHistory();
+  } catch (error) {
+    console.error('Error saving conversation:', error);
+    // Fallback to localStorage if API not available
+    const conversation = {
+      id: conversationId,
+      title: title,
+      date: new Date().toLocaleString(),
+      messages: messageList
+    };
+    const existing = JSON.parse(localStorage.getItem('conversationHistory') || '[]');
+    const index = existing.findIndex(c => c.id === conversationId);
+    if (index >= 0) {
+      existing[index] = conversation;
+    } else {
+      existing.push(conversation);
+    }
+    const recent = existing.slice(-50);
+    localStorage.setItem('conversationHistory', JSON.stringify(recent));
+    conversationHistoryList = recent;
+    renderConversationHistory();
   }
-  
-  // Keep only last 50 conversations
-  const recent = existing.slice(-50);
-  localStorage.setItem('conversationHistory', JSON.stringify(recent));
-  conversationHistoryList = recent;
-  
-  renderConversationHistory();
 }
 
 // Load conversation history
-function loadConversationHistory() {
-  const saved = localStorage.getItem('conversationHistory');
-  if (saved) {
-    conversationHistoryList = JSON.parse(saved);
+async function loadConversationHistory() {
+  try {
+    // Load from API (if available)
+    if (typeof conversationAPI !== 'undefined') {
+      const active = await conversationAPI.getAll(false);
+      const archived = await conversationAPI.getAll(true);
+      
+      conversationHistoryList = [...active, ...archived].map(conv => ({
+        id: conv.id,
+        title: conv.title,
+        date: conv.date,
+        archived: conv.archived,
+        messages: [] // Messages loaded separately when conversation is opened
+      }));
+      
+      renderConversationHistory();
+    } else {
+      // Fallback to localStorage if API not available
+      const saved = localStorage.getItem('conversationHistory');
+      if (saved) {
+        conversationHistoryList = JSON.parse(saved);
+      }
+      renderConversationHistory();
+    }
+  } catch (error) {
+    console.error('Error loading conversations:', error);
+    // Fallback to localStorage
+    const saved = localStorage.getItem('conversationHistory');
+    if (saved) {
+      conversationHistoryList = JSON.parse(saved);
+    }
+    renderConversationHistory();
   }
-  renderConversationHistory();
 }
 
 // Switch conversation tab (active/archived)
@@ -135,56 +189,102 @@ function renderConversationHistory() {
 }
 
 // Load a conversation
-function loadConversation(conversationId) {
-  const conversation = conversationHistoryList.find(c => c.id === conversationId);
-  if (!conversation || conversation.deleted) return;
-  
-  currentConversationId = conversationId;
-  
-  // Clear current chat
+async function loadConversation(conversationId) {
+  try {
+    // Load from API (if available)
+    let conversation = null;
+    if (typeof conversationAPI !== 'undefined') {
+      conversation = await conversationAPI.get(conversationId);
+    }
+    if (!conversation) {
+      // Fallback to local list
+      const localConv = conversationHistoryList.find(c => c.id === conversationId);
+      if (!localConv || localConv.deleted) return;
+      loadLocalConversation(localConv);
+      return;
+    }
+    
+    currentConversationId = conversationId;
+    
+    // Clear current chat
+    const messagesContainer = document.getElementById('chatMessages');
+    messagesContainer.innerHTML = '';
+    
+    // Hide welcome section
+    const welcomeSection = document.getElementById('conversationStarters');
+    if (welcomeSection) {
+      welcomeSection.style.display = 'none';
+    }
+    
+    // Load messages
+    conversation.messages.forEach(msg => {
+      addMessage(msg.role, msg.content, false);
+    });
+    
+    // Update history display
+    renderConversationHistory();
+    
+    // Scroll to bottom
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  } catch (error) {
+    console.error('Error loading conversation:', error);
+    // Fallback to local list
+    const localConv = conversationHistoryList.find(c => c.id === conversationId);
+    if (localConv && !localConv.deleted) {
+      loadLocalConversation(localConv);
+    }
+  }
+}
+
+// Helper function for loading local conversation (fallback)
+function loadLocalConversation(conversation) {
+  currentConversationId = conversation.id;
   const messagesContainer = document.getElementById('chatMessages');
   messagesContainer.innerHTML = '';
-  
-  // Hide welcome section
   const welcomeSection = document.getElementById('conversationStarters');
   if (welcomeSection) {
     welcomeSection.style.display = 'none';
   }
-  
-  // Load messages
   conversation.messages.forEach(msg => {
     addMessage(msg.role, msg.content, false);
   });
-  
-  // Update history display
   renderConversationHistory();
-  
-  // Scroll to bottom
   messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
 
 // Archive/Unarchive a conversation
-function archiveConversation(conversationId) {
+async function archiveConversation(conversationId) {
   event.stopPropagation();
   const conversation = conversationHistoryList.find(c => c.id === conversationId);
   if (!conversation) return;
   
-  conversation.archived = !conversation.archived;
+  const newArchivedState = !conversation.archived;
   
-  // If unarchiving, switch to active tab
-  if (!conversation.archived && currentConversationTab === 'archived') {
-    switchConversationTab('active');
+  try {
+    // Update via API (if available)
+    if (typeof conversationAPI !== 'undefined') {
+      await conversationAPI.update(conversationId, { archived: newArchivedState });
+    }
+    
+    conversation.archived = newArchivedState;
+    
+    // If unarchiving, switch to active tab
+    if (!conversation.archived && currentConversationTab === 'archived') {
+      switchConversationTab('active');
+    }
+    
+    renderConversationHistory();
+  } catch (error) {
+    console.error('Error archiving conversation:', error);
+    // Fallback to localStorage
+    conversation.archived = newArchivedState;
+    localStorage.setItem('conversationHistory', JSON.stringify(conversationHistoryList));
+    renderConversationHistory();
   }
-  
-  // Save to localStorage
-  localStorage.setItem('conversationHistory', JSON.stringify(conversationHistoryList));
-  
-  // Update display
-  renderConversationHistory();
 }
 
 // Delete a conversation
-function deleteConversation(conversationId) {
+async function deleteConversation(conversationId) {
   event.stopPropagation();
   
   // Confirm deletion
@@ -192,23 +292,35 @@ function deleteConversation(conversationId) {
     return;
   }
   
-  const conversation = conversationHistoryList.find(c => c.id === conversationId);
-  if (!conversation) return;
-  
-  // Mark as deleted instead of removing (for potential recovery)
-  conversation.deleted = true;
-  conversation.deletedAt = new Date().toISOString();
-  
-  // If this was the current conversation, start a new one
-  if (conversationId === currentConversationId) {
-    startNewConversation();
+  try {
+    // Delete via API (if available)
+    if (typeof conversationAPI !== 'undefined') {
+      await conversationAPI.delete(conversationId);
+    }
+    
+    // Remove from local list
+    conversationHistoryList = conversationHistoryList.filter(c => c.id !== conversationId);
+    
+    // If this was the current conversation, start a new one
+    if (conversationId === currentConversationId) {
+      startNewConversation();
+    }
+    
+    renderConversationHistory();
+  } catch (error) {
+    console.error('Error deleting conversation:', error);
+    // Fallback to localStorage
+    const conversation = conversationHistoryList.find(c => c.id === conversationId);
+    if (conversation) {
+      conversation.deleted = true;
+      conversation.deletedAt = new Date().toISOString();
+      localStorage.setItem('conversationHistory', JSON.stringify(conversationHistoryList));
+      if (conversationId === currentConversationId) {
+        startNewConversation();
+      }
+      renderConversationHistory();
+    }
   }
-  
-  // Save to localStorage
-  localStorage.setItem('conversationHistory', JSON.stringify(conversationHistoryList));
-  
-  // Update display
-  renderConversationHistory();
 }
 
 // Start new conversation
@@ -285,10 +397,18 @@ const languageConfig = {
 };
 
 // Update language
-function updateLanguage() {
+async function updateLanguage() {
   const select = document.getElementById('languageSelect');
   currentLanguage = select.value;
-  localStorage.setItem('currentLanguage', currentLanguage);
+  
+  // Save to API
+  try {
+    await preferencesAPI.update({ currentLanguage: currentLanguage });
+  } catch (error) {
+    console.error('Error saving language preference:', error);
+    // Fallback to localStorage
+    localStorage.setItem('currentLanguage', currentLanguage);
+  }
   
   // Update the display
   const display = document.getElementById('languageDisplay');
@@ -504,10 +624,24 @@ function processCodeFile(content, extension) {
 }
 
 // Update Gemini Model
-function updateGeminiModel() {
+async function updateGeminiModel() {
   const select = document.getElementById('geminiModelSelect');
-  geminiModel = select.value;
-  localStorage.setItem('geminiModel', geminiModel);
+  if (select) {
+    geminiModel = select.value;
+    
+    // Save to API (if available)
+    try {
+      if (typeof preferencesAPI !== 'undefined') {
+        await preferencesAPI.update({ geminiModel: geminiModel });
+      } else {
+        localStorage.setItem('geminiModel', geminiModel);
+      }
+    } catch (error) {
+      console.error('Error saving model preference:', error);
+      // Fallback to localStorage
+      localStorage.setItem('geminiModel', geminiModel);
+    }
+  }
   
   // Update the display
   const display = document.getElementById('geminiModelDisplay');
@@ -529,13 +663,27 @@ function updateGeminiModel() {
 }
 
 // Initialize Gemini on page load
-function initializeGemini() {
+async function initializeGemini() {
   // Set Gemini as provider
   aiProvider = 'gemini';
   
-  // Load saved model preference or use default
-  const savedModel = localStorage.getItem('geminiModel') || 'gemini-2.5-flash';
-  geminiModel = savedModel;
+  // Load saved model preference from API or use default
+  try {
+    if (typeof preferencesAPI !== 'undefined') {
+      const prefs = await preferencesAPI.get();
+      geminiModel = prefs.geminiModel || 'gemini-2.5-flash';
+      aiProvider = prefs.aiProvider || 'gemini';
+    } else {
+      // Fallback to localStorage if preferencesAPI not available
+      geminiModel = localStorage.getItem('geminiModel') || 'gemini-2.5-flash';
+      aiProvider = localStorage.getItem('aiProvider') || 'gemini';
+    }
+  } catch (error) {
+    console.error('Error loading preferences:', error);
+    // Fallback to localStorage
+    geminiModel = localStorage.getItem('geminiModel') || 'gemini-2.5-flash';
+    aiProvider = localStorage.getItem('aiProvider') || 'gemini';
+  }
   
   // Update UI to reflect saved model
   const modelSelect = document.getElementById('geminiModelSelect');
@@ -543,94 +691,109 @@ function initializeGemini() {
     modelSelect.value = geminiModel;
   }
   
-  // Use hardcoded API key directly
+  // Set API key in localStorage (API keys are still stored locally for security)
+  const apiKey = localStorage.getItem('geminiApiKey') || localStorage.getItem('aiApiKey') || GEMINI_API_KEY;
+  if (apiKey) {
+    localStorage.setItem('aiApiKey', apiKey);
+    localStorage.setItem('geminiApiKey', apiKey);
+  }
   localStorage.setItem('aiProvider', 'gemini');
   
   // Initialize AI agent
   initializeAIAgent();
 }
 
-// Test Ollama connection
-async function testOllamaConnection() {
-  const ollamaUrl = localStorage.getItem('ollamaUrl') || 'http://localhost:11434';
-  
+// Test API connection
+async function testAPIConnection(apiKey) {
   try {
-    const response = await fetch(`${ollamaUrl}/api/tags`);
-    if (response.ok) {
-      const data = await response.json();
-      const models = data.models?.map(m => m.name).join(', ') || 'None';
-      addMessage('assistant', `✅ Connected to Ollama at ${ollamaUrl}!\n\nAvailable models: ${models}\n\n**Note:** Ollama runs locally on your machine - no API key needed!`);
-    } else {
-      throw new Error('Ollama not responding');
+    const testResponse = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          contents: [{
+            role: 'user',
+            parts: [{ text: 'test' }]
+          }],
+          generationConfig: {
+            maxOutputTokens: 10
+          }
+        })
+      }
+    );
+    
+    if (!testResponse.ok) {
+      const error = await testResponse.json();
+      const errorMessage = error.error?.message || 'API test failed';
+      
+      if (errorMessage.includes('has not been used') || errorMessage.includes('it is disabled') || errorMessage.includes('Enable it by visiting')) {
+        throw new Error('Generative Language API is not enabled. Please enable it in Google Cloud Console: https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com');
+      }
+      
+      throw new Error(`API test failed: ${errorMessage}`);
     }
+    
+    return true;
   } catch (error) {
-    addMessage('assistant', `⚠️ Cannot connect to Ollama at ${ollamaUrl}.\n\n**To use Ollama:**\n1. Install Ollama from https://ollama.ai\n2. Run: \`ollama pull llama2\` (or another model)\n3. Make sure Ollama is running\n4. Try again\n\n**Or use Local Intelligence mode** - it works without any setup!`);
+    throw error;
   }
 }
 
 // Initialize AI Agent
 async function initializeAIAgent() {
-  // Use hardcoded API key directly
-  const apiKey = GEMINI_API_KEY;
+  const apiKey = localStorage.getItem('geminiApiKey') || localStorage.getItem('aiApiKey') || GEMINI_API_KEY;
+  
+  if (!apiKey) {
+    console.error('Gemini API key not found');
+    aiAgentInitialized = false;
+    return false;
+  }
   
   try {
+    // Test API connection first (skip test to avoid extra call, just initialize directly)
     await codeWriterAgent.initialize(apiKey, 'gemini', geminiModel);
     aiAgentInitialized = true;
     console.log(`Gemini AI agent initialized successfully with model: ${geminiModel}`);
+    return true;
   } catch (error) {
     console.error(`Failed to initialize Gemini AI agent: ${error.message}`);
     aiAgentInitialized = false;
+    
+    // Show user-friendly error if API is not enabled
+    if (error.message.includes('not enabled') || error.message.includes('Enable it')) {
+      console.error('⚠️ API Setup Required: Please enable the Generative Language API in Google Cloud Console for this API key.');
+    }
+    return false;
   }
 }
 
 // Show API Settings Modal
 function showAPISettings() {
   const modal = document.getElementById('apiSettingsModal');
+  if (!modal) return; // Modal doesn't exist, function not used
+  
   const apiKey = GEMINI_API_KEY; // Use hardcoded API key
   const provider = localStorage.getItem('aiProvider') || 'gemini';
-  const ollamaUrl = localStorage.getItem('ollamaUrl') || 'http://localhost:11434';
   
-  document.getElementById('apiKeyInput').value = apiKey;
-  document.getElementById('apiProviderSelect').value = provider;
-  document.getElementById('ollamaUrlInput').value = ollamaUrl;
+  const apiKeyInput = document.getElementById('apiKeyInput');
+  const apiProviderSelect = document.getElementById('apiProviderSelect');
   
-  // Show/hide Ollama URL field
-  const ollamaGroup = document.getElementById('ollamaUrlGroup');
-  const apiKeyGroup = document.querySelector('.form-group:has(#apiKeyInput)');
-  if (provider === 'ollama') {
-    ollamaGroup.style.display = 'block';
-    apiKeyGroup.style.display = 'none';
-  } else {
-    ollamaGroup.style.display = 'none';
-    apiKeyGroup.style.display = 'block';
-  }
+  if (apiKeyInput) apiKeyInput.value = apiKey;
+  if (apiProviderSelect) apiProviderSelect.value = provider;
   
   modal.style.display = 'block';
 }
 
-// Update form when provider changes
-document.addEventListener('DOMContentLoaded', function() {
-  const providerSelect = document.getElementById('apiProviderSelect');
-  if (providerSelect) {
-    providerSelect.addEventListener('change', function() {
-      const provider = this.value;
-      const ollamaGroup = document.getElementById('ollamaUrlGroup');
-      const apiKeyGroup = document.querySelector('.form-group:has(#apiKeyInput)');
-      
-      if (provider === 'ollama') {
-        ollamaGroup.style.display = 'block';
-        apiKeyGroup.style.display = 'none';
-      } else {
-        ollamaGroup.style.display = 'none';
-        apiKeyGroup.style.display = 'block';
-      }
-    });
-  }
-});
 
 // Close API Settings Modal
 function closeAPISettings() {
-  document.getElementById('apiSettingsModal').style.display = 'none';
+  const modal = document.getElementById('apiSettingsModal');
+  if (modal) {
+    modal.style.display = 'none';
+  }
 }
 
 // Close modal when clicking outside
@@ -643,41 +806,29 @@ window.onclick = function(event) {
 
 // Save API Settings
 async function saveAPISettings() {
-  const provider = document.getElementById('apiProviderSelect').value;
+  const apiProviderSelect = document.getElementById('apiProviderSelect');
+  const apiKeyInput = document.getElementById('apiKeyInput');
   
-  if (provider === 'ollama') {
-    const ollamaUrl = document.getElementById('ollamaUrlInput').value.trim() || 'http://localhost:11434';
-    localStorage.setItem('ollamaUrl', ollamaUrl);
-    localStorage.setItem('aiProvider', provider);
-    
-    // Update provider selector
-    // aiProvider element no longer exists - provider is hardcoded to 'gemini'
-    // No need to update UI element
-    aiProvider = provider;
-    
-    closeAPISettings();
-    // Test connection
-    await testOllamaConnection();
+  if (!apiProviderSelect || !apiKeyInput) return; // Elements don't exist, function not used
+  
+  const provider = apiProviderSelect.value;
+  const apiKey = apiKeyInput.value.trim();
+  
+  if (!apiKey) {
+    alert('Please enter an API key');
     return;
-  } else {
-    const apiKey = document.getElementById('apiKeyInput').value.trim();
-    
-    if (!apiKey) {
-      alert('Please enter an API key');
-      return;
-    }
-    
-    localStorage.setItem('aiApiKey', apiKey);
-    localStorage.setItem('aiProvider', provider);
-    
-    // Update provider selector
-    // aiProvider element no longer exists - provider is hardcoded to 'gemini'
-    // No need to update UI element
-    aiProvider = provider;
-    
-    // Initialize agent
-    await initializeAIAgent();
   }
+  
+  localStorage.setItem('aiApiKey', apiKey);
+  localStorage.setItem('aiProvider', provider);
+  
+  // Update provider selector
+  // aiProvider element no longer exists - provider is hardcoded to 'gemini'
+  // No need to update UI element
+  aiProvider = provider;
+  
+  // Initialize agent
+  await initializeAIAgent();
   
   closeAPISettings();
 }
@@ -711,15 +862,17 @@ async function sendMessage() {
   const loadingId = addLoadingMessage();
   
   try {
-    let response;
+    // Ensure AI agent is initialized, try to initialize if not
+    if (!aiAgentInitialized) {
+      // Try to initialize the agent
+      const initialized = await initializeAIAgent();
+      if (!initialized) {
+        throw new Error('Failed to initialize AI agent. The API key may be invalid or the API may not be enabled. Please check the console for details.');
+      }
+    }
     
     // Use Gemini AI
-    if (aiAgentInitialized) {
-      response = await codeWriterAgent.processMessage(message);
-    } else {
-      // Fallback to enhanced local processing if Gemini not initialized
-      response = localIntelligence.processMessage(message, chatHistory, uploadedData, currentLanguage);
-    }
+    const response = await codeWriterAgent.processMessage(message);
     
     removeLoadingMessage(loadingId);
     addMessage('assistant', response);
@@ -731,18 +884,19 @@ async function sendMessage() {
     }, 1000);
   } catch (error) {
     removeLoadingMessage(loadingId);
-    const errorMessage = `❌ Error: ${error.message}\n\nFalling back to local intelligence...`;
+    let errorMessage = `❌ Error: ${error.message}`;
+    
+    // Provide specific guidance for API not enabled error
+    if (error.message.includes('not enabled') || error.message.includes('Enable it')) {
+      errorMessage += `\n\n🔧 Setup Required:\nThe Generative Language API needs to be enabled for your API key's Google Cloud project.\n\n1. Go to: https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com\n2. Select the project associated with your API key\n3. Click "Enable"\n4. Wait a few minutes for changes to propagate\n5. Refresh this page and try again`;
+    } else {
+      errorMessage += `\n\nPlease ensure the API key is configured correctly and has the necessary permissions.`;
+    }
+    
     addMessage('assistant', errorMessage);
     
     // Add error message to chat history
     chatHistory.push({ role: 'assistant', content: errorMessage });
-    
-    // Fallback to enhanced local processing
-    const localResponse = localIntelligence.processMessage(message, chatHistory, uploadedData, currentLanguage);
-    addMessage('assistant', localResponse);
-    
-    // Add fallback response to chat history
-    chatHistory.push({ role: 'assistant', content: localResponse });
     
     // Auto-save conversation after a short delay
     setTimeout(() => {
@@ -1692,7 +1846,14 @@ function formatMessageContent(content) {
   // Handle bold
   content = content.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   
-  // Handle line breaks
+  // Reduce excessive newlines (3+ consecutive newlines become 2, helps reduce spacing)
+  content = content.replace(/\n{3,}/g, '\n\n');
+  
+  // Handle line breaks - but reduce spacing after code blocks
+  // Replace newline after code block container closing tag with minimal spacing
+  content = content.replace(/<\/div>\n+/g, '</div>');
+  
+  // Convert remaining newlines to <br>
   content = content.replace(/\n/g, '<br>');
   
   // Handle lists
@@ -2000,15 +2161,6 @@ document.addEventListener('DOMContentLoaded', function() {
   // Load saved AI provider (Gemini is the only supported provider)
   const savedProvider = localStorage.getItem('aiProvider') || 'gemini';
   aiProvider = savedProvider;
-  
-  // Check if API key is available
-  // Use hardcoded API key directly
-  const apiKey = GEMINI_API_KEY;
-  
-  // Initialize AI agent
-  if (savedProvider !== 'local') {
-    initializeAIAgent();
-  }
   
   // Hide conversation starters after first message
   const chatMessages = document.getElementById('chatMessages');

@@ -116,7 +116,7 @@
   
   <script src="js/auth.js"></script>
   <script src="js/navigation.js"></script>
-  <script src="js/local-intelligence.js"></script>
+  <script src="js/api-helper.js"></script>
   <script src="js/ai-agent.js"></script>
   <script src="js/code-assistant.js"></script>
   <script>
@@ -128,6 +128,41 @@
       }
       // Initialize Gemini AI
       initializeGemini();
+      
+      // Load preferences and set defaults
+      (async () => {
+        try {
+          const prefs = await preferencesAPI.get();
+          currentLanguage = prefs.currentLanguage || 'python';
+          geminiModel = prefs.geminiModel || 'gemini-2.5-flash';
+          
+          // Update UI
+          const langSelect = document.getElementById('languageSelect');
+          if (langSelect) langSelect.value = currentLanguage;
+          const modelSelect = document.getElementById('geminiModelSelect');
+          if (modelSelect) modelSelect.value = geminiModel;
+          
+          updateLanguage();
+          updateGeminiModel();
+        } catch (error) {
+          console.error('Error loading preferences:', error);
+          // Fallback to localStorage
+          const savedLang = localStorage.getItem('currentLanguage');
+          if (savedLang) {
+            currentLanguage = savedLang;
+            const langSelect = document.getElementById('languageSelect');
+            if (langSelect) langSelect.value = currentLanguage;
+            updateLanguage();
+          }
+          const savedModel = localStorage.getItem('geminiModel');
+          if (savedModel) {
+            geminiModel = savedModel;
+            const modelSelect = document.getElementById('geminiModelSelect');
+            if (modelSelect) modelSelect.value = geminiModel;
+            updateGeminiModel();
+          }
+        }
+      })();
       
       // Load conversation history
       loadConversationHistory();
@@ -143,10 +178,6 @@
       if (sidebar && fullPage) {
         sidebar.classList.add('hidden');
       }
-      
-      // Initialize displays
-      updateGeminiModel();
-      updateLanguage();
     });
   </script>
 </body>
