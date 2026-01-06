@@ -94,38 +94,60 @@ def signup():
         )
         user = cursor.fetchone()
         
-        # Create default profile
-        cursor.execute(
-            "INSERT INTO user_profiles (user_id) VALUES (%s)",
-            (user_id,)
-        )
+        if not user:
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'Failed to create user'}), 500
         
-        # Create default settings
-        cursor.execute(
-            "INSERT INTO user_settings (user_id) VALUES (%s)",
-            (user_id,)
-        )
+        created_user_id = user[0]
         
-        # Create default preferences
-        cursor.execute(
-            "INSERT INTO user_preferences (user_id) VALUES (%s)",
-            (user_id,)
-        )
+        # Create default profile (with error handling)
+        try:
+            cursor.execute(
+                "INSERT INTO user_profiles (user_id) VALUES (%s) ON CONFLICT (user_id) DO NOTHING",
+                (created_user_id,)
+            )
+        except Exception as e:
+            print(f"Warning: Could not create user_profiles: {e}")
         
-        # Initialize empty AI agent digest
-        cursor.execute(
-            "INSERT INTO ai_agent_digest (user_id) VALUES (%s)",
-            (user_id,)
-        )
+        # Create default settings (with error handling)
+        try:
+            cursor.execute(
+                "INSERT INTO user_settings (user_id) VALUES (%s) ON CONFLICT (user_id) DO NOTHING",
+                (created_user_id,)
+            )
+        except Exception as e:
+            print(f"Warning: Could not create user_settings: {e}")
+        
+        # Create default preferences (with error handling)
+        try:
+            cursor.execute(
+                "INSERT INTO user_preferences (user_id) VALUES (%s) ON CONFLICT (user_id) DO NOTHING",
+                (created_user_id,)
+            )
+        except Exception as e:
+            print(f"Warning: Could not create user_preferences: {e}")
+        
+        # Initialize empty AI agent digest (with error handling)
+        try:
+            cursor.execute(
+                "INSERT INTO ai_agent_digest (user_id) VALUES (%s) ON CONFLICT (user_id) DO NOTHING",
+                (created_user_id,)
+            )
+        except Exception as e:
+            print(f"Warning: Could not create ai_agent_digest: {e}")
         
         conn.commit()
         cursor.close()
         conn.close()
         
+        # Return user data - include user_id for clarity
         return jsonify({
-            'id': user[0],
+            'id': created_user_id,  # This is the user_id from database
+            'user_id': created_user_id,  # Also return as user_id for compatibility
             'name': user[1],
-            'email': user[2]
+            'email': user[2],
+            'success': True
         }), 201
         
     except Exception as e:
@@ -158,8 +180,10 @@ def signin():
         if not user:
             return jsonify({'error': 'Invalid email or password'}), 401
         
+        # Return user data - include user_id for clarity
         return jsonify({
-            'id': user[0],
+            'id': user[0],  # user_id
+            'user_id': user[0],  # Also return as user_id for compatibility
             'name': user[1],
             'email': user[2]
         }), 200
@@ -910,6 +934,13 @@ def update_practice_progress():
         data = request.json
         user_id = data.get('user_id')
         exercise_id = data.get('exercise_id')
+        
+        if not user_id or not exercise_id:
+            return jsonify({'error': 'Missing user_id or exercise_id'}), 400
+        
+        # Ensure user_id is a string (in case it's passed as number)
+        user_id = str(user_id)
+        
         exercise_title = data.get('exercise_title', '')
         score = data.get('score', 0)
         accuracy = data.get('accuracy', 0)
@@ -919,11 +950,14 @@ def update_practice_progress():
         if progress_data:
             exercise_title = progress_data.get('exercise_title', exercise_title)
         
-        if not user_id or not exercise_id:
-            return jsonify({'error': 'Missing user_id or exercise_id'}), 400
-        
+        # Verify user exists in database
         conn = get_db_connection()
         cursor = conn.cursor()
+        cursor.execute("SELECT user_id FROM users WHERE user_id = %s", (user_id,))
+        if not cursor.fetchone():
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'User not found in database. Please sign up first.'}), 404
         
         # Get current best score if exists
         cursor.execute("""
