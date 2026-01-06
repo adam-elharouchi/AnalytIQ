@@ -1,5 +1,4 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS, cross_origin
 import psycopg2
 from dotenv import load_dotenv
 import os
@@ -12,36 +11,31 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# Configure CORS to allow ALL origins including file:// protocol (null origin)
-# This allows the site to work when opening HTML files directly AND on domains
+# Disable automatic OPTIONS handling so we can handle CORS manually
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+
+# Manual CORS handling - works with file:// protocol and all domains
 @app.before_request
-def handle_preflight():
-    if request.method == "OPTIONS":
-        response = jsonify({})
-        response.headers.add("Access-Control-Allow-Origin", "*")
-        response.headers.add('Access-Control-Allow-Headers', "Content-Type, Authorization")
-        response.headers.add('Access-Control-Allow-Methods', "GET, POST, PUT, DELETE, OPTIONS")
+def handle_options():
+    if request.method == 'OPTIONS':
+        # Create response for OPTIONS preflight
+        response = app.response_class()
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+        response.headers.add('Access-Control-Max-Age', '3600')
+        response.status_code = 200
         return response
 
 @app.after_request
 def after_request(response):
-    # Allow all origins, including null (file:// protocol)
-    origin = request.headers.get('Origin')
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
-    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
-    response.headers['Access-Control-Allow-Credentials'] = 'false'
+    # Add CORS headers to all API responses
+    if request.path.startswith('/api'):
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+        response.headers['Access-Control-Allow-Credentials'] = 'false'
     return response
-
-# Also configure CORS with flask-cors as backup
-CORS(app, resources={
-    r"/api/*": {
-        "origins": "*",
-        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        "allow_headers": ["Content-Type", "Authorization"],
-        "supports_credentials": False
-    }
-})
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
@@ -56,6 +50,17 @@ def hash_password(password):
         hash_val = ((hash_val << 5) - hash_val) + ord(char)
         hash_val = hash_val & hash_val  # Convert to 32bit integer
     return str(hash_val)
+
+@app.route('/api/users/signup', methods=['OPTIONS'])
+def signup_options():
+    """Handle OPTIONS preflight for signup"""
+    response = app.response_class()
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+    response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+    response.headers['Access-Control-Max-Age'] = '3600'
+    response.status_code = 200
+    return response
 
 @app.route('/api/users/signup', methods=['POST'])
 def signup():
@@ -126,7 +131,7 @@ def signup():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/users/signin', methods=['POST'])
+@app.route('/api/users/signin', methods=['POST', 'OPTIONS'])
 def signin():
     """Sign in a user"""
     try:

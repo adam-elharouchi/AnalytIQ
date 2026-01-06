@@ -91,15 +91,33 @@ class AuthManager {
 
       // Save current user (without password)
       this.saveUser({
-        id: data.id,
-        name: data.name,
-        email: data.email
+        id: data.id || data.user?.id,
+        name: data.name || data.user?.name,
+        email: data.email || data.user?.email
       });
 
       return this.currentUser;
     } catch (error) {
-      // Fallback: if API is not available, show error
-      throw new Error(error.message || 'Unable to connect to server. Please ensure the backend server is running.');
+      // Fallback to localStorage if API fails (works without Flask)
+      console.warn('API not available, using localStorage fallback:', error.message);
+      
+      // Check localStorage for user
+      const users = JSON.parse(localStorage.getItem('users') || '[]');
+      const passwordHash = this.hashPassword(password);
+      const user = users.find(u => u.email === email && u.passwordHash === passwordHash);
+      
+      if (!user) {
+        throw new Error('Invalid email or password');
+      }
+
+      // Save current user (without password)
+      this.saveUser({
+        id: user.id,
+        name: user.name,
+        email: user.email
+      });
+
+      return this.currentUser;
     }
   }
 
