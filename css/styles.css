@@ -3457,7 +3457,7 @@ h1 {
 }
 
 .toggle-switch input:checked + .toggle-slider {
-  background-color: var(--primary-color);
+  background-color: #2569f4;
 }
 
 .toggle-switch input:checked + .toggle-slider:before {
@@ -3671,6 +3671,53 @@ input[type="text"], input[type="search"], textarea {
   background: var(--bg-card) !important;
   color: var(--text-primary) !important;
   border-color: var(--border-color) !important;
+}
+
+/* Dark Mode Styles */
+body.dark-mode,
+html[data-theme="dark"] {
+  --text-primary: #f1f5f9;
+  --text-secondary: #cbd5e1;
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-card: #1e293b;
+  --border-color: #334155;
+  background-color: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+body.dark-mode .navbar,
+html[data-theme="dark"] .navbar {
+  background-color: var(--bg-secondary) !important;
+  border-bottom-color: var(--border-color) !important;
+}
+
+body.dark-mode .profile-section,
+html[data-theme="dark"] .profile-section {
+  background: var(--bg-card) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+body.dark-mode .form-input,
+body.dark-mode .form-textarea,
+body.dark-mode select,
+html[data-theme="dark"] .form-input,
+html[data-theme="dark"] .form-textarea,
+html[data-theme="dark"] select {
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+body.dark-mode .toggle-switch input:checked + .toggle-slider,
+html[data-theme="dark"] .toggle-switch input:checked + .toggle-slider {
+  background-color: #2569f4 !important;
+}
+
+body.dark-mode .toggle-switch input:checked + .toggle-slider:before,
+html[data-theme="dark"] .toggle-switch input:checked + .toggle-slider:before {
+  transform: translateX(20px) !important;
 }
 
 input[type="text"]::placeholder, input[type="search"]::placeholder, textarea::placeholder {

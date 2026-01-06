@@ -65,7 +65,9 @@ async function loadProfileData() {
             document.getElementById('emailNotifications').checked = settings.emailNotifications;
           }
           if (settings.darkMode !== undefined) {
-            document.getElementById('darkMode').checked = settings.darkMode;
+            const darkModeToggle = document.getElementById('darkMode');
+            darkModeToggle.checked = settings.darkMode;
+            applyDarkMode(settings.darkMode);
           }
         }
       }
@@ -114,7 +116,9 @@ function loadFromLocalStorage() {
       document.getElementById('emailNotifications').checked = settings.emailNotifications;
     }
     if (settings.darkMode !== undefined) {
-      document.getElementById('darkMode').checked = settings.darkMode;
+      const darkModeToggle = document.getElementById('darkMode');
+      darkModeToggle.checked = settings.darkMode;
+      applyDarkMode(settings.darkMode);
     }
   } catch (e) {
     console.error('Error loading from localStorage:', e);
@@ -134,6 +138,26 @@ function setupEventListeners() {
   // Password form
   const passwordForm = document.getElementById('passwordForm');
   passwordForm.addEventListener('submit', handlePasswordChange);
+  
+  // Email notifications toggle - auto-save on change
+  const emailNotificationsToggle = document.getElementById('emailNotifications');
+  if (emailNotificationsToggle) {
+    emailNotificationsToggle.addEventListener('change', async function() {
+      await saveSettings();
+    });
+  }
+  
+  // Dark mode toggle - auto-save and apply on change
+  const darkModeToggle = document.getElementById('darkMode');
+  if (darkModeToggle) {
+    darkModeToggle.addEventListener('change', async function() {
+      applyDarkMode(darkModeToggle.checked);
+      await saveSettings();
+    });
+    
+    // Apply dark mode on page load
+    applyDarkMode(darkModeToggle.checked);
+  }
 }
 
 // Handle profile picture upload
@@ -357,6 +381,8 @@ async function saveSettings() {
     if (response.ok) {
       // Also save to localStorage for session
       localStorage.setItem('userSettings', JSON.stringify(settings));
+      // Apply dark mode immediately
+      applyDarkMode(settings.darkMode);
       showNotification('Settings saved successfully!', 'success');
     } else {
       throw new Error('Failed to save settings');
@@ -366,6 +392,17 @@ async function saveSettings() {
     // Fallback to localStorage
     localStorage.setItem('userSettings', JSON.stringify(settings));
     showNotification('Settings saved (saved locally)', 'success');
+  }
+}
+
+// Apply dark mode styling
+function applyDarkMode(enabled) {
+  if (enabled) {
+    document.body.classList.add('dark-mode');
+    document.documentElement.setAttribute('data-theme', 'dark');
+  } else {
+    document.body.classList.remove('dark-mode');
+    document.documentElement.removeAttribute('data-theme');
   }
 }
 
@@ -380,31 +417,38 @@ async function deleteAccount() {
   }
   
   const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-  if (!currentUser.id) {
+  
+  // Get user_id - check both 'id' and 'user_id' fields for compatibility
+  const userId = currentUser.user_id || currentUser.id;
+  
+  if (!userId) {
     alert('Please log in to delete your account');
     return;
   }
 
   try {
-    // Delete via API
-    const response = await fetch(`${API_BASE_URL}/users/delete?user_id=${currentUser.id}`, {
-      method: 'DELETE'
+    // Delete via API - ensure user_id is a string
+    const response = await fetch(`${API_BASE_URL}/users/delete?user_id=${String(userId)}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json'
+      }
     });
+
+    const data = await response.json();
 
     if (response.ok) {
       // Clear local data
-      localStorage.removeItem('currentUser');
-      localStorage.removeItem('userProfile');
-      localStorage.removeItem('userSettings');
+      localStorage.clear();
       
       // Redirect to login
       window.location.href = 'login.html';
     } else {
-      const data = await response.json();
       throw new Error(data.error || 'Failed to delete account');
     }
   } catch (error) {
-    alert(error.message || 'Failed to delete account');
+    console.error('Error deleting account:', error);
+    alert(error.message || 'Failed to delete account. Please try again.');
   }
 }
 
