@@ -977,20 +977,40 @@
     }
     
     function compareCode(userCode, solutionCode) {
-      // Normalize code for comparison
-      const normalizeCode = (code) => {
+      // Filter out comment lines (starting with #) from code
+      const filterComments = (code) => {
         return code
           .split('\n')
           .map(line => line.trim())
-          .filter(line => line.length > 0 && !line.startsWith('#'))
+          .filter(line => {
+            // Remove empty lines and comment lines (starting with #)
+            return line.length > 0 && !line.startsWith('#');
+          })
+          .join('\n');
+      };
+      
+      // Normalize code for comparison (without comments)
+      const normalizeCode = (code) => {
+        const codeWithoutComments = filterComments(code);
+        return codeWithoutComments
+          .split('\n')
+          .map(line => line.trim())
+          .filter(line => line.length > 0)
           .join('\n')
           .replace(/\s+/g, ' ')
           .toLowerCase();
       };
       
-      // Split into lines for detailed comparison
-      const userLines = userCode.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-      const solutionLines = solutionCode.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+      // Split into lines for detailed comparison (excluding comments)
+      const userLines = filterComments(userCode)
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0);
+      
+      const solutionLines = filterComments(solutionCode)
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0);
       
       // Line-by-line comparison
       const comparison = {
@@ -1098,22 +1118,38 @@
     
     function renderFormattedCode(comparison) {
       const codeDisplay = document.getElementById('codeDisplay');
-      const maxLines = Math.max(comparison.userLines.length, comparison.solutionLines.length);
-      let html = '';
+      const solutionCode = exerciseData.code;
       
-      for (let i = 0; i < maxLines; i++) {
-        const userLine = comparison.userLines[i] || { text: '', status: 'missing' };
-        const solutionLine = comparison.solutionLines[i] || { text: '', status: 'missing' };
+      // Render solution code with comments included, but only highlight non-comment lines
+      const solutionLines = solutionCode.split('\n');
+      let html = '';
+      let solutionLineIndex = 0;
+      
+      for (let i = 0; i < solutionLines.length; i++) {
+        const line = solutionLines[i].trim();
+        const isComment = line.startsWith('#');
         
-        // Show solution line with appropriate highlighting
-        if (solutionLine.status === 'correct' && userLine.status === 'correct') {
-          html += `<div class="code-line code-correct">${escapeHtml(solutionLine.text)}</div>`;
-        } else if (solutionLine.status === 'missing' || (userLine.status === 'incorrect' && solutionLine.text)) {
-          html += `<div class="code-line code-missing">${escapeHtml(solutionLine.text || '(Missing line)')}</div>`;
-        } else if (userLine.status === 'incorrect') {
-          html += `<div class="code-line code-incorrect">${escapeHtml(solutionLine.text)}</div>`;
+        if (isComment) {
+          // Show comments in normal style (not highlighted)
+          html += `<div class="code-line" style="color: #94a3b8; font-style: italic;">${escapeHtml(solutionLines[i])}</div>`;
+        } else if (line.length === 0) {
+          // Empty line
+          html += `<div class="code-line">&nbsp;</div>`;
         } else {
-          html += `<div class="code-line">${escapeHtml(solutionLine.text)}</div>`;
+          // Actual code line - check if it matches
+          const solutionLine = comparison.solutionLines[solutionLineIndex];
+          if (solutionLine) {
+            if (solutionLine.status === 'correct') {
+              html += `<div class="code-line code-correct">${escapeHtml(solutionLines[i])}</div>`;
+            } else if (solutionLine.status === 'incorrect') {
+              html += `<div class="code-line code-incorrect">${escapeHtml(solutionLines[i])}</div>`;
+            } else {
+              html += `<div class="code-line code-missing">${escapeHtml(solutionLines[i])}</div>`;
+            }
+            solutionLineIndex++;
+          } else {
+            html += `<div class="code-line code-missing">${escapeHtml(solutionLines[i])}</div>`;
+          }
         }
       }
       
