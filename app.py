@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS
+from flask_cors import CORS, cross_origin
 import psycopg2
 from dotenv import load_dotenv
 import os
@@ -12,23 +12,36 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# Configure CORS to allow requests from your production domain
-# Update this list with your actual production domains
-ALLOWED_ORIGINS = [
-    'http://localhost:*',
-    'https://localhost:*',
-    'http://127.0.0.1:*',
-    'https://127.0.0.1:*',
-    'https://www.myanalytiq.org',
-    'http://www.myanalytiq.org',
-    'https://myanalytiq.org',
-    'http://myanalytiq.org',
-    'https://adamelharouchi5-blip.github.io',
-    'http://adamelharouchi5-blip.github.io',
-]
+# Configure CORS to allow ALL origins including file:// protocol (null origin)
+# This allows the site to work when opening HTML files directly AND on domains
+@app.before_request
+def handle_preflight():
+    if request.method == "OPTIONS":
+        response = jsonify({})
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add('Access-Control-Allow-Headers', "Content-Type, Authorization")
+        response.headers.add('Access-Control-Allow-Methods', "GET, POST, PUT, DELETE, OPTIONS")
+        return response
 
-# Enable CORS with specific origins
-CORS(app, origins=ALLOWED_ORIGINS, supports_credentials=True)
+@app.after_request
+def after_request(response):
+    # Allow all origins, including null (file:// protocol)
+    origin = request.headers.get('Origin')
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+    response.headers['Access-Control-Allow-Credentials'] = 'false'
+    return response
+
+# Also configure CORS with flask-cors as backup
+CORS(app, resources={
+    r"/api/*": {
+        "origins": "*",
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"],
+        "supports_credentials": False
+    }
+})
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
@@ -938,29 +951,10 @@ def health():
 
 if __name__ == '__main__':
     import sys
-    port = int(os.environ.get('PORT', 5000))
+    port = 5001  # Changed from 5000 to avoid macOS AirPlay conflict
     if len(sys.argv) > 1:
         port = int(sys.argv[1])
-    
-    # Use 0.0.0.0 for production (accessible from outside)
-    # Use 127.0.0.1 for local only
-    host = os.environ.get('HOST', '0.0.0.0')
-    debug = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
-    
-    print(f"""
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🚀 Flask Website Starting...
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-📍 Server: http://{host}:{port}
-🌐 Local: http://localhost:{port}
-📁 Serving from: {os.getcwd()}
-
-✅ Frontend: http://localhost:{port}/
-✅ API: http://localhost:{port}/api
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-""")
-    
-    app.run(debug=debug, port=port, host=host, threaded=True)
+    print(f"Starting Flask server on port {port}...")
+    print(f"API base URL: http://localhost:{port}/api")
+    app.run(debug=True, port=port, host='127.0.0.1')
 
