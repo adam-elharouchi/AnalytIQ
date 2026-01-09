@@ -995,8 +995,9 @@
         }
         
         // Use API_BASE_URL from api-helper.js (already loaded)
-        const apiUrl = typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : 
-          (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+        // Fallback for when api-helper.js hasn't loaded yet
+        const apiUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 
+          ((window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') 
             ? 'http://localhost:5001/api' : '/api');
         
         console.log('Saving exercise score:', { userId, exerciseId, score, accuracy, timeSpent });
