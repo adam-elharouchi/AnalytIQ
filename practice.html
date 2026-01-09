@@ -1248,6 +1248,31 @@ print(r2)</code></pre>
   <script src="js/navigation.js"></script>
   <script src="js/api-helper.js"></script>
   <script>
+    // API_BASE_URL is already defined in api-helper.js
+    // Just reference it (don't redeclare)
+    // Track currently selected exercise for leaderboard
+    let currentExerciseLeaderboardId = null;
+    
+    // Function to refresh all data
+    function refreshAllData() {
+      console.log('Refreshing all practice data...');
+      loadProgress();
+      loadGrandLeaderboard();
+      
+      // Reload exercise leaderboard if one is currently selected
+      if (currentExerciseLeaderboardId) {
+        const exerciseCard = Array.from(document.querySelectorAll('.practice-card')).find(card => {
+          const title = card.querySelector('.practice-header h2').textContent;
+          const exerciseId = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+          return exerciseId === currentExerciseLeaderboardId;
+        });
+        if (exerciseCard) {
+          const title = exerciseCard.querySelector('.practice-header h2').textContent;
+          loadExerciseLeaderboard(currentExerciseLeaderboardId, title);
+        }
+      }
+    }
+    
     // Require authentication
     document.addEventListener('DOMContentLoaded', function() {
       const authManager = new AuthManager();
@@ -1255,42 +1280,113 @@ print(r2)</code></pre>
         return; // Will redirect to login
       }
       
-      // Load progress and leaderboards
-      loadProgress();
-      loadGrandLeaderboard();
+      // Check if we need to refresh (user just submitted a solution)
+      const needsRefresh = sessionStorage.getItem('practiceProgressNeedsRefresh');
+      const lastExerciseId = sessionStorage.getItem('lastSubmittedExerciseId');
+      
+      // Always load progress and leaderboards on page load
+      // Use a small delay to ensure DOM is ready
+      setTimeout(() => {
+        refreshAllData();
+        
+        // If we need to refresh and have an exercise ID, load that exercise's leaderboard
+        if (needsRefresh === 'true' && lastExerciseId) {
+          sessionStorage.removeItem('practiceProgressNeedsRefresh');
+          sessionStorage.removeItem('lastSubmittedExerciseId');
+          
+          // Load the exercise leaderboard for the submitted exercise
+          const exerciseCard = Array.from(document.querySelectorAll('.practice-card')).find(card => {
+            const title = card.querySelector('.practice-header h2').textContent;
+            const exerciseId = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+            return exerciseId === lastExerciseId;
+          });
+          if (exerciseCard) {
+            const title = exerciseCard.querySelector('.practice-header h2').textContent;
+            loadExerciseLeaderboard(lastExerciseId, title);
+          }
+        }
+      }, 100);
+      
+      // Handle back/forward navigation (pageshow event fires even for cached pages)
+      window.addEventListener('pageshow', function(event) {
+        // If page was loaded from cache (back/forward), refresh data
+        if (event.persisted) {
+          console.log('Page loaded from cache, refreshing data...');
+          setTimeout(refreshAllData, 100);
+        }
+        
+        // Also check for refresh flag
+        const needsRefresh = sessionStorage.getItem('practiceProgressNeedsRefresh');
+        if (needsRefresh === 'true') {
+          console.log('Refresh flag detected on pageshow, refreshing...');
+          setTimeout(refreshAllData, 100);
+        }
+      });
       
       // Refresh progress every 5 seconds (in case user just completed an exercise)
       setInterval(() => {
-        loadProgress();
-        loadGrandLeaderboard();
+        refreshAllData();
       }, 5000);
+      
+      // Refresh when page becomes visible (user navigated back from playground)
+      document.addEventListener('visibilitychange', function() {
+        if (!document.hidden) {
+          refreshAllData();
+        }
+      });
+      
+      // Also refresh on focus (when user switches back to this tab)
+      window.addEventListener('focus', function() {
+        refreshAllData();
+      });
+      
+      // Add click handlers to exercise cards to load exercise leaderboard
+      document.querySelectorAll('.practice-card').forEach(card => {
+        card.addEventListener('click', function(e) {
+          // Don't trigger if clicking on button or solution
+          if (e.target.closest('button') || e.target.closest('.solution')) {
+            return;
+          }
+          
+          const title = card.querySelector('.practice-header h2').textContent;
+          const exerciseId = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+          loadExerciseLeaderboard(exerciseId, title);
+        });
+      });
     });
-    
-    // Get API base URL
-    const API_BASE_URL = (() => {
-      if (window.location.protocol === 'file:') {
-        return 'http://localhost:5001/api';
-      }
-      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        return 'http://localhost:5001/api';
-      }
-      return '/api';
-    })();
     
     async function loadProgress() {
       try {
         const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-        if (!currentUser.id) return;
+        if (!currentUser.id) {
+          console.log('No user ID found');
+          return;
+        }
         
-        const response = await fetch(`${API_BASE_URL}/exercises/progress?user_id=${currentUser.id}`);
-        if (!response.ok) throw new Error('Failed to load progress');
+        console.log('Loading progress for user:', currentUser.id);
+        // Use API_BASE_URL from api-helper.js (already loaded)
+        const apiUrl = typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : 
+          (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+            ? 'http://localhost:5001/api' : '/api');
+        const response = await fetch(`${apiUrl}/exercises/progress?user_id=${currentUser.id}`);
+        if (!response.ok) {
+          console.error('Failed to load progress:', response.status, response.statusText);
+          throw new Error('Failed to load progress');
+        }
         
         const data = await response.json();
+        console.log('Progress API response:', data);
+        
         const progressMap = {};
         
+        // Handle both { progress: [...] } and [...] response formats
+        const progressArray = data.progress || data || [];
+        console.log('Progress array:', progressArray);
+        
         // Create map of exercise_id to progress
-        data.progress.forEach(p => {
+        progressArray.forEach(p => {
           progressMap[p.exercise_id] = p;
+          console.log(`Mapped exercise_id: ${p.exercise_id} -> best_score: ${p.best_score}, completed: ${p.completed}`);
         });
         
         // Update each exercise card
@@ -1299,39 +1395,60 @@ print(r2)</code></pre>
           const exerciseId = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
           const progress = progressMap[exerciseId];
           
+          console.log(`Exercise: "${title}" -> ID: "${exerciseId}" -> Progress:`, progress);
+          
           const scoreEl = card.querySelector('.exercise-best-score');
           const progressEl = card.querySelector('.exercise-progress-text');
           const progressBar = card.querySelector('.exercise-progress-bar');
           
           if (progress) {
-            if (scoreEl) scoreEl.textContent = progress.best_score;
+            if (scoreEl) {
+              scoreEl.textContent = Math.round(progress.best_score || 0);
+              console.log(`Updated score for ${exerciseId}: ${progress.best_score}`);
+            }
             if (progressEl) {
-              progressEl.textContent = progress.completed ? '✓ Completed' : `${progress.total_attempts} attempt(s)`;
+              progressEl.textContent = progress.completed ? '✓ Completed' : `${progress.total_attempts || 0} attempt(s)`;
             }
             if (progressBar) {
-              progressBar.style.width = `${progress.best_score}%`;
-              progressBar.style.background = progress.best_score >= 70 ? '#10b981' : progress.best_score >= 50 ? '#f59e0b' : '#2569f4';
+              const scorePercent = Math.round(progress.best_score || 0);
+              progressBar.style.width = `${scorePercent}%`;
+              progressBar.style.background = scorePercent >= 70 ? '#10b981' : scorePercent >= 50 ? '#f59e0b' : '#2569f4';
+              console.log(`Updated progress bar for ${exerciseId}: ${scorePercent}%`);
             }
           } else {
             // No progress yet
             if (scoreEl) scoreEl.textContent = '-';
             if (progressEl) progressEl.textContent = 'Not started';
             if (progressBar) progressBar.style.width = '0%';
+            console.log(`No progress found for ${exerciseId}`);
           }
         });
         
         // Calculate and update total progress
         const totalExercises = document.querySelectorAll('.practice-card').length;
-        const completedExercises = data.progress.filter(p => p.completed).length;
+        const completedExercises = progressArray.filter(p => p.completed).length;
         const totalProgress = totalExercises > 0 ? (completedExercises / totalExercises) * 100 : 0;
-        const avgScore = data.progress.length > 0 
-          ? data.progress.reduce((sum, p) => sum + (p.best_score || 0), 0) / data.progress.length 
+        const avgScore = progressArray.length > 0 
+          ? progressArray.reduce((sum, p) => sum + (p.best_score || 0), 0) / progressArray.length 
           : 0;
         
-        document.getElementById('totalProgressBar').style.width = `${totalProgress}%`;
-        document.getElementById('totalProgressText').textContent = `${Math.round(totalProgress)}%`;
-        document.getElementById('totalProgressDetails').textContent = 
-          `${completedExercises}/${totalExercises} exercises completed | Average Score: ${Math.round(avgScore)}`;
+        const totalProgressBar = document.getElementById('totalProgressBar');
+        const totalProgressText = document.getElementById('totalProgressText');
+        const totalProgressDetails = document.getElementById('totalProgressDetails');
+        
+        if (totalProgressBar) {
+          totalProgressBar.style.width = `${totalProgress}%`;
+          console.log(`Updated total progress bar: ${totalProgress}%`);
+        }
+        if (totalProgressText) {
+          totalProgressText.textContent = `${Math.round(totalProgress)}%`;
+        }
+        if (totalProgressDetails) {
+          totalProgressDetails.textContent = 
+            `${completedExercises}/${totalExercises} exercises completed | Average Score: ${Math.round(avgScore)}`;
+        }
+        
+        console.log('Progress loading complete');
         
       } catch (error) {
         console.error('Error loading progress:', error);
@@ -1340,7 +1457,10 @@ print(r2)</code></pre>
     
     async function loadGrandLeaderboard() {
       try {
-        const response = await fetch(`${API_BASE_URL}/leaderboard/grand?limit=10`);
+        const apiUrl = typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : 
+          (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+            ? 'http://localhost:5001/api' : '/api');
+        const response = await fetch(`${apiUrl}/leaderboard/grand?limit=10`);
         if (!response.ok) throw new Error('Failed to load leaderboard');
         
         const data = await response.json();
@@ -1381,10 +1501,14 @@ print(r2)</code></pre>
     
     async function loadExerciseLeaderboard(exerciseId, exerciseTitle) {
       try {
+        currentExerciseLeaderboardId = exerciseId;
         document.getElementById('exerciseLeaderboardTitle').textContent = exerciseTitle;
         document.getElementById('exerciseLeaderboard').innerHTML = '<p style="color: #64748b; text-align: center; padding: 1rem;">Loading...</p>';
         
-        const response = await fetch(`${API_BASE_URL}/exercises/${encodeURIComponent(exerciseId)}/leaderboard?limit=10`);
+        const apiUrl = typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : 
+          (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+            ? 'http://localhost:5001/api' : '/api');
+        const response = await fetch(`${apiUrl}/exercises/${encodeURIComponent(exerciseId)}/leaderboard?limit=10`);
         if (!response.ok) throw new Error('Failed to load leaderboard');
         
         const data = await response.json();
