@@ -917,7 +917,7 @@
       lineNumbers.scrollTop = editor.scrollTop;
     }
     
-    function submitSolution() {
+    async function submitSolution() {
       const codeEditor = document.getElementById('codeEditor');
       const userCode = codeEditor.value.trim();
       
@@ -964,7 +964,19 @@
       );
       
       // Save score to backend
-      saveExerciseScore(exerciseData.id, exerciseData.title, score, accuracy, elapsedSeconds);
+      const saveSuccess = await saveExerciseScore(exerciseData.id, exerciseData.title, score, accuracy, elapsedSeconds);
+      
+      // Signal that progress should be refreshed when user returns to practice page
+      // Only set flag if save was successful OR if we want to refresh anyway (for UI updates)
+      if (saveSuccess) {
+        sessionStorage.setItem('practiceProgressNeedsRefresh', 'true');
+        sessionStorage.setItem('lastSubmittedExerciseId', exerciseData.id);
+        console.log('Solution submitted, refresh flag set for exercise:', exerciseData.id);
+      } else {
+        console.warn('Score may not have been saved, but setting refresh flag anyway');
+        sessionStorage.setItem('practiceProgressNeedsRefresh', 'true');
+        sessionStorage.setItem('lastSubmittedExerciseId', exerciseData.id);
+      }
       
       // Hide solution section (we're showing it in the editor now)
       const solutionSection = document.getElementById('solutionSection');
@@ -983,20 +995,14 @@
           return;
         }
         
-        // Get API base URL
-        const API_BASE_URL = (() => {
-          if (window.location.protocol === 'file:') {
-            return 'http://localhost:5001/api';
-          }
-          if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-            return 'http://localhost:5001/api';
-          }
-          return '/api';
-        })();
+        // Use API_BASE_URL from api-helper.js (already loaded)
+        const apiUrl = typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : 
+          (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+            ? 'http://localhost:5001/api' : '/api');
         
         console.log('Saving exercise score:', { userId, exerciseId, score, accuracy, timeSpent });
         
-        const response = await fetch(`${API_BASE_URL}/users/practice-progress`, {
+        const response = await fetch(`${apiUrl}/users/practice-progress`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json'
@@ -1020,13 +1026,20 @@
           if (data.is_new_best) {
             console.log('🎉 New personal best!');
           }
+          return true;
         } else {
           const errorData = await response.json().catch(() => ({}));
           console.error('Failed to save score:', response.status, errorData);
+          return false;
         }
       } catch (error) {
         console.error('Error saving exercise score:', error);
-        // Log but don't interrupt user experience
+        // If it's a CORS error, suggest running a local server
+        if (error.message.includes('CORS') || error.message.includes('Failed to fetch')) {
+          console.warn('CORS error detected. Make sure you are running the Flask server on localhost:5001');
+          console.warn('If opening files directly (file://), you need to run: python app.py');
+        }
+        return false;
       }
     }
     
