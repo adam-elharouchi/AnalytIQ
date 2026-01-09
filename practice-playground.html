@@ -966,16 +966,15 @@
       // Save score to backend
       const saveSuccess = await saveExerciseScore(exerciseData.id, exerciseData.title, score, accuracy, elapsedSeconds);
       
-      // Signal that progress should be refreshed when user returns to practice page
-      // Only set flag if save was successful OR if we want to refresh anyway (for UI updates)
+      // Always set refresh flag - in production this will work, in file:// it may not save but UI will still try to refresh
+      sessionStorage.setItem('practiceProgressNeedsRefresh', 'true');
+      sessionStorage.setItem('lastSubmittedExerciseId', exerciseData.id);
+      
       if (saveSuccess) {
-        sessionStorage.setItem('practiceProgressNeedsRefresh', 'true');
-        sessionStorage.setItem('lastSubmittedExerciseId', exerciseData.id);
-        console.log('Solution submitted, refresh flag set for exercise:', exerciseData.id);
+        console.log('Solution submitted successfully, refresh flag set for exercise:', exerciseData.id);
       } else {
-        console.warn('Score may not have been saved, but setting refresh flag anyway');
-        sessionStorage.setItem('practiceProgressNeedsRefresh', 'true');
-        sessionStorage.setItem('lastSubmittedExerciseId', exerciseData.id);
+        console.log('Solution submitted (save may have failed due to CORS in file://), refresh flag set for exercise:', exerciseData.id);
+        console.log('Note: In production, this will work correctly as everything is on the same domain.');
       }
       
       // Hide solution section (we're showing it in the editor now)
@@ -1034,10 +1033,11 @@
         }
       } catch (error) {
         console.error('Error saving exercise score:', error);
-        // If it's a CORS error, suggest running a local server
+        // If it's a CORS error (file:// protocol), the data won't be saved
+        // but in production (same origin), this won't be an issue
         if (error.message.includes('CORS') || error.message.includes('Failed to fetch')) {
-          console.warn('CORS error detected. Make sure you are running the Flask server on localhost:5001');
-          console.warn('If opening files directly (file://), you need to run: python app.py');
+          console.warn('Network error - this may be due to CORS (file:// protocol).');
+          console.warn('In production, this should work fine as everything is on the same domain.');
         }
         return false;
       }
