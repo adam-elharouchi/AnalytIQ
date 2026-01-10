@@ -3674,8 +3674,10 @@ input[type="text"], input[type="search"], textarea {
 }
 
 /* Dark Mode Styles */
+html.dark-mode body,
 body.dark-mode,
-html[data-theme="dark"] {
+html[data-theme="dark"],
+html.dark-mode {
   --text-primary: #f1f5f9;
   --text-secondary: #cbd5e1;
   --bg-primary: #0f172a;
@@ -3684,6 +3686,11 @@ html[data-theme="dark"] {
   --border-color: #334155;
   background-color: var(--bg-primary) !important;
   color: var(--text-primary) !important;
+
+html.dark-mode body,
+html[data-theme="dark"] body,
+body.dark-mode {}
+
 }
 
 body.dark-mode .navbar,
@@ -3972,5 +3979,175 @@ body.dark-mode .toggle-switch .toggle-slider,
 html[data-theme="dark"] .toggle-switch .toggle-slider {
   background-color: var(--bg-secondary) !important;
   border-color: var(--border-color) !important;
+}
+
+
+/* ============================================
+   DARK MODE COLOR FIXES - Fix Color Clashes
+   ============================================ */
+
+/* Logo colors - fix dark colors that clash */
+body.dark-mode .logo-analyt,
+html[data-theme="dark"] .logo-analyt {
+  color: #e2e8f0 !important; /* Light gray instead of dark #222c3e */
+}
+
+body.dark-mode .logo-iq,
+html[data-theme="dark"] .logo-iq {
+  color: #60a5fa !important; /* Lighter blue for better visibility on dark */
+}
+
+/* Main h1 headings - override blue color for visibility */
+body.dark-mode h1,
+html[data-theme="dark"] h1 {
+  color: var(--text-primary) !important; /* White/light instead of #2569f4 blue */
+}
+
+body.dark-mode .hero-section h1,
+html[data-theme="dark"] .hero-section h1 {
+  color: var(--text-primary) !important;
+}
+
+/* Primary button text - fix dark text (#1e293b) on dark background */
+body.dark-mode .btn-primary,
+body.dark-mode button.btn-primary,
+html[data-theme="dark"] .btn-primary,
+html[data-theme="dark"] button.btn-primary {
+  color: #ffffff !important; /* Force white text */
+}
+
+body.dark-mode .btn-primary:hover,
+html[data-theme="dark"] .btn-primary:hover {
+  background: #3b82f6 !important; /* Slightly lighter blue on hover */
+  color: #ffffff !important;
+}
+
+/* Code animation container - fix dark background */
+body.dark-mode .code-animation-content,
+html[data-theme="dark"] .code-animation-content {
+  background: #1e293b !important; /* Lighter than #222c3e for better contrast */
+}
+
+body.dark-mode .code-animation-header,
+html[data-theme="dark"] .code-animation-header {
+  background: var(--bg-secondary) !important;
+  border-bottom-color: var(--border-color) !important;
+}
+
+body.dark-mode .code-animation-filename,
+html[data-theme="dark"] .code-animation-filename {
+  color: var(--text-secondary) !important;
+}
+
+/* Error messages - fix dark text */
+body.dark-mode .error-message,
+html[data-theme="dark"] .error-message {
+  background: rgba(220, 38, 38, 0.2) !important;
+  border-color: #dc2626 !important;
+  color: #fca5a5 !important; /* Light red text instead of dark #991b1b */
+}
+
+/* Badges - ensure text is visible */
+body.dark-mode .module-badge.beginner,
+body.dark-mode .module-badge.intermediate,
+body.dark-mode .module-badge.advanced,
+html[data-theme="dark"] .module-badge.beginner,
+html[data-theme="dark"] .module-badge.intermediate,
+html[data-theme="dark"] .module-badge.advanced {
+  color: var(--text-primary) !important; /* Light text on badges */
+}
+
+/* Mobile menu toggle */
+body.dark-mode .mobile-menu-toggle,
+html[data-theme="dark"] .mobile-menu-toggle {
+  color: var(--text-primary) !important;
+}
+
+/* Links - ensure visibility */
+body.dark-mode a:not(.btn-primary):not(.btn-secondary):not(.btn-danger):not(.nav-links a),
+html[data-theme="dark"] a:not(.btn-primary):not(.btn-secondary):not(.btn-danger):not(.nav-links a) {
+  color: #60a5fa !important; /* Light blue for links */
+}
+
+body.dark-mode a:hover:not(.btn-primary):not(.btn-secondary):not(.btn-danger):not(.nav-links a),
+html[data-theme="dark"] a:hover:not(.btn-primary):not(.btn-secondary):not(.btn-danger):not(.nav-links a) {
+  color: #93c5fd !important; /* Lighter blue on hover */
+}
+
+/* Card text - ensure all card content is visible */
+body.dark-mode .page-nav-card h2,
+body.dark-mode .page-nav-card p,
+body.dark-mode .page-nav-card .page-nav-icon,
+html[data-theme="dark"] .page-nav-card h2,
+html[data-theme="dark"] .page-nav-card p,
+html[data-theme="dark"] .page-nav-card .page-nav-icon {
+  color: var(--text-primary) !important;
+}
+
+body.dark-mode .module-header h2,
+body.dark-mode .module-description,
+html[data-theme="dark"] .module-header h2,
+html[data-theme="dark"] .module-description {
+  color: var(--text-primary) !important;
+}
+
+body.dark-mode .practice-card h3,
+body.dark-mode .practice-card p,
+body.dark-mode .best-score,
+html[data-theme="dark"] .practice-card h3,
+html[data-theme="dark"] .practice-card p,
+html[data-theme="dark"] .best-score {
+  color: var(--text-primary) !important;
+}
+
+body.dark-mode .resource-card h3,
+body.dark-mode .resource-card p,
+html[data-theme="dark"] .resource-card h3,
+html[data-theme="dark"] .resource-card p {
+  color: var(--text-primary) !important;
+}
+
+/* Login page text */
+body.dark-mode .login-header h1,
+body.dark-mode .login-header p,
+html[data-theme="dark"] .login-header h1,
+html[data-theme="dark"] .login-header p {
+  color: var(--text-primary) !important;
+}
+
+body.dark-mode .login-tab-content .form-group label,
+html[data-theme="dark"] .login-tab-content .form-group label {
+  color: var(--text-primary) !important;
+}
+
+body.dark-mode .login-footer p,
+html[data-theme="dark"] .login-footer p {
+  color: var(--text-secondary) !important;
+}
+
+/* Progress text */
+body.dark-mode .progress-text,
+body.dark-mode .progress-fill,
+html[data-theme="dark"] .progress-text,
+html[data-theme="dark"] .progress-fill {
+  color: var(--text-primary) !important;
+}
+
+/* Leaderboard text */
+body.dark-mode .leaderboard-item .rank,
+body.dark-mode .leaderboard-item .name,
+body.dark-mode .leaderboard-item .score,
+html[data-theme="dark"] .leaderboard-item .rank,
+html[data-theme="dark"] .leaderboard-item .name,
+html[data-theme="dark"] .leaderboard-item .score {
+  color: var(--text-primary) !important;
+}
+
+/* Any remaining elements with hardcoded dark colors */
+body.dark-mode [style*="#1e293b"],
+body.dark-mode [style*="#222c3e"],
+html[data-theme="dark"] [style*="#1e293b"],
+html[data-theme="dark"] [style*="#222c3e"] {
+  color: var(--text-primary) !important;
 }
 
