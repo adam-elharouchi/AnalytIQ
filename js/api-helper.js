@@ -10,8 +10,8 @@ const API_BASE_URL = (() => {
     return 'http://localhost:5001/api';
   }
   
-  // Production domain: use relative URL (will work with reverse proxy)
-  return '/api';
+  // Production: use Render backend URL
+  return 'https://analytiq-qbfr.onrender.com/api';
 })();
 
 // Get current user ID from localStorage
