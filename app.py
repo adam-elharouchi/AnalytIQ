@@ -138,6 +138,9 @@ def get_db_connection():
                 raise
     
     # Clean the URL first - remove invalid query parameters like pgbouncer
+    # Note: If password contains special characters (@, :, /, ?, #, [, ], !, $, &, ', (, ), *, +, ,, ;, =),
+    # they MUST be URL-encoded in the DATABASE_URL environment variable
+    # Example: password "AEH?!@Supabase" should be "AEH%21%3F%40Supabase"
     clean_url = clean_db_url(DATABASE_URL)
     
     # Validate URL format before attempting connection
