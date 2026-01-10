@@ -3724,3 +3724,253 @@ input[type="text"]::placeholder, input[type="search"]::placeholder, textarea::pl
   color: var(--text-secondary) !important;
 }
 
+
+/* Comprehensive Dark Mode Styles - Apply to All Elements */
+
+/* Cards and containers */
+body.dark-mode .card,
+body.dark-mode .module-card,
+body.dark-mode .practice-card,
+body.dark-mode .resource-card,
+body.dark-mode .page-nav-card,
+body.dark-mode .dashboard-card,
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .module-card,
+html[data-theme="dark"] .practice-card,
+html[data-theme="dark"] .resource-card,
+html[data-theme="dark"] .page-nav-card,
+html[data-theme="dark"] .dashboard-card {
+  background: var(--bg-card) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Buttons */
+body.dark-mode .btn-primary,
+html[data-theme="dark"] .btn-primary {
+  background: #2569f4 !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .btn-secondary,
+html[data-theme="dark"] .btn-secondary {
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+body.dark-mode .btn-danger,
+html[data-theme="dark"] .btn-danger {
+  background: #dc2626 !important;
+  color: #ffffff !important;
+}
+
+/* Headings */
+body.dark-mode h1,
+body.dark-mode h2,
+body.dark-mode h3,
+body.dark-mode h4,
+body.dark-mode h5,
+body.dark-mode h6,
+html[data-theme="dark"] h1,
+html[data-theme="dark"] h2,
+html[data-theme="dark"] h3,
+html[data-theme="dark"] h4,
+html[data-theme="dark"] h5,
+html[data-theme="dark"] h6 {
+  color: var(--text-primary) !important;
+}
+
+/* Text elements */
+body.dark-mode p,
+body.dark-mode li,
+body.dark-mode .subtitle,
+html[data-theme="dark"] p,
+html[data-theme="dark"] li,
+html[data-theme="dark"] .subtitle {
+  color: var(--text-primary) !important;
+}
+
+body.dark-mode .subtitle,
+html[data-theme="dark"] .subtitle {
+  color: var(--text-secondary) !important;
+}
+
+/* Navigation */
+body.dark-mode .nav-links a,
+html[data-theme="dark"] .nav-links a {
+  color: var(--text-secondary) !important;
+}
+
+body.dark-mode .nav-links a:hover,
+body.dark-mode .nav-links a.active,
+html[data-theme="dark"] .nav-links a:hover,
+html[data-theme="dark"] .nav-links a.active {
+  color: #2569f4 !important;
+}
+
+body.dark-mode .logo-analyt,
+html[data-theme="dark"] .logo-analyt {
+  color: #cbd5e1 !important;
+}
+
+/* Main content areas */
+body.dark-mode main,
+body.dark-mode .container,
+body.dark-mode .home-layout,
+body.dark-mode .hero-section,
+body.dark-mode section,
+html[data-theme="dark"] main,
+html[data-theme="dark"] .container,
+html[data-theme="dark"] .home-layout,
+html[data-theme="dark"] .hero-section,
+html[data-theme="dark"] section {
+  background: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Code assistant */
+body.dark-mode .chat-container,
+body.dark-mode .chat-main-area,
+body.dark-mode .chat-messages,
+body.dark-mode .sidebar-content,
+body.dark-mode .conversation-sidebar,
+html[data-theme="dark"] .chat-container,
+html[data-theme="dark"] .chat-main-area,
+html[data-theme="dark"] .chat-messages,
+html[data-theme="dark"] .sidebar-content,
+html[data-theme="dark"] .conversation-sidebar {
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Grids */
+body.dark-mode .modules-grid,
+body.dark-mode .practice-grid,
+body.dark-mode .resources-grid,
+html[data-theme="dark"] .modules-grid,
+html[data-theme="dark"] .practice-grid,
+html[data-theme="dark"] .resources-grid {
+  background: transparent !important;
+}
+
+/* Search inputs */
+body.dark-mode .search-bar input,
+body.dark-mode input[type="search"],
+html[data-theme="dark"] .search-bar input,
+html[data-theme="dark"] input[type="search"] {
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+/* Code blocks */
+body.dark-mode pre,
+body.dark-mode code,
+body.dark-mode .code-block,
+html[data-theme="dark"] pre,
+html[data-theme="dark"] code,
+html[data-theme="dark"] .code-block {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-color: var(--border-color) !important;
+}
+
+/* Progress bars */
+body.dark-mode .progress-bar,
+html[data-theme="dark"] .progress-bar {
+  background: var(--bg-secondary) !important;
+}
+
+body.dark-mode .progress-fill,
+html[data-theme="dark"] .progress-fill {
+  background: #2569f4 !important;
+}
+
+/* User menu */
+body.dark-mode .user-menu-dropdown,
+html[data-theme="dark"] .user-menu-dropdown {
+  background: var(--bg-card) !important;
+  border-color: var(--border-color) !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5) !important;
+}
+
+body.dark-mode .user-menu-item,
+html[data-theme="dark"] .user-menu-item {
+  color: var(--text-primary) !important;
+}
+
+body.dark-mode .user-menu-item:hover,
+html[data-theme="dark"] .user-menu-item:hover {
+  background: var(--bg-secondary) !important;
+}
+
+/* Login page */
+body.dark-mode .login-container,
+body.dark-mode .login-card,
+html[data-theme="dark"] .login-container,
+html[data-theme="dark"] .login-card {
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Badges */
+body.dark-mode .module-badge,
+body.dark-mode .badge,
+html[data-theme="dark"] .module-badge,
+html[data-theme="dark"] .badge {
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Category buttons */
+body.dark-mode .category-btn,
+html[data-theme="dark"] .category-btn {
+  background: var(--bg-secondary) !important;
+  color: var(--text-secondary) !important;
+  border-color: var(--border-color) !important;
+}
+
+body.dark-mode .category-btn.active,
+body.dark-mode .category-btn:hover,
+html[data-theme="dark"] .category-btn.active,
+html[data-theme="dark"] .category-btn:hover {
+  background: #2569f4 !important;
+  color: #ffffff !important;
+}
+
+/* Leaderboards */
+body.dark-mode .leaderboard-item,
+body.dark-mode .leaderboard-row,
+html[data-theme="dark"] .leaderboard-item,
+html[data-theme="dark"] .leaderboard-row {
+  background: var(--bg-card) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Settings */
+body.dark-mode .settings-list,
+body.dark-mode .setting-item,
+html[data-theme="dark"] .settings-list,
+html[data-theme="dark"] .setting-item {
+  color: var(--text-primary) !important;
+}
+
+body.dark-mode .setting-info h3,
+html[data-theme="dark"] .setting-info h3 {
+  color: var(--text-primary) !important;
+}
+
+body.dark-mode .setting-info p,
+html[data-theme="dark"] .setting-info p {
+  color: var(--text-secondary) !important;
+}
+
+/* Toggle switch */
+body.dark-mode .toggle-switch .toggle-slider,
+html[data-theme="dark"] .toggle-switch .toggle-slider {
+  background-color: var(--bg-secondary) !important;
+  border-color: var(--border-color) !important;
+}
+

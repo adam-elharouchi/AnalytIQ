@@ -381,6 +381,7 @@ async function saveSettings() {
     if (response.ok) {
       // Also save to localStorage for session
       localStorage.setItem('userSettings', JSON.stringify(settings));
+      localStorage.setItem('darkModeEnabled', settings.darkMode ? 'true' : 'false');
       // Apply dark mode immediately
       applyDarkMode(settings.darkMode);
       showNotification('Settings saved successfully!', 'success');
@@ -395,14 +396,21 @@ async function saveSettings() {
   }
 }
 
-// Apply dark mode styling
+// Apply dark mode styling - use global function if available, otherwise define it
 function applyDarkMode(enabled) {
-  if (enabled) {
-    document.body.classList.add('dark-mode');
-    document.documentElement.setAttribute('data-theme', 'dark');
+  if (typeof window.applyDarkMode === 'function') {
+    window.applyDarkMode(enabled);
   } else {
-    document.body.classList.remove('dark-mode');
-    document.documentElement.removeAttribute('data-theme');
+    // Fallback if global function not loaded yet
+    if (enabled) {
+      document.body.classList.add('dark-mode');
+      document.documentElement.setAttribute('data-theme', 'dark');
+      localStorage.setItem('darkModeEnabled', 'true');
+    } else {
+      document.body.classList.remove('dark-mode');
+      document.documentElement.removeAttribute('data-theme');
+      localStorage.setItem('darkModeEnabled', 'false');
+    }
   }
 }
 
