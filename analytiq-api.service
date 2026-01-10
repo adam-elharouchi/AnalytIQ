@@ -1,0 +1,18 @@
+[Unit]
+Description=AnalytIQ Flask API Service
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/var/www/AnalytIQ
+Environment="PATH=/usr/bin:/usr/local/bin"
+Environment="FLASK_ENV=production"
+Environment="PORT=5001"
+EnvironmentFile=/var/www/AnalytIQ/.env
+ExecStart=/usr/local/bin/gunicorn app:app --bind 127.0.0.1:5001 --workers 4 --timeout 120
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
