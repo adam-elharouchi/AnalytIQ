@@ -1178,8 +1178,19 @@ if __name__ == '__main__':
     print(f"Starting Flask server on port {port}...")
     print(f"Debug mode: {debug_mode}")
     print(f"API base URL: http://localhost:{port}/api")
+    print(f"Health check: http://localhost:{port}/api/health")
     
-    # For production, bind to 0.0.0.0, for local use 127.0.0.1
+    # For local development, use 127.0.0.1 (safer)
+    # For production, use 0.0.0.0 (accessible from outside)
     host = '0.0.0.0' if os.getenv('FLASK_ENV') == 'production' else '127.0.0.1'
-    app.run(debug=debug_mode, port=port, host=host)
+    
+    try:
+        app.run(debug=debug_mode, port=port, host=host)
+    except OSError as e:
+        if "Address already in use" in str(e):
+            print(f"\n❌ Error: Port {port} is already in use!")
+            print(f"   Either stop the other process or use a different port:")
+            print(f"   python3 app.py 5002")
+        else:
+            raise
 
