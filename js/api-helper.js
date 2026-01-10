@@ -1,18 +1,26 @@
 // API Helper Functions
-const API_BASE_URL = (() => {
-  // If using file:// protocol (opening HTML file directly), use localhost:5001
-  if (window.location.protocol === 'file:') {
-    return 'http://localhost:5001/api';
-  }
-  
-  // Check if we're running on localhost (development)
-  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    return 'http://localhost:5001/api';
-  }
-  
-  // Production: use Render backend URL
-  return 'https://analytiq-qbfr.onrender.com/api';
-})();
+// Declare API_BASE_URL as a global variable - single source of truth
+// Use window property to avoid const/let declaration conflicts
+if (typeof window.API_BASE_URL === 'undefined') {
+  window.API_BASE_URL = (function() {
+    // If using file:// protocol (opening HTML file directly), use localhost:5001
+    if (window.location.protocol === 'file:') {
+      return 'http://localhost:5001/api';
+    }
+    
+    // Check if we're running on localhost (development)
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      return 'http://localhost:5001/api';
+    }
+    
+    // Production: use Render backend URL
+    return 'https://analytiq-qbfr.onrender.com/api';
+  })();
+}
+
+// Local reference for use within this file (references window.API_BASE_URL)
+// Use a getter function to always get the current value
+var API_BASE_URL = window.API_BASE_URL;
 
 // Get current user ID from localStorage
 function getCurrentUserId() {
@@ -27,7 +35,7 @@ const conversationAPI = {
         if (!userId) return [];
         
         try {
-            const response = await fetch(`${API_BASE_URL}/users/conversations?user_id=${userId}&archived=${archived}`);
+            const response = await fetch(`${window.API_BASE_URL}/users/conversations?user_id=${userId}&archived=${archived}`);
             if (response.ok) {
                 return await response.json();
             }
@@ -42,7 +50,7 @@ const conversationAPI = {
         if (!userId) return null;
         
         try {
-            const response = await fetch(`${API_BASE_URL}/users/conversations/${conversationId}?user_id=${userId}`);
+            const response = await fetch(`${window.API_BASE_URL}/users/conversations/${conversationId}?user_id=${userId}`);
             if (response.ok) {
                 return await response.json();
             }
@@ -57,7 +65,7 @@ const conversationAPI = {
         if (!userId) return null;
         
         try {
-            const response = await fetch(`${API_BASE_URL}/users/conversations`, {
+            const response = await fetch(`${window.API_BASE_URL}/users/conversations`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -81,7 +89,7 @@ const conversationAPI = {
         if (!userId) return false;
         
         try {
-            const response = await fetch(`${API_BASE_URL}/users/conversations/${conversationId}`, {
+            const response = await fetch(`${window.API_BASE_URL}/users/conversations/${conversationId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -119,7 +127,7 @@ const aiAgentAPI = {
         if (!userId) return { goal: '', constraints: '', decisions: '', current_state: '', open_questions: '' };
         
         try {
-            const response = await fetch(`${API_BASE_URL}/users/ai-digest?user_id=${userId}`);
+            const response = await fetch(`${window.API_BASE_URL}/users/ai-digest?user_id=${userId}`);
             if (response.ok) {
                 return await response.json();
             }
@@ -134,7 +142,7 @@ const aiAgentAPI = {
         if (!userId) return false;
         
         try {
-            const response = await fetch(`${API_BASE_URL}/users/ai-digest`, {
+            const response = await fetch(`${window.API_BASE_URL}/users/ai-digest`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -154,7 +162,7 @@ const aiAgentAPI = {
         if (!userId) return [];
         
         try {
-            const response = await fetch(`${API_BASE_URL}/users/ai-memory?user_id=${userId}`);
+            const response = await fetch(`${window.API_BASE_URL}/users/ai-memory?user_id=${userId}`);
             if (response.ok) {
                 const data = await response.json();
                 return data.memory || [];
@@ -170,7 +178,7 @@ const aiAgentAPI = {
         if (!userId) return false;
         
         try {
-            const response = await fetch(`${API_BASE_URL}/users/ai-memory`, {
+            const response = await fetch(`${window.API_BASE_URL}/users/ai-memory`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -193,7 +201,7 @@ const preferencesAPI = {
         if (!userId) return { currentLanguage: 'python', geminiModel: 'gemini-2.5-flash', aiProvider: 'gemini' };
         
         try {
-            const response = await fetch(`${API_BASE_URL}/users/preferences?user_id=${userId}`);
+            const response = await fetch(`${window.API_BASE_URL}/users/preferences?user_id=${userId}`);
             if (response.ok) {
                 return await response.json();
             }
@@ -208,7 +216,7 @@ const preferencesAPI = {
         if (!userId) return false;
         
         try {
-            const response = await fetch(`${API_BASE_URL}/users/preferences`, {
+            const response = await fetch(`${window.API_BASE_URL}/users/preferences`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
