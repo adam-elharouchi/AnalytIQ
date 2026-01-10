@@ -147,16 +147,21 @@ function setupEventListeners() {
     });
   }
   
-  // Dark mode toggle - auto-save and apply on change
+  // Dark mode toggle - auto-save and apply on change (INSTANT)
   const darkModeToggle = document.getElementById('darkMode');
   if (darkModeToggle) {
     darkModeToggle.addEventListener('change', async function() {
+      // Apply INSTANTLY (no delay)
       applyDarkMode(darkModeToggle.checked);
-      await saveSettings();
+      // Save to API in background (non-blocking)
+      saveSettings().catch(err => console.error('Failed to save dark mode:', err));
     });
     
-    // Apply dark mode on page load
-    applyDarkMode(darkModeToggle.checked);
+    // Apply dark mode on page load if checkbox state differs
+    const currentDarkMode = document.body.classList.contains('dark-mode');
+    if (darkModeToggle.checked !== currentDarkMode) {
+      applyDarkMode(darkModeToggle.checked);
+    }
   }
 }
 
