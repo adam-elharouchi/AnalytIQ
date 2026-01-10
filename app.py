@@ -41,26 +41,37 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 
 def get_db_connection():
     """Get database connection"""
+    if not DATABASE_URL:
+        raise Exception("DATABASE_URL environment variable is not set")
+    
+    # For Supabase on cloud platforms (Render, Railway, etc.), prefer connection pooler
+    # Connection pooler uses port 6543 and works better with cloud deployments
+    db_url = DATABASE_URL
+    
+    # Check if we should use connection pooler (for Supabase on cloud)
+    # Try pooler first if it's a Supabase URL and we're likely on a cloud platform
+    if "supabase.co" in db_url and ":5432" in db_url:
+        # Try connection pooler first (port 6543) - better for cloud
+        pooler_url = db_url.replace(":5432", ":6543")
+        # Add pgbouncer parameter if not present
+        if "pgbouncer" not in pooler_url:
+            pooler_url += ("&" if "?" in pooler_url else "?") + "pgbouncer=true"
+        
+        try:
+            conn = psycopg2.connect(pooler_url, connect_timeout=10)
+            return conn
+        except Exception as pooler_error:
+            print(f"Connection pooler failed, trying direct connection: {pooler_error}")
+            # Fall through to try direct connection
+    
+    # Try direct connection (port 5432)
     try:
-        # Try direct connection first
-        conn = psycopg2.connect(DATABASE_URL)
+        conn = psycopg2.connect(db_url, connect_timeout=10)
         return conn
     except psycopg2.OperationalError as e:
-        # If direct connection fails, try with IPv4 preference
-        # Supabase connection pooler uses port 6543 and is better for cloud deployments
-        if "Network is unreachable" in str(e) or "could not connect" in str(e).lower():
-            # Try connection pooler URL (if available as separate env var)
-            pooler_url = os.getenv("DATABASE_POOLER_URL")
-            if pooler_url:
-                return psycopg2.connect(pooler_url)
-            # Otherwise, modify connection string to force IPv4 or use pooler port
-            # For Supabase, connection pooler is at same host but port 6543
-            if "supabase.co" in DATABASE_URL and ":5432" in DATABASE_URL:
-                pooler_url = DATABASE_URL.replace(":5432", ":6543")
-                try:
-                    return psycopg2.connect(pooler_url)
-                except:
-                    pass
+        error_msg = str(e)
+        if "Network is unreachable" in error_msg or "could not connect" in error_msg.lower():
+            raise Exception(f"Database connection failed. Make sure DATABASE_URL is correct and the database is accessible. Error: {error_msg}")
         raise
 
 def hash_password(password):
@@ -98,7 +109,7 @@ def signup():
         cursor = conn.cursor()
         
         # Check if user already exists
-        cursor.execute("SELECT id FROM users WHERE email = %s", (email,))
+        cursor.execute("SELECT user_id FROM users WHERE email = %s", (email,))
         if cursor.fetchone():
             cursor.close()
             conn.close()
