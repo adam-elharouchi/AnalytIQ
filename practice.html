@@ -38,7 +38,7 @@
     <p class="subtitle">Hone your data analytics skills with hands-on exercises</p>
     
     <!-- Total Progress Bar -->
-    <div class="total-progress-section" style="margin-bottom: 2rem; padding: 1.5rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem;">
+    <div class="total-progress-section" style="margin-bottom: 2rem; padding: 1.5rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem;" data-inline-styles>
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
         <h3 style="margin: 0; color: #222c3e;">Overall Progress</h3>
         <span id="totalProgressText" style="font-weight: 600; color: #2569f4;">0%</span>
@@ -52,21 +52,21 @@
     <!-- Leaderboards Section -->
     <div style="margin-bottom: 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
       <!-- Grand Leaderboard -->
-      <div class="leaderboard-card" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 1.5rem;">
-        <h3 style="margin: 0 0 1rem 0; color: #222c3e; display: flex; align-items: center; gap: 0.5rem;">
+      <div class="leaderboard-card" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 1.5rem;" data-inline-styles>
+        <h3 style="margin: 0 0 1rem 0; color: #222c3e; display: flex; align-items: center; gap: 0.5rem;" data-inline-styles>
           <span>🏆</span> Grand Leaderboard
         </h3>
-        <div id="grandLeaderboard" style="max-height: 300px; overflow-y: auto;">
+        <div id="grandLeaderboard" style="max-height: 300px; overflow-y: auto;" data-inline-styles>
           <p style="color: #64748b; text-align: center; padding: 1rem;">Loading...</p>
         </div>
       </div>
       
       <!-- Exercise Leaderboard (for selected exercise) -->
-      <div class="leaderboard-card" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 1.5rem;">
-        <h3 style="margin: 0 0 1rem 0; color: #222c3e; display: flex; align-items: center; gap: 0.5rem;">
+      <div class="leaderboard-card" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 1.5rem;" data-inline-styles>
+        <h3 style="margin: 0 0 1rem 0; color: #222c3e; display: flex; align-items: center; gap: 0.5rem;" data-inline-styles>
           <span>📊</span> <span id="exerciseLeaderboardTitle">Exercise Leaderboard</span>
         </h3>
-        <div id="exerciseLeaderboard" style="max-height: 300px; overflow-y: auto;">
+        <div id="exerciseLeaderboard" style="max-height: 300px; overflow-y: auto;" data-inline-styles>
           <p style="color: #64748b; text-align: center; padding: 1rem;">Click an exercise to view its leaderboard</p>
         </div>
       </div>
@@ -75,7 +75,7 @@
     <div class="practice-grid">
       <div class="chapter-section" style="grid-column: 1 / -1; margin-bottom: 2rem;">
         <h2 style="margin-top: 2rem; margin-bottom: 0.5rem; color: #222c3e; font-size: 1.75rem; border-bottom: 2px solid #2569f4; padding-bottom: 0.5rem;">Chapter 2: Business Analytics Foundations</h2>
-        <p style="margin-bottom: 2rem; color: #64748b; font-size: 1rem;">Learn to import datasets, explore data structures, and understand basic data operations.</p>
+        <p style="margin-bottom: 0.5rem; color: #64748b; font-size: 1rem;">Learn to import datasets, explore data structures, and understand basic data operations.</p>
       </div>
       <div class="practice-card">
         <div class="practice-header">
@@ -1277,6 +1277,62 @@ print(r2)</code></pre>
     // Track currently selected exercise for leaderboard
     let currentExerciseLeaderboardId = null;
     
+    // Function to remove inline styles in dark mode
+    function removeInlineStylesForDarkMode() {
+      if (document.body.classList.contains('dark-mode')) {
+        // Remove inline styles from leaderboard cards and progress section
+        document.querySelectorAll('.leaderboard-card[style], .total-progress-section[style]').forEach(el => {
+          // Keep only necessary styles, remove color/background/border
+          const currentStyle = el.getAttribute('style') || '';
+          // Remove background, border, but keep padding and border-radius structure
+          const newStyle = currentStyle
+            .replace(/background:\s*[^;]+;?/gi, '')
+            .replace(/border:\s*[^;]+;?/gi, '')
+            .replace(/border-[^:]+:\s*[^;]+;?/gi, '');
+          if (newStyle.trim()) {
+            el.setAttribute('style', newStyle);
+          } else {
+            el.removeAttribute('style');
+          }
+        });
+        
+        // Remove inline styles from h3 in leaderboard cards
+        document.querySelectorAll('.leaderboard-card h3[style]').forEach(el => {
+          const currentStyle = el.getAttribute('style') || '';
+          const newStyle = currentStyle.replace(/color:\s*[^;]+;?/gi, '');
+          if (newStyle.trim()) {
+            el.setAttribute('style', newStyle);
+          } else {
+            el.removeAttribute('style');
+          }
+        });
+        
+        // Remove inline styles from dynamically created leaderboard items
+        document.querySelectorAll('.leaderboard-item[style]').forEach(el => {
+          const currentStyle = el.getAttribute('style') || '';
+          const newStyle = currentStyle
+            .replace(/background:\s*white;?/gi, '')
+            .replace(/background:\s*#[^;]+;?/gi, '')
+            .replace(/border:\s*[^;]+;?/gi, '');
+          el.setAttribute('style', newStyle);
+        });
+        
+        // Remove inline color styles from leaderboard text elements
+        document.querySelectorAll('.leaderboard-name[style], .leaderboard-meta[style], .leaderboard-label[style]').forEach(el => {
+          const currentStyle = el.getAttribute('style') || '';
+          const newStyle = currentStyle.replace(/color:\s*[^;]+;?/gi, '');
+          el.setAttribute('style', newStyle);
+        });
+        
+        // Remove inline styles from chapter section paragraph
+        document.querySelectorAll('.chapter-section p[style]').forEach(el => {
+          const currentStyle = el.getAttribute('style') || '';
+          const newStyle = currentStyle.replace(/margin-bottom:\s*2rem;?/gi, 'margin-bottom: 0.5rem;');
+          el.setAttribute('style', newStyle);
+        });
+      }
+    }
+
     // Function to refresh all data
     function refreshAllData() {
       console.log('Refreshing all practice data...');
@@ -1295,10 +1351,15 @@ print(r2)</code></pre>
           loadExerciseLeaderboard(currentExerciseLeaderboardId, title);
         }
       }
+      
+      // Remove inline styles for dark mode after data loads
+      setTimeout(removeInlineStylesForDarkMode, 100);
     }
     
     // Require authentication
     document.addEventListener('DOMContentLoaded', function() {
+      // Remove inline styles for dark mode immediately
+      removeInlineStylesForDarkMode();
       const authManager = new AuthManager();
       if (!authManager.requireAuth()) {
         return; // Will redirect to login
@@ -1363,6 +1424,25 @@ print(r2)</code></pre>
       window.addEventListener('focus', function() {
         refreshAllData();
       });
+      
+      // Listen for dark mode changes and remove inline styles
+      window.addEventListener('storage', function(e) {
+        if (e.key === 'darkModeEnabled' || e.key === 'userSettings') {
+          setTimeout(removeInlineStylesForDarkMode, 100);
+        }
+      });
+      
+      // Also check when dark mode class changes (same tab toggle)
+      const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+          if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+            if (document.body.classList.contains('dark-mode')) {
+              setTimeout(removeInlineStylesForDarkMode, 100);
+            }
+          }
+        });
+      });
+      observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
       
       // Add click handlers to exercise cards to load exercise leaderboard
       document.querySelectorAll('.practice-card').forEach(card => {
@@ -1491,32 +1571,38 @@ print(r2)</code></pre>
         const data = await response.json();
         const container = document.getElementById('grandLeaderboard');
         
-        if (data.leaderboard.length === 0) {
-          container.innerHTML = '<p style="color: #64748b; text-align: center; padding: 1rem;">No scores yet. Be the first!</p>';
+        const leaderboardData = data.leaderboard || data || [];
+        if (!leaderboardData || leaderboardData.length === 0) {
+          container.innerHTML = '<p class="leaderboard-empty" style="text-align: center; padding: 1rem;">No scores yet. Be the first!</p>';
           return;
         }
         
-        let html = '<div style="display: flex; flex-direction: column; gap: 0.5rem;">';
-        data.leaderboard.forEach(entry => {
+        let html = '<ul id="grandLeaderboardList" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem;">';
+        leaderboardData.forEach((entry, index) => {
+          const rank = index + 1;
           const medal = entry.rank === 1 ? '🥇' : entry.rank === 2 ? '🥈' : entry.rank === 3 ? '🥉' : `${entry.rank}.`;
           html += `
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: white; border-radius: 0.25rem; border: 1px solid #e2e8f0;">
+            <li class="leaderboard-item" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; border-radius: 0.25rem;">
               <div style="display: flex; align-items: center; gap: 0.75rem;">
                 <span style="font-weight: 700; font-size: 1.25rem;">${medal}</span>
                 <div>
-                  <div style="font-weight: 600; color: #222c3e;">${entry.name}</div>
-                  <div style="font-size: 0.75rem; color: #64748b;">${entry.exercises_completed} exercises</div>
+                  <div class="leaderboard-name" style="font-weight: 600;">${entry.name || 'Unknown'}</div>
+                  <div class="leaderboard-meta" style="font-size: 0.75rem;">${entry.exercises_completed || entry.total_score || 0} exercises</div>
                 </div>
               </div>
               <div style="text-align: right;">
-                <div style="font-weight: 700; color: #2569f4; font-size: 1.125rem;">${Math.round(entry.average_score)}</div>
-                <div style="font-size: 0.75rem; color: #64748b;">avg score</div>
+                <div class="leaderboard-score" style="font-weight: 700; color: #2569f4; font-size: 1.125rem;">${Math.round(entry.average_score || entry.total_score || 0)}</div>
+                <div class="leaderboard-label" style="font-size: 0.75rem;">avg score</div>
               </div>
-            </div>
+            </li>
           `;
         });
-        html += '</div>';
+        html += '</ul>';
         container.innerHTML = html;
+        // Remove inline styles after setting HTML if in dark mode
+        if (document.body.classList.contains('dark-mode')) {
+          setTimeout(removeInlineStylesForDarkMode, 50);
+        }
       } catch (error) {
         console.error('Error loading grand leaderboard:', error);
         document.getElementById('grandLeaderboard').innerHTML = 
@@ -1539,32 +1625,38 @@ print(r2)</code></pre>
         const data = await response.json();
         const container = document.getElementById('exerciseLeaderboard');
         
-        if (data.leaderboard.length === 0) {
-          container.innerHTML = '<p style="color: #64748b; text-align: center; padding: 1rem;">No scores yet. Be the first!</p>';
+        const leaderboardData = data.leaderboard || data || [];
+        if (!leaderboardData || leaderboardData.length === 0) {
+          container.innerHTML = '<p class="leaderboard-empty" style="text-align: center; padding: 1rem;">No scores yet. Be the first!</p>';
           return;
         }
         
-        let html = '<div style="display: flex; flex-direction: column; gap: 0.5rem;">';
-        data.leaderboard.forEach(entry => {
-          const medal = entry.rank === 1 ? '🥇' : entry.rank === 2 ? '🥈' : entry.rank === 3 ? '🥉' : `${entry.rank}.`;
+        let html = '<ul id="exerciseLeaderboardList" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem;">';
+        leaderboardData.forEach((entry, index) => {
+          const rank = index + 1;
+          const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `${rank}.`;
           html += `
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: white; border-radius: 0.25rem; border: 1px solid #e2e8f0;">
+            <li class="leaderboard-item" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; border-radius: 0.25rem;">
               <div style="display: flex; align-items: center; gap: 0.75rem;">
                 <span style="font-weight: 700; font-size: 1.25rem;">${medal}</span>
                 <div>
-                  <div style="font-weight: 600; color: #222c3e;">${entry.name}</div>
-                  <div style="font-size: 0.75rem; color: #64748b;">${entry.total_attempts} attempt(s)</div>
+                  <div class="leaderboard-name" style="font-weight: 600;">${entry.name || 'Unknown'}</div>
+                  <div class="leaderboard-meta" style="font-size: 0.75rem;">${entry.total_attempts || entry.attempts || 0} attempt(s)</div>
                 </div>
               </div>
               <div style="text-align: right;">
-                <div style="font-weight: 700; color: #2569f4; font-size: 1.125rem;">${entry.best_score}</div>
-                <div style="font-size: 0.75rem; color: #64748b;">${Math.round(entry.best_accuracy)}% | ${formatTime(entry.best_time || 0)}</div>
+                <div class="leaderboard-score" style="font-weight: 700; color: #2569f4; font-size: 1.125rem;">${entry.best_score || entry.score || 0}</div>
+                <div class="leaderboard-label" style="font-size: 0.75rem;">${Math.round(entry.best_accuracy || entry.accuracy || 0)}% | ${formatTime(entry.best_time || entry.time_spent || 0)}</div>
               </div>
-            </div>
+            </li>
           `;
         });
-        html += '</div>';
+        html += '</ul>';
         container.innerHTML = html;
+        // Remove inline styles after setting HTML if in dark mode
+        if (document.body.classList.contains('dark-mode')) {
+          setTimeout(removeInlineStylesForDarkMode, 50);
+        }
       } catch (error) {
         console.error('Error loading exercise leaderboard:', error);
         document.getElementById('exerciseLeaderboard').innerHTML = 
