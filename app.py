@@ -44,16 +44,34 @@ def get_db_connection():
     if not DATABASE_URL:
         raise Exception("DATABASE_URL environment variable is not set")
     
+    # Clean up the database URL - remove invalid query parameters like pgbouncer
+    # psycopg2 doesn't accept pgbouncer as a query parameter
+    db_url = DATABASE_URL
+    if '?' in db_url:
+        # Remove pgbouncer parameter if present
+        url_parts = db_url.split('?')
+        base_url = url_parts[0]
+        query_params = url_parts[1] if len(url_parts) > 1 else ''
+        
+        # Filter out pgbouncer parameter
+        if query_params:
+            params = [p for p in query_params.split('&') if not p.startswith('pgbouncer=')]
+            if params:
+                db_url = base_url + '?' + '&'.join(params)
+            else:
+                db_url = base_url
+        else:
+            db_url = base_url
+    
     # For Supabase on cloud platforms (Render, Railway, etc.), prefer connection pooler
     # Connection pooler uses port 6543 and works better with cloud deployments
-    db_url = DATABASE_URL
-    
     # Check if we should use connection pooler (for Supabase on cloud)
-    # Try pooler first if it's a Supabase URL and we're likely on a cloud platform
     if "supabase.co" in db_url and ":5432" in db_url:
         # Try connection pooler first (port 6543) - better for cloud
-        # Remove any existing query parameters and just change the port
-        pooler_url = db_url.split('?')[0].replace(":5432", ":6543")
+        # Change port to 6543 for connection pooler
+        pooler_url = db_url.replace(":5432", ":6543")
+        # Ensure no query parameters that might cause issues
+        pooler_url = pooler_url.split('?')[0]
         
         try:
             conn = psycopg2.connect(pooler_url, connect_timeout=10)
@@ -61,14 +79,25 @@ def get_db_connection():
             return conn
         except Exception as pooler_error:
             print(f"Connection pooler failed, trying direct connection: {pooler_error}")
-            # Fall through to try direct connection
+            # Fall through to try direct connection (but clean the URL first)
+            db_url = db_url.replace(":6543", ":5432").split('?')[0]
     
     # Try direct connection (port 5432)
+    # Make sure URL is clean (no invalid query parameters)
+    clean_url = db_url.split('?')[0] if '?' in db_url else db_url
     try:
-        conn = psycopg2.connect(db_url, connect_timeout=10)
+        conn = psycopg2.connect(clean_url, connect_timeout=10)
         return conn
     except psycopg2.OperationalError as e:
         error_msg = str(e)
+        if "invalid dsn" in error_msg.lower() or "invalid uri" in error_msg.lower():
+            # Try with URL cleaned of all query parameters
+            clean_base = clean_url.split('?')[0]
+            try:
+                conn = psycopg2.connect(clean_base, connect_timeout=10)
+                return conn
+            except Exception as e2:
+                raise Exception(f"Database connection failed with cleaned URL. Error: {str(e2)}")
         if "Network is unreachable" in error_msg or "could not connect" in error_msg.lower():
             raise Exception(f"Database connection failed. Make sure DATABASE_URL is correct and the database is accessible. Error: {error_msg}")
         raise
