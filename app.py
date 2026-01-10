@@ -141,9 +141,17 @@ def get_db_connection():
     clean_url = clean_db_url(DATABASE_URL)
     
     # Validate URL format before attempting connection
-    parsed_test = urlparse(clean_url)
-    if parsed_test.port and not str(parsed_test.port).isdigit():
-        raise Exception(f"Invalid port value '{parsed_test.port}' in DATABASE_URL. Port must be a number (e.g., 5432 or 6543). Please check your DATABASE_URL in Render environment variables.")
+    try:
+        parsed_test = urlparse(clean_url)
+        # Check if port exists and is valid
+        if parsed_test.port is not None:
+            try:
+                int(parsed_test.port)
+            except (ValueError, TypeError):
+                raise Exception(f"Invalid port value '{parsed_test.port}' in DATABASE_URL. Port must be a number (e.g., 5432 or 6543). Current URL format: {clean_url.split('@')[0]}@HOST:PORT/...")
+    except Exception as parse_err:
+        # If URL parsing fails, the URL might be malformed
+        raise Exception(f"Failed to parse DATABASE_URL. Error: {parse_err}. Please verify the format is: postgresql://user:password@host:port/database")
     
     # Try direct connection first (simplest approach - works with Session Pooler format)
     try:
