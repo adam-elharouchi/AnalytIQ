@@ -1,7 +1,10 @@
 from flask import Flask, request, jsonify
 import psycopg2
+from psycopg2 import pool
 from dotenv import load_dotenv
 import os
+import socket
+from urllib.parse import urlparse
 import hashlib
 import json
 from datetime import datetime
@@ -40,79 +43,126 @@ def after_request(response):
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 def get_db_connection():
-    """Get database connection"""
+    """Get database connection with IPv4 fallback"""
     if not DATABASE_URL:
         raise Exception("DATABASE_URL environment variable is not set")
     
     # Clean up the database URL - remove invalid query parameters like pgbouncer
-    # psycopg2 doesn't accept pgbouncer as a query parameter
     def clean_db_url(url):
         """Remove invalid query parameters from database URL"""
         if '?' not in url:
-            return url
-        
-        url_parts = url.split('?')
-        base_url = url_parts[0]
-        query_params = url_parts[1] if len(url_parts) > 1 else ''
-        
-        if not query_params:
-            return base_url
-        
-        # Filter out pgbouncer parameter and any other problematic params
-        params = [p for p in query_params.split('&') 
-                 if p and not p.startswith('pgbouncer=') and '=' in p]
-        
-        if params:
-            return base_url + '?' + '&'.join(params)
-        else:
-            return base_url
+            return url.split('?')[0]
+        return url.split('?')[0]
     
-    # Start with cleaned URL
-    db_url = clean_db_url(DATABASE_URL)
+    def parse_connection_string(url):
+        """Parse PostgreSQL connection URL into components"""
+        try:
+            parsed = urlparse(url)
+            return {
+                'host': parsed.hostname,
+                'port': parsed.port or 5432,
+                'database': parsed.path[1:] if parsed.path else 'postgres',
+                'user': parsed.username,
+                'password': parsed.password
+            }
+        except Exception as e:
+            print(f"Error parsing connection string: {e}")
+            return None
     
-    # For Supabase on cloud platforms (Render, Railway, etc.), prefer connection pooler
-    # Connection pooler uses port 6543 and works better with cloud deployments
-    if "supabase.co" in db_url and ":5432" in db_url:
-        # Try connection pooler first (port 6543) - better for cloud
-        pooler_url = db_url.replace(":5432", ":6543")
-        # Make absolutely sure it's clean (no query parameters)
-        pooler_url = clean_db_url(pooler_url).split('?')[0]
+    def resolve_hostname_to_ipv4(hostname):
+        """Resolve hostname to IPv4 address, avoiding IPv6"""
+        try:
+            # Get all addresses
+            addrinfo = socket.getaddrinfo(hostname, None, socket.AF_INET, socket.SOCK_STREAM)
+            # Return first IPv4 address
+            if addrinfo:
+                return addrinfo[0][4][0]
+        except Exception as e:
+            print(f"Error resolving {hostname} to IPv4: {e}")
+        return hostname  # Fallback to original hostname
+    
+    def connect_with_ipv4(params):
+        """Connect using connection parameters, forcing IPv4"""
+        try:
+            # Resolve hostname to IPv4
+            ipv4_host = resolve_hostname_to_ipv4(params['host'])
+            # Use direct connection with IPv4 host
+            conn = psycopg2.connect(
+                host=ipv4_host,
+                port=params['port'],
+                database=params['database'],
+                user=params['user'],
+                password=params['password'],
+                connect_timeout=10,
+                sslmode='require'
+            )
+            return conn
+        except Exception as e:
+            print(f"IPv4 connection failed: {e}")
+            # Try with original hostname as fallback
+            try:
+                conn = psycopg2.connect(
+                    host=params['host'],
+                    port=params['port'],
+                    database=params['database'],
+                    user=params['user'],
+                    password=params['password'],
+                    connect_timeout=10,
+                    sslmode='require'
+                )
+                return conn
+            except:
+                raise
+    
+    # Clean the URL first
+    clean_url = clean_db_url(DATABASE_URL)
+    
+    # Parse connection parameters
+    conn_params = parse_connection_string(clean_url)
+    if not conn_params:
+        raise Exception("Failed to parse DATABASE_URL")
+    
+    # Try connection pooler first (port 6543) for Supabase
+    if "supabase.co" in conn_params['host']:
+        # Try pooler port 6543 first
+        pooler_params = conn_params.copy()
+        pooler_params['port'] = 6543
         
         try:
-            conn = psycopg2.connect(pooler_url, connect_timeout=10)
-            print("Connected using Supabase connection pooler (port 6543)")
+            conn = connect_with_ipv4(pooler_params)
+            print("Connected using Supabase connection pooler (port 6543, IPv4)")
             return conn
         except Exception as pooler_error:
-            print(f"Connection pooler failed: {pooler_error}")
-            # Fall through to try direct connection
-    
-    # Try direct connection (port 5432 or whatever is in the URL)
-    # Ensure URL is completely clean (no query parameters at all)
-    clean_url = clean_db_url(db_url).split('?')[0]
-    
-    try:
-        conn = psycopg2.connect(clean_url, connect_timeout=10)
-        print(f"Connected using direct connection: {clean_url.split('@')[1] if '@' in clean_url else 'database'}")
-        return conn
-    except psycopg2.OperationalError as e:
-        error_msg = str(e)
-        # If we still get an invalid DSN error, try with the absolute base URL
-        if "invalid dsn" in error_msg.lower() or "invalid uri" in error_msg.lower() or "pgbouncer" in error_msg.lower():
-            # Extract just the base connection string (everything before ?)
-            base_connection = DATABASE_URL.split('?')[0]
-            # If it's port 6543, try port 5432 instead
-            if ":6543" in base_connection:
-                base_connection = base_connection.replace(":6543", ":5432")
+            print(f"Connection pooler (6543) failed: {pooler_error}")
+            # Try direct connection (port 5432)
             try:
-                conn = psycopg2.connect(base_connection, connect_timeout=10)
-                print(f"Connected using fallback connection (no query params)")
+                direct_params = conn_params.copy()
+                direct_params['port'] = 5432
+                conn = connect_with_ipv4(direct_params)
+                print("Connected using Supabase direct connection (port 5432, IPv4)")
                 return conn
-            except Exception as e2:
-                raise Exception(f"Database connection failed. Please check DATABASE_URL in Render. Original error: {str(e)}, Fallback error: {str(e2)}")
-        
-        if "Network is unreachable" in error_msg or "could not connect" in error_msg.lower():
-            raise Exception(f"Database connection failed. Make sure DATABASE_URL is correct and the database is accessible. Error: {error_msg}")
-        raise
+            except Exception as direct_error:
+                print(f"Direct connection (5432) also failed: {direct_error}")
+                # Last resort: try with connection string (but cleaned)
+                try:
+                    # Rebuild connection string with port 5432
+                    base_url = clean_url.split('@')[0]  # user:pass
+                    host_part = clean_url.split('@')[1].split('/')[0]  # host:port
+                    db_part = '/' + conn_params['database']
+                    fallback_url = f"{base_url}@{host_part.split(':')[0]}:5432{db_part}"
+                    conn = psycopg2.connect(fallback_url, connect_timeout=10, sslmode='require')
+                    print("Connected using fallback connection string")
+                    return conn
+                except Exception as e:
+                    raise Exception(f"All connection attempts failed. Pooler error: {pooler_error}, Direct error: {direct_error}, Fallback error: {e}")
+    
+    # For non-Supabase databases, use direct connection
+    try:
+        conn = connect_with_ipv4(conn_params)
+        print(f"Connected to database at {conn_params['host']}")
+        return conn
+    except Exception as e:
+        raise Exception(f"Database connection failed: {e}")
 
 def hash_password(password):
     """Simple hash function (same as frontend for compatibility)"""
