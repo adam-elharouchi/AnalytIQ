@@ -4322,13 +4322,6 @@ html[data-theme="dark"] [data-inline-styles].leaderboard-card h3 {
   gap: 0.5rem !important;
 }
 
-/* Fix code assistant message backgrounds for dark mode */
-body.dark-mode .user-message,
-html[data-theme="dark"] .user-message {
-  background: #2569f4 !important; /* Blue instead of dark #222c3e for better contrast */
-  color: #ffffff !important;
-}
-
 body.dark-mode .assistant-message,
 html[data-theme="dark"] .assistant-message {
   background: var(--bg-card) !important; /* Use card background instead of #222c3e */
@@ -4348,22 +4341,9 @@ html[data-theme="dark"] .assistant-message .message-content li {
   color: var(--text-primary) !important;
 }
 
-/* Fix welcome message for dark mode */
-body.dark-mode .welcome-message p,
-html[data-theme="dark"] .welcome-message p {
-  color: var(--text-primary) !important; /* Use primary text color instead of white */
-}
-
 body.dark-mode .conversation-starters h3,
 html[data-theme="dark"] .conversation-starters h3 {
   color: var(--text-primary) !important; /* Use primary text color instead of blue */
-}
-
-/* Fix starter buttons hover in dark mode */
-body.dark-mode .starter-btn:hover,
-html[data-theme="dark"] .starter-btn:hover {
-  background: var(--bg-secondary) !important; /* Use dark mode secondary instead of #222c3e */
-  border-color: var(--border-color) !important;
 }
 
 /* Fix chapter section spacing */
@@ -4396,14 +4376,6 @@ html[data-theme="dark"] .total-progress-section span {
 }
 
 
-/* Fix chat input compact for dark mode */
-body.dark-mode .chat-input-compact,
-html[data-theme="dark"] .chat-input-compact {
-  background: var(--bg-card) !important;
-  color: var(--text-primary) !important;
-  border-color: var(--border-color) !important;
-}
-
 body.dark-mode .chat-input-compact:focus,
 html[data-theme="dark"] .chat-input-compact:focus {
   border-color: #2569f4 !important;
@@ -4416,25 +4388,9 @@ html[data-theme="dark"] .chat-input-compact::placeholder {
   color: var(--text-secondary) !important;
 }
 
-/* Fix send button for dark mode */
-body.dark-mode .btn-send-compact,
-html[data-theme="dark"] .btn-send-compact {
-  background: #2569f4 !important; /* Blue instead of #222c3e */
-  color: #ffffff !important;
-  border-color: #2569f4 !important;
-}
-
 body.dark-mode .btn-send-compact:hover,
 html[data-theme="dark"] .btn-send-compact:hover {
   background: #1e5ae0 !important;
-}
-
-/* Fix oval buttons (upload, gemini, language) */
-body.dark-mode .oval-btn,
-html[data-theme="dark"] .oval-btn {
-  background: var(--bg-secondary) !important;
-  border-color: var(--border-color) !important;
-  color: var(--text-primary) !important;
 }
 
 body.dark-mode .oval-select,
