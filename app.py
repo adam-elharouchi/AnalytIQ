@@ -137,23 +137,23 @@ def get_db_connection():
             except:
                 raise
     
-    # Clean the URL first
+    # Clean the URL first - remove invalid query parameters
     clean_url = clean_db_url(DATABASE_URL)
     
-    # Parse connection parameters
-    conn_params = parse_connection_string(clean_url)
-    if not conn_params:
-        # Fallback: try to connect directly with cleaned URL if parsing fails
-        print("Warning: Failed to parse DATABASE_URL, attempting direct connection with cleaned URL")
-        try:
-            # Add sslmode if not present
-            if 'sslmode' not in clean_url:
-                clean_url = clean_url + ('&' if '?' in clean_url else '?') + 'sslmode=require'
-            conn = psycopg2.connect(clean_url, connect_timeout=10)
-            print("Connected using fallback direct connection string")
-            return conn
-        except Exception as fallback_error:
-            raise Exception(f"Failed to parse DATABASE_URL and direct connection also failed. Connection error: {fallback_error}. URL format appears correct (postgresql://...), but parsing failed. Please check Render logs for detailed error.")
+    # Try direct connection first (simplest approach - works with Session Pooler format)
+    try:
+        # Ensure sslmode is set
+        if 'sslmode' not in clean_url:
+            clean_url = clean_url + ('&' if '?' in clean_url else '?') + 'sslmode=require'
+        conn = psycopg2.connect(clean_url, connect_timeout=10)
+        print(f"Connected using direct connection string to {clean_url.split('@')[1].split('/')[0] if '@' in clean_url else 'database'}")
+        return conn
+    except Exception as direct_error:
+        print(f"Direct connection failed: {direct_error}")
+        # If direct connection fails, try parsing and using connection parameters
+        conn_params = parse_connection_string(clean_url)
+        if not conn_params:
+            raise Exception(f"Both direct connection and parsing failed. Direct error: {direct_error}. Please verify DATABASE_URL in Render environment variables.")
     
     # For Supabase, try multiple connection methods
     if "supabase.co" in conn_params['host']:
