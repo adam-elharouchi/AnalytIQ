@@ -18,10 +18,6 @@ if (typeof window.API_BASE_URL === 'undefined') {
   })();
 }
 
-// Local reference for use within this file (references window.API_BASE_URL)
-// Use a getter function to always get the current value
-var API_BASE_URL = window.API_BASE_URL;
-
 // Get current user ID from localStorage
 function getCurrentUserId() {
     const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
