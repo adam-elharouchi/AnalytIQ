@@ -3892,6 +3892,7 @@ html[data-theme="dark"] .progress-bar {
 body.dark-mode .progress-fill,
 html[data-theme="dark"] .progress-fill {
   background: #2569f4 !important;
+  background-color: #2569f4 !important; /* Force override of var(--primary-color) which is white */
 }
 
 /* User menu */
@@ -4149,5 +4150,144 @@ body.dark-mode [style*="#222c3e"],
 html[data-theme="dark"] [style*="#1e293b"],
 html[data-theme="dark"] [style*="#222c3e"] {
   color: var(--text-primary) !important;
+}
+
+
+/* ============================================
+   FIX PROGRESS BARS AND LEADERBOARDS IN DARK MODE
+   ============================================ */
+
+/* Progress bars - ensure blue fill, not white */
+body.dark-mode .progress-fill,
+html[data-theme="dark"] .progress-fill {
+  background: #2569f4 !important;
+  background-color: #2569f4 !important; /* Force override of var(--primary-color) */
+}
+
+body.dark-mode .completion-bar-fill,
+html[data-theme="dark"] .completion-bar-fill {
+  background: #2569f4 !important;
+  background-color: #2569f4 !important;
+}
+
+body.dark-mode .exercise-progress-bar,
+html[data-theme="dark"] .exercise-progress-bar {
+  background-color: #2569f4 !important; /* Override inline styles */
+}
+
+body.dark-mode .completion-bar,
+html[data-theme="dark"] .completion-bar {
+  background: var(--bg-secondary) !important;
+}
+
+/* Leaderboard cards - override inline styles that cause white background */
+body.dark-mode .leaderboard-card,
+html[data-theme="dark"] .leaderboard-card {
+  background: var(--bg-card) !important; /* Override inline #f8fafc */
+  border: 1px solid var(--border-color) !important; /* Override inline #e2e8f0 */
+  border-radius: 0.5rem !important;
+  padding: 1.5rem !important;
+}
+
+body.dark-mode .leaderboard-card h3,
+html[data-theme="dark"] .leaderboard-card h3 {
+  color: var(--text-primary) !important; /* Override inline #222c3e */
+}
+
+body.dark-mode .leaderboard-card h3 span,
+html[data-theme="dark"] .leaderboard-card h3 span {
+  color: var(--text-primary) !important;
+}
+
+body.dark-mode .leaderboard-card p,
+html[data-theme="dark"] .leaderboard-card p {
+  color: var(--text-secondary) !important; /* Override inline #64748b */
+}
+
+body.dark-mode #grandLeaderboard,
+body.dark-mode #exerciseLeaderboard,
+html[data-theme="dark"] #grandLeaderboard,
+html[data-theme="dark"] #exerciseLeaderboard {
+  background: transparent !important;
+}
+
+/* Override inline styles on leaderboard items */
+body.dark-mode [style*="background: #f8fafc"],
+body.dark-mode [style*="background:#f8fafc"],
+html[data-theme="dark"] [style*="background: #f8fafc"],
+html[data-theme="dark"] [style*="background:#f8fafc"] {
+  background: var(--bg-card) !important;
+}
+
+body.dark-mode [style*="border: 1px solid #e2e8f0"],
+body.dark-mode [style*="border:1px solid #e2e8f0"],
+html[data-theme="dark"] [style*="border: 1px solid #e2e8f0"],
+html[data-theme="dark"] [style*="border:1px solid #e2e8f0"] {
+  border: 1px solid var(--border-color) !important;
+}
+
+body.dark-mode [style*="color: #222c3e"],
+body.dark-mode [style*="color:#222c3e"],
+html[data-theme="dark"] [style*="color: #222c3e"],
+html[data-theme="dark"] [style*="color:#222c3e"] {
+  color: var(--text-primary) !important;
+}
+
+body.dark-mode [style*="color: #64748b"],
+body.dark-mode [style*="color:#64748b"],
+html[data-theme="dark"] [style*="color: #64748b"],
+html[data-theme="dark"] [style*="color:#64748b"] {
+  color: var(--text-secondary) !important;
+}
+
+
+/* ============================================
+   FIX CODE ASSISTANT DARK MODE - REMOVE EXTRA BAR
+   ============================================ */
+
+/* Collapsed sidebar - fix hardcoded dark background and shadow */
+body.dark-mode .collapsed-sidebar,
+html[data-theme="dark"] .collapsed-sidebar {
+  background: var(--bg-secondary) !important; /* Use dark mode variable instead of #222c3e */
+  box-shadow: none !important; /* Remove shadow that creates extra bar */
+  border-right: 1px solid var(--border-color) !important; /* Add subtle border instead of shadow */
+}
+
+body.dark-mode .conversation-sidebar,
+html[data-theme="dark"] .conversation-sidebar {
+  background: var(--bg-secondary) !important; /* Use dark mode variable instead of #222c3e */
+  border-right: 1px solid var(--border-color) !important; /* Use dark mode border color */
+}
+
+body.dark-mode .sidebar-header,
+html[data-theme="dark"] .sidebar-header {
+  border-bottom: 1px solid var(--border-color) !important; /* Use dark mode border color */
+  background: transparent !important;
+}
+
+body.dark-mode .sidebar-header h3,
+html[data-theme="dark"] .sidebar-header h3 {
+  color: var(--text-primary) !important; /* Ensure text is visible */
+}
+
+/* Fix chat input area - ensure no extra borders or bars */
+body.dark-mode .chat-input-area-fixed,
+html[data-theme="dark"] .chat-input-area-fixed {
+  background: var(--bg-primary) !important; /* Match main background */
+  border-top: none !important;
+  box-shadow: none !important; /* Remove shadow that creates extra bar */
+}
+
+body.dark-mode .input-container-compact,
+html[data-theme="dark"] .input-container-compact {
+  background: transparent !important;
+}
+
+/* Ensure input wrapper has proper dark mode styling */
+body.dark-mode .input-wrapper,
+html[data-theme="dark"] .input-wrapper {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 0.5rem !important;
 }
 
