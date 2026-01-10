@@ -137,8 +137,13 @@ def get_db_connection():
             except:
                 raise
     
-    # Clean the URL first - remove invalid query parameters
+    # Clean the URL first - remove invalid query parameters like pgbouncer
     clean_url = clean_db_url(DATABASE_URL)
+    
+    # Validate URL format before attempting connection
+    parsed_test = urlparse(clean_url)
+    if parsed_test.port and not str(parsed_test.port).isdigit():
+        raise Exception(f"Invalid port value '{parsed_test.port}' in DATABASE_URL. Port must be a number (e.g., 5432 or 6543). Please check your DATABASE_URL in Render environment variables.")
     
     # Try direct connection first (simplest approach - works with Session Pooler format)
     try:
@@ -146,14 +151,19 @@ def get_db_connection():
         if 'sslmode' not in clean_url:
             clean_url = clean_url + ('&' if '?' in clean_url else '?') + 'sslmode=require'
         conn = psycopg2.connect(clean_url, connect_timeout=10)
-        print(f"Connected using direct connection string to {clean_url.split('@')[1].split('/')[0] if '@' in clean_url else 'database'}")
+        print(f"Connected using direct connection string")
         return conn
+    except psycopg2.OperationalError as op_error:
+        error_msg = str(op_error)
+        if "invalid integer value" in error_msg and "port" in error_msg:
+            # Extract the invalid port value from error
+            raise Exception(f"Invalid port in DATABASE_URL. The connection string has a malformed port. Please verify your DATABASE_URL in Render. It should look like: postgresql://postgres.PROJECT_REF:[PASSWORD]@aws-0-us-west-2.pooler.supabase.com:5432/postgres. Error: {error_msg}")
+        raise Exception(f"Database connection failed: {error_msg}. Please verify DATABASE_URL is correct in Render environment variables.")
     except Exception as direct_error:
-        print(f"Direct connection failed: {direct_error}")
-        # If direct connection fails, try parsing and using connection parameters
-        conn_params = parse_connection_string(clean_url)
-        if not conn_params:
-            raise Exception(f"Both direct connection and parsing failed. Direct error: {direct_error}. Please verify DATABASE_URL in Render environment variables.")
+        error_str = str(direct_error)
+        if "invalid integer value" in error_str and "port" in error_str:
+            raise Exception(f"Invalid port in DATABASE_URL. Please check your DATABASE_URL format in Render. Error: {error_str}")
+        raise Exception(f"Database connection failed: {error_str}")
     
     # For Supabase, try multiple connection methods
     if "supabase.co" in conn_params['host']:
