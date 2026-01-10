@@ -1166,10 +1166,20 @@ def health():
 
 if __name__ == '__main__':
     import sys
-    port = 5001  # Changed from 5000 to avoid macOS AirPlay conflict
+    import os
+    port = int(os.getenv('PORT', 5001))  # Changed from 5000 to avoid macOS AirPlay conflict
     if len(sys.argv) > 1:
         port = int(sys.argv[1])
+    
+    # Only run in debug mode if explicitly set or running locally
+    debug_mode = os.getenv('FLASK_DEBUG', 'False').lower() == 'true' or \
+                 (os.getenv('FLASK_ENV') == 'development' and 'localhost' in os.getenv('HOST', ''))
+    
     print(f"Starting Flask server on port {port}...")
+    print(f"Debug mode: {debug_mode}")
     print(f"API base URL: http://localhost:{port}/api")
-    app.run(debug=True, port=port, host='127.0.0.1')
+    
+    # For production, bind to 0.0.0.0, for local use 127.0.0.1
+    host = '0.0.0.0' if os.getenv('FLASK_ENV') == 'production' else '127.0.0.1'
+    app.run(debug=debug_mode, port=port, host=host)
 
