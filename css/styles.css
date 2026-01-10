@@ -3689,8 +3689,10 @@ html.dark-mode {
   color: var(--text-primary) !important;
 
 html.dark-mode body,
-html[data-theme="dark"] body,
-body.dark-mode {}
+html[data-theme="dark"] body {
+  background-color: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
+}
 
 }
 
