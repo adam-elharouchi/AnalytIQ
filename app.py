@@ -143,7 +143,17 @@ def get_db_connection():
     # Parse connection parameters
     conn_params = parse_connection_string(clean_url)
     if not conn_params:
-        raise Exception(f"Failed to parse DATABASE_URL. Please check the format. URL preview: {DATABASE_URL[:30]}... (password hidden)")
+        # Fallback: try to connect directly with cleaned URL if parsing fails
+        print("Warning: Failed to parse DATABASE_URL, attempting direct connection with cleaned URL")
+        try:
+            # Add sslmode if not present
+            if 'sslmode' not in clean_url:
+                clean_url = clean_url + ('&' if '?' in clean_url else '?') + 'sslmode=require'
+            conn = psycopg2.connect(clean_url, connect_timeout=10)
+            print("Connected using fallback direct connection string")
+            return conn
+        except Exception as fallback_error:
+            raise Exception(f"Failed to parse DATABASE_URL and direct connection also failed. Connection error: {fallback_error}. URL format appears correct (postgresql://...), but parsing failed. Please check Render logs for detailed error.")
     
     # For Supabase, try multiple connection methods
     if "supabase.co" in conn_params['host']:
