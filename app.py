@@ -57,16 +57,29 @@ def get_db_connection():
     def parse_connection_string(url):
         """Parse PostgreSQL connection URL into components"""
         try:
+            # Handle both postgresql:// and postgres:// schemes
+            if not url.startswith(('postgresql://', 'postgres://')):
+                # If no scheme, try adding postgresql://
+                if '://' not in url:
+                    url = 'postgresql://' + url
+                else:
+                    raise ValueError(f"Unsupported connection string scheme: {url}")
+            
             parsed = urlparse(url)
+            
+            if not parsed.hostname:
+                raise ValueError("Hostname is missing from connection string")
+            
             return {
                 'host': parsed.hostname,
                 'port': parsed.port or 5432,
-                'database': parsed.path[1:] if parsed.path else 'postgres',
-                'user': parsed.username,
-                'password': parsed.password
+                'database': parsed.path[1:] if parsed.path and len(parsed.path) > 1 else 'postgres',
+                'user': parsed.username or 'postgres',
+                'password': parsed.password or ''
             }
         except Exception as e:
             print(f"Error parsing connection string: {e}")
+            print(f"URL format: {url[:50]}...")  # Print first 50 chars for debugging
             return None
     
     def resolve_hostname_to_ipv4(hostname):
