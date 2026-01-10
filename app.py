@@ -122,39 +122,84 @@ def get_db_connection():
     if not conn_params:
         raise Exception("Failed to parse DATABASE_URL")
     
-    # Try connection pooler first (port 6543) for Supabase
+    # For Supabase, try multiple connection methods
     if "supabase.co" in conn_params['host']:
-        # Try pooler port 6543 first
-        pooler_params = conn_params.copy()
-        pooler_params['port'] = 6543
-        
-        try:
-            conn = connect_with_ipv4(pooler_params)
-            print("Connected using Supabase connection pooler (port 6543, IPv4)")
-            return conn
-        except Exception as pooler_error:
-            print(f"Connection pooler (6543) failed: {pooler_error}")
-            # Try direct connection (port 5432)
-            try:
-                direct_params = conn_params.copy()
-                direct_params['port'] = 5432
-                conn = connect_with_ipv4(direct_params)
-                print("Connected using Supabase direct connection (port 5432, IPv4)")
-                return conn
-            except Exception as direct_error:
-                print(f"Direct connection (5432) also failed: {direct_error}")
-                # Last resort: try with connection string (but cleaned)
+        # Check if we're using the old direct connection format (db.PROJECT_REF.supabase.co)
+        # If so, we need to use the pooler format for IPv4 compatibility
+        if conn_params['host'].startswith('db.'):
+            # This is a direct connection format - try to convert to pooler format
+            # Extract project ref from hostname (db.omjttmkczfpnwyzrdzqi.supabase.co -> omjttmkczfpnwyzrdzqi)
+            project_ref = conn_params['host'].split('.')[1]
+            
+            # Try Session Pooler first (port 5432, IPv4 compatible, best for persistent connections)
+            # Session pooler uses: aws-0-REGION.pooler.supabase.com format
+            # We'll try common regions, or use a default
+            pooler_hosts = [
+                f"aws-0-us-west-2.pooler.supabase.com",  # Most common
+                f"aws-0-us-east-1.pooler.supabase.com",
+                f"aws-0-eu-west-1.pooler.supabase.com"
+            ]
+            
+            for pooler_host in pooler_hosts:
                 try:
-                    # Rebuild connection string with port 5432
-                    base_url = clean_url.split('@')[0]  # user:pass
-                    host_part = clean_url.split('@')[1].split('/')[0]  # host:port
-                    db_part = '/' + conn_params['database']
-                    fallback_url = f"{base_url}@{host_part.split(':')[0]}:5432{db_part}"
-                    conn = psycopg2.connect(fallback_url, connect_timeout=10, sslmode='require')
-                    print("Connected using fallback connection string")
+                    session_params = {
+                        'host': pooler_host,
+                        'port': 5432,
+                        'database': conn_params['database'],
+                        'user': f"{conn_params['user']}.{project_ref}",  # Session pooler uses user.PROJECT_REF format
+                        'password': conn_params['password']
+                    }
+                    conn = connect_with_ipv4(session_params)
+                    print(f"Connected using Supabase Session Pooler (port 5432, IPv4) via {pooler_host}")
                     return conn
                 except Exception as e:
-                    raise Exception(f"All connection attempts failed. Pooler error: {pooler_error}, Direct error: {direct_error}, Fallback error: {e}")
+                    print(f"Session pooler {pooler_host} failed: {e}")
+                    continue
+            
+            # If session pooler failed, try transaction pooler (port 6543)
+            for pooler_host in pooler_hosts:
+                try:
+                    trans_params = {
+                        'host': pooler_host,
+                        'port': 6543,
+                        'database': conn_params['database'],
+                        'user': f"{conn_params['user']}.{project_ref}",
+                        'password': conn_params['password']
+                    }
+                    conn = connect_with_ipv4(trans_params)
+                    print(f"Connected using Supabase Transaction Pooler (port 6543, IPv4) via {pooler_host}")
+                    return conn
+                except Exception as e:
+                    print(f"Transaction pooler {pooler_host} failed: {e}")
+                    continue
+        
+        # If hostname already contains 'pooler', use it as-is
+        if 'pooler' in conn_params['host']:
+            try:
+                conn = connect_with_ipv4(conn_params)
+                print(f"Connected using existing pooler configuration")
+                return conn
+            except Exception as pooler_error:
+                print(f"Existing pooler configuration failed: {pooler_error}")
+        
+        # Last resort: try direct connection (may fail on IPv4-only networks)
+        try:
+            direct_params = conn_params.copy()
+            direct_params['port'] = 5432
+            conn = connect_with_ipv4(direct_params)
+            print("Connected using Supabase direct connection (port 5432, IPv4)")
+            return conn
+        except Exception as direct_error:
+            # Provide helpful error message with instructions
+            project_ref = conn_params['host'].split('.')[1] if '.' in conn_params['host'] else 'PROJECT_REF'
+            raise Exception(
+                f"Database connection failed. Your current DATABASE_URL uses direct connection which requires IPv6. "
+                f"Render requires IPv4. Please update DATABASE_URL in Render Environment Variables to use Session Pooler (IPv4 compatible):\n"
+                f"postgresql://postgres.{project_ref}:[YOUR-PASSWORD]@aws-0-us-west-2.pooler.supabase.com:5432/postgres\n"
+                f"Get the exact connection string from: https://supabase.com/dashboard/project/{project_ref}/settings/database\n"
+                f"Select 'Connection Pooling' → 'Session mode' → Copy the connection string.\n"
+                f"Original error: {direct_error}"
+            )
     
     # For non-Supabase databases, use direct connection
     try:
