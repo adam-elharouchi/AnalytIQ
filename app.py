@@ -41,7 +41,27 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 
 def get_db_connection():
     """Get database connection"""
-    return psycopg2.connect(DATABASE_URL)
+    try:
+        # Try direct connection first
+        conn = psycopg2.connect(DATABASE_URL)
+        return conn
+    except psycopg2.OperationalError as e:
+        # If direct connection fails, try with IPv4 preference
+        # Supabase connection pooler uses port 6543 and is better for cloud deployments
+        if "Network is unreachable" in str(e) or "could not connect" in str(e).lower():
+            # Try connection pooler URL (if available as separate env var)
+            pooler_url = os.getenv("DATABASE_POOLER_URL")
+            if pooler_url:
+                return psycopg2.connect(pooler_url)
+            # Otherwise, modify connection string to force IPv4 or use pooler port
+            # For Supabase, connection pooler is at same host but port 6543
+            if "supabase.co" in DATABASE_URL and ":5432" in DATABASE_URL:
+                pooler_url = DATABASE_URL.replace(":5432", ":6543")
+                try:
+                    return psycopg2.connect(pooler_url)
+                except:
+                    pass
+        raise
 
 def hash_password(password):
     """Simple hash function (same as frontend for compatibility)"""
