@@ -4291,3 +4291,205 @@ html[data-theme="dark"] .input-wrapper {
   border-radius: 0.5rem !important;
 }
 
+
+/* ============================================
+   AGGRESSIVE FIXES FOR DARK MODE ISSUES
+   ============================================ */
+
+/* Remove inline styles from leaderboard cards in dark mode using attribute selector */
+body.dark-mode [data-inline-styles].leaderboard-card,
+html[data-theme="dark"] [data-inline-styles].leaderboard-card {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 0.5rem !important;
+  padding: 1.5rem !important;
+}
+
+body.dark-mode [data-inline-styles].total-progress-section,
+html[data-theme="dark"] [data-inline-styles].total-progress-section {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 0.5rem !important;
+  padding: 1.5rem !important;
+}
+
+body.dark-mode [data-inline-styles].leaderboard-card h3,
+html[data-theme="dark"] [data-inline-styles].leaderboard-card h3 {
+  color: var(--text-primary) !important;
+  margin: 0 0 1rem 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+}
+
+/* Fix code assistant message backgrounds for dark mode */
+body.dark-mode .user-message,
+html[data-theme="dark"] .user-message {
+  background: #2569f4 !important; /* Blue instead of dark #222c3e for better contrast */
+  color: #ffffff !important;
+}
+
+body.dark-mode .assistant-message,
+html[data-theme="dark"] .assistant-message {
+  background: var(--bg-card) !important; /* Use card background instead of #222c3e */
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+body.dark-mode .assistant-message .message-content,
+html[data-theme="dark"] .assistant-message .message-content {
+  color: var(--text-primary) !important;
+}
+
+body.dark-mode .assistant-message .message-content p,
+body.dark-mode .assistant-message .message-content li,
+html[data-theme="dark"] .assistant-message .message-content p,
+html[data-theme="dark"] .assistant-message .message-content li {
+  color: var(--text-primary) !important;
+}
+
+/* Fix welcome message for dark mode */
+body.dark-mode .welcome-message p,
+html[data-theme="dark"] .welcome-message p {
+  color: var(--text-primary) !important; /* Use primary text color instead of white */
+}
+
+body.dark-mode .conversation-starters h3,
+html[data-theme="dark"] .conversation-starters h3 {
+  color: var(--text-primary) !important; /* Use primary text color instead of blue */
+}
+
+/* Fix starter buttons hover in dark mode */
+body.dark-mode .starter-btn:hover,
+html[data-theme="dark"] .starter-btn:hover {
+  background: var(--bg-secondary) !important; /* Use dark mode secondary instead of #222c3e */
+  border-color: var(--border-color) !important;
+}
+
+/* Fix chapter section spacing */
+body.dark-mode .chapter-section p,
+html[data-theme="dark"] .chapter-section p {
+  margin-bottom: 0.5rem !important; /* Reduce spacing from 2rem to 0.5rem */
+  color: var(--text-secondary) !important;
+}
+
+/* Fix chapter section heading */
+body.dark-mode .chapter-section h2,
+html[data-theme="dark"] .chapter-section h2 {
+  color: var(--text-primary) !important; /* Override inline #222c3e */
+}
+
+/* Fix total progress section */
+body.dark-mode .total-progress-section h3,
+html[data-theme="dark"] .total-progress-section h3 {
+  color: var(--text-primary) !important; /* Override inline #222c3e */
+}
+
+body.dark-mode .total-progress-section p,
+html[data-theme="dark"] .total-progress-section p {
+  color: var(--text-secondary) !important; /* Override inline #64748b */
+}
+
+body.dark-mode .total-progress-section span,
+html[data-theme="dark"] .total-progress-section span {
+  color: #2569f4 !important; /* Keep blue for progress percentage */
+}
+
+
+/* Fix chat input compact for dark mode */
+body.dark-mode .chat-input-compact,
+html[data-theme="dark"] .chat-input-compact {
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+body.dark-mode .chat-input-compact:focus,
+html[data-theme="dark"] .chat-input-compact:focus {
+  border-color: #2569f4 !important;
+  background: var(--bg-card) !important;
+  box-shadow: 0 0 0 2px rgba(37, 105, 244, 0.2) !important;
+}
+
+body.dark-mode .chat-input-compact::placeholder,
+html[data-theme="dark"] .chat-input-compact::placeholder {
+  color: var(--text-secondary) !important;
+}
+
+/* Fix send button for dark mode */
+body.dark-mode .btn-send-compact,
+html[data-theme="dark"] .btn-send-compact {
+  background: #2569f4 !important; /* Blue instead of #222c3e */
+  color: #ffffff !important;
+  border-color: #2569f4 !important;
+}
+
+body.dark-mode .btn-send-compact:hover,
+html[data-theme="dark"] .btn-send-compact:hover {
+  background: #1e5ae0 !important;
+}
+
+/* Fix oval buttons (upload, gemini, language) */
+body.dark-mode .oval-btn,
+html[data-theme="dark"] .oval-btn {
+  background: var(--bg-secondary) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+body.dark-mode .oval-select,
+html[data-theme="dark"] .oval-select {
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+/* More aggressive leaderboard fixes - use all possible selectors */
+body.dark-mode div[style*="#f8fafc"].leaderboard-card,
+body.dark-mode .leaderboard-card[style*="background: #f8fafc"],
+body.dark-mode .leaderboard-card[style*="background:#f8fafc"],
+html[data-theme="dark"] div[style*="#f8fafc"].leaderboard-card,
+html[data-theme="dark"] .leaderboard-card[style*="background: #f8fafc"],
+html[data-theme="dark"] .leaderboard-card[style*="background:#f8fafc"] {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+body.dark-mode .total-progress-section[style*="#f8fafc"],
+html[data-theme="dark"] .total-progress-section[style*="#f8fafc"] {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+
+/* Fix leaderboard item backgrounds - remove white */
+body.dark-mode .leaderboard-item,
+html[data-theme="dark"] .leaderboard-item {
+  background: var(--bg-card) !important; /* Override any inline white backgrounds */
+  border: 1px solid var(--border-color) !important;
+}
+
+body.dark-mode .leaderboard-item[style*="background"],
+html[data-theme="dark"] .leaderboard-item[style*="background"] {
+  background: var(--bg-card) !important;
+}
+
+body.dark-mode .leaderboard-name,
+body.dark-mode .leaderboard-meta,
+body.dark-mode .leaderboard-label,
+html[data-theme="dark"] .leaderboard-name,
+html[data-theme="dark"] .leaderboard-meta,
+html[data-theme="dark"] .leaderboard-label {
+  color: var(--text-primary) !important;
+}
+
+body.dark-mode .leaderboard-score,
+html[data-theme="dark"] .leaderboard-score {
+  color: #2569f4 !important; /* Keep blue for scores */
+}
+
+body.dark-mode .leaderboard-empty,
+html[data-theme="dark"] .leaderboard-empty {
+  color: var(--text-secondary) !important;
+}
+
