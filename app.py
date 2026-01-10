@@ -120,29 +120,19 @@ def get_db_connection():
             # Resolve hostname to IPv4
             ipv4_host = resolve_hostname_to_ipv4(params['host'])
             # Use direct connection with IPv4 host
-            conn = psycopg2.connect(
-                host=ipv4_host,
-                port=params['port'],
-                database=params['database'],
-                user=params['user'],
-                password=params['password'],
-                connect_timeout=10,
-                sslmode='require'
-            )
+            # Build connection string with SSL
+            import urllib.parse
+            conn_str = f"postgresql://{urllib.parse.quote(params['user'])}:{urllib.parse.quote(params['password'])}@{ipv4_host}:{params['port']}/{params['database']}?sslmode=require"
+            conn = psycopg2.connect(conn_str, connect_timeout=10)
             return conn
         except Exception as e:
             print(f"IPv4 connection failed: {e}")
             # Try with original hostname as fallback
             try:
-                conn = psycopg2.connect(
-                    host=params['host'],
-                    port=params['port'],
-                    database=params['database'],
-                    user=params['user'],
-                    password=params['password'],
-                    connect_timeout=10,
-                    sslmode='require'
-                )
+                # Build connection string with SSL mode for fallback
+                import urllib.parse
+                conn_str = f"postgresql://{urllib.parse.quote(params['user'])}:{urllib.parse.quote(params['password'])}@{params['host']}:{params['port']}/{params['database']}?sslmode=require"
+                conn = psycopg2.connect(conn_str, connect_timeout=10)
                 return conn
             except:
                 raise
