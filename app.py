@@ -63,23 +63,38 @@ def get_db_connection():
                 if '://' not in url:
                     url = 'postgresql://' + url
                 else:
-                    raise ValueError(f"Unsupported connection string scheme: {url}")
+                    raise ValueError(f"Unsupported connection string scheme: {url.split('://')[0]}")
             
+            # Use urllib.parse.unquote to handle URL-encoded characters
+            from urllib.parse import unquote
             parsed = urlparse(url)
             
             if not parsed.hostname:
                 raise ValueError("Hostname is missing from connection string")
             
-            return {
+            # Decode URL-encoded username and password
+            username = unquote(parsed.username) if parsed.username else 'postgres'
+            password = unquote(parsed.password) if parsed.password else ''
+            
+            # Get database name (remove leading slash)
+            database = parsed.path[1:] if parsed.path and len(parsed.path) > 1 else 'postgres'
+            
+            result = {
                 'host': parsed.hostname,
                 'port': parsed.port or 5432,
-                'database': parsed.path[1:] if parsed.path and len(parsed.path) > 1 else 'postgres',
-                'user': parsed.username or 'postgres',
-                'password': parsed.password or ''
+                'database': database,
+                'user': username,
+                'password': password
             }
+            
+            print(f"Parsed connection: host={result['host']}, port={result['port']}, database={result['database']}, user={result['user'][:20]}...")
+            return result
+            
         except Exception as e:
             print(f"Error parsing connection string: {e}")
-            print(f"URL format: {url[:50]}...")  # Print first 50 chars for debugging
+            print(f"URL preview (first 80 chars): {str(url)[:80]}...")
+            import traceback
+            traceback.print_exc()
             return None
     
     def resolve_hostname_to_ipv4(hostname):
@@ -133,7 +148,7 @@ def get_db_connection():
     # Parse connection parameters
     conn_params = parse_connection_string(clean_url)
     if not conn_params:
-        raise Exception("Failed to parse DATABASE_URL")
+        raise Exception(f"Failed to parse DATABASE_URL. Please check the format. URL preview: {DATABASE_URL[:30]}... (password hidden)")
     
     # For Supabase, try multiple connection methods
     if "supabase.co" in conn_params['host']:
