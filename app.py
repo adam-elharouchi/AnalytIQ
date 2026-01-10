@@ -47,6 +47,11 @@ def get_db_connection():
     if not DATABASE_URL:
         raise Exception("DATABASE_URL environment variable is not set")
     
+    # Debug: Check DATABASE_URL format (don't log the full password)
+    if DATABASE_URL:
+        url_preview = DATABASE_URL.split('@')[0] + '@' + (DATABASE_URL.split('@')[1].split('/')[0] if '@' in DATABASE_URL else 'HOST')
+        print(f"DATABASE_URL format check: {url_preview[:60]}...")
+    
     # Clean up the database URL - remove invalid query parameters like pgbouncer
     def clean_db_url(url):
         """Remove invalid query parameters from database URL"""
