@@ -52,13 +52,12 @@ def get_db_connection():
     # Try pooler first if it's a Supabase URL and we're likely on a cloud platform
     if "supabase.co" in db_url and ":5432" in db_url:
         # Try connection pooler first (port 6543) - better for cloud
-        pooler_url = db_url.replace(":5432", ":6543")
-        # Add pgbouncer parameter if not present
-        if "pgbouncer" not in pooler_url:
-            pooler_url += ("&" if "?" in pooler_url else "?") + "pgbouncer=true"
+        # Remove any existing query parameters and just change the port
+        pooler_url = db_url.split('?')[0].replace(":5432", ":6543")
         
         try:
             conn = psycopg2.connect(pooler_url, connect_timeout=10)
+            print("Connected using Supabase connection pooler (port 6543)")
             return conn
         except Exception as pooler_error:
             print(f"Connection pooler failed, trying direct connection: {pooler_error}")
