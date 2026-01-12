@@ -395,11 +395,9 @@ async function saveSettings() {
     }
   } catch (error) {
     console.error('Error saving settings:', error);
-    // Fallback to localStorage only if API is unavailable
+    // Fallback to localStorage
     localStorage.setItem('userSettings', JSON.stringify(settings));
-    localStorage.setItem('darkModeEnabled', settings.darkMode ? 'true' : 'false');
-    // Show warning that settings were only saved locally (not synced to server)
-    showNotification('Settings saved locally only (could not connect to server). They will sync when connection is restored.', 'warning');
+    showNotification('Settings saved (saved locally)', 'success');
   }
 }
 
