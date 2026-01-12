@@ -1,17 +1,7 @@
 // Authentication System
 // API_BASE_URL should be defined in api-helper.js
-// Just reference window.API_BASE_URL - don't redeclare
-// Fallback if api-helper.js didn't load
 if (typeof window.API_BASE_URL === 'undefined') {
-  window.API_BASE_URL = (() => {
-    if (window.location.protocol === 'file:') {
-      return 'http://localhost:5001/api';
-    }
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-      return 'http://localhost:5001/api';
-    }
-    return 'https://analytiq-qbfr.onrender.com/api';
-  })();
+  window.API_BASE_URL = 'https://analytiq-qbfr.onrender.com/api';
 }
 
 class AuthManager {
@@ -78,36 +68,7 @@ class AuthManager {
 
       return { ...data, user: userData };
     } catch (error) {
-      // Fallback to localStorage if API fails (works without Flask)
-      console.warn('API not available, using localStorage fallback:', error.message);
-      
-      // Check if user already exists in localStorage
-      const users = JSON.parse(localStorage.getItem('users') || '[]');
-      const existingUser = users.find(u => u.email === email);
-      if (existingUser) {
-        throw new Error('Email already registered');
-      }
-      
-      // Create user in localStorage
-      const userId = Date.now().toString();
-      const newUser = {
-        id: userId,
-        name: name,
-        email: email,
-        passwordHash: this.hashPassword(password)
-      };
-      
-      users.push(newUser);
-      localStorage.setItem('users', JSON.stringify(users));
-      
-      // Auto sign in
-      this.saveUser({
-        id: userId,
-        name: name,
-        email: email
-      });
-
-      return { success: true, user: newUser };
+      throw error;
     }
   }
 
@@ -146,26 +107,7 @@ class AuthManager {
 
       return this.currentUser;
     } catch (error) {
-      // Fallback to localStorage if API fails (works without Flask)
-      console.warn('API not available, using localStorage fallback:', error.message);
-      
-      // Check localStorage for user
-      const users = JSON.parse(localStorage.getItem('users') || '[]');
-      const passwordHash = this.hashPassword(password);
-      const user = users.find(u => u.email === email && u.passwordHash === passwordHash);
-      
-      if (!user) {
-        throw new Error('Invalid email or password');
-      }
-
-      // Save current user (without password)
-      this.saveUser({
-        id: user.id,
-        name: user.name,
-        email: user.email
-      });
-
-      return this.currentUser;
+      throw error;
     }
   }
 
@@ -185,24 +127,6 @@ class AuthManager {
     return this.currentUser;
   }
 
-  // Get all users (for demo purposes) - Not used with API
-  getUsers() {
-    // This method is kept for backward compatibility but returns empty array
-    // Users are now stored in the database
-    return [];
-  }
-
-  // Simple password hash (same as backend for compatibility)
-  hashPassword(password) {
-    // Simple hash for demo purposes
-    let hash = 0;
-    for (let i = 0; i < password.length; i++) {
-      const char = password.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32bit integer
-    }
-    return hash.toString();
-  }
 
   // Require authentication - redirect to login if not authenticated
   requireAuth() {

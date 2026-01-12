@@ -742,7 +742,6 @@
   <script src="js/auth.js"></script>
   <script src="js/navigation.js"></script>
   <script src="js/api-helper.js"></script>
-  <script src="js/local-intelligence.js"></script>
   <script src="js/ai-agent.js"></script>
   <script>
     // Initialize AI Agent for chat
@@ -777,7 +776,7 @@
           chatAIAgent = new CodeWriterAgent();
           await chatAIAgent.initialize(apiKey, 'gemini', 'gemini-2.5-flash');
         } catch (error) {
-          console.log('AI agent not available, using local intelligence');
+          console.log('AI agent not available:', error);
         }
       }
     }
@@ -990,15 +989,11 @@
       // Save score to backend
       const saveSuccess = await saveExerciseScore(exerciseData.id, exerciseData.title, score, accuracy, elapsedSeconds);
       
-      // Always set refresh flag - in production this will work, in file:// it may not save but UI will still try to refresh
       sessionStorage.setItem('practiceProgressNeedsRefresh', 'true');
       sessionStorage.setItem('lastSubmittedExerciseId', exerciseData.id);
       
       if (saveSuccess) {
         console.log('Solution submitted successfully, refresh flag set for exercise:', exerciseData.id);
-      } else {
-        console.log('Solution submitted (save may have failed due to CORS in file://), refresh flag set for exercise:', exerciseData.id);
-        console.log('Note: In production, this will work correctly as everything is on the same domain.');
       }
       
       // Hide solution section (we're showing it in the editor now)
@@ -1018,11 +1013,7 @@
           return;
         }
         
-        // Use API_BASE_URL from api-helper.js (already loaded)
-        // Fallback for when api-helper.js hasn't loaded yet
-        const apiUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 
-          ((window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') 
-            ? 'http://localhost:5001/api' : 'https://analytiq-qbfr.onrender.com/api');
+        const apiUrl = window.API_BASE_URL || 'https://analytiq-qbfr.onrender.com/api';
         
         console.log('Saving exercise score:', { userId, exerciseId, score, accuracy, timeSpent });
         
@@ -1058,12 +1049,6 @@
         }
       } catch (error) {
         console.error('Error saving exercise score:', error);
-        // If it's a CORS error (file:// protocol), the data won't be saved
-        // but in production (same origin), this won't be an issue
-        if (error.message.includes('CORS') || error.message.includes('Failed to fetch')) {
-          console.warn('Network error - this may be due to CORS (file:// protocol).');
-          console.warn('In production, this should work fine as everything is on the same domain.');
-        }
         return false;
       }
     }
@@ -1576,19 +1561,9 @@
           return response;
         }
         
-        // Fallback to local intelligence
-        if (typeof localIntelligence !== 'undefined') {
-          return localIntelligence.processMessage(message, chatHistory, null, 'python');
-        }
-        
-        // Final fallback
         return `I understand you're asking about: "${message}". This is a practice exercise. I can help you understand concepts, provide hints, and explain code. What would you like to know?`;
       } catch (error) {
         console.error('Chat error:', error);
-        // Use local intelligence as fallback
-        if (typeof localIntelligence !== 'undefined') {
-          return localIntelligence.processMessage(message, chatHistory, null, 'python');
-        }
         return 'Sorry, I encountered an error. Please try again or rephrase your question.';
       }
     }

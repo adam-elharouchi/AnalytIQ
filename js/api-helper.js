@@ -1,21 +1,7 @@
 // API Helper Functions
 // Declare API_BASE_URL as a global variable - single source of truth
-// Use window property to avoid const/let declaration conflicts
 if (typeof window.API_BASE_URL === 'undefined') {
-  window.API_BASE_URL = (function() {
-    // If using file:// protocol (opening HTML file directly), use localhost:5001
-    if (window.location.protocol === 'file:') {
-      return 'http://localhost:5001/api';
-    }
-    
-    // Check if we're running on localhost (development)
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-      return 'http://localhost:5001/api';
-    }
-    
-    // Production: use Render backend URL
-    return 'https://analytiq-qbfr.onrender.com/api';
-  })();
+  window.API_BASE_URL = 'https://analytiq-qbfr.onrender.com/api';
 }
 
 // Get current user ID from localStorage
