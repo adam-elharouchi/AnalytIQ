@@ -48,7 +48,7 @@
     }
     
     .exercise-info {
-      background: #f8fafc;
+      background: #222c3e;
       border: 1px solid #e2e8f0;
       border-radius: 0.5rem;
       padding: 1.5rem;
@@ -108,7 +108,7 @@
     }
     
     .code-editor-header {
-      background: #0f172a;
+      background: #222c3e;
       padding: 0.75rem 1rem;
       display: flex;
       align-items: center;
@@ -253,7 +253,7 @@
       gap: 2rem;
       margin-bottom: 1.5rem;
       padding: 1rem;
-      background: #f8fafc;
+      background: #222c3e;
       border: 1px solid #e2e8f0;
       border-radius: 0.5rem;
       align-items: center;
@@ -463,19 +463,32 @@
     }
     
     .chat-modal-header {
-      background: #2569f4;
-      color: white;
+      background: #222c3e;
+      color: #ffffff;
       padding: 1rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
       flex-shrink: 0;
+      border-bottom: 1px solid var(--border-color);
     }
     
     .chat-modal-header h3 {
       margin: 0;
       font-size: 1rem;
       font-weight: 600;
+      color: #ffffff;
+    }
+    
+    body.dark-mode .chat-modal-header,
+    html[data-theme="dark"] .chat-modal-header {
+      background: #222c3e !important;
+      color: #ffffff !important;
+    }
+    
+    body.dark-mode .chat-modal-body,
+    html[data-theme="dark"] .chat-modal-body {
+      background: #222c3e !important;
     }
     
     .chat-modal-close {
@@ -511,40 +524,86 @@
     .chat-messages-container {
       flex: 1;
       overflow-y: auto;
-      padding: 0.75rem;
+      padding: 1rem;
       display: flex;
       flex-direction: column;
-      gap: 0.75rem;
+      gap: 1.5rem;
       min-height: 0;
+      background: var(--bg-primary);
     }
     
-    .chat-message {
-      padding: 0.625rem 0.75rem;
-      border-radius: 0.5rem;
-      max-width: 85%;
+    /* Use same message structure as main code assistant */
+    .chat-messages-container .message {
+      display: flex;
+      gap: 1rem;
+      padding: 1rem;
+      border-radius: 0.75rem;
+      animation: fadeIn 0.3s ease-in;
+    }
+    
+    .chat-messages-container .user-message {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      max-width: 800px;
+      width: 100%;
       word-wrap: break-word;
-      font-size: 0.875rem;
-      line-height: 1.4;
-    }
-    
-    .chat-message.user {
-      background: #2569f4;
-      color: white;
-      align-self: flex-end;
+      overflow-wrap: break-word;
       margin-left: auto;
     }
     
-    .chat-message.assistant {
-      background: white;
-      color: #1e293b;
-      border: 1px solid #e2e8f0;
-      align-self: flex-start;
+    .chat-messages-container .assistant-message {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      max-width: 800px;
+      width: 100%;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      color: var(--text-primary);
+      margin-right: auto;
+    }
+    
+    .chat-messages-container .message-content {
+      flex: 1;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      max-width: 100%;
+      color: var(--code-message-text);
+    }
+    
+    /* Dark mode for playground chat messages */
+    body.dark-mode .chat-messages-container .assistant-message,
+    html[data-theme="dark"] .chat-messages-container .assistant-message {
+      background: #222c3e !important;
+      border: 1px solid var(--border-color) !important;
+      color: #ffffff !important;
+    }
+    
+    body.dark-mode .chat-messages-container .user-message,
+    html[data-theme="dark"] .chat-messages-container .user-message {
+      color: #ffffff !important;
+    }
+    
+    body.dark-mode .chat-messages-container .message-content,
+    html[data-theme="dark"] .chat-messages-container .message-content {
+      color: #ffffff !important;
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
     
     .chat-input-container {
-      border-top: 1px solid #e2e8f0;
-      padding: 0.75rem;
-      background: white;
+      border-top: 1px solid var(--border-color);
+      padding: 1rem;
+      background: var(--bg-primary);
       display: flex;
       gap: 0.5rem;
       flex-shrink: 0;
@@ -552,11 +611,13 @@
     
     .chat-input-field {
       flex: 1;
-      padding: 0.625rem;
-      border: 1px solid #e2e8f0;
-      border-radius: 0.5rem;
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--border-color);
+      border-radius: 9999px;
       font-size: 0.875rem;
       resize: none;
+      background: var(--bg-primary);
+      color: var(--text-primary);
       min-height: 36px;
       max-height: 100px;
       font-family: inherit;
@@ -569,25 +630,57 @@
     }
     
     .chat-send-button {
-      padding: 0.625rem 1rem;
+      padding: 0.75rem 1.5rem;
       background: #2569f4;
-      color: white;
+      color: #ffffff;
       border: none;
-      border-radius: 0.5rem;
+      border-radius: 9999px;
       cursor: pointer;
-      font-weight: 600;
+      font-weight: 500;
       font-size: 0.875rem;
       transition: background-color 0.2s;
-      align-self: flex-end;
+      white-space: nowrap;
     }
     
     .chat-send-button:hover:not(:disabled) {
-      background: #1d4ed8;
+      background: #2569f4;
+      opacity: 0.9;
     }
     
     .chat-send-button:disabled {
-      background: #cbd5e1;
+      background: var(--text-secondary);
       cursor: not-allowed;
+      opacity: 0.6;
+    }
+    
+    /* Dark mode for playground chat */
+    body.dark-mode .chat-input-container,
+    html[data-theme="dark"] .chat-input-container {
+      background: #222c3e !important;
+      border-top-color: var(--border-color) !important;
+    }
+    
+    body.dark-mode .chat-input-field,
+    html[data-theme="dark"] .chat-input-field {
+      background: #222c3e !important;
+      color: #ffffff !important;
+      border-color: var(--border-color) !important;
+    }
+    
+    body.dark-mode .chat-input-field::placeholder,
+    html[data-theme="dark"] .chat-input-field::placeholder {
+      color: rgba(255, 255, 255, 0.6) !important;
+    }
+    
+    body.dark-mode .chat-send-button,
+    html[data-theme="dark"] .chat-send-button {
+      background: #2569f4 !important;
+      color: #ffffff !important;
+    }
+    
+    body.dark-mode .chat-messages-container,
+    html[data-theme="dark"] .chat-messages-container {
+      background: #222c3e !important;
     }
     
     .chat-loading {
@@ -641,27 +734,23 @@
         <button class="chat-modal-close" onclick="toggleChatWidget()">×</button>
       </div>
       <div class="chat-modal-body">
-        <div class="chat-messages-container" id="chatMessagesContainer">
-          <div class="chat-message assistant">
-            Hi! I'm here to help you with questions about this exercise. What would you like to know?
+        <div class="chat-messages-container" id="chatMessagesContainer" style="display: flex; flex-direction: column; gap: 1.5rem; padding: 1rem; overflow-y: auto; flex: 1; min-height: 0;">
+          <div class="welcome-section" id="playgroundWelcomeSection">
+            <div class="welcome-message">
+              <p>Hello! I'm your Code Assistant. I can help you with questions about this exercise, explain concepts, provide hints, and assist with your code.</p>
+            </div>
           </div>
         </div>
-        <div class="chat-loading" id="chatLoading">
-          <div class="chat-loading-dots">
-            <div class="chat-loading-dot"></div>
-            <div class="chat-loading-dot"></div>
-            <div class="chat-loading-dot"></div>
-          </div>
-        </div>
-        <div class="chat-input-container">
+        <div class="chat-input-container" style="padding: 1rem; border-top: 1px solid var(--border-color); display: flex; gap: 0.5rem; align-items: flex-end;">
           <textarea 
             class="chat-input-field" 
             id="chatInputField" 
-            placeholder="Ask a question..."
-            rows="1"
+            placeholder="Type your message, paste code, or describe what you need..."
+            rows="2"
             onkeydown="handleChatInputKeydown(event)"
+            style="flex: 1; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 0.5rem; resize: none; min-height: 40px; max-height: 120px; font-family: inherit;"
           ></textarea>
-          <button class="chat-send-button" id="chatSendButton" onclick="sendChatMessage()">Send</button>
+          <button class="chat-send-button" id="chatSendButton" onclick="sendPlaygroundChatMessage()" style="padding: 0.75rem 1.5rem; background: #2569f4; color: #ffffff; border: none; border-radius: 0.5rem; cursor: pointer; font-weight: 500;">Send</button>
         </div>
       </div>
     </div>
@@ -743,10 +832,10 @@
   <script src="js/navigation.js"></script>
   <script src="js/api-helper.js"></script>
   <script src="js/ai-agent.js"></script>
+  <script src="js/code-assistant.js"></script>
   <script>
-    // Initialize AI Agent for chat
-    let chatAIAgent = null;
-    let chatHistory = [];
+    // Playground chat history (separate from main code assistant)
+    let playgroundChatHistory = [];
     
     // Require authentication
     document.addEventListener('DOMContentLoaded', function() {
@@ -760,25 +849,37 @@
       
       // Initialize chat input auto-resize
       const chatInput = document.getElementById('chatInputField');
-      chatInput.addEventListener('input', function() {
-        this.style.height = 'auto';
-        this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-      });
+      if (chatInput) {
+        chatInput.addEventListener('input', function() {
+          this.style.height = 'auto';
+          this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+        });
+      }
       
-      // Initialize AI Agent if API key is available
-      initializeChatAI();
+      // Initialize AI Agent - use the same initialization as main code assistant
+      initializePlaygroundAI();
     });
     
-    async function initializeChatAI() {
-      const apiKey = localStorage.getItem('geminiApiKey') || localStorage.getItem('aiApiKey') || '';
-      if (apiKey) {
+    async function initializePlaygroundAI() {
+      // Use the same initialization logic as main code assistant
+      // Wait a bit for code-assistant.js to load
+      setTimeout(async () => {
         try {
-          chatAIAgent = new CodeWriterAgent();
-          await chatAIAgent.initialize(apiKey, 'gemini', 'gemini-2.5-flash');
+          // Use the same initialization as main code assistant
+          if (typeof initializeAIAgent === 'function') {
+            await initializeAIAgent();
+          } else {
+            // Fallback: initialize directly if function not available yet
+            const apiKey = localStorage.getItem('geminiApiKey') || localStorage.getItem('aiApiKey') || (typeof GEMINI_API_KEY !== 'undefined' ? GEMINI_API_KEY : '');
+            if (apiKey && typeof codeWriterAgent !== 'undefined') {
+              await codeWriterAgent.initialize(apiKey, 'gemini', 'gemini-2.5-flash');
+            }
+          }
+          console.log('Playground AI agent ready');
         } catch (error) {
-          console.log('AI agent not available:', error);
+          console.error('Failed to initialize playground AI agent:', error);
         }
-      }
+      }, 100);
     }
     
     let exerciseData = null;
@@ -1496,75 +1597,149 @@
     function handleChatInputKeydown(event) {
       if (event.key === 'Enter' && !event.shiftKey) {
         event.preventDefault();
-        sendChatMessage();
+        sendPlaygroundChatMessage();
       }
     }
     
-    async function sendChatMessage() {
-      const input = document.getElementById('chatInputField');
-      const message = input.value.trim();
+    // Add message to playground chat (adapted from code-assistant.js)
+    function addPlaygroundMessage(role, content) {
+      const container = document.getElementById('chatMessagesContainer');
+      if (!container) return;
       
+      // Hide welcome section if it exists
+      const welcomeSection = document.getElementById('playgroundWelcomeSection');
+      if (welcomeSection) {
+        welcomeSection.style.display = 'none';
+      }
+      
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${role}-message`;
+      
+      const contentDiv = document.createElement('div');
+      contentDiv.className = 'message-content';
+      
+      // Use the same message formatting as main code assistant
+      if (typeof formatMessageContent === 'function') {
+        contentDiv.innerHTML = formatMessageContent(content);
+      } else {
+        // Fallback if formatMessageContent not available
+        contentDiv.textContent = content;
+      }
+      
+      messageDiv.appendChild(contentDiv);
+      container.appendChild(messageDiv);
+      
+      // Scroll to bottom
+      container.scrollTop = container.scrollHeight;
+      
+      // Attach copy buttons for code blocks
+      setTimeout(() => {
+        if (typeof attachCopyButtons === 'function') {
+          attachCopyButtons();
+        }
+      }, 100);
+    }
+    
+    // Add loading message to playground chat
+    function addPlaygroundLoadingMessage() {
+      const container = document.getElementById('chatMessagesContainer');
+      if (!container) return null;
+      
+      const messageDiv = document.createElement('div');
+      messageDiv.className = 'message assistant-message';
+      messageDiv.id = 'playground-loading-message';
+      
+      const contentDiv = document.createElement('div');
+      contentDiv.className = 'message-content';
+      contentDiv.innerHTML = '<div class="loading-indicator"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div>';
+      
+      messageDiv.appendChild(contentDiv);
+      container.appendChild(messageDiv);
+      container.scrollTop = container.scrollHeight;
+      
+      return 'playground-loading-message';
+    }
+    
+    // Remove loading message from playground chat
+    function removePlaygroundLoadingMessage(id) {
+      const loadingMsg = document.getElementById(id);
+      if (loadingMsg) {
+        loadingMsg.remove();
+      }
+    }
+    
+    // Send message in playground chat (uses same logic as main code assistant)
+    async function sendPlaygroundChatMessage() {
+      const input = document.getElementById('chatInputField');
+      if (!input) return;
+      
+      const message = input.value.trim();
       if (!message) return;
       
-      // Add user message to chat
-      addChatMessage('user', message);
+      // Hide welcome section
+      const welcomeSection = document.getElementById('playgroundWelcomeSection');
+      if (welcomeSection) {
+        welcomeSection.style.display = 'none';
+      }
+      
+      // Add user message
+      addPlaygroundMessage('user', message);
       input.value = '';
       input.style.height = 'auto';
       
+      // Add to chat history
+      playgroundChatHistory.push({ role: 'user', content: message });
+      
       // Show loading
-      const loading = document.getElementById('chatLoading');
-      loading.classList.add('show');
+      const loadingId = addPlaygroundLoadingMessage();
       
       // Disable send button
       const sendButton = document.getElementById('chatSendButton');
-      sendButton.disabled = true;
+      if (sendButton) {
+        sendButton.disabled = true;
+      }
       
       try {
-        // Add to chat history
-        chatHistory.push({ role: 'user', content: message });
-        
-        // Get response
-        const response = await getChatResponse(message);
-        
-        // Add to chat history
-        chatHistory.push({ role: 'assistant', content: response });
-        
-        // Hide loading
-        loading.classList.remove('show');
-        
-        // Add assistant response
-        addChatMessage('assistant', response);
-      } catch (error) {
-        loading.classList.remove('show');
-        addChatMessage('assistant', 'Sorry, I encountered an error. Please try again.');
-        console.error('Chat error:', error);
-      } finally {
-        sendButton.disabled = false;
-        input.focus();
-      }
-    }
-    
-    function addChatMessage(role, content) {
-      const container = document.getElementById('chatMessagesContainer');
-      const messageDiv = document.createElement('div');
-      messageDiv.className = `chat-message ${role}`;
-      messageDiv.textContent = content;
-      container.appendChild(messageDiv);
-      container.scrollTop = container.scrollHeight;
-    }
-    
-    async function getChatResponse(message) {
-      try {
-        // Try to use AI agent if available
-        if (chatAIAgent) {
-          const response = await chatAIAgent.processMessage(message);
-          return response;
+        // Ensure AI agent is initialized
+        if (typeof aiAgentInitialized !== 'undefined' && !aiAgentInitialized) {
+          if (typeof initializeAIAgent === 'function') {
+            const initialized = await initializeAIAgent();
+            if (!initialized) {
+              throw new Error('Failed to initialize AI agent. The API key may be invalid or the API may not be enabled.');
+            }
+          }
         }
         
-        return `I understand you're asking about: "${message}". This is a practice exercise. I can help you understand concepts, provide hints, and explain code. What would you like to know?`;
+        // Use the same AI agent as main code assistant
+        if (typeof codeWriterAgent === 'undefined') {
+          throw new Error('AI agent not available. Please refresh the page.');
+        }
+        
+        const response = await codeWriterAgent.processMessage(message);
+        
+        removePlaygroundLoadingMessage(loadingId);
+        addPlaygroundMessage('assistant', response);
+        playgroundChatHistory.push({ role: 'assistant', content: response });
       } catch (error) {
-        console.error('Chat error:', error);
-        return 'Sorry, I encountered an error. Please try again or rephrase your question.';
+        removePlaygroundLoadingMessage(loadingId);
+        let errorMessage = `❌ Error: ${error.message}`;
+        
+        // Provide specific guidance for API not enabled error
+        if (error.message.includes('not enabled') || error.message.includes('Enable it')) {
+          errorMessage += `\n\n🔧 Setup Required:\nThe Generative Language API needs to be enabled for your API key's Google Cloud project.\n\n1. Go to: https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com\n2. Select the project associated with your API key\n3. Click "Enable"\n4. Wait a few minutes for changes to propagate\n5. Refresh this page and try again`;
+        } else {
+          errorMessage += `\n\nPlease ensure the API key is configured correctly and has the necessary permissions.`;
+        }
+        
+        addPlaygroundMessage('assistant', errorMessage);
+        playgroundChatHistory.push({ role: 'assistant', content: errorMessage });
+      } finally {
+        if (sendButton) {
+          sendButton.disabled = false;
+        }
+        if (input) {
+          input.focus();
+        }
       }
     }
   </script>
