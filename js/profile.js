@@ -195,7 +195,7 @@ async function handlePersonalInfoSubmit(event) {
 
   try {
     // Update via API
-    const response = await fetch(`${API_BASE_URL}/users/profile`, {
+    const response = await fetch(`${window.API_BASE_URL}/users/profile`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json'
