@@ -57,7 +57,9 @@ async function loadProfileData() {
           if (settings.darkMode !== undefined) {
             const darkModeToggle = document.getElementById('darkMode');
             darkModeToggle.checked = settings.darkMode;
-            applyDarkMode(settings.darkMode);
+            if (typeof window.applyDarkMode === 'function') {
+              window.applyDarkMode(settings.darkMode);
+            }
           }
         }
       }
@@ -96,7 +98,9 @@ function setupEventListeners() {
   if (darkModeToggle) {
     darkModeToggle.addEventListener('change', async function() {
       // Apply INSTANTLY (no delay)
-      applyDarkMode(darkModeToggle.checked);
+      if (typeof window.applyDarkMode === 'function') {
+        window.applyDarkMode(darkModeToggle.checked);
+      }
       // Save to API in background (non-blocking)
       saveSettings().catch(err => console.error('Failed to save dark mode:', err));
     });
@@ -104,7 +108,9 @@ function setupEventListeners() {
     // Apply dark mode on page load if checkbox state differs
     const currentDarkMode = document.body.classList.contains('dark-mode');
     if (darkModeToggle.checked !== currentDarkMode) {
-      applyDarkMode(darkModeToggle.checked);
+      if (typeof window.applyDarkMode === 'function') {
+        window.applyDarkMode(darkModeToggle.checked);
+      }
     }
   }
 }
@@ -298,8 +304,15 @@ async function saveSettings() {
     return;
   }
 
+  // Save to localStorage first (always works)
+  localStorage.setItem('userSettings', JSON.stringify(settings));
+  localStorage.setItem('darkModeEnabled', settings.darkMode ? 'true' : 'false');
+  if (typeof window.applyDarkMode === 'function') {
+    window.applyDarkMode(settings.darkMode);
+  }
+
   try {
-    // Save via API
+    // Try to save via API (non-blocking)
     const response = await fetch(`${window.API_BASE_URL}/users/settings`, {
       method: 'PUT',
       headers: {
@@ -313,38 +326,19 @@ async function saveSettings() {
     });
 
     if (response.ok) {
-      // Also save to localStorage for session
-      localStorage.setItem('userSettings', JSON.stringify(settings));
-      localStorage.setItem('darkModeEnabled', settings.darkMode ? 'true' : 'false');
-      // Apply dark mode immediately
-      applyDarkMode(settings.darkMode);
       showNotification('Settings saved successfully!', 'success');
     } else {
-      throw new Error('Failed to save settings');
+      // API failed but localStorage saved - settings still work
+      showNotification('Settings saved locally', 'success');
     }
   } catch (error) {
-    console.error('Error saving settings:', error);
-    showNotification('Failed to save settings', 'error');
+    // API failed but localStorage saved - settings still work
+    showNotification('Settings saved locally', 'success');
   }
 }
 
-// Apply dark mode styling - use global function if available, otherwise define it
-function applyDarkMode(enabled) {
-  if (typeof window.applyDarkMode === 'function') {
-    window.applyDarkMode(enabled);
-  } else {
-    // Fallback if global function not loaded yet
-    if (enabled) {
-      document.body.classList.add('dark-mode');
-      document.documentElement.setAttribute('data-theme', 'dark');
-      localStorage.setItem('darkModeEnabled', 'true');
-    } else {
-      document.body.classList.remove('dark-mode');
-      document.documentElement.removeAttribute('data-theme');
-      localStorage.setItem('darkModeEnabled', 'false');
-    }
-  }
-}
+// Apply dark mode styling - use global function from dark-mode.js directly
+// No local wrapper needed to avoid recursion issues
 
 // Delete account
 async function deleteAccount() {
