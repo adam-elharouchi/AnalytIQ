@@ -20,11 +20,11 @@
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   
   /* Code Assistant specific variables */
-  --code-sidebar-bg: var(--bg-secondary);
-  --code-sidebar-text: var(--text-primary);
+  --code-sidebar-bg: #222c3e;
+  --code-sidebar-text: #ffffff;
   --code-sidebar-border: var(--border-color);
-  --code-sidebar-hover: var(--bg-card);
-  --code-message-text: var(--text-primary);
+  --code-sidebar-hover: rgba(37, 105, 244, 0.2);
+  --code-message-text: #ffffff;
   --code-button-bg: #2569f4;
   --code-button-text: #ffffff;
   --code-panel-bg: var(--bg-secondary);
@@ -1437,8 +1437,8 @@ h1 {
 }
 
 .user-message {
-  background: var(--bg-primary);
-  color: var(--text-primary);
+  background: #222c3e;
+  color: #ffffff;
   border: 1px solid var(--border-color);
   max-width: 800px;
   width: 100%;
@@ -1448,13 +1448,13 @@ h1 {
 }
 
 .assistant-message {
-  background: var(--bg-primary);
+  background: #222c3e;
   border: 1px solid var(--border-color);
   max-width: 800px;
   width: 100%;
   word-wrap: break-word;
   overflow-wrap: break-word;
-  color: var(--text-primary);
+  color: #ffffff;
   margin-right: auto;
 }
 
@@ -1485,7 +1485,7 @@ h1 {
 }
 
 .message-content pre {
-  background: var(--bg-secondary);
+  background: #ffffff;
   padding: 1rem;
   border-radius: 0.5rem;
   overflow-x: auto;
@@ -1493,14 +1493,16 @@ h1 {
   font-family: 'Courier New', monospace;
   font-size: 0.875rem;
   line-height: 1.5;
+  color: #000000;
 }
 
 .message-content code {
-  background: var(--bg-secondary);
+  background: #ffffff;
   padding: 0.2rem 0.4rem;
   border-radius: 0.25rem;
   font-family: 'Courier New', monospace;
   font-size: 0.875rem;
+  color: #000000;
 }
 
 .message-content pre code {
