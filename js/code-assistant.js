@@ -1,4 +1,4 @@
-// ChatGPT-style Code Assistant
+// Code Assistant
 let currentLanguage = 'python';
 let uploadedData = null;
 let uploadedFileName = null;

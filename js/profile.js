@@ -1,17 +1,7 @@
 // Profile Management JavaScript
 // API_BASE_URL should be defined in api-helper.js
-// Just reference window.API_BASE_URL - don't redeclare
-// Fallback if api-helper.js didn't load
 if (typeof window.API_BASE_URL === 'undefined') {
-  window.API_BASE_URL = (() => {
-    if (window.location.protocol === 'file:') {
-      return 'http://localhost:5001/api';
-    }
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-      return 'http://localhost:5001/api';
-    }
-    return 'https://analytiq-qbfr.onrender.com/api';
-  })();
+  window.API_BASE_URL = 'https://analytiq-qbfr.onrender.com/api';
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -72,56 +62,10 @@ async function loadProfileData() {
         }
       }
     } catch (apiError) {
-      console.error('Error fetching from API, using localStorage fallback:', apiError);
-      // Fallback to localStorage if API fails
-      loadFromLocalStorage();
+      console.error('Error fetching from API:', apiError);
     }
   } catch (e) {
     console.error('Error loading profile data:', e);
-    loadFromLocalStorage();
-  }
-}
-
-// Fallback: Load from localStorage
-function loadFromLocalStorage() {
-  try {
-    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-    const profileData = JSON.parse(localStorage.getItem('userProfile') || '{}');
-    
-    if (currentUser.name) {
-      document.getElementById('fullName').value = currentUser.name;
-    } else if (profileData.fullName) {
-      document.getElementById('fullName').value = profileData.fullName;
-    }
-    
-    if (currentUser.email) {
-      document.getElementById('email').value = currentUser.email;
-    } else if (profileData.email) {
-      document.getElementById('email').value = profileData.email;
-    }
-    
-    if (profileData.bio) {
-      document.getElementById('bio').value = profileData.bio;
-    }
-    
-    const profilePicture = currentUser.profilePicture || profileData.profilePicture;
-    if (profilePicture) {
-      document.getElementById('profilePicture').src = profilePicture;
-    } else {
-      document.getElementById('profilePicture').src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzMzNDE1NSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjQwIiBmaWxsPSIjOTRhM2I4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+8J+RpTwvdGV4dD48L3N2Zz4=';
-    }
-    
-    const settings = JSON.parse(localStorage.getItem('userSettings') || '{}');
-    if (settings.emailNotifications !== undefined) {
-      document.getElementById('emailNotifications').checked = settings.emailNotifications;
-    }
-    if (settings.darkMode !== undefined) {
-      const darkModeToggle = document.getElementById('darkMode');
-      darkModeToggle.checked = settings.darkMode;
-      applyDarkMode(settings.darkMode);
-    }
-  } catch (e) {
-    console.error('Error loading from localStorage:', e);
   }
 }
 
@@ -223,13 +167,7 @@ async function handleProfilePictureUpload(event) {
       }
     } catch (error) {
       console.error('Error updating profile picture:', error);
-      // Fallback to localStorage
-      const profileData = JSON.parse(localStorage.getItem('userProfile') || '{}');
-      profileData.profilePicture = imageData;
-      localStorage.setItem('userProfile', JSON.stringify(profileData));
-      currentUser.profilePicture = imageData;
-      localStorage.setItem('currentUser', JSON.stringify(currentUser));
-      showNotification('Profile picture updated (saved locally)', 'success');
+      showNotification('Failed to update profile picture', 'error');
     }
   };
   reader.readAsDataURL(file);
@@ -283,16 +221,7 @@ async function handlePersonalInfoSubmit(event) {
     }
   } catch (error) {
     console.error('Error updating profile:', error);
-    // Fallback to localStorage
-    const profileData = JSON.parse(localStorage.getItem('userProfile') || '{}');
-    profileData.fullName = fullName;
-    profileData.email = email;
-    profileData.bio = bio;
-    localStorage.setItem('userProfile', JSON.stringify(profileData));
-    if (fullName) currentUser.name = fullName;
-    if (email) currentUser.email = email;
-    localStorage.setItem('currentUser', JSON.stringify(currentUser));
-    showNotification('Profile updated (saved locally)', 'success');
+    showNotification('Failed to update profile', 'error');
   }
 }
 
@@ -395,9 +324,7 @@ async function saveSettings() {
     }
   } catch (error) {
     console.error('Error saving settings:', error);
-    // Fallback to localStorage
-    localStorage.setItem('userSettings', JSON.stringify(settings));
-    showNotification('Settings saved (saved locally)', 'success');
+    showNotification('Failed to save settings', 'error');
   }
 }
 
