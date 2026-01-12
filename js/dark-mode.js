@@ -6,14 +6,23 @@
   
   // Apply dark mode styling globally - INSTANT (no delay)
   function applyDarkMode(enabled) {
+    // Save to localStorage first (always works)
+    localStorage.setItem('darkModeEnabled', enabled ? 'true' : 'false');
+    
+    // Set data-theme attribute on documentElement (always exists)
     if (enabled) {
-      document.body.classList.add('dark-mode');
       document.documentElement.setAttribute('data-theme', 'dark');
-      localStorage.setItem('darkModeEnabled', 'true');
     } else {
-      document.body.classList.remove('dark-mode');
       document.documentElement.removeAttribute('data-theme');
-      localStorage.setItem('darkModeEnabled', 'false');
+    }
+    
+    // Only modify body.classList if body exists
+    if (document.body) {
+      if (enabled) {
+        document.body.classList.add('dark-mode');
+      } else {
+        document.body.classList.remove('dark-mode');
+      }
     }
   }
   
@@ -62,7 +71,7 @@
           if (settings.darkMode !== undefined) {
             const apiDarkMode = settings.darkMode;
             // Only update if API value differs from current
-            const currentDarkMode = document.body.classList.contains('dark-mode');
+            const currentDarkMode = document.body ? document.body.classList.contains('dark-mode') : false;
             if (apiDarkMode !== currentDarkMode) {
               applyDarkMode(apiDarkMode);
             }
