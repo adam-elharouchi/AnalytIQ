@@ -1,11 +1,11 @@
 // AI Agent Integration - Code Writer Agent
-// Supports OpenAI (ChatGPT) and Google Gemini
+// Uses Google Gemini
 
 class CodeWriterAgent {
   constructor() {
     this.apiKey = null;
-    this.apiProvider = 'openai'; // 'openai' or 'gemini'
-    this.geminiModel = 'gemini-2.5-flash'; // Default Gemini model
+    this.apiProvider = 'gemini';
+    this.geminiModel = 'gemini-2.5-flash';
     this.digest = {
       userGoal: '',
       constraints: [],
@@ -24,9 +24,9 @@ class CodeWriterAgent {
   }
 
   // Initialize with API key
-  async initialize(apiKey, provider = 'openai', geminiModel = 'gemini-2.5-flash') {
+  async initialize(apiKey, provider = 'gemini', geminiModel = 'gemini-2.5-flash') {
     this.apiKey = apiKey;
-    this.apiProvider = provider;
+    this.apiProvider = 'gemini';
     this.geminiModel = geminiModel;
     await this.loadDigest();
     await this.loadMemory();
@@ -289,31 +289,6 @@ ${digestText}
 ${memoryText}`;
   }
 
-  // Call OpenAI API
-  async callOpenAI(messages) {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.apiKey}`
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: messages,
-        temperature: 0.7,
-        max_tokens: 4000
-      })
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error?.message || 'OpenAI API error');
-    }
-
-    const data = await response.json();
-    return data.choices[0].message.content;
-  }
-
   // Call Google Gemini API
   async callGemini(messages) {
     // Convert messages to Gemini format
@@ -374,14 +349,7 @@ ${memoryText}`;
     ];
 
     try {
-      let response;
-      if (this.apiProvider === 'openai') {
-        response = await this.callOpenAI(messages);
-      } else if (this.apiProvider === 'gemini') {
-        response = await this.callGemini(messages);
-      } else {
-        throw new Error('Unknown API provider');
-      }
+      const response = await this.callGemini(messages);
 
       // Update digest
       this.updateDigest(userMessage, response);

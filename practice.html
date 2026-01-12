@@ -1468,11 +1468,7 @@ print(r2)</code></pre>
         }
         
         console.log('Loading progress for user:', currentUser.id);
-        // Use API_BASE_URL from api-helper.js (already loaded)
-        // Fallback for when api-helper.js hasn't loaded yet
-        const apiUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 
-          ((window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') 
-            ? 'http://localhost:5001/api' : 'https://analytiq-qbfr.onrender.com/api');
+        const apiUrl = window.API_BASE_URL || 'https://analytiq-qbfr.onrender.com/api';
         const response = await fetch(`${apiUrl}/exercises/progress?user_id=${currentUser.id}`);
         if (!response.ok) {
           console.error('Failed to load progress:', response.status, response.statusText);
@@ -1550,7 +1546,7 @@ print(r2)</code></pre>
         }
         if (totalProgressDetails) {
           totalProgressDetails.textContent = 
-            `${completedExercises}/${totalExercises} exercises completed | Average Score: ${Math.round(avgScore)}`;
+          `${completedExercises}/${totalExercises} exercises completed | Average Score: ${Math.round(avgScore)}`;
         }
         
         console.log('Progress loading complete');
@@ -1563,8 +1559,7 @@ print(r2)</code></pre>
     async function loadGrandLeaderboard() {
       try {
         const apiUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 
-          ((window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') 
-            ? 'http://localhost:5001/api' : 'https://analytiq-qbfr.onrender.com/api');
+          window.API_BASE_URL || 'https://analytiq-qbfr.onrender.com/api';
         const response = await fetch(`${apiUrl}/leaderboard/grand?limit=10`);
         if (!response.ok) throw new Error('Failed to load leaderboard');
         
@@ -1617,8 +1612,7 @@ print(r2)</code></pre>
         document.getElementById('exerciseLeaderboard').innerHTML = '<p style="color: #64748b; text-align: center; padding: 1rem;">Loading...</p>';
         
         const apiUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 
-          ((window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') 
-            ? 'http://localhost:5001/api' : 'https://analytiq-qbfr.onrender.com/api');
+          window.API_BASE_URL || 'https://analytiq-qbfr.onrender.com/api';
         const response = await fetch(`${apiUrl}/exercises/${encodeURIComponent(exerciseId)}/leaderboard?limit=10`);
         if (!response.ok) throw new Error('Failed to load leaderboard');
         
