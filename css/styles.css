@@ -431,7 +431,7 @@ h1 {
 
 .btn-primary {
   background-color: #2569f4;
-  color: #1e293b;
+  color: #ffffff;
 }
 
 .btn-primary:hover {
@@ -504,6 +504,8 @@ h1 {
   padding: 1.5rem;
   box-shadow: var(--shadow);
   transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
 }
 
 .module-card:hover {
@@ -515,14 +517,18 @@ h1 {
 .module-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 1rem;
+  min-height: 3.5rem;
 }
 
 .module-header h2 {
   font-size: 1.25rem;
   margin: 0;
   color: var(--text-primary);
+  line-height: 1.4;
+  flex: 1;
+  margin-right: 0.75rem;
 }
 
 .module-badge {
@@ -550,6 +556,9 @@ h1 {
 .module-description {
   color: var(--text-secondary);
   margin-bottom: 1rem;
+  min-height: 3rem;
+  line-height: 1.5;
+  flex: 1;
 }
 
 .module-progress {
@@ -574,6 +583,21 @@ h1 {
 .progress-text {
   font-size: 0.875rem;
   color: var(--text-secondary);
+}
+
+.module-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: auto;
+  align-items: center;
+}
+
+.module-actions .btn {
+  flex: 1;
+  text-align: center;
+  font-size: 0.875rem;
+  padding: 0.75rem 1rem;
+  white-space: nowrap;
 }
 
 .module-details {
@@ -731,7 +755,7 @@ h1 {
 
 .category-btn.active {
   background-color: #2569f4;
-  color: #1e293b;
+  color: #ffffff;
   border-color: #2569f4;
 }
 
@@ -1520,7 +1544,7 @@ h1 {
   left: 60px;
   right: 0;
   padding: 0.5rem 1rem;
-  background: #222c3e;
+  background: var(--bg-primary);
   border-top: none;
   z-index: 100;
   box-shadow: none;
@@ -1539,7 +1563,7 @@ h1 {
   display: flex;
   flex-direction: column;
   gap: 0.375rem;
-  background: #222c3e;
+  background: var(--bg-primary);
 }
 
 /* chat-main-area padding handled in main definition above */
@@ -1552,7 +1576,7 @@ h1 {
   align-items: center;
   justify-content: center;
   flex-wrap: nowrap;
-  background: #222c3e;
+  background: var(--bg-primary);
   border: none;
   padding: 0.5rem 0;
   width: 100%;
@@ -1562,10 +1586,10 @@ h1 {
 .oval-btn {
   flex: 1;
   padding: 0.5rem 1rem;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
+  background: #2569f4;
+  border: 1px solid #2569f4;
   border-radius: 9999px;
-  color: var(--text-primary);
+  color: #ffffff;
   cursor: pointer;
   font-size: 0.75rem;
   display: flex;
@@ -1579,8 +1603,8 @@ h1 {
 }
 
 .oval-btn:hover {
-  background: var(--bg-card);
-  border-color: var(--primary-color);
+  background: #2569f4;
+  border-color: #2569f4;
   transform: translateY(-1px);
   box-shadow: var(--shadow);
 }
@@ -1625,12 +1649,12 @@ h1 {
 
 .icon-text {
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-secondary);
 }
 
 .file-upload-chat-btn-compact:hover .icon-text,
 .btn-clear-compact:hover .icon-text {
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 .btn-clear-compact {
@@ -1654,7 +1678,7 @@ h1 {
   display: flex;
   gap: 0.5rem;
   align-items: stretch;
-  background: #222c3e;
+  background: var(--bg-primary);
 }
 
 .chat-input-compact {
@@ -1667,8 +1691,8 @@ h1 {
   resize: none;
   min-height: 40px;
   max-height: 120px;
-  background: #222c3e;
-  color: #ffffff;
+  background: var(--bg-primary);
+  color: var(--text-primary);
   line-height: 1.5;
   box-sizing: border-box;
   text-align: left;
@@ -1676,22 +1700,22 @@ h1 {
 }
 
 .chat-input-compact::placeholder {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-secondary);
 }
 
 .chat-input-compact:focus {
   outline: none;
   border-color: var(--primary-color);
   box-shadow: 0 0 0 2px rgba(37, 105, 244, 0.2);
-  background: #222c3e;
-  color: #ffffff;
+  background: var(--bg-primary);
+  color: var(--text-primary);
 }
 
 .btn-send-compact {
   padding: 0.25rem 0.75rem;
-  background: #222c3e;
+  background: #2569f4;
   color: #ffffff;
-  border: 1px solid var(--border-color);
+  border: 1px solid #2569f4;
   border-radius: 9999px;
   font-size: 0.8125rem;
   font-weight: 500;
@@ -1707,8 +1731,8 @@ h1 {
 }
 
 .btn-send-compact:hover {
-  background: #222c3e;
-  border-color: var(--border-color);
+  background: #2569f4;
+  border-color: #2569f4;
   color: #ffffff;
 }
 
@@ -2901,6 +2925,7 @@ h1 {
   background: linear-gradient(135deg, #2569f4 0%, #2569f4 100%);
   box-shadow: 0 4px 15px rgba(37, 105, 244, 0.4);
   border: none;
+  color: #ffffff;
 }
 
 .chat-container.design1 .assistant-message {
@@ -2936,6 +2961,7 @@ h1 {
   background: linear-gradient(135deg, #2569f4 0%, #2569f4 100%);
   box-shadow: 0 4px 15px rgba(37, 105, 244, 0.4);
   border: none;
+  color: #ffffff;
 }
 
 .chat-container.design1 .btn-send:hover {
@@ -3025,6 +3051,7 @@ h1 {
   background: #2569f4;
   box-shadow: 0 2px 8px rgba(37, 105, 244, 0.3);
   font-weight: 500;
+  color: #ffffff;
 }
 
 .chat-container.design2 .btn-send:hover {
@@ -3113,6 +3140,7 @@ h1 {
 .chat-container.design3 .btn-send {
   background: linear-gradient(135deg, #2569f4 0%, #8b5cf6 100%);
   box-shadow: 0 4px 15px rgba(37, 105, 244, 0.3);
+  color: #ffffff;
 }
 
 .chat-container.design3 .btn-send:hover {
@@ -3173,7 +3201,7 @@ h1 {
 }
 
 .welcome-message p {
-  color: var(--text-primary);
+  color: #ffffff;
   font-size: 1.1rem;
   margin: 0;
   text-align: center;
@@ -3212,8 +3240,8 @@ h1 {
 }
 
 .starter-btn:hover {
-  background: #222c3e;
-  border-color: #222c3e;
+  background: #2569f4;
+  border-color: #2569f4;
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
@@ -3371,7 +3399,7 @@ h1 {
 .btn-primary {
   padding: 0.75rem 1.5rem;
   background: #2569f4;
-  color: #1e293b;
+  color: #ffffff;
   border: none;
   border-radius: 0.5rem;
   font-size: 0.875rem;
@@ -3674,6 +3702,29 @@ input[type="text"], input[type="search"], textarea {
   background: var(--bg-card);
   color: var(--text-primary);
   border-color: var(--border-color);
+}
+
+/* Leaderboard Styles */
+.leaderboard-item {
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  transition: all 0.2s;
+}
+
+.leaderboard-item:hover {
+  box-shadow: var(--shadow);
+  transform: translateY(-1px);
+}
+
+.leaderboard-item-current {
+  border: 2px solid #2569f4 !important;
+  background: rgba(37, 105, 244, 0.05) !important;
+  box-shadow: 0 0 0 3px rgba(37, 105, 244, 0.1);
+}
+
+.leaderboard-item-current .leaderboard-name {
+  color: #2569f4 !important;
+  font-weight: 700 !important;
 }
 
 
