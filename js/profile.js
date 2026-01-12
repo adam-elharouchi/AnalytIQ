@@ -66,13 +66,6 @@ async function loadProfileData() {
           if (settings.emailNotifications !== undefined) {
             document.getElementById('emailNotifications').checked = settings.emailNotifications;
           }
-          if (settings.darkMode !== undefined) {
-            const darkModeToggle = document.getElementById('darkMode');
-            darkModeToggle.checked = settings.darkMode;
-            if (typeof window.applyDarkMode === 'function') {
-              window.applyDarkMode(settings.darkMode);
-            }
-          }
         }
       }
     } catch (apiError) {
@@ -103,50 +96,6 @@ function setupEventListeners() {
     emailNotificationsToggle.addEventListener('change', async function() {
       await saveSettings();
     });
-  }
-  
-  // Dark mode toggle - auto-save and apply on change (INSTANT)
-  const darkModeToggle = document.getElementById('darkMode');
-  if (darkModeToggle) {
-    darkModeToggle.addEventListener('change', async function() {
-      // Apply INSTANTLY (no delay) - always apply, even if function doesn't exist
-      const enabled = darkModeToggle.checked;
-      
-      // Apply dark mode styling immediately
-      if (enabled) {
-        document.body.classList.add('dark-mode');
-        document.documentElement.setAttribute('data-theme', 'dark');
-        localStorage.setItem('darkModeEnabled', 'true');
-      } else {
-        document.body.classList.remove('dark-mode');
-        document.documentElement.removeAttribute('data-theme');
-        localStorage.setItem('darkModeEnabled', 'false');
-      }
-      
-      // Also call global function if available (for consistency)
-      if (typeof window.applyDarkMode === 'function') {
-        window.applyDarkMode(enabled);
-      }
-      
-      // Save to API in background (non-blocking)
-      saveSettings().catch(err => console.error('Failed to save dark mode:', err));
-    });
-    
-    // Apply dark mode on page load if checkbox state differs
-    const currentDarkMode = document.body.classList.contains('dark-mode');
-    if (darkModeToggle.checked !== currentDarkMode) {
-      const enabled = darkModeToggle.checked;
-      if (enabled) {
-        document.body.classList.add('dark-mode');
-        document.documentElement.setAttribute('data-theme', 'dark');
-      } else {
-        document.body.classList.remove('dark-mode');
-        document.documentElement.removeAttribute('data-theme');
-      }
-      if (typeof window.applyDarkMode === 'function') {
-        window.applyDarkMode(enabled);
-      }
-    }
   }
 }
 
@@ -329,8 +278,7 @@ async function handlePasswordChange(event) {
 // Save settings
 async function saveSettings() {
   const settings = {
-    emailNotifications: document.getElementById('emailNotifications').checked,
-    darkMode: document.getElementById('darkMode').checked
+    emailNotifications: document.getElementById('emailNotifications').checked
   };
   
   const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
@@ -341,10 +289,6 @@ async function saveSettings() {
 
   // Save to localStorage first (always works)
   localStorage.setItem('userSettings', JSON.stringify(settings));
-  localStorage.setItem('darkModeEnabled', settings.darkMode ? 'true' : 'false');
-  if (typeof window.applyDarkMode === 'function') {
-    window.applyDarkMode(settings.darkMode);
-  }
 
   try {
     // Try to save via API (non-blocking)
@@ -355,8 +299,7 @@ async function saveSettings() {
       },
       body: JSON.stringify({
         user_id: currentUser.id,
-        emailNotifications: settings.emailNotifications,
-        darkMode: settings.darkMode
+        emailNotifications: settings.emailNotifications
       })
     });
 
@@ -371,9 +314,6 @@ async function saveSettings() {
     showNotification('Settings saved locally', 'success');
   }
 }
-
-// Apply dark mode styling - use global function from dark-mode.js directly
-// No local wrapper needed to avoid recursion issues
 
 // Delete account
 async function deleteAccount() {

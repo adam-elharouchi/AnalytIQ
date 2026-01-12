@@ -506,7 +506,7 @@ def get_settings():
         cursor = conn.cursor()
         
         cursor.execute(
-            "SELECT email_notifications, dark_mode FROM user_settings WHERE user_id = %s",
+            "SELECT email_notifications FROM user_settings WHERE user_id = %s",
             (user_id,)
         )
         result = cursor.fetchone()
@@ -515,11 +515,10 @@ def get_settings():
         conn.close()
         
         if not result:
-            return jsonify({'emailNotifications': False, 'darkMode': False}), 200
+            return jsonify({'emailNotifications': False}), 200
         
         return jsonify({
             'emailNotifications': result[0],
-            'darkMode': result[1]
         }), 200
         
     except Exception as e:
@@ -532,27 +531,24 @@ def update_settings():
         data = request.json
         user_id = data.get('user_id')
         email_notifications = data.get('emailNotifications')
-        dark_mode = data.get('darkMode')
         
         if not user_id:
             return jsonify({'error': 'Missing user_id'}), 400
         
         # Ensure boolean values (handle None/undefined)
         email_notifications = bool(email_notifications) if email_notifications is not None else False
-        dark_mode = bool(dark_mode) if dark_mode is not None else False
         
         conn = get_db_connection()
         cursor = conn.cursor()
         
         cursor.execute("""
-            INSERT INTO user_settings (user_id, email_notifications, dark_mode, updated_at)
-            VALUES (%s, %s, %s, CURRENT_TIMESTAMP)
+            INSERT INTO user_settings (user_id, email_notifications, updated_at)
+            VALUES (%s, %s, CURRENT_TIMESTAMP)
             ON CONFLICT (user_id)
             DO UPDATE SET
                 email_notifications = EXCLUDED.email_notifications,
-                dark_mode = EXCLUDED.dark_mode,
                 updated_at = CURRENT_TIMESTAMP
-        """, (user_id, email_notifications, dark_mode))
+        """, (user_id, email_notifications))
         
         conn.commit()
         cursor.close()

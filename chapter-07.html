@@ -5,30 +5,8 @@
   <title>Chapter 7: Data Visualization - AnalytIQ</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="css/styles.css" />
-  <script>
-    // INSTANT dark mode application - runs before page renders to prevent flash
-    (function() {
-      try {
-        const darkMode = localStorage.getItem('darkModeEnabled');
-        if (darkMode === 'true') {
-          document.documentElement.setAttribute('data-theme', 'dark');
-          // Add class to html element - body will inherit via CSS
-          document.documentElement.classList.add('dark-mode');
-          // Apply to body when it's available
-          if (document.body) {
-            document.body.classList.add('dark-mode');
-          } else {
-            // Wait for body to be available
-            document.addEventListener('DOMContentLoaded', function() {
-              document.body.classList.add('dark-mode');
-            });
-          }
-        }
-      } catch(e) {}
-    })();
-  </script>
   <script src="js/api-helper.js"></script>
-  <script src="js/dark-mode.js"></script>
+  
   <style>
     .chapter-viewer {
       max-width: 1200px;
