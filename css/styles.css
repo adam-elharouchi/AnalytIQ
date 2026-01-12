@@ -7,7 +7,7 @@
 
 :root {
   --primary-color: #2569f4;
-  --primary-dark: #1e5ae0;
+  --primary-dark: #2569f4;
   --secondary-color: #8b5cf6;
   --accent-color: #2569f4;
   --text-primary: #1e293b;
@@ -781,7 +781,7 @@ h1 {
 
 .resource-link:hover {
   text-decoration: underline;
-  color: #93c5fd;
+  color: #2569f4;
 }
 
 /* Code Assistant - Full Page Layout */
@@ -1471,6 +1471,13 @@ h1 {
   line-height: 1.5;
 }
 
+/* Dark mode code blocks - white background, black text */
+body.dark-mode .message-content pre,
+html[data-theme="dark"] .message-content pre {
+  background: #ffffff !important;
+  color: #000000 !important;
+}
+
 .message-content code {
   background: var(--bg-secondary);
   padding: 0.2rem 0.4rem;
@@ -1479,9 +1486,23 @@ h1 {
   font-size: 0.875rem;
 }
 
+/* Dark mode inline code - white background, black text */
+body.dark-mode .message-content code,
+html[data-theme="dark"] .message-content code {
+  background: #ffffff !important;
+  color: #000000 !important;
+}
+
 .message-content pre code {
   background: none;
   padding: 0;
+}
+
+/* Dark mode - code inside pre blocks should be black */
+body.dark-mode .message-content pre code,
+html[data-theme="dark"] .message-content pre code {
+  color: #000000 !important;
+  background: transparent !important;
 }
 
 .message-content h3, .message-content h4 {
@@ -1936,7 +1957,7 @@ h1 {
 }
 
 .code-block {
-  background: #f8fafc;
+  background: var(--bg-card);
   color: var(--text-primary);
   padding: 1rem;
   border-radius: 0.5rem;
@@ -2855,7 +2876,7 @@ h1 {
 
 /* DESIGN 1: Modern Glassmorphism */
 .chat-container.design1 {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #2569f4 0%, #2569f4 100%);
   padding: 2rem;
   border-radius: 1.5rem;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
@@ -2881,7 +2902,7 @@ h1 {
 }
 
 .chat-container.design1 .chat-header h1 {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #2569f4 0%, #2569f4 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -2889,8 +2910,8 @@ h1 {
 }
 
 .chat-container.design1 .user-message {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  background: linear-gradient(135deg, #2569f4 0%, #2569f4 100%);
+  box-shadow: 0 4px 15px rgba(37, 105, 244, 0.4);
   border: none;
 }
 
@@ -2913,37 +2934,37 @@ h1 {
 
 .chat-container.design1 .chat-input {
   background: rgba(255, 255, 255, 0.8);
-  border: 2px solid rgba(102, 126, 234, 0.2);
+  border: 2px solid rgba(37, 105, 244, 0.2);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
 .chat-container.design1 .chat-input:focus {
-  border-color: #667eea;
-  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+  border-color: #2569f4;
+  box-shadow: 0 0 0 4px rgba(37, 105, 244, 0.1);
   background: white;
 }
 
 .chat-container.design1 .btn-send {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  background: linear-gradient(135deg, #2569f4 0%, #2569f4 100%);
+  box-shadow: 0 4px 15px rgba(37, 105, 244, 0.4);
   border: none;
 }
 
 .chat-container.design1 .btn-send:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+  box-shadow: 0 6px 20px rgba(37, 105, 244, 0.5);
 }
 
 .chat-container.design1 .file-upload-chat-btn,
 .chat-container.design1 .btn-clear {
-  background: rgba(102, 126, 234, 0.1);
-  border: 1px solid rgba(102, 126, 234, 0.3);
-  color: #667eea;
+  background: rgba(37, 105, 244, 0.1);
+  border: 1px solid rgba(37, 105, 244, 0.3);
+  color: #2569f4;
 }
 
 .chat-container.design1 .file-upload-chat-btn:hover,
 .chat-container.design1 .btn-clear:hover {
-  background: rgba(102, 126, 234, 0.2);
+  background: rgba(37, 105, 244, 0.2);
 }
 
 /* DESIGN 2: Clean Minimal with Accents */
@@ -3142,7 +3163,7 @@ h1 {
 }
 
 .chat-container.design3 .code-block-header {
-  background: #ffffff;
+  background: var(--bg-card);
   border-bottom: 1px solid #222c3e;
   color: #94a3b8;
 }
@@ -3849,8 +3870,8 @@ html[data-theme="dark"] .chat-main-area,
 html[data-theme="dark"] .chat-messages,
 html[data-theme="dark"] .sidebar-content,
 html[data-theme="dark"] .conversation-sidebar {
-  background: var(--bg-card) !important;
-  color: var(--text-primary) !important;
+  background: #222c3e !important;
+  color: #ffffff !important;
 }
 
 /* Grids */
@@ -3880,8 +3901,8 @@ body.dark-mode .code-block,
 html[data-theme="dark"] pre,
 html[data-theme="dark"] code,
 html[data-theme="dark"] .code-block {
-  background: #1e293b !important;
-  color: #e2e8f0 !important;
+  background: #ffffff !important;
+  color: #000000 !important;
   border-color: var(--border-color) !important;
 }
 
@@ -3997,7 +4018,7 @@ html[data-theme="dark"] .logo-analyt {
 
 body.dark-mode .logo-iq,
 html[data-theme="dark"] .logo-iq {
-  color: #60a5fa !important; /* Lighter blue for better visibility on dark */
+  color: #2569f4 !important; /* Blue for "IQ" */
 }
 
 /* Main h1 headings - override blue color for visibility */
@@ -4021,7 +4042,7 @@ html[data-theme="dark"] button.btn-primary {
 
 body.dark-mode .btn-primary:hover,
 html[data-theme="dark"] .btn-primary:hover {
-  background: #3b82f6 !important; /* Slightly lighter blue on hover */
+  background: #2569f4 !important; /* Blue on hover */
   color: #ffffff !important;
 }
 
@@ -4066,12 +4087,12 @@ html[data-theme="dark"] .mobile-menu-toggle {
 /* Links - ensure visibility */
 body.dark-mode a:not(.btn-primary):not(.btn-secondary):not(.btn-danger):not(.nav-links a),
 html[data-theme="dark"] a:not(.btn-primary):not(.btn-secondary):not(.btn-danger):not(.nav-links a) {
-  color: #60a5fa !important; /* Light blue for links */
+  color: #2569f4 !important; /* Blue for links */
 }
 
 body.dark-mode a:hover:not(.btn-primary):not(.btn-secondary):not(.btn-danger):not(.nav-links a),
 html[data-theme="dark"] a:hover:not(.btn-primary):not(.btn-secondary):not(.btn-danger):not(.nav-links a) {
-  color: #93c5fd !important; /* Lighter blue on hover */
+  color: #2569f4 !important; /* Blue on hover */
 }
 
 /* Card text - ensure all card content is visible */
@@ -4244,8 +4265,11 @@ html[data-theme="dark"] [style*="color:#64748b"] {
    FIX CODE ASSISTANT DARK MODE - REMOVE EXTRA BAR
    ============================================ */
 
-/* Collapsed sidebar - fix hardcoded dark background and shadow */
-/* Dark mode sidebar styles handled by CSS variables - no overrides needed */
+/* Collapsed sidebar - dark mode */
+body.dark-mode .collapsed-sidebar,
+html[data-theme="dark"] .collapsed-sidebar {
+  background: #222c3e !important;
+}
 
 body.dark-mode .sidebar-header,
 html[data-theme="dark"] .sidebar-header {
@@ -4312,16 +4336,80 @@ html[data-theme="dark"] [data-inline-styles].leaderboard-card h3 {
 
 body.dark-mode .assistant-message,
 html[data-theme="dark"] .assistant-message {
-  background: var(--bg-card) !important; /* Use card background instead of #222c3e */
+  background: #222c3e !important;
   border: 1px solid var(--border-color) !important;
-  color: var(--text-primary) !important;
+  color: #ffffff !important;
 }
 
-/* Dark mode message content uses CSS variables, no override needed */
+/* Dark mode message content - white text */
+body.dark-mode .assistant-message .message-content,
+html[data-theme="dark"] .assistant-message .message-content {
+  color: #ffffff !important;
+}
+
+body.dark-mode .assistant-message .message-content p,
+body.dark-mode .assistant-message .message-content li,
+body.dark-mode .assistant-message .message-content h3,
+body.dark-mode .assistant-message .message-content h4,
+html[data-theme="dark"] .assistant-message .message-content p,
+html[data-theme="dark"] .assistant-message .message-content li,
+html[data-theme="dark"] .assistant-message .message-content h3,
+html[data-theme="dark"] .assistant-message .message-content h4 {
+  color: #ffffff !important;
+}
 
 body.dark-mode .conversation-starters h3,
 html[data-theme="dark"] .conversation-starters h3 {
-  color: var(--text-primary) !important; /* Use primary text color instead of blue */
+  color: #ffffff !important;
+}
+
+/* Code Assistant Full Page - dark mode background */
+body.dark-mode .code-assistant-fullpage,
+html[data-theme="dark"] .code-assistant-fullpage {
+  background: #222c3e !important;
+}
+
+/* Buttons - dark mode */
+body.dark-mode .btn-send-compact,
+body.dark-mode .btn-send,
+body.dark-mode .sidebar-new-conversation-btn,
+body.dark-mode .sidebar-new-conversation-btn.collapsed,
+body.dark-mode .btn-copy-code-footer,
+body.dark-mode .chat-container.design3 .btn-copy-code,
+html[data-theme="dark"] .btn-send-compact,
+html[data-theme="dark"] .btn-send,
+html[data-theme="dark"] .sidebar-new-conversation-btn,
+html[data-theme="dark"] .sidebar-new-conversation-btn.collapsed,
+html[data-theme="dark"] .btn-copy-code-footer,
+html[data-theme="dark"] .chat-container.design3 .btn-copy-code {
+  background: #2569f4 !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .btn-send-compact:hover,
+body.dark-mode .btn-send:hover,
+body.dark-mode .sidebar-new-conversation-btn:hover,
+body.dark-mode .sidebar-new-conversation-btn.collapsed:hover,
+body.dark-mode .btn-copy-code-footer:hover,
+body.dark-mode .chat-container.design3 .btn-copy-code:hover,
+html[data-theme="dark"] .btn-send-compact:hover,
+html[data-theme="dark"] .btn-send:hover,
+html[data-theme="dark"] .sidebar-new-conversation-btn:hover,
+html[data-theme="dark"] .sidebar-new-conversation-btn.collapsed:hover,
+html[data-theme="dark"] .btn-copy-code-footer:hover,
+html[data-theme="dark"] .chat-container.design3 .btn-copy-code:hover {
+  background: #2569f4 !important;
+}
+
+/* User message text - dark mode */
+body.dark-mode .user-message,
+html[data-theme="dark"] .user-message {
+  color: #ffffff !important;
+}
+
+body.dark-mode .user-message .message-content,
+html[data-theme="dark"] .user-message .message-content {
+  color: #ffffff !important;
 }
 
 /* Fix chapter section spacing */
@@ -4366,9 +4454,11 @@ html[data-theme="dark"] .chat-input-compact::placeholder {
   color: var(--text-secondary) !important;
 }
 
+body.dark-mode .btn-send-compact,
 body.dark-mode .btn-send-compact:hover,
+html[data-theme="dark"] .btn-send-compact,
 html[data-theme="dark"] .btn-send-compact:hover {
-  background: #1e5ae0 !important;
+  background: #2569f4 !important;
 }
 
 body.dark-mode .oval-select,
