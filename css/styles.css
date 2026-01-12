@@ -2501,7 +2501,7 @@ h1 {
 .code-animation-filename {
   margin-left: auto;
   font-size: 0.875rem;
-  color: var(--text-secondary);
+  color: #ffffff;
   font-family: 'Courier New', monospace;
 }
 
@@ -2521,7 +2521,7 @@ h1 {
   margin: 0;
   padding: 0;
   background: transparent;
-  color: var(--code-panel-text);
+  color: #ffffff;
   font-family: 'Courier New', monospace;
   font-size: 0.875rem;
   line-height: 1.6;
@@ -2534,7 +2534,7 @@ h1 {
 }
 
 .code-animation-content .code-line {
-  color: var(--code-panel-text);
+  color: #ffffff;
   display: block;
   background: transparent;
   margin: 0;
@@ -2588,7 +2588,7 @@ h1 {
 }
 
 .code-animation-content .variable {
-  color: var(--code-panel-text);
+  color: #ffffff;
   background: transparent;
 }
 
