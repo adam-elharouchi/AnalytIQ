@@ -2476,7 +2476,7 @@ html[data-theme="dark"] .message-content pre code {
 
 /* Code Animation Container */
 .code-animation-container {
-  background: var(--bg-card);
+  background: #222c3e;
   border: 1px solid var(--border-color);
   border-radius: 0.75rem;
   overflow: hidden;
@@ -2491,16 +2491,16 @@ html[data-theme="dark"] .message-content pre code {
   box-sizing: border-box;
 }
 
-/* Dark mode - remove white background from code animation */
+/* Dark mode - use same background color */
 body.dark-mode .code-animation-container,
 html[data-theme="dark"] .code-animation-container {
-  background: transparent !important;
+  background: #222c3e !important;
   border-color: var(--border-color) !important;
   box-shadow: none !important;
 }
 
 .code-animation-header {
-  background: var(--bg-secondary);
+  background: #222c3e;
   padding: 0.75rem 1rem;
   display: flex;
   align-items: center;
@@ -2536,7 +2536,7 @@ html[data-theme="dark"] .code-animation-container {
 
 .code-animation-content {
   padding: 1.5rem;
-  background: var(--code-panel-bg);
+  background: #222c3e;
   flex: 1;
   overflow: hidden;
   border-radius: 0 0 0.75rem 0.75rem;
@@ -4066,13 +4066,13 @@ html[data-theme="dark"] .btn-primary:hover {
 /* Code animation container - fix dark background */
 body.dark-mode .code-animation-container,
 html[data-theme="dark"] .code-animation-container {
-  background: transparent !important;
+  background: #222c3e !important;
   border-color: var(--border-color) !important;
 }
 
 body.dark-mode .code-animation-content,
 html[data-theme="dark"] .code-animation-content {
-  background: transparent !important;
+  background: #222c3e !important;
 }
 
 body.dark-mode .code-animation-content pre,
@@ -4089,7 +4089,7 @@ html[data-theme="dark"] .code-animation-content .code-line {
 
 body.dark-mode .code-animation-header,
 html[data-theme="dark"] .code-animation-header {
-  background: transparent !important;
+  background: #222c3e !important;
   border-bottom-color: var(--border-color) !important;
 }
 
