@@ -158,6 +158,13 @@ async function handleSignIn(event) {
   }
 }
 
+// Validate Hult email domain
+function isValidHultEmail(email) {
+  const allowedDomains = ['hult.edu', 'faculty.hult.edu', 'student.hult.edu'];
+  const emailDomain = email.toLowerCase().split('@')[1];
+  return allowedDomains.includes(emailDomain);
+}
+
 // Handle sign up
 async function handleSignUp(event) {
   event.preventDefault();
@@ -169,6 +176,13 @@ async function handleSignUp(event) {
 
   // Clear previous errors
   errorDiv.style.display = 'none';
+
+  // Validate email domain (must be Hult email)
+  if (!isValidHultEmail(email)) {
+    errorDiv.textContent = 'Please use a Hult email address (hult.edu, faculty.hult.edu, or student.hult.edu)';
+    errorDiv.style.display = 'block';
+    return;
+  }
 
   // Validate passwords match
   if (password !== confirmPassword) {
