@@ -537,6 +537,10 @@ def update_settings():
         if not user_id:
             return jsonify({'error': 'Missing user_id'}), 400
         
+        # Ensure boolean values (handle None/undefined)
+        email_notifications = bool(email_notifications) if email_notifications is not None else False
+        dark_mode = bool(dark_mode) if dark_mode is not None else False
+        
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -557,6 +561,9 @@ def update_settings():
         return jsonify({'success': True}), 200
         
     except Exception as e:
+        print(f"Error updating settings: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/users/password', methods=['PUT'])
