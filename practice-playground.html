@@ -5,30 +5,8 @@
   <title>Practice Playground - AnalytIQ</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="css/styles.css" />
-  <script>
-    // INSTANT dark mode application - runs before page renders to prevent flash
-    (function() {
-      try {
-        const darkMode = localStorage.getItem('darkModeEnabled');
-        if (darkMode === 'true') {
-          document.documentElement.setAttribute('data-theme', 'dark');
-          // Add class to html element - body will inherit via CSS
-          document.documentElement.classList.add('dark-mode');
-          // Apply to body when it's available
-          if (document.body) {
-            document.body.classList.add('dark-mode');
-          } else {
-            // Wait for body to be available
-            document.addEventListener('DOMContentLoaded', function() {
-              document.body.classList.add('dark-mode');
-            });
-          }
-        }
-      } catch(e) {}
-    })();
-  </script>
   <script src="js/api-helper.js"></script>
-  <script src="js/dark-mode.js"></script>
+  
   <style>
     .playground-container {
       max-width: 1200px;
@@ -480,16 +458,9 @@
       color: #ffffff;
     }
     
-    body.dark-mode .chat-modal-header,
-    html[data-theme="dark"] .chat-modal-header {
-      background: #222c3e !important;
-      color: #ffffff !important;
-    }
     
-    body.dark-mode .chat-modal-body,
-    html[data-theme="dark"] .chat-modal-body {
-      background: #222c3e !important;
-    }
+    
+    
     
     .chat-modal-close {
       background: none;
@@ -571,23 +542,12 @@
       color: var(--code-message-text);
     }
     
-    /* Dark mode for playground chat messages */
-    body.dark-mode .chat-messages-container .assistant-message,
-    html[data-theme="dark"] .chat-messages-container .assistant-message {
-      background: #222c3e !important;
-      border: 1px solid var(--border-color) !important;
-      color: #ffffff !important;
-    }
     
-    body.dark-mode .chat-messages-container .user-message,
-    html[data-theme="dark"] .chat-messages-container .user-message {
-      color: #ffffff !important;
-    }
     
-    body.dark-mode .chat-messages-container .message-content,
-    html[data-theme="dark"] .chat-messages-container .message-content {
-      color: #ffffff !important;
-    }
+    
+    
+    
+    
     
     @keyframes fadeIn {
       from {
@@ -653,35 +613,16 @@
       opacity: 0.6;
     }
     
-    /* Dark mode for playground chat */
-    body.dark-mode .chat-input-container,
-    html[data-theme="dark"] .chat-input-container {
-      background: #222c3e !important;
-      border-top-color: var(--border-color) !important;
-    }
     
-    body.dark-mode .chat-input-field,
-    html[data-theme="dark"] .chat-input-field {
-      background: #222c3e !important;
-      color: #ffffff !important;
-      border-color: var(--border-color) !important;
-    }
     
-    body.dark-mode .chat-input-field::placeholder,
-    html[data-theme="dark"] .chat-input-field::placeholder {
-      color: rgba(255, 255, 255, 0.6) !important;
-    }
     
-    body.dark-mode .chat-send-button,
-    html[data-theme="dark"] .chat-send-button {
-      background: #2569f4 !important;
-      color: #ffffff !important;
-    }
     
-    body.dark-mode .chat-messages-container,
-    html[data-theme="dark"] .chat-messages-container {
-      background: #222c3e !important;
-    }
+    
+    
+    
+    
+    
+    
     
     .chat-loading {
       display: none;
