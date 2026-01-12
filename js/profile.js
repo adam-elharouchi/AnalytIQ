@@ -19,8 +19,15 @@ async function loadProfileData() {
       return;
     }
 
+    // Load profile picture IMMEDIATELY from localStorage (instant, no delay)
+    const profilePictureEl = document.getElementById('profilePicture');
+    if (profilePictureEl) {
+      const defaultAvatar = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzMzNDE1NSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjQwIiBmaWxsPSIjOTRhM2I4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+8J+RpTwvdGV4dD48L3N2Zz4=';
+      profilePictureEl.src = currentUser.profilePicture || defaultAvatar;
+    }
+
     try {
-      // Fetch profile from API
+      // Fetch profile from API (update in background)
       const response = await fetch(`${window.API_BASE_URL}/users/profile?user_id=${currentUser.id}`);
       const profileData = await response.json();
 
@@ -38,12 +45,17 @@ async function loadProfileData() {
           document.getElementById('bio').value = profileData.bio;
         }
         
-        // Load profile picture
-        if (profileData.profilePicture) {
-          document.getElementById('profilePicture').src = profileData.profilePicture;
-        } else {
-          // Default avatar
-          document.getElementById('profilePicture').src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzMzNDE1NSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjQwIiBmaWxsPSIjOTRhM2I4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+8J+RpTwvdGV4dD48L3N2Zz4=';
+        // Update profile picture from API (if different from localStorage)
+        if (profilePictureEl && profileData.profilePicture) {
+          if (profileData.profilePicture !== currentUser.profilePicture) {
+            profilePictureEl.src = profileData.profilePicture;
+            // Update localStorage with API value
+            currentUser.profilePicture = profileData.profilePicture;
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+          }
+        } else if (profilePictureEl && !profileData.profilePicture) {
+          // Use default if API doesn't have a picture
+          profilePictureEl.src = defaultAvatar;
         }
 
         // Load settings
