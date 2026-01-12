@@ -109,10 +109,25 @@ function setupEventListeners() {
   const darkModeToggle = document.getElementById('darkMode');
   if (darkModeToggle) {
     darkModeToggle.addEventListener('change', async function() {
-      // Apply INSTANTLY (no delay)
-      if (typeof window.applyDarkMode === 'function') {
-        window.applyDarkMode(darkModeToggle.checked);
+      // Apply INSTANTLY (no delay) - always apply, even if function doesn't exist
+      const enabled = darkModeToggle.checked;
+      
+      // Apply dark mode styling immediately
+      if (enabled) {
+        document.body.classList.add('dark-mode');
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('darkModeEnabled', 'true');
+      } else {
+        document.body.classList.remove('dark-mode');
+        document.documentElement.removeAttribute('data-theme');
+        localStorage.setItem('darkModeEnabled', 'false');
       }
+      
+      // Also call global function if available (for consistency)
+      if (typeof window.applyDarkMode === 'function') {
+        window.applyDarkMode(enabled);
+      }
+      
       // Save to API in background (non-blocking)
       saveSettings().catch(err => console.error('Failed to save dark mode:', err));
     });
@@ -120,8 +135,16 @@ function setupEventListeners() {
     // Apply dark mode on page load if checkbox state differs
     const currentDarkMode = document.body.classList.contains('dark-mode');
     if (darkModeToggle.checked !== currentDarkMode) {
+      const enabled = darkModeToggle.checked;
+      if (enabled) {
+        document.body.classList.add('dark-mode');
+        document.documentElement.setAttribute('data-theme', 'dark');
+      } else {
+        document.body.classList.remove('dark-mode');
+        document.documentElement.removeAttribute('data-theme');
+      }
       if (typeof window.applyDarkMode === 'function') {
-        window.applyDarkMode(darkModeToggle.checked);
+        window.applyDarkMode(enabled);
       }
     }
   }
