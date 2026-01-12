@@ -91,7 +91,7 @@ const conversationAPI = {
         if (!userId) return false;
         
         try {
-            const response = await fetch(`${API_BASE_URL}/users/conversations/${conversationId}?user_id=${userId}`, {
+            const response = await fetch(`${window.API_BASE_URL}/users/conversations/${conversationId}?user_id=${userId}`, {
                 method: 'DELETE'
             });
             return response.ok;
