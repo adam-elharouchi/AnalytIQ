@@ -3655,21 +3655,10 @@ h1 {
   background: var(--primary-dark);
 }
 
-/* Apply white theme to all pages */
-body {
-  background: #ffffff !important;
-  color: var(--text-primary);
-}
-
-/* Ensure all text is readable */
-p, li, span, div {
-  color: var(--text-primary);
-}
-
-/* Code blocks */
+/* Code blocks use theme variables */
 pre, code {
-  background: #f8fafc !important;
-  color: var(--text-primary) !important;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
 }
 
 /* Select elements */
