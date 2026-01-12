@@ -3130,15 +3130,15 @@ h1 {
 }
 
 .chat-container.design3 .message-content pre {
-  background: #ffffff;
-  border: 1px solid #222c3e;
-  color: #e2e8f0;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
 }
 
 .chat-container.design3 .code-block {
-  background: #ffffff;
-  border: 1px solid #222c3e;
-  color: #e2e8f0;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
 }
 
 .chat-container.design3 .code-block-header {
@@ -4026,10 +4026,7 @@ html[data-theme="dark"] .btn-primary:hover {
 }
 
 /* Code animation container - fix dark background */
-body.dark-mode .code-animation-content,
-html[data-theme="dark"] .code-animation-content {
-  background: #1e293b !important; /* Lighter than #222c3e for better contrast */
-}
+/* .code-animation-content uses --code-panel-bg variable, no override needed */
 
 body.dark-mode .code-animation-header,
 html[data-theme="dark"] .code-animation-header {
