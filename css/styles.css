@@ -20,13 +20,15 @@
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   
   /* Code Assistant specific variables */
-  --code-sidebar-bg: #f8fafc;
-  --code-sidebar-text: #1e293b;
-  --code-sidebar-border: rgba(0, 0, 0, 0.1);
-  --code-sidebar-hover: rgba(37, 105, 244, 0.1);
-  --code-message-text: #1e293b;
+  --code-sidebar-bg: var(--bg-secondary);
+  --code-sidebar-text: var(--text-primary);
+  --code-sidebar-border: var(--border-color);
+  --code-sidebar-hover: var(--bg-card);
+  --code-message-text: var(--text-primary);
   --code-button-bg: #2569f4;
   --code-button-text: #ffffff;
+  --code-panel-bg: var(--bg-secondary);
+  --code-panel-text: var(--text-primary);
 }
 
 body {
@@ -798,7 +800,7 @@ h1 {
 /* Collapsed Sidebar (Always Visible) */
 .collapsed-sidebar {
   width: 60px;
-  background: var(--bg-secondary);
+  background: var(--code-sidebar-bg);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -806,7 +808,7 @@ h1 {
   gap: 1rem;
   z-index: 11;
   height: 100%;
-  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
+  border-right: 1px solid var(--code-sidebar-border);
 }
 
 .sidebar-logo-toggle {
@@ -1093,8 +1095,10 @@ h1 {
   overflow: hidden;
   margin-left: 60px;
   transition: margin-left 0.3s ease;
+  padding-bottom: 100px; /* Space for fixed input */
 }
 
+/* Chat Header - Single Definition */
 .chat-header {
   display: flex;
   justify-content: space-between;
@@ -1105,17 +1109,18 @@ h1 {
   flex-shrink: 0;
 }
 
+.chat-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: var(--text-primary);
+}
+
 .header-left {
   display: flex;
   align-items: center;
 }
 
-.chat-header h1 {
-  margin: 0;
-  font-size: 1.5rem;
-}
-
-/* Code Assistant */
+/* Code Assistant Container */
 .chat-container {
   max-width: 1200px;
   margin: 0 auto;
@@ -1130,21 +1135,10 @@ h1 {
   box-shadow: var(--shadow-lg);
 }
 
-.chat-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 1.5rem;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
+.chat-container .chat-header {
   border-radius: 0.75rem;
   margin-bottom: 1rem;
-  flex-shrink: 0;
-}
-
-.chat-header h1 {
-  margin: 0;
-  font-size: 1.5rem;
+  border: 1px solid var(--border-color);
 }
 
 .language-selector-wrapper {
@@ -1547,9 +1541,7 @@ h1 {
   gap: 0.375rem;
 }
 
-.chat-main-area {
-  padding-bottom: 100px; /* Space for fixed input */
-}
+/* chat-main-area padding handled in main definition above */
 
 /* Sidebar adjustments handled by transform */
 
@@ -2506,7 +2498,7 @@ h1 {
 
 .code-animation-content {
   padding: 1.5rem;
-  background: #222c3e;
+  background: var(--code-panel-bg);
   flex: 1;
   overflow: hidden;
   border-radius: 0 0 0.75rem 0.75rem;
@@ -2519,8 +2511,8 @@ h1 {
 .code-animation-content pre {
   margin: 0;
   padding: 0;
-  background: transparent !important;
-  color: #e2e8f0;
+  background: transparent;
+  color: var(--code-panel-text);
   font-family: 'Courier New', monospace;
   font-size: 0.875rem;
   line-height: 1.6;
@@ -2533,9 +2525,9 @@ h1 {
 }
 
 .code-animation-content .code-line {
-  color: #e2e8f0;
+  color: var(--code-panel-text);
   display: block;
-  background: transparent !important;
+  background: transparent;
   margin: 0;
   padding: 0;
 }
@@ -2550,49 +2542,49 @@ h1 {
   margin-left: 2px;
 }
 
-/* Syntax highlighting colors */
+/* Syntax highlighting colors - theme-aware */
 .code-animation-content .keyword {
   color: #c792ea; /* Purple for keywords */
-  background: transparent !important;
+  background: transparent;
 }
 
 .code-animation-content .string {
   color: #c3e88d; /* Green for strings */
-  background: transparent !important;
+  background: transparent;
 }
 
 .code-animation-content .comment {
   color: #546e7a; /* Gray for comments */
-  background: transparent !important;
+  background: transparent;
 }
 
 .code-animation-content .function {
   color: #82aaff; /* Blue for functions */
-  background: transparent !important;
+  background: transparent;
 }
 
 .code-animation-content .number {
   color: #f78c6c; /* Orange for numbers */
-  background: transparent !important;
+  background: transparent;
 }
 
 .code-animation-content .operator {
   color: #89ddff; /* Cyan for operators */
-  background: transparent !important;
+  background: transparent;
 }
 
 .code-animation-content .bracket {
   color: #ffcb6b; /* Yellow for brackets */
-  background: transparent !important;
+  background: transparent;
 }
 
 .code-animation-content .variable {
-  color: #eeffff; /* White for variables */
-  background: transparent !important;
+  color: var(--code-panel-text);
+  background: transparent;
 }
 
 .code-animation-content span {
-  background: transparent !important;
+  background: transparent;
 }
 
 @keyframes blink {
@@ -4256,18 +4248,7 @@ html[data-theme="dark"] [style*="color:#64748b"] {
    ============================================ */
 
 /* Collapsed sidebar - fix hardcoded dark background and shadow */
-body.dark-mode .collapsed-sidebar,
-html[data-theme="dark"] .collapsed-sidebar {
-  background: var(--bg-secondary) !important; /* Use dark mode variable instead of #222c3e */
-  box-shadow: none !important; /* Remove shadow that creates extra bar */
-  border-right: 1px solid var(--border-color) !important; /* Add subtle border instead of shadow */
-}
-
-body.dark-mode .conversation-sidebar,
-html[data-theme="dark"] .conversation-sidebar {
-  background: var(--bg-secondary) !important; /* Use dark mode variable instead of #222c3e */
-  border-right: 1px solid var(--border-color) !important; /* Use dark mode border color */
-}
+/* Dark mode sidebar styles handled by CSS variables - no overrides needed */
 
 body.dark-mode .sidebar-header,
 html[data-theme="dark"] .sidebar-header {
