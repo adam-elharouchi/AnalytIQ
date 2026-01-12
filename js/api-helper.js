@@ -11,7 +11,8 @@ function getCurrentUserId() {
 }
 
 // Conversation API functions
-const conversationAPI = {
+if (typeof window.conversationAPI === 'undefined') {
+  window.conversationAPI = {
     async getAll(archived = false) {
         const userId = getCurrentUserId();
         if (!userId) return [];
@@ -100,10 +101,12 @@ const conversationAPI = {
         }
         return false;
     }
-};
+  };
+}
 
 // AI Agent API functions
-const aiAgentAPI = {
+if (typeof window.aiAgentAPI === 'undefined') {
+  window.aiAgentAPI = {
     async getDigest() {
         const userId = getCurrentUserId();
         if (!userId) return { goal: '', constraints: '', decisions: '', current_state: '', open_questions: '' };
@@ -174,10 +177,12 @@ const aiAgentAPI = {
         }
         return false;
     }
-};
+  };
+}
 
 // Preferences API functions
-const preferencesAPI = {
+if (typeof window.preferencesAPI === 'undefined') {
+  window.preferencesAPI = {
     async get() {
         const userId = getCurrentUserId();
         if (!userId) return { currentLanguage: 'python', geminiModel: 'gemini-2.5-flash', aiProvider: 'gemini' };
@@ -212,5 +217,6 @@ const preferencesAPI = {
         }
         return false;
     }
-};
+  };
+}
 

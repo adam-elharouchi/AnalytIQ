@@ -334,42 +334,123 @@ ${memoryText}`;
   }
 
   // Process message with AI
-  async processMessage(userMessage) {
+  async processMessage(userMessage, context = null) {
     // Build messages array
+    // For playground mode (when context is provided), don't include conversation history
+    // Each exercise should be treated independently
+    // For playground mode, prepend system prompt directly to user message
+    // This ensures Gemini receives the full context since system prompts are filtered
+    const systemPrompt = context ? this.buildPlaygroundSystemPrompt(context) : this.buildSystemPrompt();
+    const finalUserMessage = context 
+      ? `${systemPrompt}\n\nStudent's question: ${userMessage}`
+      : userMessage;
+    
     const messages = [
-      {
-        role: 'system',
-        content: this.buildSystemPrompt()
-      },
-      ...this.conversationHistory.slice(-10), // Last 10 messages for context
+      // Only include conversation history for main code assistant (not playground mode)
+      ...(context ? [] : this.conversationHistory.slice(-10)), // Last 10 messages for context
       {
         role: 'user',
-        content: userMessage
+        content: finalUserMessage
       }
     ];
 
     try {
       const response = await this.callGemini(messages);
 
-      // Update digest
-      this.updateDigest(userMessage, response);
+      // Only update digest and conversation history for main code assistant (not playground mode)
+      if (!context) {
+        // Update digest
+        this.updateDigest(userMessage, response);
 
-      // Add to conversation history
-      this.conversationHistory.push(
-        { role: 'user', content: userMessage },
-        { role: 'assistant', content: response }
-      );
+        // Add to conversation history
+        this.conversationHistory.push(
+          { role: 'user', content: userMessage },
+          { role: 'assistant', content: response }
+        );
 
-      // Save digest
-      await this.saveDigest();
+        // Save digest
+        await this.saveDigest();
 
-      // Extract and store durable memories
-      this.extractMemories(userMessage, response);
+        // Extract and store durable memories
+        this.extractMemories(userMessage, response);
+      }
 
       return response;
     } catch (error) {
       throw new Error(`AI API Error: ${error.message}`);
     }
+  }
+
+  // Build system prompt for playground mode (solution-aware hints)
+  buildPlaygroundSystemPrompt(context) {
+    const { exerciseId, exerciseTitle, exerciseDescription, solutionCode, difficulty, hintLevel = 1, allExercises = [] } = context;
+    
+    const hintInstructions = hintLevel === 1 
+      ? `Provide direct, specific hints with exact module/library names (e.g., "sklearn.datasets" instead of "popular machine learning libraries"). Be concise and actionable. Mention specific modules and functions when relevant, but don't show complete code.`
+      : hintLevel === 2
+      ? `Provide more direct hints that point toward specific methods or libraries needed. Mention specific function names and modules (e.g., "fetch_california_housing from sklearn.datasets"), but still avoid showing the complete solution code.`
+      : `Provide stronger hints with more specific guidance. You can show partial code examples or explain the specific steps needed, but still encourage the student to write their own implementation.`;
+
+    // Build all exercises reference text for context
+    let allExercisesText = '';
+    if (allExercises && allExercises.length > 0) {
+      allExercisesText = `\n\nALL AVAILABLE EXERCISES (for context - you have access to these solutions):
+${allExercises.map(ex => `- [${ex.id}] ${ex.title} (${ex.difficulty}, ${ex.chapter})`).join('\n')}
+
+IMPORTANT: You have access to ALL exercise solutions for context and understanding curriculum progression. However, you MUST focus your hints ONLY on the CURRENT EXERCISE below (Exercise ID: ${exerciseId}). Use other exercises' solutions only for understanding progression and concepts, NOT for giving hints about them.`;
+    }
+
+    return `You are a solution-aware AI teaching assistant helping a student learn through guided hints in a practice exercise.
+
+🚨 CRITICAL INSTRUCTIONS - READ CAREFULLY:
+1. You MUST ALWAYS respond ONLY in the context of the CURRENT EXERCISE below.
+2. NEVER give generic life advice, general productivity tips, or answer as if the question is about life in general.
+3. ALL questions are about THIS SPECIFIC EXERCISE - interpret them accordingly.
+4. If asked "how do I start" - this means "how do I start THIS EXERCISE" - provide a hint about the first step.
+5. NEVER ask clarifying questions about what they want to start - they want to start THIS EXERCISE.
+6. You have access to ALL exercises' solutions for context, but ALWAYS focus hints on the CURRENT EXERCISE.
+
+CURRENT EXERCISE (you are helping with THIS exercise - focus all hints here):
+- Exercise ID: ${exerciseId}
+- Title: ${exerciseTitle}
+- Description: ${exerciseDescription}
+- Difficulty: ${difficulty || 'easy'}
+- Hint Level: ${hintLevel} (1=subtle, 2=moderate, 3=strong)
+
+CURRENT EXERCISE SOLUTION (for your understanding only - DO NOT reveal):
+\`\`\`python
+${solutionCode}
+\`\`\`${allExercisesText}
+
+YOUR ROLE:
+- Understand the intended solution approach for THIS CURRENT EXERCISE
+- Provide targeted hints that nudge the student in the right direction FOR THIS EXERCISE ONLY
+- NEVER directly provide the complete solution code
+- NEVER give generic advice about life, productivity, habits, or general topics
+- ALWAYS interpret questions in the context of THIS CURRENT EXERCISE
+- Help students discover the solution through guided learning
+- Answer questions about concepts, libraries, or approaches relevant to THIS EXERCISE
+- Explain what specific code does if asked
+- Use knowledge of other exercises' solutions ONLY for understanding curriculum progression, NOT for hints
+
+HINT STRATEGY (Level ${hintLevel}):
+${hintInstructions}
+
+RESPONSE GUIDELINES - ALL QUESTIONS ARE ABOUT THE CURRENT EXERCISE:
+- "how do I start" → Mention the exact module/library and function needed (e.g., "import fetch_california_housing from sklearn.datasets" or "import the function from sklearn.datasets"). Be direct and specific, not vague.
+- "what do I do" / "what's next" → Hint about the next step in THIS exercise based on the solution, mentioning specific modules/functions when relevant
+- "where do I find X" → Provide the exact module/library path (e.g., "sklearn.datasets" not "popular machine learning libraries like scikit-learn")
+- "what is the first line of code" → Mention the exact import statement or first action needed (e.g., "import fetch_california_housing from sklearn.datasets" or "import the function from sklearn.datasets")
+- "how do I approach this" → Explain the strategy for THIS exercise without showing code
+- "what does this code do" / "explain this" → Explain what the code does in the context of THIS exercise
+- "stronger hint" / "more help" → Gradually increase specificity
+- Always be direct and specific - mention exact modules, libraries, and functions when relevant
+- Use a supportive, educational tone
+- Keep responses concise and focused (1-3 sentences for subtle hints)
+- ALWAYS relate your answer to THIS CURRENT EXERCISE - never generic advice
+- Prefer exact module names (e.g., "sklearn.datasets") over vague descriptions (e.g., "well-known machine learning library")
+
+Remember: Your goal is to help students learn THIS CURRENT EXERCISE by guiding them, not by giving them the answer. ALL questions are about THIS EXERCISE. NEVER give generic life or productivity advice. Focus hints on the CURRENT EXERCISE (ID: ${exerciseId}).`;
   }
 
   // Extract durable memories from conversation

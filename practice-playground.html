@@ -490,58 +490,41 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      background: #f8fafc;
+      background: var(--bg-primary);
       min-height: 0;
     }
     
-    .chat-messages-container {
+    /* Use exact same styling as main code assistant */
+    .chat-widget-container .chat-messages {
       flex: 1;
       overflow-y: auto;
-      padding: 1rem;
+      overflow-x: hidden;
+      padding: 2rem;
       display: flex;
       flex-direction: column;
       gap: 1.5rem;
+      background: var(--bg-primary);
       min-height: 0;
+      align-items: flex-start;
+    }
+    
+    .chat-widget-container .chat-messages::-webkit-scrollbar {
+      width: 8px;
+    }
+    
+    .chat-widget-container .chat-messages::-webkit-scrollbar-track {
       background: var(--bg-primary);
+      border-radius: 4px;
     }
     
-    /* Use same message structure as main code assistant */
-    .chat-messages-container .message {
-      display: flex;
-      gap: 1rem;
-      padding: 1rem;
-      border-radius: 0.75rem;
-      animation: fadeIn 0.3s ease-in;
+    .chat-widget-container .chat-messages::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+      border-radius: 4px;
     }
     
-    .chat-messages-container .user-message {
-      background: var(--bg-primary);
-      color: var(--text-primary);
-      border: 1px solid var(--border-color);
-      max-width: 800px;
-      width: 100%;
-      word-wrap: break-word;
-      overflow-wrap: break-word;
-      margin-left: auto;
-    }
-    
-    .chat-messages-container .assistant-message {
-      background: var(--bg-primary);
-      border: 1px solid var(--border-color);
-      max-width: 800px;
-      width: 100%;
-      word-wrap: break-word;
-      overflow-wrap: break-word;
-      color: var(--text-primary);
-      margin-right: auto;
-    }
-    
-    .chat-messages-container .message-content {
-      flex: 1;
-      word-wrap: break-word;
-      overflow-wrap: break-word;
-      max-width: 100%;
-      color: var(--code-message-text);
+    .chat-widget-container .chat-messages::-webkit-scrollbar-thumb:hover {
+      background: var(--border-color);
+      opacity: 0.8;
     }
     
     
@@ -562,57 +545,36 @@
       }
     }
     
-    .chat-input-container {
+    /* Use same input styling as main code assistant */
+    .chat-widget-container .chat-input-area-fixed {
+      position: relative;
+      bottom: auto;
+      left: auto;
+      right: auto;
+      padding: 0.5rem 1rem;
+      background: transparent;
       border-top: 1px solid var(--border-color);
-      padding: 1rem;
-      background: var(--bg-primary);
+      z-index: 100;
+      box-shadow: none;
+      display: flex;
+      justify-content: center;
+      transition: none;
+    }
+    
+    .chat-widget-container .input-container-compact {
+      width: 100%;
+      max-width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 0.375rem;
+      background: transparent;
+    }
+    
+    .chat-widget-container .input-wrapper {
       display: flex;
       gap: 0.5rem;
-      flex-shrink: 0;
-    }
-    
-    .chat-input-field {
-      flex: 1;
-      padding: 0.75rem 1rem;
-      border: 1px solid var(--border-color);
-      border-radius: 9999px;
-      font-size: 0.875rem;
-      resize: none;
-      background: var(--bg-primary);
-      color: var(--text-primary);
-      min-height: 36px;
-      max-height: 100px;
-      font-family: inherit;
-    }
-    
-    .chat-input-field:focus {
-      outline: none;
-      border-color: #2569f4;
-      box-shadow: 0 0 0 3px rgba(37, 105, 244, 0.1);
-    }
-    
-    .chat-send-button {
-      padding: 0.75rem 1.5rem;
-      background: #2569f4;
-      color: #ffffff;
-      border: none;
-      border-radius: 9999px;
-      cursor: pointer;
-      font-weight: 500;
-      font-size: 0.875rem;
-      transition: background-color 0.2s;
-      white-space: nowrap;
-    }
-    
-    .chat-send-button:hover:not(:disabled) {
-      background: #2569f4;
-      opacity: 0.9;
-    }
-    
-    .chat-send-button:disabled {
-      background: var(--text-secondary);
-      cursor: not-allowed;
-      opacity: 0.6;
+      align-items: stretch;
+      background: transparent;
     }
     
     
@@ -677,23 +639,26 @@
         <button class="chat-modal-close" onclick="toggleChatWidget()">×</button>
       </div>
       <div class="chat-modal-body">
-        <div class="chat-messages-container" id="chatMessagesContainer" style="display: flex; flex-direction: column; gap: 1.5rem; padding: 1rem; overflow-y: auto; flex: 1; min-height: 0;">
+        <div class="chat-messages" id="chatMessagesContainer">
           <div class="welcome-section" id="playgroundWelcomeSection">
             <div class="welcome-message">
               <p>Hello! I'm your Code Assistant. I can help you with questions about this exercise, explain concepts, provide hints, and assist with your code.</p>
             </div>
           </div>
         </div>
-        <div class="chat-input-container" style="padding: 1rem; border-top: 1px solid var(--border-color); display: flex; gap: 0.5rem; align-items: flex-end;">
-          <textarea 
-            class="chat-input-field" 
-            id="chatInputField" 
-            placeholder="Type your message, paste code, or describe what you need..."
-            rows="2"
-            onkeydown="handleChatInputKeydown(event)"
-            style="flex: 1; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 0.5rem; resize: none; min-height: 40px; max-height: 120px; font-family: inherit;"
-          ></textarea>
-          <button class="chat-send-button" id="chatSendButton" onclick="sendPlaygroundChatMessage()" style="padding: 0.75rem 1.5rem; background: #2569f4; color: #ffffff; border: none; border-radius: 0.5rem; cursor: pointer; font-weight: 500;">Send</button>
+        <div class="chat-input-area-fixed" style="position: relative; bottom: auto; left: auto; right: auto; padding: 0.5rem 1rem; border-top: 1px solid var(--border-color);">
+          <div class="input-container-compact">
+            <div class="input-wrapper">
+              <textarea 
+                class="chat-input-compact" 
+                id="chatInputField" 
+                placeholder="Type your message, paste code, or describe what you need..."
+                rows="2"
+                onkeydown="handleChatInputKeydown(event)"
+              ></textarea>
+              <button class="btn-send-compact" id="chatSendButton" onclick="sendPlaygroundChatMessage()" title="Send message">Send</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -774,6 +739,7 @@
   <script src="js/auth.js"></script>
   <script src="js/navigation.js"></script>
   <script src="js/api-helper.js"></script>
+  <script src="js/exercises-database.js"></script>
   <script src="js/ai-agent.js"></script>
   <script src="js/code-assistant.js"></script>
   <script>
@@ -830,6 +796,8 @@
     let startTime = null;
     let timerInterval = null;
     let elapsedSeconds = 0;
+    let hintInteractions = 0; // Track number of assistant interactions
+    let currentHintLevel = 1; // Current hint level (1-3)
     
     function loadExerciseFromURL() {
       const urlParams = new URLSearchParams(window.location.search);
@@ -1002,7 +970,7 @@
       // Calculate accuracy and score
       const comparison = compareCode(userCode, exerciseData.code);
       const accuracy = comparison.accuracy;
-      const score = calculateScore(elapsedSeconds, accuracy);
+      const score = calculateScore(elapsedSeconds, accuracy, hintInteractions);
       
       // Update stats display
       document.getElementById('accuracyDisplay').textContent = `${Math.round(accuracy)}%`;
@@ -1025,10 +993,11 @@
       submitBtn.textContent = 'Submitted';
       
       // Show submission message with score
-      showSubmissionMessage(
-        `Solution submitted! Accuracy: ${Math.round(accuracy)}% | Score: ${score} | Time: ${formatTime(elapsedSeconds)}`,
-        'success'
-      );
+      let submissionMessage = `Solution submitted! Accuracy: ${Math.round(accuracy)}% | Score: ${score} | Time: ${formatTime(elapsedSeconds)}`;
+      if (hintInteractions > 0) {
+        submissionMessage += ` | Hints used: ${hintInteractions}`;
+      }
+      showSubmissionMessage(submissionMessage, 'success');
       
       // Save score to backend
       const saveSuccess = await saveExerciseScore(exerciseData.id, exerciseData.title, score, accuracy, elapsedSeconds);
@@ -1426,7 +1395,7 @@
       return div.innerHTML;
     }
     
-    function calculateScore(timeSeconds, accuracy) {
+    function calculateScore(timeSeconds, accuracy, hintPenalty = 0) {
       // Base score from accuracy (0-70 points)
       // Accuracy is already a percentage (0-100)
       const accuracyScore = Math.max(0, Math.min(70, (accuracy / 100) * 70));
@@ -1444,11 +1413,15 @@
       // Cap time bonus at 30 points
       timeBonus = Math.max(0, Math.min(30, timeBonus));
       
-      // Total score: accuracy (0-70) + time bonus (0-30) = 0-100 points
-      const totalScore = accuracyScore + timeBonus;
+      // Hint penalty: reduce score by 2 points per interaction (max 20 points reduction)
+      const maxHintPenalty = 20;
+      const penalty = Math.min(hintPenalty * 2, maxHintPenalty);
       
-      // Round to nearest integer
-      return Math.round(totalScore);
+      // Total score: accuracy (0-70) + time bonus (0-30) - hint penalty (0-20) = 0-100 points
+      const totalScore = accuracyScore + timeBonus - penalty;
+      
+      // Round to nearest integer, ensure non-negative
+      return Math.max(0, Math.round(totalScore));
     }
     
     function resetCode() {
@@ -1478,13 +1451,17 @@
       document.getElementById('scoreDisplay').textContent = '0';
       document.getElementById('codeEditorTitle').textContent = 'Your Code';
       
+      // Reset hint tracking
+      hintInteractions = 0;
+      currentHintLevel = 1;
+      
       const submitBtn = document.getElementById('submitBtn');
       submitBtn.disabled = false;
       submitBtn.textContent = 'Submit Solution';
       
       const solutionSection = document.getElementById('solutionSection');
       solutionSection.classList.remove('show');
-      solutionSection.style.display = 'block';
+      solutionSection.style.display = 'none';
       
       const submissionMessage = document.getElementById('submissionMessage');
       submissionMessage.classList.remove('show');
@@ -1658,7 +1635,29 @@
           throw new Error('AI agent not available. Please refresh the page.');
         }
         
-        const response = await codeWriterAgent.processMessage(message);
+        // Increment hint interactions
+        hintInteractions++;
+        
+        // Detect if user is asking for a stronger hint
+        const messageLower = message.toLowerCase();
+        if (messageLower.includes('stronger hint') || messageLower.includes('more help') || 
+            messageLower.includes('give me more') || messageLower.includes('need more guidance')) {
+          currentHintLevel = Math.min(currentHintLevel + 1, 3);
+        }
+        
+        // Provide solution-aware context to AI agent
+        // Include all exercises for context, but focus hints on current exercise
+        const playgroundContext = {
+          exerciseId: exerciseData.id,
+          exerciseTitle: exerciseData.title,
+          exerciseDescription: exerciseData.description || generateExerciseDescription(exerciseData.title, exerciseData.difficulty),
+          solutionCode: exerciseData.code,
+          difficulty: exerciseData.difficulty,
+          hintLevel: currentHintLevel,
+          allExercises: typeof ALL_EXERCISES !== 'undefined' ? ALL_EXERCISES : []
+        };
+        
+        const response = await codeWriterAgent.processMessage(message, playgroundContext);
         
         removePlaygroundLoadingMessage(loadingId);
         addPlaygroundMessage('assistant', response);
