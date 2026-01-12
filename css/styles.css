@@ -1541,7 +1541,7 @@ html[data-theme="dark"] .message-content pre code {
   left: 60px;
   right: 0;
   padding: 0.5rem 1rem;
-  background: transparent;
+  background: #222c3e;
   border-top: none;
   z-index: 100;
   box-shadow: none;
@@ -1560,6 +1560,7 @@ html[data-theme="dark"] .message-content pre code {
   display: flex;
   flex-direction: column;
   gap: 0.375rem;
+  background: #222c3e;
 }
 
 /* chat-main-area padding handled in main definition above */
@@ -1572,7 +1573,7 @@ html[data-theme="dark"] .message-content pre code {
   align-items: center;
   justify-content: center;
   flex-wrap: nowrap;
-  background: transparent;
+  background: #222c3e;
   border: none;
   padding: 0.5rem 0;
   width: 100%;
@@ -1636,7 +1637,7 @@ html[data-theme="dark"] .message-content pre code {
 .oval-btn span {
   pointer-events: none;
   z-index: 1;
-  color: var(--text-primary);
+  color: #ffffff;
 }
 
 .file-upload-chat-btn-compact input[type="file"] {
@@ -1645,12 +1646,12 @@ html[data-theme="dark"] .message-content pre code {
 
 .icon-text {
   font-size: 0.75rem;
-  color: var(--text-secondary);
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .file-upload-chat-btn-compact:hover .icon-text,
 .btn-clear-compact:hover .icon-text {
-  color: var(--text-primary);
+  color: #ffffff;
 }
 
 .btn-clear-compact {
@@ -1674,6 +1675,7 @@ html[data-theme="dark"] .message-content pre code {
   display: flex;
   gap: 0.5rem;
   align-items: stretch;
+  background: #222c3e;
 }
 
 .chat-input-compact {
@@ -1686,24 +1688,30 @@ html[data-theme="dark"] .message-content pre code {
   resize: none;
   min-height: 40px;
   max-height: 120px;
-  background: var(--bg-primary);
-  color: var(--text-primary);
+  background: #222c3e;
+  color: #ffffff;
   line-height: 1.5;
   box-sizing: border-box;
   text-align: left;
   overflow-y: auto;
 }
 
+.chat-input-compact::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
 .chat-input-compact:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.1);
+  box-shadow: 0 0 0 2px rgba(37, 105, 244, 0.2);
+  background: #222c3e;
+  color: #ffffff;
 }
 
 .btn-send-compact {
   padding: 0.25rem 0.75rem;
-  background: var(--bg-secondary);
-  color: var(--text-primary);
+  background: #222c3e;
+  color: #ffffff;
   border: 1px solid var(--border-color);
   border-radius: 9999px;
   font-size: 0.8125rem;
@@ -1720,8 +1728,9 @@ html[data-theme="dark"] .message-content pre code {
 }
 
 .btn-send-compact:hover {
-  background: var(--bg-card);
+  background: #222c3e;
   border-color: var(--border-color);
+  color: #ffffff;
 }
 
 .btn-send-compact:disabled {
@@ -2480,6 +2489,14 @@ html[data-theme="dark"] .message-content pre code {
   min-height: 0;
   height: 100%;
   box-sizing: border-box;
+}
+
+/* Dark mode - remove white background from code animation */
+body.dark-mode .code-animation-container,
+html[data-theme="dark"] .code-animation-container {
+  background: transparent !important;
+  border-color: var(--border-color) !important;
+  box-shadow: none !important;
 }
 
 .code-animation-header {
@@ -4047,11 +4064,32 @@ html[data-theme="dark"] .btn-primary:hover {
 }
 
 /* Code animation container - fix dark background */
-/* .code-animation-content uses --code-panel-bg variable, no override needed */
+body.dark-mode .code-animation-container,
+html[data-theme="dark"] .code-animation-container {
+  background: transparent !important;
+  border-color: var(--border-color) !important;
+}
+
+body.dark-mode .code-animation-content,
+html[data-theme="dark"] .code-animation-content {
+  background: transparent !important;
+}
+
+body.dark-mode .code-animation-content pre,
+html[data-theme="dark"] .code-animation-content pre {
+  background: transparent !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .code-animation-content .code-line,
+html[data-theme="dark"] .code-animation-content .code-line {
+  background: transparent !important;
+  color: #ffffff !important;
+}
 
 body.dark-mode .code-animation-header,
 html[data-theme="dark"] .code-animation-header {
-  background: var(--bg-secondary) !important;
+  background: transparent !important;
   border-bottom-color: var(--border-color) !important;
 }
 
@@ -4285,20 +4323,20 @@ html[data-theme="dark"] .sidebar-header h3 {
 /* Fix chat input area - ensure no extra borders or bars */
 body.dark-mode .chat-input-area-fixed,
 html[data-theme="dark"] .chat-input-area-fixed {
-  background: var(--bg-primary) !important; /* Match main background */
+  background: #222c3e !important;
   border-top: none !important;
   box-shadow: none !important; /* Remove shadow that creates extra bar */
 }
 
 body.dark-mode .input-container-compact,
 html[data-theme="dark"] .input-container-compact {
-  background: transparent !important;
+  background: #222c3e !important;
 }
 
 /* Ensure input wrapper has proper dark mode styling */
 body.dark-mode .input-wrapper,
 html[data-theme="dark"] .input-wrapper {
-  background: var(--bg-card) !important;
+  background: #222c3e !important;
   border: 1px solid var(--border-color) !important;
   border-radius: 0.5rem !important;
 }
@@ -4442,23 +4480,31 @@ html[data-theme="dark"] .total-progress-section span {
 }
 
 
+body.dark-mode .chat-input-compact,
+html[data-theme="dark"] .chat-input-compact {
+  background: #222c3e !important;
+  color: #ffffff !important;
+}
+
 body.dark-mode .chat-input-compact:focus,
 html[data-theme="dark"] .chat-input-compact:focus {
   border-color: #2569f4 !important;
-  background: var(--bg-card) !important;
+  background: #222c3e !important;
+  color: #ffffff !important;
   box-shadow: 0 0 0 2px rgba(37, 105, 244, 0.2) !important;
 }
 
 body.dark-mode .chat-input-compact::placeholder,
 html[data-theme="dark"] .chat-input-compact::placeholder {
-  color: var(--text-secondary) !important;
+  color: rgba(255, 255, 255, 0.6) !important;
 }
 
 body.dark-mode .btn-send-compact,
 body.dark-mode .btn-send-compact:hover,
 html[data-theme="dark"] .btn-send-compact,
 html[data-theme="dark"] .btn-send-compact:hover {
-  background: #2569f4 !important;
+  background: #222c3e !important;
+  color: #ffffff !important;
 }
 
 body.dark-mode .oval-select,
