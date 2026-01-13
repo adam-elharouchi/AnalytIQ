@@ -101,7 +101,7 @@ if (typeof window.conversationAPI === 'undefined') {
         }
         return false;
     }
-  };
+};
 }
 
 // AI Agent API functions
@@ -177,7 +177,7 @@ if (typeof window.aiAgentAPI === 'undefined') {
         }
         return false;
     }
-  };
+};
 }
 
 // Preferences API functions
@@ -217,6 +217,6 @@ if (typeof window.preferencesAPI === 'undefined') {
         }
         return false;
     }
-  };
+};
 }
 

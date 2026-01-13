@@ -359,20 +359,20 @@ ${memoryText}`;
 
       // Only update digest and conversation history for main code assistant (not playground mode)
       if (!context) {
-        // Update digest
-        this.updateDigest(userMessage, response);
+      // Update digest
+      this.updateDigest(userMessage, response);
 
-        // Add to conversation history
-        this.conversationHistory.push(
-          { role: 'user', content: userMessage },
-          { role: 'assistant', content: response }
-        );
+      // Add to conversation history
+      this.conversationHistory.push(
+        { role: 'user', content: userMessage },
+        { role: 'assistant', content: response }
+      );
 
-        // Save digest
-        await this.saveDigest();
+      // Save digest
+      await this.saveDigest();
 
-        // Extract and store durable memories
-        this.extractMemories(userMessage, response);
+      // Extract and store durable memories
+      this.extractMemories(userMessage, response);
       }
 
       return response;
