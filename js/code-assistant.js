@@ -2166,16 +2166,16 @@ document.addEventListener('DOMContentLoaded', function() {
   // Hide conversation starters after first message
   const chatMessages = document.getElementById('chatMessages');
   if (chatMessages) {
-    const observer = new MutationObserver(function(mutations) {
-      const messages = chatMessages.querySelectorAll('.message');
-      if (messages.length > 0) { // Any message sent
-        const starters = document.getElementById('conversationStarters');
-        if (starters && starters.style.display !== 'none') {
-          starters.style.display = 'none';
-        }
+  const observer = new MutationObserver(function(mutations) {
+    const messages = chatMessages.querySelectorAll('.message');
+    if (messages.length > 0) { // Any message sent
+      const starters = document.getElementById('conversationStarters');
+      if (starters && starters.style.display !== 'none') {
+        starters.style.display = 'none';
       }
-    });
-    
-    observer.observe(chatMessages, { childList: true });
+    }
+  });
+  
+  observer.observe(chatMessages, { childList: true });
   }
 });
