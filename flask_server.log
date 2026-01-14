@@ -1,0 +1,72 @@
+Warning: PDF processor not available. PDF uploads will not work.
+Starting Flask server on port 5001...
+Debug mode: False
+API base URL: http://localhost:5001/api
+Health check: http://localhost:5001/api/health
+ * Serving Flask app 'app'
+ * Debug mode: off
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+[33mPress CTRL+C to quit[0m
+127.0.0.1 - - [13/Jan/2026 18:52:13] "[35m[1mPOST /api/users/signup HTTP/1.1[0m" 201 -
+127.0.0.1 - - [13/Jan/2026 18:52:20] "[35m[1mPOST /api/users/signup HTTP/1.1[0m" 201 -
+127.0.0.1 - - [13/Jan/2026 18:52:21] "GET /api/health HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 18:53:14] "OPTIONS /api/users/signup HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 18:53:16] "[35m[1mPOST /api/users/signup HTTP/1.1[0m" 201 -
+127.0.0.1 - - [13/Jan/2026 18:53:20] "GET /api/classes?user_id=1768348395814 HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 18:53:43] "GET /api/classes?user_id=1768348395814 HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 18:54:01] "OPTIONS /api/classes HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 18:54:03] "[35m[1mPOST /api/classes HTTP/1.1[0m" 201 -
+127.0.0.1 - - [13/Jan/2026 18:54:04] "GET /api/classes?user_id=1768348395814 HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 18:54:08] "GET /api/classes?user_id=1768348395814 HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 18:54:15] "[35m[1mPOST /api/classes HTTP/1.1[0m" 201 -
+127.0.0.1 - - [13/Jan/2026 18:54:17] "GET /api/classes?user_id=1768348395814 HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 18:54:22] "GET /api/classes?user_id=1768348395814 HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 18:54:27] "GET /api/classes/JPP210?user_id=1768348395814 HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 18:54:29] "GET /api/classes/JPP210/chapters?user_id=1768348395814 HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 18:55:06] "GET /api/exercises/progress?user_id=1768348395814 HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 18:55:06] "GET /api/leaderboard/grand?limit=10 HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 18:55:11] "GET /api/leaderboard/grand?limit=10 HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 18:55:11] "GET /api/exercises/progress?user_id=1768348395814 HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 18:55:16] "GET /api/exercises/progress?user_id=1768348395814 HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 18:55:16] "GET /api/leaderboard/grand?limit=10 HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 18:55:17] "GET /api/classes?user_id=1768348395814 HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 18:55:21] "GET /api/classes?user_id=1768348395814 HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 18:57:54] "GET /api/leaderboard/grand?limit=10 HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 18:57:54] "GET /api/exercises/progress?user_id=1768348395814 HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 18:57:59] "GET /api/leaderboard/grand?limit=10 HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 18:57:59] "GET /api/exercises/progress?user_id=1768348395814 HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 18:58:03] "GET /api/exercises/progress?user_id=1768348395814 HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 18:58:03] "GET /api/leaderboard/grand?limit=10 HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 18:58:03] "GET /api/classes?user_id=1768348395814 HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 18:58:11] "[35m[1mPOST /api/users/signup HTTP/1.1[0m" 201 -
+127.0.0.1 - - [13/Jan/2026 18:58:15] "GET /api/users/profile?user_id=1768348395814 HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 18:58:16] "GET /api/users/settings?user_id=1768348395814 HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 18:58:20] "GET /api/classes?user_id=1768348395814 HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 18:58:21] "GET /api/exercises/progress?user_id=1768348395814 HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 18:58:21] "GET /api/leaderboard/grand?limit=10 HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 18:58:23] "GET /api/classes?user_id=1768348395814 HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 18:58:46] "[31m[1mPOST /api/classes/enroll HTTP/1.1[0m" 400 -
+127.0.0.1 - - [13/Jan/2026 18:58:50] "GET /api/classes/enrolled?user_id=1768348690433 HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 18:59:13] "[35m[1mPOST /api/classes/enroll HTTP/1.1[0m" 201 -
+127.0.0.1 - - [13/Jan/2026 18:59:16] "GET /api/classes/enrolled?user_id=1768348690433 HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 19:00:09] "[35m[1mPOST /api/users/signup HTTP/1.1[0m" 201 -
+127.0.0.1 - - [13/Jan/2026 19:00:20] "GET /api/classes/enrolled?user_id=1768348808720 HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 19:01:03] "[35m[1mPOST /api/users/signin HTTP/1.1[0m" 500 -
+127.0.0.1 - - [13/Jan/2026 19:01:03] "[31m[1mGET /api/classes/enrolled?user_id= HTTP/1.1[0m" 400 -
+127.0.0.1 - - [13/Jan/2026 19:01:17] "OPTIONS /api/classes/enroll HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 19:01:18] "[35m[1mPOST /api/classes/enroll HTTP/1.1[0m" 201 -
+127.0.0.1 - - [13/Jan/2026 19:01:19] "GET /api/classes/enrolled?user_id=1768348808720 HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 19:01:29] "GET /api/classes/VJC588?user_id=1768348808720 HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 19:01:30] "GET /api/classes/VJC588/chapters?user_id=1768348808720 HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 19:01:41] "GET /api/classes/enrolled?user_id=1768348808720 HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 19:01:45] "GET /api/exercises/progress?user_id=1768348808720 HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 19:01:45] "GET /api/leaderboard/grand?limit=10 HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 19:01:45] "OPTIONS /api/users/preferences HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 19:01:46] "[35m[1mPUT /api/users/preferences HTTP/1.1[0m" 500 -
+127.0.0.1 - - [13/Jan/2026 19:01:46] "GET /api/users/conversations?user_id=1768348808720&archived=false HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 19:01:46] "GET /api/users/preferences?user_id=1768348808720 HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 19:01:47] "[35m[1mPUT /api/users/preferences HTTP/1.1[0m" 500 -
+127.0.0.1 - - [13/Jan/2026 19:01:47] "[35m[1mPUT /api/users/preferences HTTP/1.1[0m" 500 -
+127.0.0.1 - - [13/Jan/2026 19:01:47] "GET /api/users/ai-digest?user_id=1768348808720 HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jan/2026 19:01:47] "GET /api/users/conversations?user_id=1768348808720&archived=true HTTP/1.1" 200 -
