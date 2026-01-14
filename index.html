@@ -73,6 +73,16 @@
       if (!authManager.requireAuth()) {
         return; // Will redirect to login
       }
+      
+      // Optional: Check if user should be redirected to their role-specific dashboard
+      // Uncomment the following code if you want automatic redirection from home page
+      /*
+      const currentUser = authManager.getCurrentUser();
+      if (currentUser && currentUser.role === 'professor') {
+        // Optionally redirect professors to their dashboard
+        // window.location.href = 'professor-dashboard.html';
+      }
+      */
     });
   </script>
 </body>

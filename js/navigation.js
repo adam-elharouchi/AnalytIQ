@@ -15,6 +15,8 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   const isAuthenticated = currentUser !== null;
+  const userRole = currentUser?.role || 'student';
+  const isProfessor = userRole === 'professor';
   
   // Build user menu
   let userMenu = '';
@@ -53,6 +55,16 @@ document.addEventListener('DOMContentLoaded', function() {
     `;
   }
   
+  // Build role-based navigation links
+  let roleLinks = '';
+  if (isAuthenticated) {
+    if (isProfessor) {
+      roleLinks = `<li><a href="professor-dashboard.html" ${currentPage === 'professor-dashboard.html' || currentPage === 'professor-class.html' ? 'class="active"' : ''}>Dashboard</a></li>`;
+    } else {
+      roleLinks = `<li><a href="student-classes.html" ${currentPage === 'student-classes.html' || currentPage === 'student-class.html' ? 'class="active"' : ''}>My Classes</a></li>`;
+    }
+  }
+  
   const navHTML = `
     <div class="nav-container">
       <a href="index.html" class="nav-brand">
@@ -61,6 +73,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">☰</button>
       <ul class="nav-links" id="navLinks">
         <li><a href="index.html" ${currentPage === 'index.html' ? 'class="active"' : ''}>Home</a></li>
+        ${roleLinks}
         <li><a href="modules.html" ${currentPage === 'modules.html' ? 'class="active"' : ''}>Modules</a></li>
         <li><a href="practice.html" ${currentPage === 'practice.html' ? 'class="active"' : ''}>Practice</a></li>
         <li><a href="resources.html" ${currentPage === 'resources.html' ? 'class="active"' : ''}>Resources</a></li>
