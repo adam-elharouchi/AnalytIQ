@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Class - AnalytIQ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <script src="js/api-helper.js"></script>
+</head>
+<body>
+  <nav class="navbar" id="navbar"></nav>
+  
+  <main class="container">
+    <!-- Back Button -->
+    <div style="margin-bottom: 1rem;">
+      <a href="student-classes.html" style="color: #2569f4; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;">
+        <span>←</span>
+        <span>Back to My Classes</span>
+      </a>
+    </div>
+    
+    <!-- Loading State -->
+    <div id="loadingState" style="text-align: center; padding: 3rem;">
+      <p style="color: #64748b;">Loading class details...</p>
+    </div>
+    
+    <!-- Class Header -->
+    <div id="classHeader" style="display: none; margin-bottom: 2rem;">
+      <div style="margin-bottom: 1rem;">
+        <h1 id="className" style="margin-bottom: 0.5rem; color: #222c3e;"></h1>
+        <p id="classDescription" style="color: #64748b; margin-bottom: 0.5rem;"></p>
+        <p style="color: #64748b; font-size: 0.875rem;">
+          <strong>Professor:</strong> <span id="professorName"></span>
+        </p>
+      </div>
+      
+      <!-- Class Stats -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-top: 1.5rem; padding: 1.5rem; background: #f8fafc; border-radius: 0.5rem;">
+        <div>
+          <div style="font-size: 2rem; font-weight: 600; color: #2569f4;" id="chapterCountStat">0</div>
+          <div style="font-size: 0.875rem; color: #64748b;">Chapters</div>
+        </div>
+        <div>
+          <div style="font-size: 2rem; font-weight: 600; color: #2569f4;" id="exerciseCountStat">0</div>
+          <div style="font-size: 0.875rem; color: #64748b;">Exercises</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Chapters List -->
+    <div id="chaptersContainer" style="display: none;">
+      <h2 style="margin-bottom: 1.5rem; color: #222c3e;">Chapters</h2>
+      
+      <div id="chaptersList">
+        <div style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem;">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">📄</div>
+          <p style="color: #64748b;">No chapters available yet.</p>
+        </div>
+      </div>
+    </div>
+  </main>
+  
+  <script src="js/auth.js"></script>
+  <script src="js/navigation.js"></script>
+  <script src="js/student-class.js"></script>
+  <script>
+    // Require authentication
+    document.addEventListener('DOMContentLoaded', function() {
+      const authManager = new AuthManager();
+      if (!authManager.requireAuth()) {
+        return; // Will redirect to login
+      }
+      
+      // Get class_id from URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const classId = urlParams.get('class_id');
+      
+      if (!classId) {
+        alert('Class ID is required');
+        window.location.href = 'student-classes.html';
+        return;
+      }
+      
+      // Load class data
+      loadClassData(classId);
+    });
+  </script>
+</body>
+</html>
