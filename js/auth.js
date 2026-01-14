@@ -1,10 +1,7 @@
 // Authentication System
 // API_BASE_URL should be defined in api-helper.js
 if (typeof window.API_BASE_URL === 'undefined') {
-  // Use localhost for local testing, production URL for deployed version
-  window.API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-    ? 'http://localhost:5001/api' 
-    : 'https://analytiq-qbfr.onrender.com/api';
+  window.API_BASE_URL = 'https://analytiq-qbfr.onrender.com/api';
 }
 
 class AuthManager {
@@ -56,8 +53,7 @@ class AuthManager {
         id: userId,  // Store as 'id' for compatibility with existing code
         user_id: userId,  // Also store as 'user_id' for clarity
         name: data.name || data.user?.name || name,
-        email: data.email || data.user?.email || email,
-        role: data.role || 'student'  // Store role
+        email: data.email || data.user?.email || email
       };
       
       this.saveUser(userData);
@@ -104,8 +100,7 @@ class AuthManager {
         id: userId,  // Store as 'id' for compatibility with existing code
         user_id: userId,  // Also store as 'user_id' for clarity
         name: data.name || data.user?.name,
-        email: data.email || data.user?.email,
-        role: data.role || 'student'  // Store role
+        email: data.email || data.user?.email
       };
       
       this.saveUser(userData);
@@ -154,14 +149,9 @@ async function handleSignIn(event) {
   const errorDiv = document.getElementById('signinError');
 
   try {
-    const user = await authManager.signIn(email, password);
-    // Redirect based on role
-    const role = user?.role || 'student';
-    if (role === 'professor') {
-      window.location.href = 'professor-dashboard.html';
-    } else {
-      window.location.href = 'index.html';
-    }
+    await authManager.signIn(email, password);
+    // Redirect to home page
+    window.location.href = 'index.html';
   } catch (error) {
     errorDiv.textContent = error.message;
     errorDiv.style.display = 'block';
@@ -208,16 +198,11 @@ async function handleSignUp(event) {
     submitButton.disabled = true;
     submitButton.textContent = 'Creating account...';
 
-    const user = await authManager.signUp(name, email, password);
+    await authManager.signUp(name, email, password);
     
-    // Small delay to show notification, then redirect based on role
+    // Small delay to show notification, then redirect
     setTimeout(() => {
-      const role = user?.user?.role || user?.role || 'student';
-      if (role === 'professor') {
-        window.location.href = 'professor-dashboard.html';
-      } else {
-        window.location.href = 'index.html';
-      }
+      window.location.href = 'index.html';
     }, 2000);
   } catch (error) {
     errorDiv.textContent = error.message;

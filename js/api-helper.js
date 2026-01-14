@@ -1,10 +1,7 @@
 // API Helper Functions
 // Declare API_BASE_URL as a global variable - single source of truth
 if (typeof window.API_BASE_URL === 'undefined') {
-  // Use localhost for local testing, production URL for deployed version
-  window.API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-    ? 'http://localhost:5001/api' 
-    : 'https://analytiq-qbfr.onrender.com/api';
+  window.API_BASE_URL = 'https://analytiq-qbfr.onrender.com/api';
 }
 
 // Get current user ID from localStorage
