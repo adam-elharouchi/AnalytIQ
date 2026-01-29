@@ -2697,6 +2697,203 @@ def get_student_progress(student_id):
 # Note: The existing PUT endpoint at /api/users/practice-progress already exists
 # We'll update it to also store class_id and class_exercise_id when provided
 
+# ============================================================================
+# Additional Class Endpoints - Leaderboards and Resources
+# ============================================================================
+
+@app.route('/api/classes/<class_id>/leaderboard/average', methods=['GET'])
+def get_class_average_leaderboard(class_id):
+    """Get average leaderboard for a class (all students ranked by average score)"""
+    try:
+        user_id = request.args.get('user_id')
+        if not user_id:
+            return jsonify({'error': 'Missing user_id'}), 400
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Verify user is enrolled in the class or is the professor
+        cursor.execute("""
+            SELECT professor_id FROM classes WHERE class_id = %s
+        """, (class_id,))
+        class_data = cursor.fetchone()
+        
+        if not class_data:
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'Class not found'}), 404
+        
+        is_professor = (class_data[0] == user_id)
+        
+        # Check if student is enrolled
+        if not is_professor:
+            cursor.execute("""
+                SELECT 1 FROM class_enrollments 
+                WHERE class_id = %s AND student_id = %s
+            """, (class_id, user_id))
+            if not cursor.fetchone():
+                cursor.close()
+                conn.close()
+                return jsonify({'error': 'Not authorized to view this leaderboard'}), 403
+        
+        # Get average scores for all students in the class
+        cursor.execute("""
+            SELECT 
+                u.user_id,
+                u.name,
+                u.email,
+                COALESCE(AVG(ep.score), 0) as average_score
+            FROM class_enrollments ce
+            JOIN users u ON ce.student_id = u.user_id
+            LEFT JOIN exercise_progress ep ON ep.student_id = u.user_id
+            LEFT JOIN class_exercises ex ON ex.exercise_id = ep.exercise_id AND ex.class_id = %s
+            WHERE ce.class_id = %s
+            GROUP BY u.user_id, u.name, u.email
+            ORDER BY average_score DESC, u.name ASC
+        """, (class_id, class_id))
+        
+        students = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        
+        leaderboard = []
+        for rank, student in enumerate(students, 1):
+            leaderboard.append({
+                'rank': rank,
+                'student_id': student[0],
+                'name': student[1],
+                'email': student[2],
+                'average_score': round(float(student[3]), 1)
+            })
+        
+        return jsonify({'leaderboard': leaderboard}), 200
+        
+    except Exception as e:
+        print(f"Error in get_class_average_leaderboard: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/classes/<class_id>/leaderboard/exercise/<exercise_id>', methods=['GET'])
+def get_exercise_leaderboard_for_class(class_id, exercise_id):
+    """Get leaderboard for a specific exercise in a class"""
+    try:
+        user_id = request.args.get('user_id')
+        if not user_id:
+            return jsonify({'error': 'Missing user_id'}), 400
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Verify user is enrolled in the class or is the professor
+        cursor.execute("""
+            SELECT professor_id FROM classes WHERE class_id = %s
+        """, (class_id,))
+        class_data = cursor.fetchone()
+        
+        if not class_data:
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'Class not found'}), 404
+        
+        is_professor = (class_data[0] == user_id)
+        
+        # Check if student is enrolled
+        if not is_professor:
+            cursor.execute("""
+                SELECT 1 FROM class_enrollments 
+                WHERE class_id = %s AND student_id = %s
+            """, (class_id, user_id))
+            if not cursor.fetchone():
+                cursor.close()
+                conn.close()
+                return jsonify({'error': 'Not authorized to view this leaderboard'}), 403
+        
+        # Get scores for all students for this specific exercise
+        cursor.execute("""
+            SELECT 
+                u.user_id,
+                u.name,
+                u.email,
+                COALESCE(ep.score, 0) as score
+            FROM class_enrollments ce
+            JOIN users u ON ce.student_id = u.user_id
+            LEFT JOIN exercise_progress ep ON ep.student_id = u.user_id AND ep.exercise_id = %s
+            WHERE ce.class_id = %s
+            ORDER BY score DESC, u.name ASC
+        """, (exercise_id, class_id))
+        
+        students = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        
+        leaderboard = []
+        for rank, student in enumerate(students, 1):
+            leaderboard.append({
+                'rank': rank,
+                'student_id': student[0],
+                'name': student[1],
+                'email': student[2],
+                'score': round(float(student[3]), 1)
+            })
+        
+        return jsonify({'leaderboard': leaderboard}), 200
+        
+    except Exception as e:
+        print(f"Error in get_exercise_leaderboard_for_class: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/classes/<class_id>/resources', methods=['GET'])
+def get_class_resources(class_id):
+    """Get all resources for a class"""
+    try:
+        user_id = request.args.get('user_id')
+        if not user_id:
+            return jsonify({'error': 'Missing user_id'}), 400
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Verify user is enrolled in the class or is the professor
+        cursor.execute("""
+            SELECT professor_id FROM classes WHERE class_id = %s
+        """, (class_id,))
+        class_data = cursor.fetchone()
+        
+        if not class_data:
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'Class not found'}), 404
+        
+        is_professor = (class_data[0] == user_id)
+        
+        # Check if student is enrolled
+        if not is_professor:
+            cursor.execute("""
+                SELECT 1 FROM class_enrollments 
+                WHERE class_id = %s AND student_id = %s
+            """, (class_id, user_id))
+            if not cursor.fetchone():
+                cursor.close()
+                conn.close()
+                return jsonify({'error': 'Not authorized to view resources'}), 403
+        
+        # Get all resources for this class
+        # For now, return empty array as resources table doesn't exist yet
+        # This can be extended later when resources feature is implemented
+        cursor.close()
+        conn.close()
+        
+        return jsonify({'all_resources': []}), 200
+        
+    except Exception as e:
+        print(f"Error in get_class_resources: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     import sys
     import os
