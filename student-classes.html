@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>My Classes - AnalytIQ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <script src="js/api-helper.js"></script>
+</head>
+
+<body>
+  <nav class="navbar" id="navbar"></nav>
+
+  <main class="container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+      <div>
+        <h1>My Classes</h1>
+        <p class="subtitle">View your enrolled classes and access learning materials</p>
+      </div>
+      <button class="btn btn-primary" onclick="showJoinClassModal()"
+        style="display: flex; align-items: center; gap: 0.5rem;">
+        <span>➕</span>
+        <span>Join Class</span>
+      </button>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loadingState" style="text-align: center; padding: 3rem;">
+      <p style="color: #64748b;">Loading classes...</p>
+    </div>
+
+    <!-- Empty State -->
+    <div id="emptyState"
+      style="display: none; text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem;">
+      <div style="font-size: 3rem; margin-bottom: 1rem;">📚</div>
+      <h2 style="color: #222c3e; margin-bottom: 0.5rem;">No Classes Yet</h2>
+      <p style="color: #64748b; margin-bottom: 1.5rem;">Join a class using a class code to get started</p>
+      <button class="btn btn-primary" onclick="showJoinClassModal()">Join Your First Class</button>
+    </div>
+
+    <!-- Classes Grid -->
+    <div id="classesGrid"
+      style="display: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem;">
+      <!-- Classes will be dynamically inserted here -->
+    </div>
+
+    <!-- Join Class Modal -->
+    <div id="joinClassModal"
+      style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center;">
+      <div
+        style="background: white; border-radius: 0.5rem; padding: 2rem; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+          <h2 style="margin: 0; color: #222c3e;">Join Class</h2>
+          <button onclick="hideJoinClassModal()"
+            style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b;">&times;</button>
+        </div>
+
+        <form id="joinClassForm" onsubmit="handleJoinClass(event)">
+          <div style="margin-bottom: 1.5rem;">
+            <label for="classCode"
+              style="display: block; margin-bottom: 0.5rem; color: #222c3e; font-weight: 500;">Class Code *</label>
+            <input type="text" id="classCode" required placeholder="e.g., ABCDE12345"
+              style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem; text-transform: uppercase;"
+              maxlength="10" />
+            <p style="margin-top: 0.5rem; color: #64748b; font-size: 0.875rem;">Enter the class code (3-10 characters)
+              provided by your professor</p>
+          </div>
+
+          <div id="joinClassError" class="error-message" style="display: none; margin-bottom: 1rem;"></div>
+
+          <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+            <button type="button" class="btn btn-secondary" onclick="hideJoinClassModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary">Join Class</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/auth.js"></script>
+  <script src="js/navigation.js"></script>
+  <script src="js/student-classes.js"></script>
+  <script>
+    // Require authentication and student role
+    document.addEventListener('DOMContentLoaded', function () {
+      const authManager = new AuthManager();
+      if (!authManager.requireAuth()) {
+        return; // Will redirect to login
+      }
+
+      // Check if user is a student
+      const currentUser = authManager.getCurrentUser();
+      if (!currentUser || currentUser.role === 'professor') {
+        // Allow students, redirect professors to their dashboard
+        if (currentUser && currentUser.role === 'professor') {
+          window.location.href = 'professor-dashboard.html';
+          return;
+        }
+        // For non-professors, allow access (students)
+      }
+
+      // Load classes
+      loadEnrolledClasses();
+    });
+  </script>
+</body>
+
+</html>

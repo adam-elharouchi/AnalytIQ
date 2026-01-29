@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Upload Assistant - AnalytIQ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <script src="js/api-helper.js"></script>
+  <style>
+    .assistant-container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .step-indicator {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 3rem;
+      position: relative;
+    }
+
+    .step-indicator::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: #e2e8f0;
+      z-index: 0;
+      transform: translateY(-50%);
+    }
+
+    .step {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: white;
+      border: 2px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      color: #94a3b8;
+      position: relative;
+      z-index: 1;
+    }
+
+    .step.active {
+      border-color: #2569f4;
+      background: #2569f4;
+      color: white;
+    }
+
+    .step.completed {
+      border-color: #2569f4;
+      background: white;
+      color: #2569f4;
+    }
+
+    .step-label {
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      margin-top: 0.5rem;
+      font-size: 0.875rem;
+      color: #64748b;
+      white-space: nowrap;
+    }
+
+    .step.active .step-label {
+      color: #2569f4;
+      font-weight: 500;
+    }
+
+    .upload-zone {
+      border: 2px dashed #cbd5e1;
+      border-radius: 1rem;
+      padding: 4rem 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: #f8fafc;
+    }
+
+    .upload-zone:hover,
+    .upload-zone.dragover {
+      border-color: #2569f4;
+      background: #eff6ff;
+    }
+
+    .processing-stage {
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.5rem;
+      opacity: 0.5;
+    }
+
+    .processing-stage.active {
+      opacity: 1;
+      border-color: #2569f4;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .processing-stage.completed {
+      opacity: 1;
+      border-color: #10b981;
+      background: #f0fdf4;
+    }
+
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid #e2e8f0;
+      border-top-color: #2569f4;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .exercise-card {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.5rem;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .exercise-card h3 {
+      margin-top: 0;
+      color: #1e293b;
+    }
+
+    .code-preview {
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      font-family: monospace;
+      font-size: 0.875rem;
+      overflow-x: auto;
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+
+<body>
+  <nav class="navbar" id="navbar"></nav>
+
+  <main class="assistant-container">
+    <!-- Header -->
+    <div style="margin-bottom: 2rem;">
+      <a href="#" onclick="goBack()"
+        style="color: #64748b; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+        <span>←</span> Back to Class
+      </a>
+      <h1 style="color: #1e293b; margin-bottom: 0.5rem;">Upload Assistant</h1>
+      <p style="color: #64748b;">Generate coding exercises from your chapter content using AI.</p>
+    </div>
+
+    <!-- Step Indicator -->
+    <div class="step-indicator">
+      <div class="step active" id="step1">
+        1
+        <span class="step-label">Select</span>
+      </div>
+      <div class="step" id="step2">
+        2
+        <span class="step-label">Generate</span>
+      </div>
+      <div class="step" id="step3">
+        3
+        <span class="step-label">Review</span>
+      </div>
+    </div>
+
+    <!-- Step 1: Select Chapter Source -->
+    <div id="uploadView">
+      <!-- Chapter Source Selection -->
+      <div style="margin-bottom: 2rem;">
+        <label
+          style="display: block; margin-bottom: 0.75rem; color: #1e293b; font-weight: 600; font-size: 1.1rem;">Choose
+          Chapter Source</label>
+        <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+          <label
+            style="flex: 1; display: flex; align-items: center; gap: 0.75rem; padding: 1rem; border: 2px solid #e2e8f0; border-radius: 0.5rem; cursor: pointer; transition: all 0.2s;"
+            id="existingChapterOption">
+            <input type="radio" name="chapterSource" value="existing" onchange="toggleChapterSource('existing')"
+              style="cursor: pointer;">
+            <span>
+              <strong style="display: block; color: #1e293b;">📚 Existing Chapter</strong>
+              <span style="font-size: 0.875rem; color: #64748b;">Select from uploaded chapters</span>
+            </span>
+          </label>
+          <label
+            style="flex: 1; display: flex; align-items: center; gap: 0.75rem; padding: 1rem; border: 2px solid #e2e8f0; border-radius: 0.5rem; cursor: pointer; transition: all 0.2s;"
+            id="newChapterOption">
+            <input type="radio" name="chapterSource" value="new" checked onchange="toggleChapterSource('new')"
+              style="cursor: pointer;">
+            <span>
+              <strong style="display: block; color: #1e293b;">📄 New Chapter</strong>
+              <span style="font-size: 0.875rem; color: #64748b;">Upload a new PDF</span>
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Existing Chapter Selection -->
+      <div id="existingChapterSection" style="display: none; margin-bottom: 2rem;">
+        <label style="display: block; margin-bottom: 0.5rem; color: #1e293b; font-weight: 500;">Select Chapter</label>
+        <select id="existingChapterSelect"
+          style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.5rem; font-size: 1rem;">
+          <option value="">Loading chapters...</option>
+        </select>
+      </div>
+
+      <!-- New Chapter Upload -->
+      <div id="newChapterSection">
+        <div class="upload-zone" id="dropZone">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">📄</div>
+          <h3 style="margin-bottom: 0.5rem; color: #1e293b;">Upload Chapter PDF</h3>
+          <p style="color: #64748b; margin-bottom: 1.5rem;">Drag and drop your PDF here, or click to browse</p>
+          <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">Select PDF
+            File</button>
+          <input type="file" id="fileInput" accept=".pdf" style="display: none" onchange="handleFileSelect(event)">
+        </div>
+
+        <div style="margin-top: 2rem;">
+          <label style="display: block; margin-bottom: 0.5rem; color: #1e293b; font-weight: 500;">Chapter Title</label>
+          <input type="text" id="chapterTitleInput" placeholder="e.g., Chapter 3: Advanced Data Visualization"
+            style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.5rem; font-size: 1rem;">
+        </div>
+      </div>
+
+      <!-- Generate Button for Existing Chapter -->
+      <div id="existingChapterActions" style="display: none; margin-top: 2rem;">
+        <button class="btn btn-primary" onclick="generateFromExisting()"
+          style="width: 100%; padding: 1rem; font-size: 1.1rem;">
+          ✨ Generate Exercises from Selected Chapter
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 2: Process -->
+    <div id="processView" style="display: none;">
+      <div class="processing-stage" id="stageUpload">
+        <div class="status-icon">○</div>
+        <div>
+          <h4 style="margin: 0;">Uploading PDF</h4>
+          <span style="font-size: 0.875rem; color: #64748b;">Sending file to server...</span>
+        </div>
+      </div>
+
+      <div class="processing-stage" id="stageExtract">
+        <div class="status-icon">○</div>
+        <div>
+          <h4 style="margin: 0;">Reading Content</h4>
+          <span style="font-size: 0.875rem; color: #64748b;">Extracting text from PDF pages...</span>
+        </div>
+      </div>
+
+      <div class="processing-stage" id="stageAnalyze">
+        <div class="status-icon">○</div>
+        <div>
+          <h4 style="margin: 0;">Analyzing & Generating</h4>
+          <span style="font-size: 0.875rem; color: #64748b;">AI is creating exercises based on the content...</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: Review -->
+    <div id="reviewView" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h2 style="margin: 0; color: #1e293b;">Review Generated Exercises</h2>
+        <div style="display: flex; gap: 0.5rem;">
+          <button class="btn btn-secondary" onclick="restartProcess()">Start Over</button>
+          <button class="btn btn-primary" onclick="saveAll()">Save to Class</button>
+        </div>
+      </div>
+
+      <div id="exercisesContainer"></div>
+    </div>
+
+  </main>
+
+  <script src="js/auth.js"></script>
+  <script src="js/navigation.js"></script>
+  <script src="js/upload-assistant.js"></script>
+</body>
+
+</html>

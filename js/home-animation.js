@@ -1,10 +1,10 @@
 // Home page code animation
-document.addEventListener('DOMContentLoaded', function() {
-  const codeElement = document.getElementById('codeAnimation');
-  if (!codeElement) return;
+document.addEventListener('DOMContentLoaded', function () {
+    const codeElement = document.getElementById('codeAnimation');
+    if (!codeElement) return;
 
-  // Code to animate
-  const code = `# Import the necessary libraries
+    // Code to animate
+    const code = `# Import the necessary libraries
 from sklearn.datasets import load_wine
 import pandas as pd
 
@@ -20,47 +20,49 @@ df_wine['target'] = wine.target
 # Display the first 5 rows of the DataFrame
 print(df_wine.head())`;
 
-  let currentCharIndex = 0;
-  let isDeleting = false;
-  let typingSpeed = 30;
-  let deletingSpeed = 10;
-  let pauseTime = 2000;
+    let currentCharIndex = 0;
+    let isDeleting = false;
+    let typingSpeed = 30;
+    let deletingSpeed = 15;
+    let pauseTime = 2000;
 
-  function typeCode() {
-    const codeLine = codeElement.querySelector('.code-line');
-    if (!codeLine) return;
+    function typeCode() {
+        const codeLine = codeElement.querySelector('.code-line');
+        if (!codeLine) return;
 
-    // Escape HTML helper
-    const escapeHtml = (text) => {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    };
+        // Escape HTML helper
+        const escapeHtml = (text) => {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        };
 
-    if (!isDeleting && currentCharIndex < code.length) {
-      // Typing
-      const currentText = code.substring(0, currentCharIndex + 1);
-      codeLine.innerHTML = escapeHtml(currentText) + '<span class="cursor">|</span>';
-      currentCharIndex++;
-      setTimeout(typeCode, typingSpeed);
-    } else if (isDeleting && currentCharIndex > 0) {
-      // Deleting
-      const currentText = code.substring(0, currentCharIndex - 1);
-      codeLine.innerHTML = escapeHtml(currentText) + '<span class="cursor">|</span>';
-      currentCharIndex--;
-      setTimeout(typeCode, deletingSpeed);
-    } else if (!isDeleting && currentCharIndex === code.length) {
-      // Pause at end
-      isDeleting = true;
-      setTimeout(typeCode, pauseTime);
-    } else if (isDeleting && currentCharIndex === 0) {
-      // Restart
-      isDeleting = false;
-      codeLine.innerHTML = '<span class="cursor">|</span>';
-      setTimeout(typeCode, 500);
+        if (!isDeleting && currentCharIndex < code.length) {
+            // Typing
+            const currentText = code.substring(0, currentCharIndex + 1);
+            codeLine.innerHTML = escapeHtml(currentText) + '<span class="cursor">|</span>';
+            currentCharIndex++;
+            setTimeout(typeCode, typingSpeed);
+        } else if (isDeleting && currentCharIndex > 0) {
+            // Deleting
+            const currentText = code.substring(0, currentCharIndex - 1);
+            codeLine.innerHTML = escapeHtml(currentText) + '<span class="cursor">|</span>';
+            currentCharIndex--;
+            setTimeout(typeCode, deletingSpeed);
+        } else if (!isDeleting && currentCharIndex === code.length) {
+            // Pause at end - remove cursor
+            const currentText = code.substring(0, currentCharIndex);
+            codeLine.innerHTML = escapeHtml(currentText);
+            isDeleting = true;
+            setTimeout(typeCode, pauseTime);
+        } else if (isDeleting && currentCharIndex === 0) {
+            // Restart
+            isDeleting = false;
+            codeLine.innerHTML = '<span class="cursor">|</span>';
+            setTimeout(typeCode, 500);
+        }
     }
-  }
 
-  // Start animation
-  typeCode();
+    // Start animation
+    typeCode();
 });
