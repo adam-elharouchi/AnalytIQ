@@ -5,7 +5,7 @@ class CodeWriterAgent {
   constructor() {
     this.apiKey = null;
     this.apiProvider = 'gemini';
-    this.geminiModel = 'gemini-2.5-flash';
+    this.geminiModel = 'gemini-3-pro-preview';
     this.digest = {
       userGoal: '',
       constraints: [],
@@ -17,14 +17,14 @@ class CodeWriterAgent {
     this.memory = [];
     this.repoContext = null;
   }
-  
+
   // Set Gemini model
   setGeminiModel(model) {
     this.geminiModel = model;
   }
 
   // Initialize with API key
-  async initialize(apiKey, provider = 'gemini', geminiModel = 'gemini-2.5-flash') {
+  async initialize(apiKey, provider = 'gemini', geminiModel = 'gemini-3-pro-preview') {
     this.apiKey = apiKey;
     this.apiProvider = 'gemini';
     this.geminiModel = geminiModel;
@@ -54,7 +54,7 @@ class CodeWriterAgent {
       // Transform API response to match internal format
       // API returns: goal, constraints, decisions, current_state, open_questions (as strings or arrays)
       // Internal format expects: userGoal, constraints, decisionsMade, currentState, openQuestions (as arrays)
-      
+
       // Helper function to ensure value is an array
       const ensureArray = (value) => {
         if (Array.isArray(value)) return value;
@@ -70,7 +70,7 @@ class CodeWriterAgent {
         }
         return [];
       };
-      
+
       this.digest = {
         userGoal: digest.goal || digest.userGoal || '',
         constraints: ensureArray(digest.constraints || []),
@@ -181,12 +181,12 @@ class CodeWriterAgent {
     if (!Array.isArray(this.digest.openQuestions)) {
       this.digest.openQuestions = [];
     }
-    
+
     // Extract goal
-    const goalMatch = userMessage.match(/goal:\s*(.+)/i) || 
-                     userMessage.match(/I want to (.+)/i) ||
-                     userMessage.match(/create (.+)/i) ||
-                     userMessage.match(/build (.+)/i);
+    const goalMatch = userMessage.match(/goal:\s*(.+)/i) ||
+      userMessage.match(/I want to (.+)/i) ||
+      userMessage.match(/create (.+)/i) ||
+      userMessage.match(/build (.+)/i);
     if (goalMatch) {
       this.digest.userGoal = goalMatch[1].trim();
     }
@@ -225,9 +225,26 @@ class CodeWriterAgent {
       }
     });
 
+    // Extract current section progress
+    const sectionMatch = userMessage.match(/section\s+(\d+)/i) ||
+      assistantResponse.match(/section\s+(\d+)/i) ||
+      userMessage.match(/step\s+(\d+)/i);
+
+    if (sectionMatch) {
+      const sectionNum = sectionMatch[1];
+      // Only update if it's a new section or explicit reference
+      const sectionText = `Section ${sectionNum}`;
+      if (!this.digest.currentState.includes(sectionText) && !this.digest.currentState.some(s => s.startsWith('Completed Section'))) {
+        // Clear previous section statuse to keep state clean
+        this.digest.currentState = this.digest.currentState.filter(s => !s.startsWith('Section'));
+        this.digest.currentState.push(sectionText);
+      }
+    }
+
     // Keep arrays manageable
     this.digest.constraints = this.digest.constraints.slice(0, 20);
     this.digest.decisionsMade = this.digest.decisionsMade.slice(0, 20);
+    this.digest.currentState = this.digest.currentState.slice(0, 5); // Keep concise state
   }
 
   // Build system prompt
@@ -237,7 +254,7 @@ class CodeWriterAgent {
     const decisionsMade = Array.isArray(this.digest.decisionsMade) ? this.digest.decisionsMade : [];
     const currentState = Array.isArray(this.digest.currentState) ? this.digest.currentState : [];
     const openQuestions = Array.isArray(this.digest.openQuestions) ? this.digest.openQuestions : [];
-    
+
     const digestText = `
 DIGEST:
 <UserGoal>${this.digest.userGoal || 'Not set'}</UserGoal>
@@ -260,44 +277,102 @@ RelevantMemory:
 ${this.memory.slice(0, 5).map(m => `- ${m}`).join('\n')}
 ` : '';
 
-    return `You are a senior-level AI code assistant whose goal is to deliver correct, maintainable, production-ready solutions while communicating clearly and efficiently.
+    return `You are a helpful code assistant for beginners in business analytics and coding.
 
-For every request, first identify the user's end goal, constraints (such as language, framework, performance, style, or platform), inputs and outputs, and any ambiguity. If missing information would materially affect correctness, ask concise clarifying questions; otherwise, make reasonable assumptions and state them explicitly.
+CORE PRINCIPLES:
+1. **Keep it simple** - Provide clean, minimal code that directly answers the question
+2. **Only what's requested** - Don't add features, exploration, or analysis unless explicitly asked
+3. **Beginner-friendly** - Use clear variable names and add brief comments when helpful
+4. **Production-ready** - Write clean, executable code without excessive verbosity
 
-Structure responses by briefly restating the goal, explaining the chosen approach and reasoning, providing the implementation (code or steps), validating the result with examples, tests, or edge cases, and noting pitfalls and best practices.
+CODE GENERATION RULES:
+- Provide the most straightforward solution to the user's request
+- Use standard, well-known libraries and approaches
+- Keep code concise - avoid showing multiple methods unless asked for alternatives
+- Don't add data exploration, visualization, or analysis unless specifically requested
+- Don't include extensive comments explaining every line - keep it clean
+- Format code properly for copy-paste into Jupyter/Colab or scripts
 
-When writing code:
-- Use modern idiomatic syntax
-- Prioritize readability and correctness
-- Handle errors and edge cases
-- Avoid premature optimization
-- Comment on why rather than what
-- Include usage examples or tests when appropriate
-- Do not output pseudocode unless explicitly requested
-- ALL code must be in markdown code blocks (triple backticks with language). Never write code as plain text.
-- Code blocks should be ready to copy-paste into Google Colab or any IDE.
+WHEN TO ADD EXPLANATIONS:
+- Only explain if the user asks "how" or "why" something works
+- Only explore data if explicitly requested (e.g., "explore the dataset", "show me statistics")
+- Only add visualizations if asked (e.g., "visualize", "plot", "show distribution")
+- Only provide multiple approaches if asked for alternatives or comparisons
 
-Use computation tools when accuracy matters, browsing tools for time-sensitive or factual information, cite external sources when used, and never guess on critical facts.
+RESPONSE STYLE:
+- Be concise and direct
+- Use simple language for beginners
+- Avoid academic or overly formal tone
+- No meta commentary or apologies
+- If asked about a specific section or step, provide that section/step directly
 
-Communicate in a professional, calm, and supportive tone, use structured formatting when helpful, adapt depth to the user's expertise, and avoid unnecessary filler. Use minimal spacing between sentences and paragraphs. Keep spacing between code blocks and following text to a minimum (no extra blank lines).
+EXAMPLES OF GOOD RESPONSES:
 
-When debugging, identify the root cause, explain why it occurs, propose one or more fixes, and explain tradeoffs rather than patching symptoms.
+User: "give me code to get california housing dataset from sklearn and make it into a df"
+Good response:
+\`\`\`python
+from sklearn.datasets import fetch_california_housing
+import pandas as pd
 
-Clearly label assumptions and constraints when they exist, and do not end responses with open loops unless follow-up questions are required for correctness.
+# Load dataset
+california = fetch_california_housing()
+
+# Create DataFrame
+df = pd.DataFrame(
+    data=california.data,
+    columns=california.feature_names
+)
+
+# Add target variable
+df['MedHouseVal'] = california.target
+\`\`\`
+
+User: "create a pandas dataframe with columns name, age, city"
+Good response:
+\`\`\`python
+import pandas as pd
+
+df = pd.DataFrame({
+    'name': [],
+    'age': [],
+    'city': []
+})
+\`\`\`
+
+User: "explain how groupby works in pandas"
+Good response: (provide clear explanation with simple example)
 
 ${digestText}
 ${memoryText}`;
   }
 
-  // Call Google Gemini API
-  async callGemini(messages) {
+  // Call Google Gemini API (supports text and images)
+  async callGemini(messages, imageData = null) {
     // Convert messages to Gemini format
     const contents = messages
       .filter(m => m.role !== 'system')
-      .map(m => ({
-        role: m.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: m.content }]
-      }));
+      .map((m, index) => {
+        const parts = [{ text: m.content }];
+
+        // Add image to the last user message if provided
+        if (imageData && index === messages.length - 1 && m.role === 'user') {
+          // Extract base64 data from data URL
+          const base64Match = imageData.match(/^data:([^;]+);base64,(.+)$/);
+          if (base64Match) {
+            parts.unshift({
+              inlineData: {
+                mimeType: base64Match[1],
+                data: base64Match[2]
+              }
+            });
+          }
+        }
+
+        return {
+          role: m.role === 'assistant' ? 'model' : 'user',
+          parts: parts
+        };
+      });
 
     // Use selected Gemini model
     const response = await fetch(
@@ -311,7 +386,7 @@ ${memoryText}`;
           contents: contents,
           generationConfig: {
             temperature: 0.7,
-            maxOutputTokens: 4000
+            maxOutputTokens: 8192
           }
         })
       }
@@ -320,12 +395,12 @@ ${memoryText}`;
     if (!response.ok) {
       const error = await response.json();
       const errorMessage = error.error?.message || 'Gemini API error';
-      
+
       // Check for specific API not enabled error
       if (errorMessage.includes('has not been used') || errorMessage.includes('it is disabled') || errorMessage.includes('Enable it by visiting')) {
         throw new Error(`Generative Language API is not enabled for this API key's project. Please enable the API in Google Cloud Console: https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com`);
       }
-      
+
       throw new Error(errorMessage);
     }
 
@@ -333,18 +408,24 @@ ${memoryText}`;
     return data.candidates[0].content.parts[0].text;
   }
 
-  // Process message with AI
-  async processMessage(userMessage, context = null) {
+  // Process message with AI (supports optional image data)
+  async processMessage(userMessage, context = null, imageData = null) {
     // Build messages array
     // For playground mode (when context is provided), don't include conversation history
     // Each exercise should be treated independently
     // For playground mode, prepend system prompt directly to user message
     // This ensures Gemini receives the full context since system prompts are filtered
     const systemPrompt = context ? this.buildPlaygroundSystemPrompt(context) : this.buildSystemPrompt();
-    const finalUserMessage = context 
+
+    // Add image context to message if image is provided
+    let finalUserMessage = context
       ? `${systemPrompt}\n\nStudent's question: ${userMessage}`
       : userMessage;
-    
+
+    if (imageData && !context) {
+      finalUserMessage = `[User has uploaded an image for analysis]\n\n${userMessage}`;
+    }
+
     const messages = [
       // Only include conversation history for main code assistant (not playground mode)
       ...(context ? [] : this.conversationHistory.slice(-10)), // Last 10 messages for context
@@ -355,24 +436,24 @@ ${memoryText}`;
     ];
 
     try {
-      const response = await this.callGemini(messages);
+      const response = await this.callGemini(messages, imageData);
 
       // Only update digest and conversation history for main code assistant (not playground mode)
       if (!context) {
-      // Update digest
-      this.updateDigest(userMessage, response);
+        // Update digest
+        this.updateDigest(userMessage, response);
 
-      // Add to conversation history
-      this.conversationHistory.push(
-        { role: 'user', content: userMessage },
-        { role: 'assistant', content: response }
-      );
+        // Add to conversation history
+        this.conversationHistory.push(
+          { role: 'user', content: userMessage },
+          { role: 'assistant', content: response }
+        );
 
-      // Save digest
-      await this.saveDigest();
+        // Save digest
+        await this.saveDigest();
 
-      // Extract and store durable memories
-      this.extractMemories(userMessage, response);
+        // Extract and store durable memories
+        this.extractMemories(userMessage, response);
       }
 
       return response;
@@ -384,12 +465,12 @@ ${memoryText}`;
   // Build system prompt for playground mode (solution-aware hints)
   buildPlaygroundSystemPrompt(context) {
     const { exerciseId, exerciseTitle, exerciseDescription, solutionCode, difficulty, hintLevel = 1, allExercises = [] } = context;
-    
-    const hintInstructions = hintLevel === 1 
+
+    const hintInstructions = hintLevel === 1
       ? `Provide direct, specific hints with exact module/library names (e.g., "sklearn.datasets" instead of "popular machine learning libraries"). Be concise and actionable. Mention specific modules and functions when relevant, but don't show complete code.`
       : hintLevel === 2
-      ? `Provide more direct hints that point toward specific methods or libraries needed. Mention specific function names and modules (e.g., "fetch_california_housing from sklearn.datasets"), but still avoid showing the complete solution code.`
-      : `Provide stronger hints with more specific guidance. You can show partial code examples or explain the specific steps needed, but still encourage the student to write their own implementation.`;
+        ? `Provide more direct hints that point toward specific methods or libraries needed. Mention specific function names and modules (e.g., "fetch_california_housing from sklearn.datasets"), but still avoid showing the complete solution code.`
+        : `Provide stronger hints with more specific guidance. You can show partial code examples or explain the specific steps needed, but still encourage the student to write their own implementation.`;
 
     // Build all exercises reference text for context
     let allExercisesText = '';

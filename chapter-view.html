@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Chapter - AnalytIQ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <script src="js/api-helper.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    
+    .chapter-container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem;
+    }
+    
+    .back-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: #64748b;
+      text-decoration: none;
+      margin-bottom: 2rem;
+      font-weight: 500;
+      font-size: 0.9375rem;
+      padding: 0.75rem 1.25rem;
+      border-radius: 0.5rem;
+      background: white;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    
+    .back-button:hover {
+      background: #f8fafc;
+      color: #2569f4;
+      border-color: #cbd5e1;
+      transform: translateX(-2px);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+    
+    .back-button:active {
+      transform: translateX(-1px);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .back-button span:first-child {
+      font-size: 1.25rem;
+      display: inline-flex;
+      align-items: center;
+      line-height: 1;
+      font-weight: 600;
+    }
+    
+    .chapter-header {
+      background: white;
+      padding: 2.5rem;
+      border-radius: 1rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      border-left: 6px solid #2569f4;
+      margin-bottom: 2rem;
+    }
+    
+    .chapter-title {
+      font-size: 2.75rem;
+      font-weight: 800;
+      color: #0f172a;
+      margin: 0 0 0.75rem 0;
+    }
+    
+    .chapter-description {
+      color: #64748b;
+      font-size: 1rem;
+      font-style: italic;
+    }
+    
+    .pdf-pages-container {
+      background: white;
+      padding: 2rem;
+      border-radius: 1rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    .pdf-page {
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+    
+    .pdf-page:last-child {
+      margin-bottom: 0;
+    }
+    
+    .pdf-page canvas {
+      max-width: 100%;
+      height: auto;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      border-radius: 0.5rem;
+    }
+    
+    .page-number {
+      margin-top: 1rem;
+      color: #64748b;
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+    
+    .loading-state {
+      text-align: center;
+      padding: 6rem 2rem;
+      color: #64748b;
+    }
+    
+    .loading-spinner {
+      display: inline-block;
+      width: 50px;
+      height: 50px;
+      border: 5px solid #e2e8f0;
+      border-top-color: #2569f4;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 1.5rem;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar" id="navbar"></nav>
+  
+  <main class="chapter-container">
+    <a href="javascript:history.back()" class="back-button">
+      <span>←</span>
+      <span>Back</span>
+    </a>
+    
+    <div class="chapter-header">
+      <h1 class="chapter-title" id="chapterTitle">Loading Chapter...</h1>
+      <p class="chapter-description" id="chapterDescription"></p>
+    </div>
+    
+    
+    <div id="contentContainer" class="pdf-pages-container">
+      <div class="loading-state">
+        <div class="loading-spinner"></div>
+        <p>Loading PDF pages...</p>
+      </div>
+    </div>
+  </main>
+  
+  <script src="js/api-helper.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/navigation.js"></script>
+  <script>
+    let currentChapterId = null;
+    let currentClassId = null;
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      const authManager = new AuthManager();
+      if (!authManager.requireAuth()) return;
+      
+      const urlParams = new URLSearchParams(window.location.search);
+      currentChapterId = urlParams.get('chapter_id');
+      currentClassId = urlParams.get('class_id');
+      
+      if (!currentChapterId) {
+        document.getElementById('contentContainer').innerHTML = '<div class="loading-state"><p>Error: Chapter ID missing</p></div>';
+        return;
+      }
+      
+      loadChapterPDF();
+    });
+    
+    async function loadChapterPDF() {
+      const container = document.getElementById('contentContainer');
+      
+      try {
+        // Get chapter info from classes endpoint
+        const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        if (!currentUser.user_id) {
+          throw new Error('User not logged in');
+        }
+        
+        const apiUrl = window.API_BASE_URL || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+          ? 'http://localhost:5001/api'
+          : 'https://analytiq-qbfr.onrender.com/api');
+        
+        // Get all chapters for the class
+        const chapterResponse = await fetch(`${apiUrl}/classes/${encodeURIComponent(currentClassId)}/chapters?user_id=${currentUser.user_id}`);
+        const chaptersData = await chapterResponse.json();
+        
+        if (!chapterResponse.ok) {
+          throw new Error(chaptersData.error || 'Failed to load chapters');
+        }
+        
+        // Find the specific chapter
+        const chapter = chaptersData.chapters.find(c => c.chapter_id === currentChapterId);
+        
+        if (!chapter) {
+          throw new Error('Chapter not found');
+        }
+        
+        // Set chapter title and description
+        document.getElementById('chapterTitle').textContent = chapter.title || 'Untitled Chapter';
+        document.getElementById('chapterDescription').textContent = chapter.description || '';
+        
+        if (!chapter.pdf_filename) {
+          throw new Error('PDF file not found for this chapter');
+        }
+        
+        // Construct PDF path - use the pdf_url if available, otherwise construct from filename
+        const pdfPath = chapter.pdf_url || `Course Content/${chapter.pdf_filename}`;
+        await renderPDFPages(pdfPath, container);
+        
+      } catch (error) {
+        console.error('Error:', error);
+        container.innerHTML = `<div class="loading-state"><p>Error loading PDF: ${error.message}</p><button class="btn btn-primary" onclick="javascript:history.back()" style="margin-top: 1rem;">Go Back</button></div>`;
+      }
+    }
+    
+    async function renderPDFPages(pdfPath, container) {
+      if (typeof pdfjsLib === 'undefined') {
+        throw new Error('PDF.js library not loaded. Please refresh the page.');
+      }
+      
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      
+      try {
+        // Load PDF document
+        const loadingTask = pdfjsLib.getDocument(pdfPath);
+        const pdf = await loadingTask.promise;
+        
+        container.innerHTML = '';
+        
+        // Render each page
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+          const page = await pdf.getPage(pageNum);
+          
+          // Use scale 1.5 for better performance while maintaining quality
+          const scale = 1.5;
+          const viewport = page.getViewport({ scale });
+          
+          const pageDiv = document.createElement('div');
+          pageDiv.className = 'pdf-page';
+          
+          const canvas = document.createElement('canvas');
+          const context = canvas.getContext('2d');
+          canvas.height = viewport.height;
+          canvas.width = viewport.width;
+          
+          // Render page to canvas
+          await page.render({
+            canvasContext: context,
+            viewport: viewport
+          }).promise;
+          
+          pageDiv.appendChild(canvas);
+          
+          // Add page number label
+          const pageLabel = document.createElement('div');
+          pageLabel.className = 'page-number';
+          pageLabel.textContent = `Page ${pageNum} of ${pdf.numPages}`;
+          pageDiv.appendChild(pageLabel);
+          
+          container.appendChild(pageDiv);
+        }
+      } catch (error) {
+        console.error('PDF rendering error:', error);
+        throw new Error(`Failed to load PDF: ${error.message}`);
+      }
+    }
+    
+  </script>
+</body>
+</html>

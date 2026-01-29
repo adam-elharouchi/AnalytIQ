@@ -1,19 +1,7 @@
 // Professor Dashboard - Class Management
 // API_BASE_URL should be defined in api-helper.js
 
-if (typeof window.API_BASE_URL === 'undefined') {
-  window.API_BASE_URL = 'https://analytiq-qbfr.onrender.com/api';
-}
-
-// Get current user
-function getCurrentUser() {
-  try {
-    const userStr = localStorage.getItem('currentUser');
-    return userStr ? JSON.parse(userStr) : null;
-  } catch (e) {
-    return null;
-  }
-}
+// API_BASE_URL and getCurrentUser are defined in api-helper.js
 
 // Load classes for professor
 async function loadClasses() {
@@ -22,25 +10,25 @@ async function loadClasses() {
     console.error('No user found');
     return;
   }
-  
+
   const loadingState = document.getElementById('loadingState');
   const emptyState = document.getElementById('emptyState');
   const classesGrid = document.getElementById('classesGrid');
-  
+
   try {
     loadingState.style.display = 'block';
     emptyState.style.display = 'none';
     classesGrid.style.display = 'none';
-    
+
     const response = await fetch(`${window.API_BASE_URL}/classes?user_id=${currentUser.user_id}`);
     const data = await response.json();
-    
+
     if (!response.ok) {
       throw new Error(data.error || 'Failed to load classes');
     }
-    
+
     loadingState.style.display = 'none';
-    
+
     if (!data.classes || data.classes.length === 0) {
       emptyState.style.display = 'block';
       classesGrid.style.display = 'none';
@@ -100,17 +88,25 @@ function renderClasses(classes) {
         >
           📋
         </button>
+        <button 
+          class="btn btn-secondary" 
+          onclick="deleteClass('${escapeHtml(classItem.class_id)}', '${escapeHtml(classItem.name)}')"
+          title="Delete Class"
+          style="color: #dc2626;"
+        >
+          🗑️
+        </button>
       </div>
     </div>
   `).join('');
-  
+
   // Add hover effect
   const classCards = classesGrid.querySelectorAll('.class-card');
   classCards.forEach(card => {
-    card.addEventListener('mouseenter', function() {
+    card.addEventListener('mouseenter', function () {
       this.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
     });
-    card.addEventListener('mouseleave', function() {
+    card.addEventListener('mouseleave', function () {
       this.style.boxShadow = 'none';
     });
   });
@@ -134,30 +130,44 @@ function hideCreateClassModal() {
 // Handle create class form submission
 async function handleCreateClass(event) {
   event.preventDefault();
-  
+
   const currentUser = getCurrentUser();
   if (!currentUser || !currentUser.user_id) {
     alert('Please sign in to create a class');
     return;
   }
-  
+
   const name = document.getElementById('className').value.trim();
+  const classCode = document.getElementById('classCode').value.trim().toUpperCase();
   const description = document.getElementById('classDescription').value.trim();
   const errorDiv = document.getElementById('createClassError');
-  
+
   if (!name) {
     errorDiv.textContent = 'Class name is required';
     errorDiv.style.display = 'block';
     return;
   }
-  
+
+  if (!classCode) {
+    errorDiv.textContent = 'Class code/ID is required';
+    errorDiv.style.display = 'block';
+    return;
+  }
+
+  // Validate class code format (3-20 alphanumeric characters, hyphens, underscores)
+  if (!/^[A-Za-z0-9_-]{3,20}$/.test(classCode)) {
+    errorDiv.textContent = 'Class code must be 3-20 characters (letters, numbers, hyphens, underscores only)';
+    errorDiv.style.display = 'block';
+    return;
+  }
+
   try {
     errorDiv.style.display = 'none';
     const submitButton = event.target.querySelector('button[type="submit"]');
     const originalText = submitButton.textContent;
     submitButton.disabled = true;
     submitButton.textContent = 'Creating...';
-    
+
     const response = await fetch(`${window.API_BASE_URL}/classes`, {
       method: 'POST',
       headers: {
@@ -165,24 +175,25 @@ async function handleCreateClass(event) {
       },
       body: JSON.stringify({
         user_id: currentUser.user_id,
+        class_id: classCode.toUpperCase(),
         name: name,
         description: description
       })
     });
-    
+
     const data = await response.json();
-    
+
     if (!response.ok) {
       throw new Error(data.error || 'Failed to create class');
     }
-    
+
     // Success - reload classes and close modal
     hideCreateClassModal();
     loadClasses();
-    
+
     // Show success message
     alert(`Class "${name}" created successfully! Class Code: ${data.class_id}`);
-    
+
   } catch (error) {
     console.error('Error creating class:', error);
     errorDiv.textContent = error.message;
@@ -216,15 +227,46 @@ function copyClassCode(classId) {
   });
 }
 
-// Escape HTML to prevent XSS
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
+// Delete class with confirmation
+async function deleteClass(classId, className) {
+  const currentUser = getCurrentUser();
+  if (!currentUser || !currentUser.user_id) {
+    alert('Please sign in to delete a class');
+    return;
+  }
+
+  // Confirm deletion
+  const confirmed = confirm(`Are you sure you want to delete "${className}"?\n\nThis will permanently delete:\n• All chapters\n• All exercises\n• All student enrollments\n\nThis action cannot be undone.`);
+
+  if (!confirmed) return;
+
+  try {
+    const response = await fetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(classId)}?user_id=${currentUser.user_id}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to delete class');
+    }
+
+    // Reload classes to reflect deletion
+    loadClasses();
+    alert(`Class "${className}" has been deleted.`);
+
+  } catch (error) {
+    console.error('Error deleting class:', error);
+    alert('Error deleting class: ' + error.message);
+  }
 }
 
+
 // Close modal when clicking outside
-document.addEventListener('click', function(event) {
+document.addEventListener('click', function (event) {
   const modal = document.getElementById('createClassModal');
   if (event.target === modal) {
     hideCreateClassModal();
@@ -232,7 +274,7 @@ document.addEventListener('click', function(event) {
 });
 
 // Close modal with Escape key
-document.addEventListener('keydown', function(event) {
+document.addEventListener('keydown', function (event) {
   if (event.key === 'Escape') {
     hideCreateClassModal();
   }
