@@ -1,51 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <title>AnalytIQ - Data Analytics Learning Platform</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="css/styles.css" />
   <script src="js/api-helper.js"></script>
-  
+
 </head>
-<body>
+
+<body class="home-page">
   <nav class="navbar" id="navbar"></nav>
-  
+
   <main class="container">
     <div class="home-layout">
       <div class="home-content-left">
         <div class="hero-section">
           <h1>Welcome to <span class="logo-analyt">Analyt</span><span class="logo-iq">IQ</span></h1>
-          <p>Your comprehensive platform for mastering data analytics. Learn, practice, and master data analytics skills with interactive tools and resources.</p>
+          <p>Your comprehensive platform for mastering data analytics. Learn, practice, and master data analytics skills
+            with interactive tools and resources.</p>
         </div>
-        
-        <div class="page-navigation-grid">
-      <a href="modules.html" class="page-nav-card">
-        <div class="page-nav-icon">📚</div>
-        <h2>Modules</h2>
-        <p>Structured learning paths from beginner to advanced, covering all aspects of data analytics and visualization.</p>
-      </a>
-      
-      <a href="practice.html" class="page-nav-card">
-        <div class="page-nav-icon">💻</div>
-        <h2>Practice</h2>
-        <p>Hands-on exercises and coding challenges to reinforce your learning and build practical skills.</p>
-      </a>
-      
-      <a href="resources.html" class="page-nav-card">
-        <div class="page-nav-icon">📖</div>
-        <h2>Resources</h2>
-        <p>Access to articles, videos, tools, books, and datasets to support your learning journey.</p>
-      </a>
-      
-      <a href="code-assistant.html" class="page-nav-card">
-        <div class="page-nav-icon">🔧</div>
-        <h2>Code</h2>
-        <p>AI-powered assistant that helps you write code, analyze data, derive insights, and create visualizations.</p>
-        </a>
+
+        <div class="page-navigation-grid" id="pageNavigationGrid">
+          <!-- Navigation cards will be dynamically generated based on user role -->
         </div>
       </div>
-      
+
       <div class="home-content-right">
         <div class="code-animation-container">
           <div class="code-animation-header">
@@ -61,29 +42,134 @@
       </div>
     </div>
   </main>
-  
+
+  <footer class="home-footer" role="contentinfo">
+    <div class="container home-footer-inner">
+      <div class="home-footer-top-row">
+        <div class="home-footer-left-links" id="footerLeftLinks">
+          <!-- Portal-specific links will be dynamically inserted here -->
+        </div>
+        <div class="home-footer-brand-center">
+          <div class="home-footer-brand"><span class="logo-analyt">Analyt</span><span class="logo-iq">IQ</span></div>
+        </div>
+        <div class="home-footer-right-links" id="footerRightLinks">
+          <!-- Portal-specific links will be dynamically inserted here -->
+        </div>
+      </div>
+      <div class="home-footer-bottom-row">
+        <div class="home-footer-text-line">Your comprehensive platform for mastering data analytics © <span
+            id="footerYear"></span> AnalytIQ. All rights reserved. Adam El Harouchi.</div>
+      </div>
+    </div>
+  </footer>
+
   <script src="js/home-animation.js"></script>
-  
+
   <script src="js/auth.js"></script>
   <script src="js/navigation.js"></script>
   <script>
     // Require authentication for entire website
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
       const authManager = new AuthManager();
       if (!authManager.requireAuth()) {
         return; // Will redirect to login
       }
-      
-      // Optional: Check if user should be redirected to their role-specific dashboard
-      // Uncomment the following code if you want automatic redirection from home page
-      /*
+
+      // Generate navigation cards based on user role
       const currentUser = authManager.getCurrentUser();
-      if (currentUser && currentUser.role === 'professor') {
-        // Optionally redirect professors to their dashboard
-        // window.location.href = 'professor-dashboard.html';
+      const isProfessor = currentUser && currentUser.role === 'professor';
+
+      const navigationGrid = document.getElementById('pageNavigationGrid');
+
+      if (isProfessor) {
+        // Professor navigation cards: Dashboard, Code, Contact, Profile (Resources embedded in course)
+        navigationGrid.innerHTML = `
+          <a href="professor-dashboard.html" class="page-nav-card">
+            <div class="page-nav-icon">📊</div>
+            <h2>Dashboard</h2>
+            <p>Manage your classes, upload modules, create exercises, and track student progress.</p>
+          </a>
+          
+          <a href="code-assistant.html" class="page-nav-card">
+            <div class="page-nav-icon">🔧</div>
+            <h2>Code</h2>
+            <p>AI-powered assistant that helps you write code, analyze data, derive insights, and create visualizations.</p>
+          </a>
+          
+          <a href="contact.html" class="page-nav-card">
+            <div class="page-nav-icon">📧</div>
+            <h2>Contact</h2>
+            <p>Report issues or get help with the website. We're here to assist you.</p>
+          </a>
+          
+          <a href="profile.html" class="page-nav-card">
+            <div class="page-nav-icon">👤</div>
+            <h2>Profile</h2>
+            <p>Manage your profile information, update your account settings, and customize your preferences.</p>
+          </a>
+        `;
+      } else {
+        // Student navigation cards: My Classes, Resources, Contact, Code
+        navigationGrid.innerHTML = `
+          <a href="student-classes.html" class="page-nav-card">
+            <div class="page-nav-icon">📚</div>
+            <h2>My Classes</h2>
+            <p>Access your enrolled classes, view modules, practice exercises, and resources for each course.</p>
+          </a>
+          
+          <a href="contact.html" class="page-nav-card">
+            <div class="page-nav-icon">📧</div>
+            <h2>Contact</h2>
+            <p>Report issues or get help with the website. We're here to assist you.</p>
+          </a>
+          
+          <a href="code-assistant.html" class="page-nav-card">
+            <div class="page-nav-icon">🔧</div>
+            <h2>Code</h2>
+            <p>AI-powered assistant that helps you write code, analyze data, derive insights, and create visualizations.</p>
+          </a>
+          
+          <a href="profile.html" class="page-nav-card">
+            <div class="page-nav-icon">👤</div>
+            <h2>Profile</h2>
+            <p>Manage your profile information, update your account settings, and customize your preferences.</p>
+          </a>
+        `;
       }
-      */
+
+      // Footer year
+      const yearEl = document.getElementById('footerYear');
+      if (yearEl) yearEl.textContent = new Date().getFullYear();
+
+      // Set footer links based on role (balanced around centered logo)
+      const footerLeftLinks = document.getElementById('footerLeftLinks');
+      const footerRightLinks = document.getElementById('footerRightLinks');
+
+      if (footerLeftLinks && footerRightLinks) {
+        if (isProfessor) {
+          // Professor portal: Home, Dashboard (left), Code, Contact (right) - 2 left, 2 right
+          footerLeftLinks.innerHTML = `
+            <a href="index.html">Home</a>
+            <a href="professor-dashboard.html">Dashboard</a>
+          `;
+          footerRightLinks.innerHTML = `
+            <a href="code-assistant.html">Code</a>
+            <a href="contact.html">Contact</a>
+          `;
+        } else {
+          // Student portal: My Classes, Profile (left), Contact, Code (right) - 2 left, 2 right, no Home
+          footerLeftLinks.innerHTML = `
+            <a href="student-classes.html">My Classes</a>
+            <a href="profile.html">Profile</a>
+          `;
+          footerRightLinks.innerHTML = `
+            <a href="contact.html">Contact</a>
+            <a href="code-assistant.html">Code</a>
+          `;
+        }
+      }
     });
   </script>
 </body>
+
 </html>

@@ -1,1 +1,20 @@
+# Environment
 .env
+.venv/
+venv/
+
+# Logs and PIDs
+*.log
+*.pid
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Node (if applicable)
+node_modules/
