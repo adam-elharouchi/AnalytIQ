@@ -175,7 +175,7 @@ async function handleCreateClass(event) {
       },
       body: JSON.stringify({
         user_id: currentUser.user_id,
-        class_id: classCode.toUpperCase(),
+        class_code: classCode.toUpperCase(),
         name: name,
         description: description
       })

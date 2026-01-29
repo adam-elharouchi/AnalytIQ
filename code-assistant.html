@@ -161,8 +161,9 @@
             geminiModel = savedModel;
             const modelSelect = document.getElementById('geminiModelSelect');
             if (modelSelect) modelSelect.value = geminiModel;
-            updateGeminiModel();
           }
+          // Call updateGeminiModel to update the display label
+          updateGeminiModel();
         }
       })();
 
