@@ -1478,6 +1478,55 @@ def health():
 # CLASS MANAGEMENT APIs (Phase 2)
 # ============================================================================
 
+# ============================================
+# CONTACT FORM ENDPOINT
+# ============================================
+
+@app.route('/api/contact', methods=['POST', 'OPTIONS'])
+def submit_contact():
+    """Submit a contact form message"""
+    if request.method == 'OPTIONS':
+        return '', 200
+    
+    try:
+        data = request.json
+        name = data.get('name')
+        email = data.get('email')
+        subject = data.get('subject')
+        message = data.get('message')
+        user_id = data.get('user_id')  # Optional - may be null for non-logged-in users
+        
+        if not all([name, email, subject, message]):
+            return jsonify({'error': 'Missing required fields'}), 400
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            INSERT INTO contact_messages (name, email, subject, message, user_id, status, created_at)
+            VALUES (%s, %s, %s, %s, %s, 'unread', NOW())
+            RETURNING id
+        """, (name, email, subject, message, user_id))
+        
+        message_id = cursor.fetchone()[0]
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Contact message submitted successfully',
+            'id': str(message_id)
+        }), 201
+        
+    except Exception as e:
+        print(f"Error submitting contact form: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+# ============================================
+# CLASS MANAGEMENT ENDPOINTS
+# ============================================
+
 def generate_class_code():
     """Generate a unique 10-character class code (5 letters + 5 numbers)"""
     import random
@@ -1502,9 +1551,17 @@ def create_class():
         user_id = data.get('user_id')
         name = data.get('name')
         description = data.get('description', '')
+        class_code = data.get('class_code', '').strip().upper()  # Custom code from professor
         
         if not user_id or not name:
             return jsonify({'error': 'Missing required fields (user_id, name)'}), 400
+        
+        if not class_code:
+            return jsonify({'error': 'Class code is required. Please enter a code that matches your school system.'}), 400
+        
+        # Validate class code format (alphanumeric, 3-20 characters)
+        if not class_code.isalnum() or len(class_code) < 3 or len(class_code) > 20:
+            return jsonify({'error': 'Class code must be 3-20 alphanumeric characters'}), 400
         
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -1517,25 +1574,18 @@ def create_class():
             conn.close()
             return jsonify({'error': 'Only professors can create classes'}), 403
         
-        # Generate unique class code (6 characters: 3 letters + 3 numbers)
-        class_id = generate_class_code()
-        # Ensure uniqueness
-        max_attempts = 10
-        for _ in range(max_attempts):
-            cursor.execute("SELECT class_id FROM classes WHERE class_id = %s", (class_id,))
-            if not cursor.fetchone():
-                break
-            class_id = generate_class_code()
-        else:
+        # Check if class code already exists
+        cursor.execute("SELECT class_id FROM classes WHERE class_id = %s", (class_code,))
+        if cursor.fetchone():
             cursor.close()
             conn.close()
-            return jsonify({'error': 'Failed to generate unique class code'}), 500
+            return jsonify({'error': f'Class code "{class_code}" is already in use. Please choose a different code.'}), 409
         
-        # Create class
+        # Create class with custom code
         cursor.execute(
             """INSERT INTO classes (class_id, professor_id, name, description)
                VALUES (%s, %s, %s, %s) RETURNING class_id, name, description, created_at""",
-            (class_id, user_id, name, description)
+            (class_code, user_id, name, description)
         )
         new_class = cursor.fetchone()
         
