@@ -1505,18 +1505,15 @@ def submit_contact():
         cursor.execute("""
             INSERT INTO contact_submissions (name, email, subject, message, user_id, status, created_at)
             VALUES (%s, %s, %s, %s, %s, 'unread', NOW())
-            RETURNING id
         """, (name, email, subject, message, user_id))
         
-        message_id = cursor.fetchone()[0]
         conn.commit()
         cursor.close()
         conn.close()
         
         return jsonify({
             'success': True,
-            'message': 'Contact message submitted successfully',
-            'id': str(message_id)
+            'message': 'Contact message submitted successfully'
         }), 201
         
     except Exception as e:
