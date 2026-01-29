@@ -449,6 +449,49 @@ def signin():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/users/forgot-password', methods=['POST', 'OPTIONS'])
+def forgot_password():
+    """Handle forgot password request"""
+    try:
+        data = request.json
+        email = data.get('email')
+        
+        if not email:
+            return jsonify({'error': 'Email is required'}), 400
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Check if user exists
+        cursor.execute("SELECT user_id, name FROM users WHERE email = %s", (email,))
+        user = cursor.fetchone()
+        
+        cursor.close()
+        conn.close()
+        
+        # Always return success to prevent email enumeration
+        # In a real implementation, you would:
+        # 1. Generate a secure reset token
+        # 2. Store it in the database with an expiration time
+        # 3. Send an email with the reset link
+        
+        if user:
+            # User exists - in production, send email here
+            # For now, just log it
+            print(f"Password reset requested for user: {email}")
+            # TODO: Implement email sending with reset token
+            # reset_token = secrets.token_urlsafe(32)
+            # send_reset_email(email, reset_token)
+        
+        # Always return success message (security best practice)
+        return jsonify({
+            'success': True,
+            'message': 'If an account exists with this email, you will receive password reset instructions.'
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/users/profile', methods=['GET'])
 def get_profile():
     """Get user profile"""

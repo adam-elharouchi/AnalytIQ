@@ -267,3 +267,69 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 });
+
+// Forgot Password Functions
+function showForgotPasswordModal(event) {
+  if (event) event.preventDefault();
+  document.getElementById('forgotPasswordModal').style.display = 'flex';
+  document.getElementById('resetEmail').value = '';
+  document.getElementById('resetSuccess').style.display = 'none';
+  document.getElementById('resetError').style.display = 'none';
+}
+
+function closeForgotPasswordModal() {
+  document.getElementById('forgotPasswordModal').style.display = 'none';
+}
+
+async function handleForgotPassword(event) {
+  event.preventDefault();
+  const email = document.getElementById('resetEmail').value;
+  const successDiv = document.getElementById('resetSuccess');
+  const errorDiv = document.getElementById('resetError');
+
+  // Clear previous messages
+  successDiv.style.display = 'none';
+  errorDiv.style.display = 'none';
+
+  // Show loading state
+  const submitButton = event.target.querySelector('button[type="submit"]');
+  const originalButtonText = submitButton.textContent;
+  submitButton.disabled = true;
+  submitButton.textContent = 'Sending...';
+
+  try {
+    const response = await fetch(`${window.API_BASE_URL}/users/forgot-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email: email })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to send reset link');
+    }
+
+    // Show success message
+    successDiv.textContent = 'Password reset instructions have been sent to your email address. Please check your inbox.';
+    successDiv.style.display = 'block';
+
+    // Clear form
+    document.getElementById('resetEmail').value = '';
+
+    // Close modal after 3 seconds
+    setTimeout(() => {
+      closeForgotPasswordModal();
+    }, 3000);
+
+  } catch (error) {
+    errorDiv.textContent = error.message;
+    errorDiv.style.display = 'block';
+  } finally {
+    // Re-enable button
+    submitButton.disabled = false;
+    submitButton.textContent = originalButtonText;
+  }
+}
