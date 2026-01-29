@@ -52,14 +52,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
       try {
         // Send to API endpoint
-          name: formData.name,
-          email: formData.email,
-          subject: formData.subject,
-          // Don't log full message for privacy
-          message_length: formData.message.length,
-          user_id: currentUser?.id || currentUser?.user_id || null
-        });
-
         const response = await fetch(`${window.API_BASE_URL}/contact`, {
           method: 'POST',
           headers: {
