@@ -1503,7 +1503,7 @@ def submit_contact():
         cursor = conn.cursor()
         
         cursor.execute("""
-            INSERT INTO contact_messages (name, email, subject, message, user_id, status, created_at)
+            INSERT INTO contact_submissions (name, email, subject, message, user_id, status, created_at)
             VALUES (%s, %s, %s, %s, %s, 'unread', NOW())
             RETURNING id
         """, (name, email, subject, message, user_id))
