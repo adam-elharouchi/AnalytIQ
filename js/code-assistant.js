@@ -1813,98 +1813,106 @@ function toggleSidebar() {
 
 
 // Format message content
-// Format message content
-// Format message content
 function formatMessageContent(content, role = 'assistant') {
-  // Check if it's a user message - simply return escaped content
-  // The user explicitly requested NO code block formatting for their messages
-  if (role === 'user') {
-    return escapeHtml(content).replace(/\n/g, '<br>');
-  }
+    // Check if it's a user message - simply return escaped content
+    if (role === 'user') {
+        return escapeHtml(content).replace(/\n/g, '<br>');
+    }
 
-  // First, protect code blocks
-  const codeBlockPlaceholders = [];
-  let placeholderIndex = 0;
+    // Step 1: Protect code blocks with placeholders
+    const codeBlockPlaceholders = [];
+    let placeholderIndex = 0;
 
-  content = content.replace(/```(\w*)[^\n]*\n([\s\S]*?)```/g, (match) => {
-    const placeholder = `__CODE_BLOCK_${placeholderIndex}__`;
-    codeBlockPlaceholders[placeholderIndex] = match;
-    placeholderIndex++;
-    return placeholder;
-  });
+    content = content.replace(/```(\w*)[^\n]*\n([\s\S]*?)```/g, (match) => {
+        const placeholder = `__CODE_BLOCK_${placeholderIndex}__`;
+        codeBlockPlaceholders[placeholderIndex] = match;
+        placeholderIndex++;
+        return placeholder;
+    });
 
-  // Only apply markdown headers for assistant messages to avoid formatting code comments as headers
-  if (role === 'assistant') {
-    // Convert markdown headers to HTML (outside code blocks)
-    content = content.replace(/^#### (.+)$/gm, '<h4>$1</h4>');
-    content = content.replace(/^### (.+)$/gm, '<h3>$1</h3>');
-    content = content.replace(/^## (.+)$/gm, '<h2>$1</h2>');
-    content = content.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+    // Step 2: Protect inline code with placeholders
+    const inlineCodePlaceholders = [];
+    let inlineIndex = 0;
 
-    // Handle horizontal rules
-    content = content.replace(/^---$/gm, '<hr>');
-  }
+    content = content.replace(/`([^`]+)`/g, (match) => {
+        const placeholder = `__INLINE_CODE_${inlineIndex}__`;
+        inlineCodePlaceholders[inlineIndex] = match;
+        inlineIndex++;
+        return placeholder;
+    });
 
-  // Restore code blocks
-  codeBlockPlaceholders.forEach((codeBlock, index) => {
-    content = content.replace(`__CODE_BLOCK_${index}__`, codeBlock);
-  });
+    // Step 3: Apply markdown formatting to remaining text (outside code)
+    if (role === 'assistant') {
+        // Convert markdown headers to HTML
+        content = content.replace(/^#### (.+)$/gm, '<h4>$1</h4>');
+        content = content.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+        content = content.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+        content = content.replace(/^# (.+)$/gm, '<h1>$1</h1>');
 
-  // Handle code blocks - make them Colab-ready
-  content = content.replace(/```(\w*)[^\n]*\n([\s\S]*?)```/g, (match, lang, code) => {
-    // Clean the code for Colab
-    let cleanCode = code.trim();
-    cleanCode = cleanCode.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+        // Handle horizontal rules
+        content = content.replace(/^---$/gm, '<hr>');
 
-    // Remove any nested code fences
-    cleanCode = cleanCode.replace(/^```[\w]*\n?/gm, '').replace(/```$/gm, '');
+        // Handle bullet points
+        content = content.replace(/^\* (.+)$/gm, '<li>$1</li>');
 
-    // Preserve newlines by using <pre> or proper formatting
-    const language = lang || 'python';
-    const escapedCode = escapeHtml(cleanCode);
+        // Handle numbered lists
+        content = content.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
 
-    // Use pre tag to preserve whitespace and newlines
-    return `<div class="code-block-container">
+        // Handle lists
+        content = content.replace(/^[-*]\s+(.+)$/gm, '<li>$1</li>');
+    }
+
+    // Handle bold (before italic to avoid conflicts)
+    content = content.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+
+    // Handle italic
+    content = content.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+
+    // Step 4: Restore code blocks and format them
+    codeBlockPlaceholders.forEach((codeBlock, index) => {
+        const formatted = codeBlock.replace(/```(\w*)[^\n]*\n([\s\S]*?)```/g, (match, lang, code) => {
+            // Clean the code
+            let cleanCode = code.trim();
+            cleanCode = cleanCode.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+            // Preserve newlines and escape HTML
+            const language = lang || 'python';
+            const escapedCode = escapeHtml(cleanCode);
+
+            // Use pre tag to preserve whitespace and newlines
+            return `<div class="code-block-container">
       <pre class="code-block" data-language="${language}"><code>${escapedCode}</code></pre>
     </div>`;
-  });
+        });
+        content = content.replace(`__CODE_BLOCK_${index}__`, formatted);
+    });
 
-  // Handle inline code
-  content = content.replace(/`([^`]+)`/g, '<code>$1</code>');
+    // Step 5: Restore inline code
+    inlineCodePlaceholders.forEach((inlineCode, index) => {
+        const formatted = inlineCode.replace(/`([^`]+)`/g, '<code>$1</code>');
+        content = content.replace(`__INLINE_CODE_${index}__`, formatted);
+    });
 
-  // Handle bold
-  content = content.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    // Reduce excessive newlines (3+ consecutive newlines become 2)
+    content = content.replace(/\n{3,}/g, '\n\n');
 
-  // Handle italic
-  content = content.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    // Convert remaining newlines to <br> (but not around block elements)
+    content = content.replace(/\n/g, '<br>');
 
-  // Handle bullet points
-  content = content.replace(/^\* (.+)$/gm, '<li>$1</li>');
+    // Clean up br tags around block elements
+    content = content.replace(/<br>\s*(<h[1-4]>)/g, '$1');
+    content = content.replace(/(<\/h[1-4]>)\s*<br>/g, '$1');
+    content = content.replace(/<br>\s*(<hr>)/g, '$1');
+    content = content.replace(/(<hr>)\s*<br>/g, '$1');
+    content = content.replace(/<br>\s*(<div)/g, '$1');
+    content = content.replace(/(<\/div>)\s*<br>/g, '$1');
+    content = content.replace(/<br>\s*(<li>)/g, '$1');
+    content = content.replace(/(<\/li>)\s*<br>/g, '$1');
 
-  // Handle numbered lists
-  content = content.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+    // Wrap lists in ul tags
+    content = content.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
 
-  // Reduce excessive newlines (3+ consecutive newlines become 2)
-  content = content.replace(/\n{3,}/g, '\n\n');
-
-  // Convert remaining newlines to <br> (but not around block elements)
-  content = content.replace(/\n/g, '<br>');
-
-  // Clean up br tags around block elements
-  content = content.replace(/<br>\s*(<h[1-4]>)/g, '$1');
-  content = content.replace(/(<\/h[1-4]>)\s*<br>/g, '$1');
-  content = content.replace(/<br>\s*(<hr>)/g, '$1');
-  content = content.replace(/(<hr>)\s*<br>/g, '$1');
-  content = content.replace(/<br>\s*(<div)/g, '$1');
-  content = content.replace(/(<\/div>)\s*<br>/g, '$1');
-  content = content.replace(/<br>\s*(<li>)/g, '$1');
-  content = content.replace(/(<\/li>)\s*<br>/g, '$1');
-
-  // Handle lists
-  content = content.replace(/^[-*]\s+(.+)$/gm, '<li>$1</li>');
-  content = content.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
-
-  return content;
+    return content;
 }
 
 // Format code block for Google Colab compatibility
