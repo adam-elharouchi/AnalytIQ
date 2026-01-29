@@ -4,11 +4,11 @@
 if (typeof window.API_BASE_URL === 'undefined') {
   // Use localhost for local testing, production URL for deployed version
   // Check for localhost, 127.0.0.1, or file:// protocol (local development)
-  const isLocal = window.location.hostname === 'localhost' || 
-                  window.location.hostname === '127.0.0.1' || 
-                  window.location.protocol === 'file:';
-  window.API_BASE_URL = isLocal 
-    ? 'http://localhost:5001/api' 
+  const isLocal = window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1' ||
+    window.location.protocol === 'file:';
+  window.API_BASE_URL = isLocal
+    ? 'http://localhost:5001/api'
     : 'https://analytiq-qbfr.onrender.com/api';
 }
 
@@ -29,25 +29,25 @@ async function loadEnrolledClasses() {
     console.error('No user found');
     return;
   }
-  
+
   const loadingState = document.getElementById('loadingState');
   const emptyState = document.getElementById('emptyState');
   const classesGrid = document.getElementById('classesGrid');
-  
+
   try {
     loadingState.style.display = 'block';
     emptyState.style.display = 'none';
     classesGrid.style.display = 'none';
-    
+
     const response = await fetch(`${window.API_BASE_URL}/classes/enrolled?user_id=${currentUser.user_id}`);
     const data = await response.json();
-    
+
     if (!response.ok) {
       throw new Error(data.error || 'Failed to load classes');
     }
-    
+
     loadingState.style.display = 'none';
-    
+
     if (!data.classes || data.classes.length === 0) {
       emptyState.style.display = 'block';
       classesGrid.style.display = 'none';
@@ -103,14 +103,14 @@ function renderClasses(classes) {
       </button>
     </div>
   `).join('');
-  
+
   // Add hover effect
   const classCards = classesGrid.querySelectorAll('.class-card');
   classCards.forEach(card => {
-    card.addEventListener('mouseenter', function() {
+    card.addEventListener('mouseenter', function () {
       this.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
     });
-    card.addEventListener('mouseleave', function() {
+    card.addEventListener('mouseleave', function () {
       this.style.boxShadow = 'none';
     });
   });
@@ -121,10 +121,10 @@ function showJoinClassModal() {
   const modal = document.getElementById('joinClassModal');
   modal.style.display = 'flex';
   document.getElementById('classCode').focus();
-  
+
   // Transform input to uppercase as user types
   const classCodeInput = document.getElementById('classCode');
-  classCodeInput.addEventListener('input', function() {
+  classCodeInput.addEventListener('input', function () {
     this.value = this.value.toUpperCase();
   });
 }
@@ -140,29 +140,29 @@ function hideJoinClassModal() {
 // Handle join class form submission
 async function handleJoinClass(event) {
   event.preventDefault();
-  
+
   const currentUser = getCurrentUser();
   if (!currentUser || !currentUser.user_id) {
     alert('Please sign in to join a class');
     return;
   }
-  
+
   const classCode = document.getElementById('classCode').value.trim().toUpperCase();
   const errorDiv = document.getElementById('joinClassError');
-  
-  if (!classCode || classCode.length < 3 || classCode.length > 10) {
-    errorDiv.textContent = 'Please enter a valid class code (3-10 characters)';
+
+  if (!classCode || classCode.length < 3 || classCode.length > 20) {
+    errorDiv.textContent = 'Please enter a valid class code (3-20 characters)';
     errorDiv.style.display = 'block';
     return;
   }
-  
+
   try {
     errorDiv.style.display = 'none';
     const submitButton = event.target.querySelector('button[type="submit"]');
     const originalText = submitButton.textContent;
     submitButton.disabled = true;
     submitButton.textContent = 'Joining...';
-    
+
     const response = await fetch(`${window.API_BASE_URL}/classes/enroll`, {
       method: 'POST',
       headers: {
@@ -173,20 +173,20 @@ async function handleJoinClass(event) {
         class_id: classCode
       })
     });
-    
+
     const data = await response.json();
-    
+
     if (!response.ok) {
       throw new Error(data.error || 'Failed to join class');
     }
-    
+
     // Success - reload classes and close modal
     hideJoinClassModal();
     loadEnrolledClasses();
-    
+
     // Show success message
     alert(`Successfully joined "${data.class_name}"!`);
-    
+
   } catch (error) {
     console.error('Error joining class:', error);
     errorDiv.textContent = error.message;
@@ -210,7 +210,7 @@ function escapeHtml(text) {
 }
 
 // Close modal when clicking outside
-document.addEventListener('click', function(event) {
+document.addEventListener('click', function (event) {
   const modal = document.getElementById('joinClassModal');
   if (event.target === modal) {
     hideJoinClassModal();
@@ -218,7 +218,7 @@ document.addEventListener('click', function(event) {
 });
 
 // Close modal with Escape key
-document.addEventListener('keydown', function(event) {
+document.addEventListener('keydown', function (event) {
   if (event.key === 'Escape') {
     hideJoinClassModal();
   }
