@@ -1,10 +1,10 @@
 // Navigation system for AnalytIQ
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
   const navbar = document.getElementById('navbar');
   if (!navbar) return;
 
   const currentPage = window.location.pathname.split('/').pop() || 'index.html';
-  
+
   // Check authentication
   let currentUser = null;
   try {
@@ -13,11 +13,11 @@ document.addEventListener('DOMContentLoaded', function() {
   } catch (e) {
     currentUser = null;
   }
-  
+
   const isAuthenticated = currentUser !== null;
   const userRole = currentUser?.role || 'student';
   const isProfessor = userRole === 'professor';
-  
+
   // Build user menu
   let userMenu = '';
   if (isAuthenticated) {
@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const profilePicture = currentUser.profilePicture || profileData.profilePicture;
     const defaultAvatar = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzMzNDE1NSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjQwIiBmaWxsPSIjOTRhM2I4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+8J+RpTwvdGV4dD48L3N2Zz4=';
     const avatarSrc = profilePicture || defaultAvatar;
-    
+
     userMenu = `
       <li class="user-menu">
         <button class="user-menu-toggle profile-picture-btn" onclick="toggleUserMenu()" title="User Menu">
@@ -54,17 +54,37 @@ document.addEventListener('DOMContentLoaded', function() {
       <li><a href="login.html" class="btn-login">Sign In</a></li>
     `;
   }
-  
+
   // Build role-based navigation links
   let roleLinks = '';
+  let commonLinks = '';
+
   if (isAuthenticated) {
     if (isProfessor) {
+      // Professors: Dashboard, Code, Contact (Resources embedded in course)
       roleLinks = `<li><a href="professor-dashboard.html" ${currentPage === 'professor-dashboard.html' || currentPage === 'professor-class.html' ? 'class="active"' : ''}>Dashboard</a></li>`;
+      commonLinks = `
+        <li><a href="code-assistant.html" ${currentPage === 'code-assistant.html' ? 'class="active"' : ''}>Code</a></li>
+        <li><a href="contact.html" ${currentPage === 'contact.html' ? 'class="active"' : ''}>Contact</a></li>
+      `;
     } else {
+      // Students: My Classes, Resources, Contact, Code
       roleLinks = `<li><a href="student-classes.html" ${currentPage === 'student-classes.html' || currentPage === 'student-class.html' ? 'class="active"' : ''}>My Classes</a></li>`;
+      commonLinks = `
+        <li><a href="contact.html" ${currentPage === 'contact.html' ? 'class="active"' : ''}>Contact</a></li>
+        <li><a href="code-assistant.html" ${currentPage === 'code-assistant.html' ? 'class="active"' : ''}>Code</a></li>
+      `;
     }
+  } else {
+    // Not authenticated - show all links including Modules and Practice
+    commonLinks = `
+      <li><a href="modules.html" ${currentPage === 'modules.html' ? 'class="active"' : ''}>Modules</a></li>
+      <li><a href="practice.html" ${currentPage === 'practice.html' ? 'class="active"' : ''}>Practice</a></li>
+      <li><a href="resources.html" ${currentPage === 'resources.html' ? 'class="active"' : ''}>Resources</a></li>
+      <li><a href="code-assistant.html" ${currentPage === 'code-assistant.html' ? 'class="active"' : ''}>Code</a></li>
+    `;
   }
-  
+
   const navHTML = `
     <div class="nav-container">
       <a href="index.html" class="nav-brand">
@@ -74,30 +94,27 @@ document.addEventListener('DOMContentLoaded', function() {
       <ul class="nav-links" id="navLinks">
         <li><a href="index.html" ${currentPage === 'index.html' ? 'class="active"' : ''}>Home</a></li>
         ${roleLinks}
-        <li><a href="modules.html" ${currentPage === 'modules.html' ? 'class="active"' : ''}>Modules</a></li>
-        <li><a href="practice.html" ${currentPage === 'practice.html' ? 'class="active"' : ''}>Practice</a></li>
-        <li><a href="resources.html" ${currentPage === 'resources.html' ? 'class="active"' : ''}>Resources</a></li>
-        <li><a href="code-assistant.html" ${currentPage === 'code-assistant.html' ? 'class="active"' : ''}>Code</a></li>
+        ${commonLinks}
         ${userMenu}
       </ul>
     </div>
   `;
-  
+
   navbar.innerHTML = navHTML;
-  
+
   // Update profile picture in navigation if it changes
   if (isAuthenticated) {
     updateNavProfilePicture();
-    
+
     // Listen for storage changes to update profile picture
-    window.addEventListener('storage', function(e) {
+    window.addEventListener('storage', function (e) {
       if (e.key === 'currentUser' || e.key === 'userProfile') {
         updateNavProfilePicture();
       }
     });
-    
+
     // Also listen for custom events (for same-tab updates)
-    window.addEventListener('profilePictureUpdated', function() {
+    window.addEventListener('profilePictureUpdated', function () {
       updateNavProfilePicture();
     });
   }
@@ -110,7 +127,7 @@ function updateNavProfilePicture() {
     const profileData = JSON.parse(localStorage.getItem('userProfile') || '{}');
     const profilePicture = currentUser.profilePicture || profileData.profilePicture;
     const defaultAvatar = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzMzNDE1NSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjQwIiBmaWxsPSIjOTRhM2I4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+8J+RpTwvdGV4dD48L3N2Zz4=';
-    
+
     const navProfilePic = document.querySelector('.nav-profile-picture');
     if (navProfilePic) {
       navProfilePic.src = profilePicture || defaultAvatar;
@@ -144,7 +161,7 @@ function toggleUserMenu() {
 }
 
 // Close user menu when clicking outside
-document.addEventListener('click', function(event) {
+document.addEventListener('click', function (event) {
   const userMenu = document.querySelector('.user-menu');
   const dropdown = document.getElementById('userMenuDropdown');
   if (userMenu && dropdown && !userMenu.contains(event.target)) {

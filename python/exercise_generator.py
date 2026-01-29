@@ -30,30 +30,34 @@ def generate_exercises_from_pdf_content(pdf_text, chapter_title, api_key=None):
     truncated_text = pdf_text[:10000] if len(pdf_text) > 10000 else pdf_text
     
     # Build prompt
-    prompt = f"""Analyze the following chapter content and create 3-5 coding practice exercises.
-
+    prompt = f"""Analyze the following chapter content and create 3-5 beginner-friendly coding practice exercises.
+    
 Chapter Title: {chapter_title}
 Chapter Content: {truncated_text}
 
-For each exercise, provide:
-1. A clear, descriptive title
-2. A detailed description of what students need to do
-3. Difficulty level (easy, medium, or hard)
-4. Complete solution code in Python
+The user wants exercises that feel like a "Jupyter Notebook" tutorial (step-by-step, clear, using standard libraries like pandas/matplotlib).
 
-Focus on practical, hands-on exercises related to:
-- Data loading and exploration
-- Data cleaning and preprocessing
-- Data analysis and visualization
-- Statistical analysis
-- Machine learning concepts (if applicable)
+For each exercise:
+1. **Title**: Simple and descriptive (e.g., "Load the dataset", "Visualize the distribution").
+2. **Description**: Clear instructions on what to do. Mention specific library functions if helpful (e.g., "Use pd.read_csv()").
+3. **Difficulty**: Default to "easy" or "medium". Avoid "hard" unless necessary.
+4. **Solution Code**: Provide complete, runnable Python code that could be pasted into a notebook cell. 
+   - Use standard imports (import pandas as pd, import matplotlib.pyplot as plt).
+   - Add comments explaining each step.
+   - Keep it simple and procedural (avoid complex classes or advanced functional patterns).
+
+Focus on practical tasks:
+- Loading data (CSV, standard datasets).
+- basic DataFrame operations (head(), describe(), selecting columns).
+- Simple visualizations (histograms, scatter plots).
+- Basic modeling (LinearRegression) if the text covers it.
 
 Return your response as a JSON array with this structure:
 [
   {{
     "title": "Exercise Title",
     "description": "Exercise description",
-    "difficulty": "easy|medium|hard",
+    "difficulty": "easy|medium",
     "solution_code": "Python code here"
   }}
 ]
@@ -75,7 +79,8 @@ Return ONLY valid JSON, no additional text before or after."""
                 }],
                 'generationConfig': {
                     'temperature': 0.7,
-                    'maxOutputTokens': 4096
+                    'maxOutputTokens': 8192,
+                    'responseMimeType': "application/json"
                 }
             },
             timeout=60
@@ -96,7 +101,14 @@ Return ONLY valid JSON, no additional text before or after."""
         
         # Extract JSON from response (handle markdown code blocks)
         content = content.strip()
-        if '```json' in content:
+        
+        # Robust extraction: Find the first [ and last ]
+        start_index = content.find('[')
+        end_index = content.rfind(']')
+        
+        if start_index != -1 and end_index != -1 and end_index > start_index:
+            content = content[start_index:end_index+1]
+        elif '```json' in content:
             content = content.split('```json')[1].split('```')[0].strip()
         elif '```' in content:
             content = content.split('```')[1].split('```')[0].strip()
@@ -130,6 +142,9 @@ Return ONLY valid JSON, no additional text before or after."""
         return validated_exercises
         
     except json.JSONDecodeError as e:
-        raise Exception(f"Failed to parse JSON response: {str(e)}")
+        # Include snippet of content in error for debugging
+        snippet = content[:500] + "..." if len(content) > 500 else content
+        print(f"FAILED CONTENT: {content}") # Print to server logs
+        raise Exception(f"Failed to parse JSON response: {str(e)}. Raw content snippet: {snippet}")
     except Exception as e:
         raise Exception(f"Error generating exercises: {str(e)}")

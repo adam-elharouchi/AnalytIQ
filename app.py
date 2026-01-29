@@ -1436,11 +1436,11 @@ def health():
 # ============================================================================
 
 def generate_class_code():
-    """Generate a unique 6-character class code (3 letters + 3 numbers)"""
+    """Generate a unique 10-character class code (5 letters + 5 numbers)"""
     import random
     import string
-    letters = ''.join(random.choices(string.ascii_uppercase, k=3))
-    numbers = ''.join(random.choices(string.digits, k=3))
+    letters = ''.join(random.choices(string.ascii_uppercase, k=5))
+    numbers = ''.join(random.choices(string.digits, k=5))
     return letters + numbers
 
 @app.route('/api/classes', methods=['POST', 'OPTIONS'])
@@ -2044,7 +2044,7 @@ def get_chapter_exercises(chapter_id):
         
         # Get exercises
         cursor.execute("""
-            SELECT exercise_id, title, description, difficulty, exercise_number, created_at
+            SELECT exercise_id, title, description, difficulty, exercise_number, created_at, solution_code
             FROM class_exercises
             WHERE chapter_id = %s
             ORDER BY exercise_number ASC
@@ -2058,7 +2058,8 @@ def get_chapter_exercises(chapter_id):
                 'description': row[2],
                 'difficulty': row[3],
                 'exercise_number': row[4],
-                'created_at': row[5].isoformat() if row[5] else None
+                'created_at': row[5].isoformat() if row[5] else None,
+                'solution_code': row[6] or ''
             })
         
         cursor.close()

@@ -2,7 +2,14 @@
 // API_BASE_URL should be defined in api-helper.js
 
 if (typeof window.API_BASE_URL === 'undefined') {
-  window.API_BASE_URL = 'https://analytiq-qbfr.onrender.com/api';
+  // Use localhost for local testing, production URL for deployed version
+  // Check for localhost, 127.0.0.1, or file:// protocol (local development)
+  const isLocal = window.location.hostname === 'localhost' || 
+                  window.location.hostname === '127.0.0.1' || 
+                  window.location.protocol === 'file:';
+  window.API_BASE_URL = isLocal 
+    ? 'http://localhost:5001/api' 
+    : 'https://analytiq-qbfr.onrender.com/api';
 }
 
 // Get current user
@@ -143,8 +150,8 @@ async function handleJoinClass(event) {
   const classCode = document.getElementById('classCode').value.trim().toUpperCase();
   const errorDiv = document.getElementById('joinClassError');
   
-  if (!classCode || classCode.length !== 6) {
-    errorDiv.textContent = 'Please enter a valid 6-character class code';
+  if (!classCode || classCode.length < 3 || classCode.length > 10) {
+    errorDiv.textContent = 'Please enter a valid class code (3-10 characters)';
     errorDiv.style.display = 'block';
     return;
   }
