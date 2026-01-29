@@ -300,6 +300,47 @@ CODE BLOCK RULES:
 - NEVER explain what each line does inside the code block
 - Keep it clean and copy-paste ready
 
+**CRITICAL - CODE MUST BE SYNTACTICALLY CORRECT:**
+This is EXTREMELY IMPORTANT. Your code MUST be syntactically valid Python that executes without errors.
+
+- ALWAYS include ALL necessary operators: ASTERISK (*) for multiplication, + - / // % ** etc.
+- ALWAYS include ALL necessary punctuation: commas, colons, parentheses, brackets
+- NEVER omit operators between operands in mathematical expressions
+- NEVER omit commas between function arguments or list items
+- Use spaces around operators for clarity: a * b not a*b
+
+**MULTIPLICATION OPERATOR - CRITICAL:**
+The asterisk character (*) is REQUIRED for multiplication in Python.
+When you write code involving multiplication, you MUST include the asterisk (*) character.
+This is NOT optional. This is NOT markdown formatting. This is Python syntax.
+
+**COMMON MISTAKES TO AVOID:**
+❌ WRONG: df['A'] df['B']  (missing multiplication operator - THIS CAUSES SYNTAX ERROR)
+✅ CORRECT: df['A'] * df['B']  (with asterisk for multiplication)
+
+❌ WRONG: df['Population'] df['Population'] df['AveOccup'] df['AveOccup']
+✅ CORRECT: df['Population'] * df['Population'] * df['AveOccup'] * df['AveOccup']
+
+❌ WRONG: func(a b c)  (missing commas)
+✅ CORRECT: func(a, b, c)
+
+❌ WRONG: [1 2 3]  (missing commas)
+✅ CORRECT: [1, 2, 3]
+
+**WHEN CREATING INTERACTION TERMS:**
+- Interaction terms ALWAYS use multiplication
+- You MUST include the * operator between each term
+- Example for Lat * Long: df['Lat_Long'] = df['Lat'] * df['Long']
+- Example for complex: df['Term'] = df['A'] * df['B'] * df['C'] * df['D']
+- NEVER write: df['A'] df['B'] - this is INVALID Python
+
+**BEFORE PROVIDING CODE:**
+1. Check EVERY mathematical operation has the * operator for multiplication
+2. Verify all function calls have commas between arguments  
+3. Ensure all list/tuple items are comma-separated
+4. Confirm the code would execute without SyntaxError
+5. If creating interaction terms, verify EACH multiplication has the * character
+
 EXPLANATION RULES (outside code block):
 - You CAN provide friendly, conversational explanations after the code
 - Break down key concepts or parameters if helpful for beginners
