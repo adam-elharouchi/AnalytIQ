@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Class Management - AnalytIQ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <script src="js/api-helper.js"></script>
+</head>
+
+<body>
+  <nav class="navbar" id="navbar"></nav>
+
+  <main class="container">
+    <!-- Back Button -->
+    <div style="margin-bottom: 1rem;">
+      <a href="professor-dashboard.html"
+        style="color: #2569f4; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;">
+        <span>←</span>
+        <span>Back to Dashboard</span>
+      </a>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loadingState" style="text-align: center; padding: 3rem;">
+      <p style="color: #64748b;">Loading class details...</p>
+    </div>
+
+    <!-- Class Header -->
+    <div id="classHeader" style="display: none; margin-bottom: 2rem;">
+      <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+        <div style="flex: 1;">
+          <h1 id="className" style="margin-bottom: 0.5rem; color: #222c3e;"></h1>
+          <p id="classDescription" style="color: #64748b; margin-bottom: 0.5rem;"></p>
+          <div style="display: flex; gap: 1rem; align-items: center;">
+            <span
+              style="background: #2569f4; color: white; padding: 0.375rem 0.75rem; border-radius: 1rem; font-size: 0.875rem; font-weight: 600;"
+              id="classCode"></span>
+            <span style="color: #64748b; font-size: 0.875rem;">Class Code</span>
+          </div>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+          <button class="btn btn-secondary" onclick="copyClassCodeToClipboard()">📋 Copy Code</button>
+          <button class="btn btn-secondary" onclick="showEditClassModal()">✏️ Edit Class</button>
+        </div>
+      </div>
+
+      <!-- Class Stats -->
+      <div
+        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-top: 1.5rem; padding: 1.5rem; background: #f8fafc; border-radius: 0.5rem;">
+        <div>
+          <div style="font-size: 2rem; font-weight: 600; color: #2569f4;" id="studentCountStat">0</div>
+          <div style="font-size: 0.875rem; color: #64748b;">Students</div>
+        </div>
+        <div>
+          <div style="font-size: 2rem; font-weight: 600; color: #2569f4;" id="chapterCountStat">0</div>
+          <div style="font-size: 0.875rem; color: #64748b;">Chapters</div>
+        </div>
+        <div>
+          <div style="font-size: 2rem; font-weight: 600; color: #2569f4;" id="exerciseCountStat">0</div>
+          <div style="font-size: 0.875rem; color: #64748b;">Exercises</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div id="tabsContainer" style="display: none; margin-bottom: 2rem;">
+      <div style="display: flex; gap: 0.5rem; border-bottom: 2px solid #e2e8f0;">
+        <button class="tab-button active" onclick="switchTab('chapters')" id="tabChapters">📚 Chapters</button>
+        <button class="tab-button" onclick="switchTab('exercises')" id="tabExercises">💪 Exercises</button>
+        <button class="tab-button" onclick="switchTab('resources')" id="tabResources">📖 Resources</button>
+        <button class="tab-button" onclick="switchTab('students')" id="tabStudents">👥 Students</button>
+        <button class="tab-button" onclick="switchTab('progress')" id="tabProgress">🏆 Leaderboards</button>
+      </div>
+    </div>
+
+    <!-- Chapters Tab -->
+    <div id="tabContentChapters" class="tab-content" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h2 style="margin: 0; color: #222c3e;">Chapters</h2>
+        <button class="btn btn-primary" onclick="showUploadChapterModal()">➕ Upload Chapter</button>
+      </div>
+
+      <div id="chaptersList">
+        <div
+          style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem;">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">📄</div>
+          <p style="color: #64748b;">No chapters yet. Upload your first chapter to get started.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Exercises Tab -->
+    <div id="tabContentExercises" class="tab-content" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h2 style="margin: 0; color: #222c3e;">Exercises</h2>
+        <div style="display: flex; gap: 0.5rem;">
+          <a href="#"
+            onclick="window.location.href='upload-assistant.html?class_id=' + new URLSearchParams(window.location.search).get('class_id')"
+            class="btn btn-secondary" style="display: flex; align-items: center; gap: 0.5rem; text-decoration: none;">
+            <span>✨</span> Upload Assistant
+          </a>
+          <button class="btn btn-primary" onclick="showCreateExerciseModal()">➕ Create Exercise</button>
+        </div>
+      </div>
+
+      <div id="exercisesList">
+        <div
+          style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem;">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">💪</div>
+          <p style="color: #64748b;">No exercises yet. Exercises will appear here once chapters are uploaded with
+            auto-generation enabled, or create them manually.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Resources Tab -->
+    <div id="tabContentResources" class="tab-content" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h2 style="margin: 0; color: #222c3e;">Course Resources</h2>
+        <button class="btn btn-primary" onclick="showAddResourceModal()">➕ Add Resource</button>
+      </div>
+
+      <div id="resourcesList">
+        <div
+          style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem;">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">📖</div>
+          <p style="color: #64748b;">No resources added yet. Add helpful links, documents, or external resources for
+            your students.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Students Tab -->
+    <div id="tabContentStudents" class="tab-content" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h2 style="margin: 0; color: #222c3e;">Enrolled Students</h2>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span style="color: #64748b; font-size: 0.875rem;" id="studentsCount">0 students</span>
+        </div>
+      </div>
+
+      <div id="studentsList">
+        <div
+          style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem;">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">👥</div>
+          <p style="color: #64748b;">No students enrolled yet.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Progress Tab -->
+    <div id="tabContentProgress" class="tab-content" style="display: none;">
+      <div style="margin-bottom: 1.5rem;">
+        <h2 style="margin: 0 0 1rem 0; color: #222c3e;">Class Leaderboards</h2>
+        <p style="color: #64748b;">See how students are performing in the class exercises.</p>
+      </div>
+
+      <!-- Progress View Tabs -->
+      <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 2px solid #e2e8f0;">
+        <button class="sub-tab-button active" onclick="switchProgressView('avgLeaderboard')" id="subTabAvg">🏆 Average
+          Score</button>
+        <button class="sub-tab-button" onclick="switchProgressView('exLeaderboard')" id="subTabEx">🎯 By
+          Exercise</button>
+        <button class="sub-tab-button" onclick="switchProgressView('table')" id="subTabTable">📊 Detailed
+          Matrix</button>
+      </div>
+
+      <div id="progressOverview">
+        <!-- Main Table Content -->
+        <div id="progressTableContainer">
+          <div
+            style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem;">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">📊</div>
+            <p style="color: #64748b;">No progress data available yet.</p>
+          </div>
+        </div>
+
+        <!-- Average Leaderboard Content -->
+        <div id="avgLeaderboardContainer" style="display: none;">
+          <div style="text-align: center; padding: 2rem; color: #64748b;">Select "Average Leaderboard" to view rankings.
+          </div>
+        </div>
+
+        <!-- Exercise Leaderboard Content -->
+        <div id="exLeaderboardContainer" style="display: none;">
+          <div style="margin-bottom: 1rem;">
+            <label for="leaderboardExerciseSelect"
+              style="font-weight: 500; color: #222c3e; margin-right: 0.5rem;">Select Exercise:</label>
+            <select id="leaderboardExerciseSelect" onchange="loadExerciseLeaderboard(this.value)"
+              style="padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 0.25rem;">
+              <option value="">-- Choose an Exercise --</option>
+            </select>
+          </div>
+          <div id="exLeaderboardContent">
+            <div
+              style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem;">
+              <p style="color: #64748b;">Select an exercise above to see the leaderboard.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Upload Chapter Modal -->
+    <div id="uploadChapterModal"
+      style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center;">
+      <div
+        style="background: white; border-radius: 0.5rem; padding: 2rem; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+          <h2 style="margin: 0; color: #222c3e;">Upload Chapter</h2>
+          <button onclick="hideUploadChapterModal()"
+            style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b;">&times;</button>
+        </div>
+
+        <form id="uploadChapterForm" onsubmit="handleUploadChapter(event)">
+          <div style="margin-bottom: 1.5rem;">
+            <label for="chapterTitle"
+              style="display: block; margin-bottom: 0.5rem; color: #222c3e; font-weight: 500;">Chapter Title *</label>
+            <input type="text" id="chapterTitle" required placeholder="e.g., Chapter 2: Business Analytics Foundations"
+              style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;" />
+          </div>
+
+          <div style="margin-bottom: 1.5rem;">
+            <label for="chapterDescription"
+              style="display: block; margin-bottom: 0.5rem; color: #222c3e; font-weight: 500;">Description</label>
+            <textarea id="chapterDescription" rows="3" placeholder="Optional: Add a description for this chapter..."
+              style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem; resize: vertical;"></textarea>
+          </div>
+
+          <div style="margin-bottom: 1.5rem;">
+            <label for="chapterPDF" style="display: block; margin-bottom: 0.5rem; color: #222c3e; font-weight: 500;">PDF
+              File *</label>
+            <input type="file" id="chapterPDF" accept=".pdf" required
+              style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;" />
+            <small style="color: #64748b; font-size: 0.875rem; display: block; margin-top: 0.5rem;">Upload a PDF file
+              for this chapter</small>
+          </div>
+
+          <div style="margin-bottom: 1.5rem;">
+            <label style="display: block; margin-bottom: 0.5rem; color: #222c3e; font-weight: 500;">Exercise
+              Generation</label>
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+              <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                <input type="radio" name="exerciseMode" value="auto" checked style="cursor: pointer;" />
+                <span>Auto-generate exercises (AI-powered)</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                <input type="radio" name="exerciseMode" value="manual" style="cursor: pointer;" />
+                <span>Manual creation (I'll create exercises later)</span>
+              </label>
+            </div>
+          </div>
+
+          <div id="uploadChapterError" class="error-message" style="display: none; margin-bottom: 1rem;"></div>
+
+          <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+            <button type="button" class="btn btn-secondary" onclick="hideUploadChapterModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary">Upload Chapter</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Edit Class Modal -->
+    <div id="editClassModal"
+      style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center;">
+      <div style="background: white; border-radius: 0.5rem; padding: 2rem; max-width: 500px; width: 90%;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+          <h2 style="margin: 0; color: #222c3e;">Edit Class</h2>
+          <button onclick="hideEditClassModal()"
+            style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b;">&times;</button>
+        </div>
+
+        <form id="editClassForm" onsubmit="handleEditClass(event)">
+          <div style="margin-bottom: 1.5rem;">
+            <label for="editClassName"
+              style="display: block; margin-bottom: 0.5rem; color: #222c3e; font-weight: 500;">Class Name *</label>
+            <input type="text" id="editClassName" required
+              style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;" />
+          </div>
+
+          <div style="margin-bottom: 1.5rem;">
+            <label for="editClassDescription"
+              style="display: block; margin-bottom: 0.5rem; color: #222c3e; font-weight: 500;">Description</label>
+            <textarea id="editClassDescription" rows="4"
+              style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem; resize: vertical;"></textarea>
+          </div>
+
+          <div id="editClassError" class="error-message" style="display: none; margin-bottom: 1rem;"></div>
+
+          <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+            <button type="button" class="btn btn-secondary" onclick="hideEditClassModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/auth.js"></script>
+  <script src="js/navigation.js"></script>
+  <script src="js/professor-class.js"></script>
+  <script>
+    // Require authentication and professor role
+    document.addEventListener('DOMContentLoaded', function () {
+      const authManager = new AuthManager();
+      if (!authManager.requireAuth()) {
+        return; // Will redirect to login
+      }
+
+      // Check if user is a professor
+      const currentUser = authManager.getCurrentUser();
+      if (!currentUser || currentUser.role !== 'professor') {
+        alert('Access denied. This page is for professors only.');
+        window.location.href = 'index.html';
+        return;
+      }
+
+      // Get class_id from URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const classId = urlParams.get('class_id');
+
+      if (!classId) {
+        alert('Class ID is required');
+        window.location.href = 'professor-dashboard.html';
+        return;
+      }
+
+      // Load class data
+      loadClassData(classId);
+    });
+  </script>
+
+  <!-- Add Resource Modal -->
+  <div id="addResourceModal"
+    style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div
+      style="background: white; border-radius: 0.5rem; padding: 2rem; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h2 style="margin: 0; color: #222c3e;">Add Resource</h2>
+        <button onclick="hideAddResourceModal()"
+          style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b;">&times;</button>
+      </div>
+
+      <form id="addResourceForm" onsubmit="handleAddResource(event)">
+        <div style="margin-bottom: 1.5rem;">
+          <label for="resourceTitle"
+            style="display: block; margin-bottom: 0.5rem; color: #222c3e; font-weight: 500;">Resource Title *</label>
+          <input type="text" id="resourceTitle" required placeholder="e.g., Python Documentation"
+            style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;" />
+        </div>
+
+        <div style="margin-bottom: 1.5rem;">
+          <label for="resourceDescription"
+            style="display: block; margin-bottom: 0.5rem; color: #222c3e; font-weight: 500;">Description</label>
+          <textarea id="resourceDescription" rows="3" placeholder="Describe this resource and how it helps students..."
+            style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem; resize: vertical;"></textarea>
+        </div>
+
+        <div style="margin-bottom: 1.5rem;">
+          <label for="resourceType"
+            style="display: block; margin-bottom: 0.5rem; color: #222c3e; font-weight: 500;">Resource Type *</label>
+          <select id="resourceType" required
+            style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;"
+            onchange="updateResourceInputType()">
+            <option value="link">Link</option>
+            <option value="tool">Tool</option>
+            <option value="dataset">Dataset</option>
+            <option value="video">Video</option>
+            <option value="article">Article</option>
+            <option value="pdf">PDF Document</option>
+            <option value="csv">CSV File</option>
+            <option value="excel">Excel File</option>
+          </select>
+        </div>
+
+        <!-- Resource Input Type Selection (Link or Upload) -->
+        <div id="resourceInputTypeSection" style="margin-bottom: 1.5rem; display: none;">
+          <label style="display: block; margin-bottom: 0.5rem; color: #222c3e; font-weight: 500;">Resource Source
+            *</label>
+          <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+            <label
+              style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 1rem; border: 2px solid #e2e8f0; border-radius: 0.375rem; flex: 1; transition: all 0.2s;"
+              id="linkOptionLabel">
+              <input type="radio" name="resourceInputType" value="link" checked onchange="toggleResourceInput()"
+                style="cursor: pointer;" />
+              <span>🔗 Link/URL</span>
+            </label>
+            <label
+              style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 1rem; border: 2px solid #e2e8f0; border-radius: 0.375rem; flex: 1; transition: all 0.2s;"
+              id="uploadOptionLabel">
+              <input type="radio" name="resourceInputType" value="upload" onchange="toggleResourceInput()"
+                style="cursor: pointer;" />
+              <span>📁 Upload File</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Link/URL Input -->
+        <div id="resourceUrlSection" style="margin-bottom: 1.5rem;">
+          <label for="resourceUrl"
+            style="display: block; margin-bottom: 0.5rem; color: #222c3e; font-weight: 500;">Resource URL *</label>
+          <input type="url" id="resourceUrl" placeholder="https://example.com or code-assistant.html"
+            style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;" />
+          <small style="color: #64748b; font-size: 0.875rem; display: block; margin-top: 0.5rem;">Enter a full URL
+            (https://...) or a relative path (e.g., code-assistant.html)</small>
+        </div>
+
+        <!-- File Upload Input -->
+        <div id="resourceFileSection" style="margin-bottom: 1.5rem; display: none;">
+          <label for="resourceFile"
+            style="display: block; margin-bottom: 0.5rem; color: #222c3e; font-weight: 500;">Upload File *</label>
+          <input type="file" id="resourceFile" accept=".pdf,.csv,.xlsx,.xls,.txt,.json"
+            style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;" />
+          <small style="color: #64748b; font-size: 0.875rem; display: block; margin-top: 0.5rem;">Supported formats:
+            PDF, CSV, Excel (.xlsx, .xls), TXT, JSON</small>
+          <small id="resourceFileInfo"
+            style="color: #2569f4; font-size: 0.875rem; display: none; margin-top: 0.5rem; font-weight: 500;"></small>
+        </div>
+
+        <div id="addResourceError" class="error-message"
+          style="display: none; margin-bottom: 1rem; padding: 0.75rem; background: #fee2e2; color: #dc2626; border-radius: 0.375rem;">
+        </div>
+
+        <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+          <button type="button" class="btn btn-secondary" onclick="hideAddResourceModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Add Resource</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Create Exercise Modal -->
+  <div id="createExerciseModal"
+    style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div
+      style="background: white; border-radius: 0.5rem; padding: 2rem; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h2 style="margin: 0; color: #222c3e;">Create New Exercise</h2>
+        <button onclick="hideCreateExerciseModal()"
+          style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b;">&times;</button>
+      </div>
+
+      <form id="createExerciseForm" onsubmit="handleCreateExercise(event)">
+        <div style="margin-bottom: 1.5rem;">
+          <label for="exerciseChapter"
+            style="display: block; margin-bottom: 0.5rem; color: #222c3e; font-weight: 500;">Chapter *</label>
+          <select id="exerciseChapter" required
+            style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;">
+            <option value="">Select a chapter...</option>
+          </select>
+        </div>
+
+        <div style="margin-bottom: 1.5rem;">
+          <label for="exerciseTitle"
+            style="display: block; margin-bottom: 0.5rem; color: #222c3e; font-weight: 500;">Exercise Title *</label>
+          <input type="text" id="exerciseTitle" required placeholder="e.g., Calculate mean and median"
+            style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;" />
+        </div>
+
+        <div style="margin-bottom: 1.5rem;">
+          <label for="exerciseDescription"
+            style="display: block; margin-bottom: 0.5rem; color: #222c3e; font-weight: 500;">Description</label>
+          <textarea id="exerciseDescription" rows="3" placeholder="Describe what students should do in this exercise..."
+            style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem; resize: vertical;"></textarea>
+        </div>
+
+        <div style="margin-bottom: 1.5rem;">
+          <label for="exerciseDifficulty"
+            style="display: block; margin-bottom: 0.5rem; color: #222c3e; font-weight: 500;">Difficulty *</label>
+          <select id="exerciseDifficulty" required
+            style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;">
+            <option value="easy">Easy</option>
+            <option value="medium" selected>Medium</option>
+            <option value="hard">Hard</option>
+          </select>
+        </div>
+
+        <div style="margin-bottom: 1.5rem;">
+          <label for="exerciseSolution"
+            style="display: block; margin-bottom: 0.5rem; color: #222c3e; font-weight: 500;">Solution Code</label>
+          <textarea id="exerciseSolution" rows="6"
+            placeholder="# Enter the solution code here...&#10;# Example:&#10;import pandas as pd&#10;df = pd.read_csv('data.csv')&#10;print(df.head())"
+            style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 0.875rem; font-family: 'Courier New', monospace; resize: vertical;"></textarea>
+          <small style="color: #64748b; font-size: 0.875rem; display: block; margin-top: 0.5rem;">This code will be used
+            to validate student submissions</small>
+        </div>
+
+
+        <div id="createExerciseError" class="error-message"
+          style="display: none; margin-bottom: 1rem; padding: 0.75rem; background: #fee2e2; color: #dc2626; border-radius: 0.375rem;">
+        </div>
+
+        <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+          <button type="button" class="btn btn-secondary" onclick="hideCreateExerciseModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Exercise</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Chapter Modal -->
+  <div id="editChapterModal"
+    style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 0.5rem; padding: 2rem; max-width: 600px; width: 90%;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h2 style="margin: 0; color: #222c3e;">Edit Chapter</h2>
+        <button onclick="hideEditChapterModal()"
+          style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b;">&times;</button>
+      </div>
+
+      <form id="editChapterForm" onsubmit="handleEditChapter(event)">
+        <div style="margin-bottom: 1.5rem;">
+          <label for="editChapterTitle"
+            style="display: block; margin-bottom: 0.5rem; color: #222c3e; font-weight: 500;">Chapter Title *</label>
+          <input type="text" id="editChapterTitle" required
+            style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;" />
+        </div>
+
+        <div style="margin-bottom: 1.5rem;">
+          <label for="editChapterDescription"
+            style="display: block; margin-bottom: 0.5rem; color: #222c3e; font-weight: 500;">Description</label>
+          <textarea id="editChapterDescription" rows="4"
+            style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem; resize: vertical;"></textarea>
+        </div>
+
+        <div id="editChapterError" class="error-message" style="display: none; margin-bottom: 1rem;"></div>
+
+        <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+          <button type="button" class="btn btn-secondary" onclick="hideEditChapterModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete Chapter Modal -->
+  <div id="deleteChapterModal"
+    style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div
+      style="background: white; border-radius: 0.5rem; padding: 2rem; max-width: 500px; width: 90%; text-align: center;">
+      <div style="margin-bottom: 1.5rem; font-size: 3rem;">⚠️</div>
+      <h2 style="margin: 0 0 1rem 0; color: #222c3e;">Delete Chapter?</h2>
+      <p style="color: #64748b; margin-bottom: 2rem;">Are you sure you want to delete this chapter? All associated
+        exercises will also be deleted. This action cannot be undone.</p>
+
+      <div style="display: flex; gap: 1rem; justify-content: center;">
+        <button class="btn btn-secondary" onclick="hideDeleteChapterModal()">Cancel</button>
+        <button id="confirmDeleteChapterBtn" class="btn btn-primary"
+          style="background: #ef4444; border-color: #ef4444;">Delete Chapter</button>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>

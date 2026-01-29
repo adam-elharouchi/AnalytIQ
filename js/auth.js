@@ -1,7 +1,10 @@
 // Authentication System
 // API_BASE_URL should be defined in api-helper.js
 if (typeof window.API_BASE_URL === 'undefined') {
-  window.API_BASE_URL = 'https://analytiq-qbfr.onrender.com/api';
+  // Use localhost for local testing, production URL for deployed version
+  window.API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:5001/api'
+    : 'https://analytiq-qbfr.onrender.com/api';
 }
 
 class AuthManager {
@@ -47,24 +50,18 @@ class AuthManager {
 
       // Extract user ID - use user_id if available, otherwise fall back to id
       const userId = data.user_id || data.id || data.user?.user_id || data.user?.id || Date.now().toString();
-      
+
       // Auto sign in - save user with consistent user_id
       const userData = {
         id: userId,  // Store as 'id' for compatibility with existing code
         user_id: userId,  // Also store as 'user_id' for clarity
         name: data.name || data.user?.name || name,
-        email: data.email || data.user?.email || email
+        email: data.email || data.user?.email || email,
+        role: data.role || 'student'  // Store role
       };
-      
+
       this.saveUser(userData);
-      
-      // Log successful signup for debugging
-      console.log('User signed up successfully:', { 
-        userId: userId, 
-        name: userData.name, 
-        email: userData.email,
-        savedToDB: data.success !== false 
-      });
+
 
       return { ...data, user: userData };
     } catch (error) {
@@ -94,15 +91,16 @@ class AuthManager {
 
       // Extract user ID - use user_id if available, otherwise fall back to id
       const userId = data.user_id || data.id || data.user?.user_id || data.user?.id;
-      
+
       // Save current user (without password) - store user_id consistently
       const userData = {
         id: userId,  // Store as 'id' for compatibility with existing code
         user_id: userId,  // Also store as 'user_id' for clarity
         name: data.name || data.user?.name,
-        email: data.email || data.user?.email
+        email: data.email || data.user?.email,
+        role: data.role || 'student'  // Store role
       };
-      
+
       this.saveUser(userData);
 
       return this.currentUser;
@@ -148,13 +146,23 @@ async function handleSignIn(event) {
   const password = document.getElementById('signinPassword').value;
   const errorDiv = document.getElementById('signinError');
 
+  // Show loading state
+  const submitButton = event.target.querySelector('button[type="submit"]');
+  const originalButtonText = submitButton.textContent;
+  submitButton.disabled = true;
+  submitButton.textContent = 'Signing in...';
+  errorDiv.style.display = 'none';
+
   try {
-    await authManager.signIn(email, password);
-    // Redirect to home page
+    const user = await authManager.signIn(email, password);
+    // Always redirect to home page
     window.location.href = 'index.html';
   } catch (error) {
     errorDiv.textContent = error.message;
     errorDiv.style.display = 'block';
+    // Re-enable button on error
+    submitButton.disabled = false;
+    submitButton.textContent = originalButtonText;
   }
 }
 
@@ -198,16 +206,14 @@ async function handleSignUp(event) {
     submitButton.disabled = true;
     submitButton.textContent = 'Creating account...';
 
-    await authManager.signUp(name, email, password);
-    
-    // Small delay to show notification, then redirect
-    setTimeout(() => {
-      window.location.href = 'index.html';
-    }, 2000);
+    const user = await authManager.signUp(name, email, password);
+
+    // Always redirect to home page
+    window.location.href = 'index.html';
   } catch (error) {
     errorDiv.textContent = error.message;
     errorDiv.style.display = 'block';
-    
+
     // Re-enable button
     const submitButton = event.target.querySelector('button[type="submit"]');
     if (submitButton) {
@@ -229,7 +235,7 @@ function showTab(tabName, buttonElement) {
 
   // Show selected tab
   document.getElementById(tabName + 'Tab').classList.add('active');
-  
+
   // Activate the clicked button
   if (buttonElement) {
     buttonElement.classList.add('active');
@@ -245,12 +251,12 @@ function showTab(tabName, buttonElement) {
 }
 
 // Check authentication on page load
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
   // If already authenticated and on login page, redirect to home
   if (authManager.isAuthenticated() && window.location.pathname.includes('login.html')) {
     window.location.href = 'index.html';
   }
-  
+
   // If not authenticated and trying to access any page except login, redirect to login
   // This is handled by requireAuth() on each page, but we can add a global check here too
   if (!authManager.isAuthenticated() && !window.location.pathname.includes('login.html')) {
