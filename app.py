@@ -2785,11 +2785,10 @@ def get_class_average_leaderboard(class_id):
                 u.user_id,
                 u.name,
                 u.email,
-                COALESCE(AVG(ep.score), 0) as average_score
+                COALESCE(AVG(pp.best_score), 0) as average_score
             FROM class_enrollments ce
             JOIN users u ON ce.student_id = u.user_id
-            LEFT JOIN exercise_progress ep ON ep.student_id = u.user_id
-            LEFT JOIN class_exercises ex ON ex.exercise_id = ep.exercise_id AND ex.class_id = %s
+            LEFT JOIN practice_progress pp ON pp.user_id = u.user_id AND pp.class_id = %s
             WHERE ce.class_id = %s
             GROUP BY u.user_id, u.name, u.email
             ORDER BY average_score DESC, u.name ASC
@@ -2858,10 +2857,10 @@ def get_exercise_leaderboard_for_class(class_id, exercise_id):
                 u.user_id,
                 u.name,
                 u.email,
-                COALESCE(ep.score, 0) as score
+                COALESCE(pp.best_score, 0) as score
             FROM class_enrollments ce
             JOIN users u ON ce.student_id = u.user_id
-            LEFT JOIN exercise_progress ep ON ep.student_id = u.user_id AND ep.exercise_id = %s
+            LEFT JOIN practice_progress pp ON pp.user_id = u.user_id AND pp.class_exercise_id = %s
             WHERE ce.class_id = %s
             ORDER BY score DESC, u.name ASC
         """, (exercise_id, class_id))
