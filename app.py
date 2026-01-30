@@ -2987,6 +2987,21 @@ def get_class_resources(class_id):
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
+# ============================================================================
+# PDF File Serving Endpoint
+# ============================================================================
+
+@app.route('/Course%20Content/<path:filename>')
+@app.route('/Course Content/<path:filename>')
+def serve_pdf(filename):
+    """Serve PDF files from the Course Content directory"""
+    try:
+        from flask import send_from_directory
+        return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+    except Exception as e:
+        print(f"Error serving PDF {filename}: {e}")
+        return jsonify({'error': 'PDF file not found'}), 404
+
 if __name__ == '__main__':
     import sys
     import os
