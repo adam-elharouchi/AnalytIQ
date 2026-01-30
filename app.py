@@ -2101,6 +2101,118 @@ def delete_chapter(chapter_id):
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/chapters/<chapter_id>/generate-exercises', methods=['POST'])
+def generate_exercises_for_chapter(chapter_id):
+    """Generate exercises from an existing chapter's PDF data"""
+    try:
+        data = request.get_json() or {}
+        user_id = data.get('user_id')
+        
+        if not user_id:
+            return jsonify({'error': 'User ID required'}), 400
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Get chapter data including PDF binary
+        cursor.execute("""
+            SELECT cc.pdf_data, cc.title, cc.class_id, c.professor_id
+            FROM class_chapters cc
+            JOIN classes c ON cc.class_id = c.class_id
+            WHERE cc.chapter_id = %s
+        """, (chapter_id,))
+        
+        result = cursor.fetchone()
+        if not result:
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'Chapter not found'}), 404
+        
+        pdf_data, chapter_title, class_id, professor_id = result
+        
+        # Verify user is the professor
+        if professor_id != user_id:
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'Only the class professor can generate exercises'}), 403
+        
+        if not pdf_data:
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'PDF data not found for this chapter'}), 404
+        
+        # Extract text from PDF binary data
+        if not extract_text_from_pdf_bytes:
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'PDF processor not available'}), 500
+        
+        try:
+            pdf_text = extract_text_from_pdf_bytes(bytes(pdf_data))
+        except Exception as e:
+            cursor.close()
+            conn.close()
+            return jsonify({'error': f'Failed to extract text from PDF: {str(e)}'}), 500
+        
+        if not pdf_text:
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'Could not extract text from PDF. PDF may be empty or image-based.'}), 400
+        
+        # Generate exercises using AI
+        if not generate_exercises_from_pdf_content:
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'Exercise generator not available'}), 500
+        
+        try:
+            api_key = os.getenv('GEMINI_API_KEY') or 'AIzaSyDURc7Q5UxgJZs_L9H3DaJzQD9Rysme_Ws'
+            exercises = generate_exercises_from_pdf_content(pdf_text, chapter_title, api_key)
+        except Exception as e:
+            cursor.close()
+            conn.close()
+            return jsonify({'error': f'Failed to generate exercises: {str(e)}'}), 500
+        
+        if not exercises:
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'No exercises were generated'}), 400
+        
+        # Store exercises in database
+        exercises_generated = 0
+        for idx, exercise in enumerate(exercises, 1):
+            exercise_id = f"{chapter_id}_ex_{idx}_{int(datetime.now().timestamp() * 1000)}"
+            cursor.execute("""
+                INSERT INTO class_exercises (exercise_id, chapter_id, class_id, title, description, difficulty, solution_code, exercise_number)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            """, (
+                exercise_id,
+                chapter_id,
+                class_id,
+                exercise['title'],
+                exercise['description'],
+                exercise['difficulty'],
+                exercise['solution_code'],
+                idx
+            ))
+            exercises_generated += 1
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'exercises_generated': exercises_generated,
+            'chapter_id': chapter_id
+        }), 201
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/classes/<class_id>', methods=['DELETE'])
 def delete_class(class_id):
     """Delete class (professor only, must be owner)"""
