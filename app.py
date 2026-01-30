@@ -1949,6 +1949,8 @@ def upload_chapter(class_id):
                 # Don't fail the upload if exercise generation fails
                 exercises_generated = 0
         
+        # Commit the transaction to ensure chapter is saved
+        conn.commit()
         cursor.close()
         conn.close()
         
@@ -2832,7 +2834,8 @@ def get_class_average_leaderboard(class_id):
                 u.user_id,
                 u.name,
                 u.email,
-                COALESCE(AVG(pp.best_score), 0) as average_score
+                COALESCE(AVG(pp.best_score), 0) as average_score,
+                COUNT(DISTINCT CASE WHEN pp.completed = true THEN pp.exercise_id END) as exercises_completed
             FROM class_enrollments ce
             JOIN users u ON ce.student_id = u.user_id
             LEFT JOIN practice_progress pp ON pp.user_id = u.user_id AND pp.class_id = %s
@@ -2852,7 +2855,8 @@ def get_class_average_leaderboard(class_id):
                 'student_id': student[0],
                 'name': student[1],
                 'email': student[2],
-                'average_score': round(float(student[3]), 1)
+                'average_score': round(float(student[3]), 1),
+                'exercises_completed': int(student[4]) if student[4] else 0
             })
         
         return jsonify({'leaderboard': leaderboard}), 200
