@@ -28,6 +28,7 @@ except ImportError:
 # Load environment variables
 load_dotenv()
 
+
 app = Flask(__name__)
 
 # Disable automatic OPTIONS handling so we can handle CORS manually
@@ -1879,15 +1880,12 @@ def upload_chapter(class_id):
         # Generate unique chapter ID
         chapter_id = f"{class_id}_{int(datetime.now().timestamp() * 1000)}"
         
-        # Save PDF file
+        # Store filename for reference
         filename = secure_filename(file.filename)
         pdf_filename = f"{chapter_id}_{filename}"
-        pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], pdf_filename)
-        pdf_url = f"Course Content/{pdf_filename}"  # Relative path for now
         
-        # Save file
-        file.seek(0)  # Reset file pointer
-        file.save(pdf_path)
+        # PDF URL will point to our serve endpoint
+        pdf_url = f"/api/chapters/{chapter_id}/pdf"
         
         # Extract text from PDF (for future exercise generation)
         pdf_text = None
@@ -1906,12 +1904,12 @@ def upload_chapter(class_id):
         """, (class_id,))
         chapter_number = cursor.fetchone()[0] or 1
         
-        # Create chapter record
+        # Create chapter record with PDF binary data
         cursor.execute("""
-            INSERT INTO class_chapters (chapter_id, class_id, title, description, chapter_number, pdf_url, pdf_filename)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO class_chapters (chapter_id, class_id, title, description, chapter_number, pdf_url, pdf_filename, pdf_data)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING chapter_id, title, description, chapter_number, created_at
-        """, (chapter_id, class_id, title, description, chapter_number, pdf_url, pdf_filename))
+        """, (chapter_id, class_id, title, description, chapter_number, pdf_url, pdf_filename, psycopg2.Binary(file_bytes)))
         
         chapter_data = cursor.fetchone()
         chapter_id_result = chapter_data[0]
@@ -2087,17 +2085,9 @@ def delete_chapter(chapter_id):
         # Delete associated exercises first (foreign key constraint)
         cursor.execute("DELETE FROM class_exercises WHERE chapter_id = %s", (chapter_id,))
         
-        # Delete the chapter
+        # Delete the chapter (PDF binary data will be deleted automatically)
         cursor.execute("DELETE FROM class_chapters WHERE chapter_id = %s", (chapter_id,))
-        
-        # Delete the PDF file if it exists
-        if pdf_filename:
-            pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], pdf_filename)
-            if os.path.exists(pdf_path):
-                try:
-                    os.remove(pdf_path)
-                except Exception as e:
-                    print(f"Warning: Could not delete PDF file {pdf_filename}: {e}")
+
         
         conn.commit()
         cursor.close()
@@ -3060,16 +3050,42 @@ def get_class_resources(class_id):
 # PDF File Serving Endpoint
 # ============================================================================
 
-@app.route('/Course%20Content/<path:filename>')
-@app.route('/Course Content/<path:filename>')
-def serve_pdf(filename):
-    """Serve PDF files from the Course Content directory"""
+@app.route('/api/chapters/<chapter_id>/pdf', methods=['GET'])
+def serve_chapter_pdf(chapter_id):
+    """Serve PDF file from database binary storage"""
     try:
-        from flask import send_from_directory
-        return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Get PDF binary data from database
+        cursor.execute("""
+            SELECT pdf_data, pdf_filename
+            FROM class_chapters
+            WHERE chapter_id = %s
+        """, (chapter_id,))
+        
+        result = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        
+        if not result or not result[0]:
+            return jsonify({'error': 'PDF not found'}), 404
+        
+        pdf_data = bytes(result[0])
+        pdf_filename = result[1] or 'chapter.pdf'
+        
+        # Return PDF with proper headers
+        from flask import Response
+        response = Response(pdf_data, mimetype='application/pdf')
+        response.headers['Content-Disposition'] = f'inline; filename="{pdf_filename}"'
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
+        
     except Exception as e:
-        print(f"Error serving PDF {filename}: {e}")
-        return jsonify({'error': 'PDF file not found'}), 404
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
 
 if __name__ == '__main__':
     import sys

@@ -215,12 +215,12 @@
         document.getElementById('chapterTitle').textContent = chapter.title || 'Untitled Chapter';
         document.getElementById('chapterDescription').textContent = chapter.description || '';
 
-        if (!chapter.pdf_filename) {
-          throw new Error('PDF file not found for this chapter');
+        if (!chapter.chapter_id) {
+          throw new Error('Chapter ID not found');
         }
 
-        // Construct PDF path using Flask server URL
-        const pdfPath = `${apiUrl.replace('/api', '')}/Course%20Content/${encodeURIComponent(chapter.pdf_filename)}`;
+        // Construct PDF path using API endpoint that serves from database
+        const pdfPath = `${apiUrl}/chapters/${encodeURIComponent(chapter.chapter_id)}/pdf`;
         await renderPDFPages(pdfPath, container);
 
       } catch (error) {
