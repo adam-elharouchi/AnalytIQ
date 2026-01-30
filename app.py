@@ -3210,12 +3210,16 @@ def get_class_resources(class_id):
         
         resources = []
         for ch in chapters:
+            chapter_id = ch[0]
+            # Construct PDF URL that points to our serving endpoint
+            pdf_url = f"/api/chapters/{chapter_id}/pdf"
+            
             resources.append({
-                'resource_id': ch[0],
+                'resource_id': chapter_id,
                 'title': ch[1],
                 'description': ch[2],
-                'type': 'chapter',
-                'url': ch[3],
+                'resource_type': 'chapter',  # This helps frontend distinguish icons
+                'url': pdf_url, 
                 'created_at': ch[4].isoformat() if ch[4] else None
             })
             
