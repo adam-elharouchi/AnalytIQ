@@ -3000,22 +3000,28 @@ def get_class_average_leaderboard(class_id):
                 return jsonify({'error': 'Not authorized to view this leaderboard'}), 403
         
         # Get average scores for all students in the class
-        cursor.execute("""
-            SELECT 
-                u.user_id,
-                u.name,
-                u.email,
-                COALESCE(AVG(pp.best_score), 0) as average_score,
-                COUNT(DISTINCT CASE WHEN pp.completed = true THEN pp.exercise_id END) as exercises_completed
-            FROM class_enrollments ce
-            JOIN users u ON ce.student_id = u.user_id
-            LEFT JOIN practice_progress pp ON pp.user_id = u.user_id AND pp.class_id = %s
-            WHERE ce.class_id = %s
-            GROUP BY u.user_id, u.name, u.email
-            ORDER BY average_score DESC, u.name ASC
-        """, (class_id, class_id))
+        # Get average scores - Optimized query
+        try:
+            cursor.execute("""
+                SELECT 
+                    u.user_id,
+                    u.name,
+                    u.email,
+                    COALESCE(AVG(pp.best_score), 0) as average_score,
+                    COUNT(DISTINCT pp.exercise_id) as exercises_completed
+                FROM class_enrollments ce
+                JOIN users u ON ce.student_id = u.user_id
+                LEFT JOIN practice_progress pp ON pp.user_id = u.user_id AND pp.class_id = %s AND pp.completed = true
+                WHERE ce.class_id = %s
+                GROUP BY u.user_id, u.name, u.email
+                ORDER BY average_score DESC, u.name ASC
+            """, (class_id, class_id))
+            students = cursor.fetchall()
+        except Exception as query_err:
+             print(f"Error executing leaderboard query: {query_err}")
+             # Fallback to empty list if query fails (e.g. connection issue)
+             students = []
         
-        students = cursor.fetchall()
         cursor.close()
         conn.close()
         
@@ -3027,7 +3033,10 @@ def get_class_average_leaderboard(class_id):
                 'name': student[1],
                 'email': student[2],
                 'average_score': round(float(student[3]), 1),
-                'exercises_completed': int(student[4]) if student[4] else 0
+                'exercises_completed': int(student[4])
+            })
+            
+        return jsonify({'leaderboard': leaderboard}), 200
             })
         
         return jsonify({'leaderboard': leaderboard}), 200

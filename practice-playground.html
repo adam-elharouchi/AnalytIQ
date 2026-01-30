@@ -916,7 +916,8 @@
             title: exercise.title,
             description: exercise.description || '',
             difficulty: exercise.difficulty || 'medium',
-            code: '' // Will be populated if available in solution_code
+            code: '', // Will be populated if available in solution_code
+            classId: classId // Store class_id for submission tracking
           };
 
           // Store solution_code if available (for professors)
@@ -925,7 +926,7 @@
           } else if (exercise.exercise_file_url) {
             // If no solution_code but file exists, try to fetch file content
             try {
-              const fileUrl = exercise.exercise_file_url.startsWith("/") 
+              const fileUrl = exercise.exercise_file_url.startsWith("/")
                 ? `${window.location.origin}${exercise.exercise_file_url}`
                 : exercise.exercise_file_url;
               const fileResponse = await fetch(fileUrl);
@@ -1189,6 +1190,9 @@
             score: Math.round(score),
             accuracy: parseFloat(accuracy.toFixed(2)),
             time_spent: Math.round(timeSpent),
+            // Add class context if available
+            class_id: exerciseData ? exerciseData.classId : null,
+            class_exercise_id: exerciseData ? exerciseData.id : null,
             progress_data: {
               exercise_title: exerciseTitle
             }
