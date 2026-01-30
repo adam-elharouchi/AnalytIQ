@@ -3037,9 +3037,7 @@ def get_class_average_leaderboard(class_id):
             })
             
         return jsonify({'leaderboard': leaderboard}), 200
-            })
-        
-        return jsonify({'leaderboard': leaderboard}), 200
+
         
     except Exception as e:
         print(f"Error in get_class_average_leaderboard: {e}")
