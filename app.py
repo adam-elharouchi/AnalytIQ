@@ -3052,14 +3052,14 @@ def get_class_resources(class_id):
 
 @app.route('/api/chapters/<chapter_id>/pdf', methods=['GET'])
 def serve_chapter_pdf(chapter_id):
-    """Serve PDF file from database binary storage"""
+    """Serve PDF file from database binary storage or filesystem (backward compatibility)"""
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Get PDF binary data from database
+        # Get PDF data from database
         cursor.execute("""
-            SELECT pdf_data, pdf_filename
+            SELECT pdf_data, pdf_filename, pdf_url
             FROM class_chapters
             WHERE chapter_id = %s
         """, (chapter_id,))
@@ -3068,18 +3068,35 @@ def serve_chapter_pdf(chapter_id):
         cursor.close()
         conn.close()
         
-        if not result or not result[0]:
-            return jsonify({'error': 'PDF not found'}), 404
+        if not result:
+            return jsonify({'error': 'Chapter not found'}), 404
         
-        pdf_data = bytes(result[0])
+        pdf_data = result[0]
         pdf_filename = result[1] or 'chapter.pdf'
+        pdf_url = result[2]
         
-        # Return PDF with proper headers
-        from flask import Response
-        response = Response(pdf_data, mimetype='application/pdf')
-        response.headers['Content-Disposition'] = f'inline; filename="{pdf_filename}"'
-        response.headers['Access-Control-Allow-Origin'] = '*'
-        return response
+        # NEW: If pdf_data exists in database, serve from database
+        if pdf_data:
+            pdf_bytes = bytes(pdf_data)
+            from flask import Response
+            response = Response(pdf_bytes, mimetype='application/pdf')
+            response.headers['Content-Disposition'] = f'inline; filename="{pdf_filename}"'
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            return response
+        
+        # OLD: Fallback to filesystem for legacy chapters
+        elif pdf_filename:
+            pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], pdf_filename)
+            if os.path.exists(pdf_path):
+                from flask import send_from_directory
+                response = send_from_directory(app.config['UPLOAD_FOLDER'], pdf_filename)
+                response.headers['Access-Control-Allow-Origin'] = '*'
+                return response
+            else:
+                return jsonify({'error': f'PDF file not found: {pdf_filename}'}), 404
+        
+        else:
+            return jsonify({'error': 'No PDF data available'}), 404
         
     except Exception as e:
         import traceback
