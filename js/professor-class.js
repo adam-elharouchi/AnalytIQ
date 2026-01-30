@@ -2273,3 +2273,100 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+// Upload Chapter Modal Functions
+function showUploadChapterModal() {
+  const modal = document.getElementById('uploadChapterModal');
+  document.getElementById('uploadChapterForm').reset();
+  document.getElementById('uploadChapterError').style.display = 'none';
+  modal.style.display = 'flex';
+}
+
+function hideUploadChapterModal() {
+  document.getElementById('uploadChapterModal').style.display = 'none';
+}
+
+async function handleUploadChapter(event) {
+  event.preventDefault();
+
+  const currentUser = getCurrentUser();
+  if (!currentUser || !currentUser.user_id || !currentClassId) {
+    alert('Error: User not logged in');
+    return;
+  }
+
+  const title = document.getElementById('chapterTitle').value.trim();
+  const description = document.getElementById('chapterDescription').value.trim();
+  const pdfFile = document.getElementById('chapterPDF').files[0];
+  const exerciseMode = document.querySelector('input[name="exerciseMode"]:checked').value;
+
+  if (!title || !pdfFile) {
+    showUploadChapterError('Please fill in all required fields');
+    return;
+  }
+
+  const errorDiv = document.getElementById('uploadChapterError');
+  errorDiv.style.display = 'none';
+
+  const submitButton = event.target.querySelector('button[type="submit"]');
+  const originalText = submitButton.textContent;
+
+  try {
+    submitButton.disabled = true;
+    submitButton.textContent = 'Uploading...';
+
+    const formData = new FormData();
+    formData.append('pdf_file', pdfFile);
+    formData.append('title', title);
+    formData.append('description', description);
+    formData.append('exercise_mode', exerciseMode);
+    formData.append('user_id', currentUser.user_id);
+    formData.append('chapter_number', 999); // Auto-increment
+
+    const response = await fetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/chapters`, {
+      method: 'POST',
+      body: formData
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to upload chapter');
+    }
+
+    // Success - close modal and reload chapters
+    hideUploadChapterModal();
+    await loadChapters();
+
+    // Update chapter count in header
+    if (currentClassData) {
+      currentClassData.chapter_count = (currentClassData.chapter_count || 0) + 1;
+      document.getElementById('chapterCountStat').textContent = currentClassData.chapter_count;
+    }
+
+    // If exercises were auto-generated, update exercise count
+    if (data.exercises_generated && data.exercises_generated > 0) {
+      if (currentClassData) {
+        currentClassData.exercise_count = (currentClassData.exercise_count || 0) + data.exercises_generated;
+        document.getElementById('exerciseCountStat').textContent = currentClassData.exercise_count;
+      }
+      alert(`Chapter uploaded successfully! ${data.exercises_generated} exercises were auto-generated.`);
+    } else {
+      alert('Chapter uploaded successfully!');
+    }
+
+  } catch (error) {
+    console.error('Error uploading chapter:', error);
+    errorDiv.textContent = error.message;
+    errorDiv.style.display = 'block';
+  } finally {
+    submitButton.textContent = originalText;
+    submitButton.disabled = false;
+  }
+}
+
+function showUploadChapterError(message) {
+  const errorDiv = document.getElementById('uploadChapterError');
+  errorDiv.textContent = message;
+  errorDiv.style.display = 'block';
+}
