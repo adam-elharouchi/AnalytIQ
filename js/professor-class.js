@@ -1865,8 +1865,19 @@ async function handleUploadChapter(event) {
       renderClassHeader(currentClassData);
     }
 
-    // Show success message
-    alert(`Chapter "${title}" uploaded successfully!`);
+    // Reload exercises if any were generated
+    if (data.exercises_generated && data.exercises_generated > 0) {
+      if (currentClassData) {
+        currentClassData.exercise_count = (currentClassData.exercise_count || 0) + data.exercises_generated;
+        renderClassHeader(currentClassData);
+      }
+      // Reload exercises tab
+      loadExercises();
+      alert(`Chapter "${title}" uploaded successfully!\n${data.exercises_generated} exercises were auto-generated.`);
+    } else {
+      alert(`Chapter "${title}" uploaded successfully!`);
+    }
+
 
   } catch (error) {
     console.error('Error uploading chapter:', error);
