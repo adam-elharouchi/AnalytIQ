@@ -936,6 +936,7 @@ async function loadResources() {
       // Type icons and labels
       const typeLabels = {
         'pdf': { icon: '📄', label: 'PDFs & Documents' },
+        'chapter': { icon: '📖', label: 'Chapter PDFs' },
         'tool': { icon: '🛠️', label: 'Tools' },
         'dataset': { icon: '💾', label: 'Datasets' },
         'video': { icon: '🎥', label: 'Videos' },
@@ -956,22 +957,23 @@ async function loadResources() {
             <div class="resources-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
               ${resources.map(resource => {
           const icon = resource.resource_type === 'pdf' ? '📄' :
-            resource.resource_type === 'tool' ? '🛠️' :
-              resource.resource_type === 'dataset' ? '💾' :
-                resource.resource_type === 'video' ? '🎥' : '🔗';
+            resource.resource_type === 'chapter' ? '📖' :
+              resource.resource_type === 'tool' ? '🛠️' :
+                resource.resource_type === 'dataset' ? '💾' :
+                  resource.resource_type === 'video' ? '🎥' : '🔗';
 
-          let url = resource.resource_url || '#';
+          let url = resource.resource_url || resource.url || '#';
           let linkTarget = '';
           let linkText = 'Visit Resource';
 
-          // Handle PDFs - if it's a chapter PDF, link to chapter viewer
-          if (resource.resource_type === 'pdf' && resource.is_chapter && resource.chapter_id) {
-            url = `chapter-view.html?chapter_id=${encodeURIComponent(resource.chapter_id)}&class_id=${encodeURIComponent(currentClassId)}`;
-            linkText = 'View PDF';
-          } else if (resource.resource_type === 'pdf') {
+          // Handle PDFs
+          if (resource.resource_type === 'pdf') {
             linkText = 'View PDF';
             const isExternal = url.startsWith('http://') || url.startsWith('https://');
             linkTarget = isExternal ? 'target="_blank"' : '';
+          } else if (resource.resource_type === 'chapter') {
+            linkText = 'View PDF';
+            linkTarget = '_blank';
           } else {
             const isExternal = url.startsWith('http://') || url.startsWith('https://');
             linkTarget = isExternal ? 'target="_blank"' : '';
