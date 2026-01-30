@@ -2042,6 +2042,75 @@ def get_class_chapters(class_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/chapters/<chapter_id>', methods=['DELETE', 'OPTIONS'])
+def delete_chapter(chapter_id):
+    """Delete a chapter and all its exercises (professor only)"""
+    try:
+        if request.method == 'OPTIONS':
+            response = app.response_class()
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+            response.headers['Access-Control-Allow-Methods'] = 'DELETE, OPTIONS'
+            response.status_code = 200
+            return response
+        
+        user_id = request.args.get('user_id')
+        if not user_id:
+            return jsonify({'error': 'Missing user_id'}), 400
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Verify chapter exists and user is the professor
+        cursor.execute("""
+            SELECT cc.class_id, cc.pdf_filename, c.professor_id
+            FROM class_chapters cc
+            JOIN classes c ON cc.class_id = c.class_id
+            WHERE cc.chapter_id = %s
+        """, (chapter_id,))
+        chapter_data = cursor.fetchone()
+        
+        if not chapter_data:
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'Chapter not found'}), 404
+        
+        class_id = chapter_data[0]
+        pdf_filename = chapter_data[1]
+        professor_id = chapter_data[2]
+        
+        if professor_id != user_id:
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'Only the class owner can delete chapters'}), 403
+        
+        # Delete associated exercises first (foreign key constraint)
+        cursor.execute("DELETE FROM class_exercises WHERE chapter_id = %s", (chapter_id,))
+        
+        # Delete the chapter
+        cursor.execute("DELETE FROM class_chapters WHERE chapter_id = %s", (chapter_id,))
+        
+        # Delete the PDF file if it exists
+        if pdf_filename:
+            pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], pdf_filename)
+            if os.path.exists(pdf_path):
+                try:
+                    os.remove(pdf_path)
+                except Exception as e:
+                    print(f"Warning: Could not delete PDF file {pdf_filename}: {e}")
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        return jsonify({'success': True, 'message': 'Chapter deleted successfully'}), 200
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/classes/<class_id>', methods=['DELETE'])
 def delete_class(class_id):
     """Delete class (professor only, must be owner)"""
