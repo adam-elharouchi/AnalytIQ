@@ -183,7 +183,7 @@ async function loadChapters() {
             </div>
             ${chapter.description ? `<p style="color: #64748b; margin-bottom: 0.5rem;">${escapeHtml(chapter.description)}</p>` : ''}
             <div style="font-size: 0.875rem; color: #64748b;">
-              <span>📄 ${escapeHtml(chapter.pdf_filename || 'PDF file')}</span>
+              <span>📄 ${escapeHtml((chapter.pdf_filename || 'PDF file').replace(/^[A-Za-z0-9]+_\d+_/, ''))}</span>
               ${chapter.created_at ? `<span style="margin-left: 1rem;">Uploaded: ${new Date(chapter.created_at).toLocaleDateString()}</span>` : ''}
             </div>
           </div>
