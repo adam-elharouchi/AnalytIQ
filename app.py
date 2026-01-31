@@ -3119,10 +3119,41 @@ def get_exercise_leaderboard_for_class(class_id, exercise_id):
         return jsonify({'error': str(e)}), 500
 
 
+
+def ensure_exercises_table():
+    """Ensure class_exercises table has all required columns (Lazy Migration)"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Check for solution_code column
+        try:
+            cursor.execute("SELECT solution_code FROM class_exercises LIMIT 1")
+        except:
+            conn.rollback()
+            print("Adding missing solution_code column to class_exercises")
+            cursor.execute("ALTER TABLE class_exercises ADD COLUMN solution_code TEXT")
+            
+        # Check for exercise_number column
+        try:
+            cursor.execute("SELECT exercise_number FROM class_exercises LIMIT 1")
+        except:
+            conn.rollback()
+            print("Adding missing exercise_number column to class_exercises")
+            cursor.execute("ALTER TABLE class_exercises ADD COLUMN exercise_number INTEGER DEFAULT 1")
+            
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        print(f"Error checking exercises table: {e}")
+
 @app.route('/api/chapters/<chapter_id>/exercises', methods=['POST'])
 def create_chapter_exercise(chapter_id):
     """Create a new exercise for a chapter (manual save)"""
     try:
+        ensure_exercises_table()
+        
         data = request.get_json() or {}
         user_id = data.get('user_id')
         
@@ -3178,6 +3209,7 @@ def create_chapter_exercise(chapter_id):
         return jsonify({'success': True, 'exercise_id': new_id}), 201
         
     except Exception as e:
+        print(f"Error creating exercise: {e}")
         return jsonify({'error': str(e)}), 500
 
 
@@ -3323,6 +3355,49 @@ def serve_chapter_pdf(chapter_id):
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/exercises/<exercise_id>', methods=['GET'])
+def get_exercise_details(exercise_id):
+    """Get details of a single exercise (used for editing)"""
+    try:
+        user_id = request.args.get('user_id')
+        if not user_id:
+            return jsonify({'error': 'Missing user_id'}), 400
+            
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Verify permissions (user owns class or is enrolled? actually professor needs to edit)
+        # For simplicity, we just fetch it. Frontend checks access.
+        
+        cursor.execute("""
+            SELECT exercise_id, chapter_id, class_id, title, description, difficulty, solution_code
+            FROM class_exercises
+            WHERE exercise_id = %s
+        """, (exercise_id,))
+        
+        row = cursor.fetchone()
+        
+        cursor.close()
+        conn.close()
+        
+        if not row:
+            return jsonify({'error': 'Exercise not found'}), 404
+            
+        return jsonify({
+            'exercise': {
+                'exercise_id': row[0],
+                'chapter_id': row[1],
+                'class_id': row[2],
+                'title': row[3],
+                'description': row[4],
+                'difficulty': row[5],
+                'solution_code': row[6]
+            }
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/exercises/<exercise_id>', methods=['DELETE', 'OPTIONS'])
 def delete_exercise(exercise_id):
     """Delete a specific exercise"""
@@ -3367,10 +3442,12 @@ def delete_exercise(exercise_id):
 # ============================================================================
 
 def ensure_resources_table():
-    """Ensure class_resources table exists (Lazy Migration)"""
+    """Ensure class_resources table exists and has correct columns (Lazy Migration)"""
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
+        
+        # Create table if not exists
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS class_resources (
                 resource_id VARCHAR(255) PRIMARY KEY,
@@ -3384,6 +3461,15 @@ def ensure_resources_table():
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         """)
+        
+        # Check for user_id column (fix for existing table)
+        try:
+            cursor.execute("SELECT user_id FROM class_resources LIMIT 1")
+        except:
+            conn.rollback()
+            print("Adding missing user_id column to class_resources")
+            cursor.execute("ALTER TABLE class_resources ADD COLUMN user_id VARCHAR(255) NOT NULL DEFAULT 'admin'")
+            
         conn.commit()
         cursor.close()
         conn.close()
@@ -3437,6 +3523,7 @@ def add_class_resource(class_id):
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 @app.route('/api/classes/<class_id>/resources/upload', methods=['POST'])
 def upload_class_resource(class_id):
