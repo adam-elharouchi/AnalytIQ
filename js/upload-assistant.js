@@ -397,13 +397,15 @@ async function saveAll() {
         description: card.querySelector('.ex-desc').value
     }));
 
-    // We already have the chapter created (selectedChapterId)
-    // Just save the exercises - no duplicate upload!
-
     if (!selectedChapterId) {
         alert('Error: No chapter selected');
         return;
     }
+
+    const saveBtn = document.getElementById('saveBtn');
+    const originalText = saveBtn.textContent;
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
 
     try {
         // Save all exercises in parallel for speed
@@ -428,6 +430,8 @@ async function saveAll() {
 
     } catch (error) {
         alert('Error saving: ' + error.message);
+        saveBtn.disabled = false;
+        saveBtn.textContent = originalText;
     }
 }
 
