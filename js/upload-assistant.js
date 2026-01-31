@@ -408,7 +408,7 @@ async function saveAll() {
     try {
         // Save all exercises in parallel for speed
         const savePromises = finalExercises.map(ex =>
-            fetch(`${API_BASE_URL}/classes/${currentClassId}/chapters/${selectedChapterId}/exercises`, {
+            fetch(`${API_BASE_URL}/chapters/${selectedChapterId}/exercises`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
