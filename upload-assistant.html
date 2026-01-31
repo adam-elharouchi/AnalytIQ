@@ -229,6 +229,12 @@
 
       <!-- New Chapter Upload -->
       <div id="newChapterSection">
+        <div style="margin-bottom: 2rem;">
+          <label style="display: block; margin-bottom: 0.5rem; color: #1e293b; font-weight: 500;">Chapter Title</label>
+          <input type="text" id="chapterTitleInput" placeholder="e.g., Chapter 3: Advanced Data Visualization"
+            style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.5rem; font-size: 1rem;">
+        </div>
+
         <div class="upload-zone" id="dropZone">
           <div style="font-size: 3rem; margin-bottom: 1rem;">📄</div>
           <h3 style="margin-bottom: 0.5rem; color: #1e293b;">Upload Chapter PDF</h3>
@@ -236,12 +242,6 @@
           <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">Select PDF
             File</button>
           <input type="file" id="fileInput" accept=".pdf" style="display: none" onchange="handleFileSelect(event)">
-        </div>
-
-        <div style="margin-top: 2rem;">
-          <label style="display: block; margin-bottom: 0.5rem; color: #1e293b; font-weight: 500;">Chapter Title</label>
-          <input type="text" id="chapterTitleInput" placeholder="e.g., Chapter 3: Advanced Data Visualization"
-            style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.5rem; font-size: 1rem;">
         </div>
       </div>
 

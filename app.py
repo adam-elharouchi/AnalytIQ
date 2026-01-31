@@ -1729,6 +1729,12 @@ def get_class(class_id):
             SELECT COUNT(*) FROM class_chapters WHERE class_id = %s
         """, (class_id,))
         chapter_count = cursor.fetchone()[0] or 0
+
+        # Get exercise count (NEW FIX)
+        cursor.execute("""
+            SELECT COUNT(*) FROM class_exercises WHERE class_id = %s
+        """, (class_id,))
+        exercise_count = cursor.fetchone()[0] or 0
         
         cursor.close()
         conn.close()
@@ -1743,11 +1749,185 @@ def get_class(class_id):
             'professor_email': class_data[6] if len(class_data) > 6 else None,
             'student_count': student_count,
             'chapter_count': chapter_count,
+            'exercise_count': exercise_count, 
             'is_owner': is_owner
         }), 200
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+# ... (Previous code) ... 
+
+@app.route('/api/classes/<class_id>/resources', methods=['GET'])
+def get_class_resources(class_id):
+    """Get all resources for a class (including chapters as resources)"""
+    # ... Implementation check ... 
+    try:
+        user_id = request.args.get('user_id')
+        if not user_id:
+            return jsonify({'error': 'Missing user_id'}), 400
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Verify user is enrolled in the class or is the professor
+        cursor.execute("""
+            SELECT professor_id FROM classes WHERE class_id = %s
+        """, (class_id,))
+        class_data = cursor.fetchone()
+        
+        if not class_data:
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'Class not found'}), 404
+        
+        # Get chapters to show as resources
+        cursor.execute("""
+            SELECT chapter_id, title, description, pdf_url, created_at
+            FROM class_chapters
+            WHERE class_id = %s
+            ORDER BY created_at DESC
+        """, (class_id,))
+        
+        chapters = cursor.fetchall()
+        
+        resources = []
+        for ch in chapters:
+            chapter_id = ch[0]
+            # Construct PDF URL that points to our serving endpoint
+            pdf_url = f"/api/chapters/{chapter_id}/pdf"
+            
+            resources.append({
+                'resource_id': chapter_id,
+                'title': ch[1],
+                'description': ch[2],
+                'resource_type': 'chapter',
+                'url': pdf_url, 
+                'created_at': ch[4].isoformat() if ch[4] else None
+            })
+            
+        # Get other resources from class_resources table
+        ensure_resources_table()
+        try:
+            cursor.execute("""
+                SELECT resource_id, title, description, resource_type, resource_url, created_at
+                FROM class_resources
+                WHERE class_id = %s
+                ORDER BY created_at DESC
+            """, (class_id,))
+            
+            other_resources = cursor.fetchall()
+            for res in other_resources:
+                resources.append({
+                    'resource_id': res[0],
+                    'title': res[1],
+                    'description': res[2],
+                    'resource_type': res[3],
+                    'url': res[4],
+                    'created_at': res[5].isoformat() if res[5] else None,
+                    'is_custom': True 
+                })
+        except Exception as table_err:
+            print(f"Error fetching class_resources: {table_err}")
+            
+        cursor.close()
+        conn.close()
+        
+        return jsonify({'all_resources': resources}), 200
+        
+    except Exception as e:
+        print(f"Error in get_class_resources: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/exercises/<exercise_id>', methods=['GET'])
+def get_exercise_details(exercise_id):
+    """Get details of a single exercise"""
+    try:
+        user_id = request.args.get('user_id')
+        if not user_id:
+            return jsonify({'error': 'Missing user_id'}), 400
+            
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT exercise_id, chapter_id, class_id, title, description, difficulty, solution_code
+            FROM class_exercises
+            WHERE exercise_id = %s
+        """, (exercise_id,))
+        
+        row = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        
+        if not row:
+            return jsonify({'error': 'Exercise not found'}), 404
+            
+        return jsonify({
+            'exercise': {
+                'exercise_id': row[0],
+                'chapter_id': row[1],
+                'class_id': row[2],
+                'title': row[3],
+                'description': row[4],
+                'difficulty': row[5],
+                'solution_code': row[6]
+            }
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/exercises/<exercise_id>', methods=['PUT'])
+def update_exercise(exercise_id):
+    """Update an existing exercise"""
+    try:
+        ensure_exercises_table()
+        data = request.json
+        user_id = data.get('user_id')
+        
+        if not user_id:
+            return jsonify({'error': 'Missing user_id'}), 400
+            
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Verify ownership (simplified check)
+        cursor.execute("""
+            SELECT c.professor_id 
+            FROM class_exercises ce
+            JOIN classes c ON ce.class_id = c.class_id
+            WHERE ce.exercise_id = %s
+        """, (exercise_id,))
+        
+        result = cursor.fetchone()
+        if not result or result[0] != user_id:
+             cursor.close()
+             conn.close()
+             return jsonify({'error': 'Not authorized'}), 403
+             
+        cursor.execute("""
+            UPDATE class_exercises 
+            SET title = %s, description = %s, difficulty = %s, solution_code = %s
+            WHERE exercise_id = %s
+        """, (
+            data.get('title'),
+            data.get('description'),
+            data.get('difficulty'),
+            data.get('solution_code'),
+            exercise_id
+        ))
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        return jsonify({'success': True}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/exercises/<exercise_id>', methods=['DELETE', 'OPTIONS'])
+def delete_exercise(exercise_id):
 
 @app.route('/api/classes/<class_id>', methods=['PUT'])
 def update_class(class_id):
