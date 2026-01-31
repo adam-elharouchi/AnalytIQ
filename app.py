@@ -3580,49 +3580,6 @@ def serve_chapter_pdf(chapter_id):
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/exercises/<exercise_id>', methods=['GET'])
-def get_exercise_details(exercise_id):
-    """Get details of a single exercise (used for editing)"""
-    try:
-        user_id = request.args.get('user_id')
-        if not user_id:
-            return jsonify({'error': 'Missing user_id'}), 400
-            
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        # Verify permissions (user owns class or is enrolled? actually professor needs to edit)
-        # For simplicity, we just fetch it. Frontend checks access.
-        
-        cursor.execute("""
-            SELECT exercise_id, chapter_id, class_id, title, description, difficulty, solution_code
-            FROM class_exercises
-            WHERE exercise_id = %s
-        """, (exercise_id,))
-        
-        row = cursor.fetchone()
-        
-        cursor.close()
-        conn.close()
-        
-        if not row:
-            return jsonify({'error': 'Exercise not found'}), 404
-            
-        return jsonify({
-            'exercise': {
-                'exercise_id': row[0],
-                'chapter_id': row[1],
-                'class_id': row[2],
-                'title': row[3],
-                'description': row[4],
-                'difficulty': row[5],
-                'solution_code': row[6]
-            }
-        }), 200
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
 @app.route('/api/exercises/<exercise_id>', methods=['DELETE', 'OPTIONS'])
 def delete_exercise(exercise_id):
     """Delete a specific exercise"""
