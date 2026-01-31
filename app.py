@@ -3148,6 +3148,8 @@ def ensure_exercises_table():
     except Exception as e:
         print(f"Error checking exercises table: {e}")
 
+import uuid
+
 @app.route('/api/chapters/<chapter_id>/exercises', methods=['POST'])
 def create_chapter_exercise(chapter_id):
     """Create a new exercise for a chapter (manual save)"""
@@ -3183,8 +3185,8 @@ def create_chapter_exercise(chapter_id):
             conn.close()
             return jsonify({'error': 'Only the professor can add exercises'}), 403
             
-        # Generate ID if not provided
-        exercise_id = data.get('exercise_id') or f"{chapter_id}_ex_{int(datetime.now().timestamp() * 1000)}"
+        # Generate Unique ID using UUID to prevent collisions in parallel requests
+        exercise_id = data.get('exercise_id') or f"{chapter_id}_ex_{str(uuid.uuid4())}"
         
         cursor.execute("""
             INSERT INTO class_exercises (exercise_id, chapter_id, class_id, title, description, difficulty, solution_code, exercise_number)
@@ -3212,8 +3214,53 @@ def create_chapter_exercise(chapter_id):
         print(f"Error creating exercise: {e}")
         return jsonify({'error': str(e)}), 500
 
-
-@app.route('/api/classes/<class_id>/resources', methods=['GET'])
+@app.route('/api/classes/<class_id>/resources', methods=['POST', 'OPTIONS'])
+def add_class_resource(class_id):
+    """Add a new resource (link) to the class"""
+    try:
+        if request.method == 'OPTIONS':
+            response = app.response_class()
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+            response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+            response.status_code = 200
+            return response
+            
+        ensure_resources_table()
+        
+        data = request.json
+        user_id = data.get('user_id')
+        
+        if not user_id:
+            return jsonify({'error': 'Missing user_id'}), 400
+            
+        # Generate Unique ID using UUID
+        resource_id = f"res_{str(uuid.uuid4())}"
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            INSERT INTO class_resources (resource_id, class_id, user_id, title, description, resource_type, resource_url)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """, (
+            resource_id,
+            class_id,
+            user_id,
+            data.get('title'),
+            data.get('description', ''),
+            data.get('resource_type', 'link'),
+            data.get('resource_url')
+        ))
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        return jsonify({'success': True, 'resource_id': resource_id}), 201
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 def get_class_resources(class_id):
     """Get all resources for a class (including chapters as resources)"""
     try:
