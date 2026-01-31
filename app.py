@@ -3523,53 +3523,7 @@ def ensure_resources_table():
     except Exception as e:
         print(f"Error checking resources table: {e}")
 
-@app.route('/api/classes/<class_id>/resources', methods=['POST', 'OPTIONS'])
-def add_class_resource(class_id):
-    """Add a new resource (link) to the class"""
-    try:
-        if request.method == 'OPTIONS':
-            response = app.response_class()
-            response.headers['Access-Control-Allow-Origin'] = '*'
-            response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
-            response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
-            response.status_code = 200
-            return response
-            
-        ensure_resources_table()
-        
-        data = request.json
-        user_id = data.get('user_id')
-        
-        if not user_id:
-            return jsonify({'error': 'Missing user_id'}), 400
-            
-        # Generate ID
-        resource_id = f"res_{int(datetime.now().timestamp() * 1000)}"
-        
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        cursor.execute("""
-            INSERT INTO class_resources (resource_id, class_id, user_id, title, description, resource_type, resource_url)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-        """, (
-            resource_id,
-            class_id,
-            user_id,
-            data.get('title'),
-            data.get('description', ''),
-            data.get('resource_type', 'link'),
-            data.get('resource_url')
-        ))
-        
-        conn.commit()
-        cursor.close()
-        conn.close()
-        
-        return jsonify({'success': True, 'resource_id': resource_id}), 201
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+
 
 
 @app.route('/api/classes/<class_id>/resources/upload', methods=['POST'])
