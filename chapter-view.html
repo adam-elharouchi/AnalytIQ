@@ -247,8 +247,8 @@
         for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
           const page = await pdf.getPage(pageNum);
 
-          // Use scale 1.5 for better performance while maintaining quality
-          const scale = 1.5;
+          // Use scale 2.5 for better quality
+          const scale = 2.5;
           const viewport = page.getViewport({ scale });
 
           const pageDiv = document.createElement('div');

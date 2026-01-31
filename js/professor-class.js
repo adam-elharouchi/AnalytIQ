@@ -833,6 +833,99 @@ function viewExerciseSolution(exerciseId) {
   alert(`View solution for exercise ${exerciseId} - functionality coming soon.`);
 }
 
+// Edit exercise - opens modal with existing data
+async function editExercise(exerciseId) {
+  const currentUser = getCurrentUser();
+  if (!currentUser || !currentClassId) return;
+
+  try {
+    // Find the exercise in the DOM or fetch it
+    // We can fetch details from the API to be sure
+    const chapterId = document.querySelector(`button[onclick*="'${exerciseId}'"]`).getAttribute('onclick').match(/'([^']+)', '([^']+)'/)[2]; // Hacky, better to fetch
+
+    // Better: Fetch specific exercise details. Since we don't have a direct GET /exercises/:id, we use the chapter list or iterate
+    // However, looking at loadExercises, we have the data in memory if we wanted, but let's just fetch from the new endpoint if we had it, or filter from cache.
+    // Let's iterate through the DOM or cache. 'dataCache' has exercises?
+
+    // Simplest approach: We already have the list loaded.
+    // Let's fetch the specific exercise details using the chapter endpoint we know exists, or search in our local cache.
+    // But we need the chapter_id.
+
+    // Let's just loop through chapters to find it if we don't have it.
+    // Or, we can use the `dataCache.exercises` if populated.
+
+    // Actually, let's use the button's data attributes if we added them, but we didn't.
+    // Let's try to find it in the `allExercises` array if we made it global, but we didn't.
+
+    // Valid Plan:
+    // 1. Show loading state.
+    // 2. Fetch all chapters.
+    // 3. Search for exercise in each chapter (parallel).
+    // 4. Populate modal.
+
+    // OPTIMIZATION: We changed the UI to group by chapter. We can pass the chapter_id to the edit button too!
+    // But I can't change the HTML generation easily without reloading.
+
+    // Let's assumes we find it.
+    // Actually, I'll search all chapters for now.
+
+    const chaptersResponse = await fetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/chapters?user_id=${currentUser.user_id}`);
+    const chaptersData = await chaptersResponse.json();
+    const chapters = chaptersData.chapters || [];
+
+    let foundExercise = null;
+    let foundChapterId = null;
+
+    for (const chapter of chapters) {
+      const exResp = await fetch(`${window.API_BASE_URL}/chapters/${encodeURIComponent(chapter.chapter_id)}/exercises?user_id=${currentUser.user_id}`);
+      const exData = await exResp.json();
+      const exercises = exData.exercises || [];
+      const match = exercises.find(e => e.exercise_id === exerciseId);
+      if (match) {
+        foundExercise = match;
+        foundChapterId = chapter.chapter_id;
+        break;
+      }
+    }
+
+    if (!foundExercise) {
+      alert("Exercise not found.");
+      return;
+    }
+
+    const modal = document.getElementById('createExerciseModal');
+    const modalTitle = modal.querySelector('h2');
+    const submitBtn = modal.querySelector('button[type="submit"]');
+
+    // Set to Edit Mode
+    modal.dataset.mode = 'edit';
+    modal.dataset.exerciseId = exerciseId;
+    modalTitle.textContent = "Edit Exercise";
+    submitBtn.textContent = "Update Exercise";
+
+    // Populate Form
+    document.getElementById('exerciseTitle').value = foundExercise.title || '';
+    document.getElementById('exerciseDescription').value = foundExercise.description || '';
+    document.getElementById('exerciseDifficulty').value = foundExercise.difficulty || 'medium';
+    document.getElementById('exerciseSolution').value = foundExercise.solution_code || '';
+
+    // Handle Chapter Select
+    await loadChapterOptions();
+    document.getElementById('exerciseChapter').value = foundChapterId;
+    document.getElementById('exerciseChapter').disabled = true; // Cannot move chapters in edit mode easily
+
+    // File input is optional/hidden for edit
+    // (We could clear it)
+    document.getElementById('exerciseFile').value = '';
+
+    modal.style.display = 'flex';
+
+  } catch (error) {
+    console.error("Error fetching exercise for edit:", error);
+    alert("Failed to load exercise details.");
+  }
+}
+
 // Start exercise from class view - opens practice playground
 function startExerciseFromClass(exerciseId, chapterId, exerciseTitle) {
   window.location.href = `practice-playground.html?exercise_id=${encodeURIComponent(exerciseId)}&chapter_id=${encodeURIComponent(chapterId)}&class_id=${encodeURIComponent(currentClassId)}&title=${encodeURIComponent(exerciseTitle)}&page_type=professor`;

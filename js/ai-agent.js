@@ -349,7 +349,11 @@ Before providing any code, CHECK THE CONVERSATION HISTORY to see what has alread
 - If data preprocessing was done, DON'T repeat it
 - Build upon previous code instead of starting from scratch
 - Reference earlier work: "Using the dataset we loaded earlier..." or "Building on the previous code..."
+- Reference earlier work: "Using the dataset we loaded earlier..." or "Building on the previous code..."
 - Only provide NEW code that adds to what was already done
+- DO NOT output the entire file content again. Only output the lines that changed or are new.
+- DO NOT repeat import statements if they were already imported in previous turns.
+- DO NOT repeat data loading code if data is already loaded.
 
 **Example of GOOD context awareness:**
 User: "Load the California housing dataset"
