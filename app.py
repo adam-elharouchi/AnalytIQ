@@ -1926,8 +1926,6 @@ def update_exercise(exercise_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/exercises/<exercise_id>', methods=['DELETE', 'OPTIONS'])
-def delete_exercise(exercise_id):
 
 @app.route('/api/classes/<class_id>', methods=['PUT'])
 def update_class(class_id):
