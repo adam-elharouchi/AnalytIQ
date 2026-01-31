@@ -409,13 +409,17 @@ async function saveAll() {
 
     try {
         // Save all exercises in parallel for speed
+        // The exercises already exist (generated in previous step), so we update them using PUT
         const savePromises = finalExercises.map(ex =>
-            fetch(`${API_BASE_URL}/chapters/${selectedChapterId}/exercises`, {
-                method: 'POST',
+            fetch(`${API_BASE_URL}/exercises/${ex.exercise_id}`, {
+                method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    ...ex,
-                    user_id: getCurrentUserId()
+                    user_id: getCurrentUserId(),
+                    title: ex.title,
+                    description: ex.description,
+                    difficulty: ex.difficulty,
+                    solution_code: ex.solution_code
                 })
             }).then(response => {
                 if (!response.ok) throw new Error('Failed to save exercise: ' + ex.title);

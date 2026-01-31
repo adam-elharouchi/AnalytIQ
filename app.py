@@ -3439,6 +3439,73 @@ def add_class_resource(class_id):
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/exercises/<exercise_id>', methods=['PUT', 'OPTIONS'])
+def update_exercise(exercise_id):
+    """Update an existing exercise"""
+    try:
+        if request.method == 'OPTIONS':
+            response = app.response_class()
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+            response.headers['Access-Control-Allow-Methods'] = 'PUT, OPTIONS'
+            response.status_code = 200
+            return response
+
+        data = request.json
+        user_id = data.get('user_id')
+        
+        if not user_id:
+            return jsonify({'error': 'Missing user_id'}), 400
+            
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Verify user is professor of the class owning this exercise
+        cursor.execute("""
+            SELECT c.professor_id 
+            FROM class_exercises ce
+            JOIN classes c ON ce.class_id = c.class_id
+            WHERE ce.exercise_id = %s
+        """, (exercise_id,))
+        
+        result = cursor.fetchone()
+        if not result:
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'Exercise not found'}), 404
+            
+        professor_id = result[0]
+        if professor_id != user_id:
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'Only the professor can edit this exercise'}), 403
+            
+        # Update exercise fields
+        cursor.execute("""
+            UPDATE class_exercises 
+            SET title = %s, 
+                description = %s, 
+                difficulty = %s, 
+                solution_code = %s,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE exercise_id = %s
+        """, (
+            data.get('title'),
+            data.get('description'),
+            data.get('difficulty'),
+            data.get('solution_code'),
+            exercise_id
+        ))
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        return jsonify({'success': True}), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 def get_class_resources(class_id):
     """Get all resources for a class (including chapters as resources)"""
     try:
