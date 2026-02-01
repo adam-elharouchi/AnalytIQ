@@ -33,7 +33,7 @@ app = Flask(__name__)
 
 # Disable automatic OPTIONS handling so we can handle CORS manually
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
-app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max file size
+app.config['MAX_CONTENT_LENGTH'] = 500 * 1024 * 1024  # 500MB max file size
 app.config['UPLOAD_FOLDER'] = 'Course Content'
 
 # Ensure upload folder exists
@@ -3653,6 +3653,29 @@ def ensure_resources_table():
             conn.rollback()
             print("Adding missing user_id column to class_resources")
             cursor.execute("ALTER TABLE class_resources ADD COLUMN user_id VARCHAR(255) NOT NULL DEFAULT 'admin'")
+            
+        # Check for legacy 'type' column (fix for 500 Internal Server Error)
+        try:
+            # Check if 'type' column exists
+            cursor.execute("SELECT type FROM class_resources LIMIT 1")
+            
+            # If we get here, the column exists. We need to drop it because it has a NOT NULL constraint
+            # causing failures when we insert using 'resource_type'.
+            print("Detected legacy 'type' column. Migrating data and dropping column...")
+            
+            # First, ensure data is preserved in 'resource_type' if needed
+            # (Assuming resource_type already exists as per CREATE statement)
+            cursor.execute("UPDATE class_resources SET resource_type = type WHERE resource_type IS NULL OR resource_type = ''")
+            
+            # Drop the legacy column
+            cursor.execute("ALTER TABLE class_resources DROP COLUMN type")
+            print("Legacy 'type' column dropped successfully.")
+            
+        except Exception as e:
+            # If SELECT type fails, the column likely doesn't exist, which is what we want.
+            # Or some other error occurred, but we proceed.
+            conn.rollback()
+            pass
             
         conn.commit()
         cursor.close()
