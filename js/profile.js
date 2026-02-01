@@ -4,7 +4,7 @@ if (typeof window.API_BASE_URL === 'undefined') {
   window.API_BASE_URL = 'https://analytiq-qbfr.onrender.com/api';
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
   loadProfileData();
   setupEventListeners();
 });
@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
 async function loadProfileData() {
   try {
     const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-    
+
     if (!currentUser.id) {
       console.error('No user logged in');
       return;
@@ -36,15 +36,15 @@ async function loadProfileData() {
         if (profileData.fullName || profileData.name) {
           document.getElementById('fullName').value = profileData.fullName || profileData.name;
         }
-        
+
         if (profileData.email) {
           document.getElementById('email').value = profileData.email;
         }
-        
+
         if (profileData.bio) {
           document.getElementById('bio').value = profileData.bio;
         }
-        
+
         // Update profile picture from API (if different from localStorage)
         if (profilePictureEl && profileData.profilePicture) {
           if (profileData.profilePicture !== currentUser.profilePicture) {
@@ -61,10 +61,13 @@ async function loadProfileData() {
         // Load settings
         const settingsResponse = await fetch(`${window.API_BASE_URL}/users/settings?user_id=${currentUser.id}`);
         const settings = await settingsResponse.json();
-        
+
         if (settingsResponse.ok) {
           if (settings.emailNotifications !== undefined) {
-            document.getElementById('emailNotifications').checked = settings.emailNotifications;
+            const emailToggle = document.getElementById('emailNotifications');
+            if (emailToggle) {
+              emailToggle.checked = settings.emailNotifications;
+            }
           }
         }
       }
@@ -81,19 +84,19 @@ function setupEventListeners() {
   // Profile picture upload
   const profilePictureInput = document.getElementById('profilePictureInput');
   profilePictureInput.addEventListener('change', handleProfilePictureUpload);
-  
+
   // Personal information form
   const personalInfoForm = document.getElementById('personalInfoForm');
   personalInfoForm.addEventListener('submit', handlePersonalInfoSubmit);
-  
+
   // Password form
   const passwordForm = document.getElementById('passwordForm');
   passwordForm.addEventListener('submit', handlePasswordChange);
-  
+
   // Email notifications toggle - auto-save on change
   const emailNotificationsToggle = document.getElementById('emailNotifications');
   if (emailNotificationsToggle) {
-    emailNotificationsToggle.addEventListener('change', async function() {
+    emailNotificationsToggle.addEventListener('change', async function () {
       await saveSettings();
     });
   }
@@ -103,24 +106,24 @@ function setupEventListeners() {
 async function handleProfilePictureUpload(event) {
   const file = event.target.files[0];
   if (!file) return;
-  
+
   // Validate file type
   if (!file.type.startsWith('image/')) {
     alert('Please select an image file');
     return;
   }
-  
+
   // Validate file size (max 5MB)
   if (file.size > 5 * 1024 * 1024) {
     alert('Image size must be less than 5MB');
     return;
   }
-  
+
   const reader = new FileReader();
-  reader.onload = async function(e) {
+  reader.onload = async function (e) {
     const imageData = e.target.result;
     document.getElementById('profilePicture').src = imageData;
-    
+
     const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
     if (!currentUser.id) {
       alert('Please log in to update your profile picture');
@@ -144,12 +147,12 @@ async function handleProfilePictureUpload(event) {
         // Also update localStorage for session
         currentUser.profilePicture = imageData;
         localStorage.setItem('currentUser', JSON.stringify(currentUser));
-        
+
         // Update navigation profile picture if function exists
         if (typeof updateNavProfilePicture === 'function') {
           updateNavProfilePicture();
         }
-        
+
         window.dispatchEvent(new CustomEvent('profilePictureUpdated'));
         showNotification('Profile picture updated successfully!', 'success');
       } else {
@@ -166,17 +169,17 @@ async function handleProfilePictureUpload(event) {
 // Handle personal information form submission
 async function handlePersonalInfoSubmit(event) {
   event.preventDefault();
-  
+
   const fullName = document.getElementById('fullName').value.trim();
   const email = document.getElementById('email').value.trim();
   const bio = document.getElementById('bio').value.trim();
-  
+
   // Validate email
   if (email && !isValidEmail(email)) {
     alert('Please enter a valid email address');
     return;
   }
-  
+
   const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
   if (!currentUser.id) {
     alert('Please log in to update your profile');
@@ -203,7 +206,7 @@ async function handlePersonalInfoSubmit(event) {
       if (fullName) currentUser.name = fullName;
       if (email) currentUser.email = email;
       localStorage.setItem('currentUser', JSON.stringify(currentUser));
-      
+
       showNotification('Profile information updated successfully!', 'success');
     } else {
       const data = await response.json();
@@ -218,29 +221,29 @@ async function handlePersonalInfoSubmit(event) {
 // Handle password change
 async function handlePasswordChange(event) {
   event.preventDefault();
-  
+
   const currentPassword = document.getElementById('currentPassword').value;
   const newPassword = document.getElementById('newPassword').value;
   const confirmPassword = document.getElementById('confirmPassword').value;
-  
+
   // Validate inputs
   if (!currentPassword || !newPassword || !confirmPassword) {
     alert('Please fill in all password fields');
     return;
   }
-  
+
   // Validate new password length
   if (newPassword.length < 8) {
     alert('New password must be at least 8 characters long');
     return;
   }
-  
+
   // Check if passwords match
   if (newPassword !== confirmPassword) {
     alert('New passwords do not match');
     return;
   }
-  
+
   const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
   if (!currentUser.id) {
     alert('Please log in to change your password');
@@ -280,7 +283,7 @@ async function saveSettings() {
   const settings = {
     emailNotifications: document.getElementById('emailNotifications').checked
   };
-  
+
   const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
   if (!currentUser.id) {
     alert('Please log in to save settings');
@@ -320,16 +323,16 @@ async function deleteAccount() {
   if (!confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
     return;
   }
-  
+
   if (!confirm('This will permanently delete all your data. Are you absolutely sure?')) {
     return;
   }
-  
+
   const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-  
+
   // Get user_id - check both 'id' and 'user_id' fields for compatibility
   const userId = currentUser.user_id || currentUser.id;
-  
+
   if (!userId) {
     alert('Please log in to delete your account');
     return;
@@ -349,7 +352,7 @@ async function deleteAccount() {
     if (response.ok) {
       // Clear local data
       localStorage.clear();
-      
+
       // Redirect to login
       window.location.href = 'login.html';
     } else {
@@ -374,20 +377,20 @@ function showNotification(message, type = 'success') {
   if (existingNotification) {
     existingNotification.remove();
   }
-  
+
   // Create notification element
   const notification = document.createElement('div');
   notification.className = `notification notification-${type}`;
   notification.textContent = message;
-  
+
   // Add to page
   document.body.appendChild(notification);
-  
+
   // Show notification
   setTimeout(() => {
     notification.classList.add('show');
   }, 10);
-  
+
   // Hide and remove after 3 seconds
   setTimeout(() => {
     notification.classList.remove('show');
