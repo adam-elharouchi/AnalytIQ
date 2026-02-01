@@ -1214,8 +1214,10 @@ function toggleResourceInput() {
     fileInput.accept = '.xlsx,.xls';
   } else if (resourceType === 'dataset') {
     fileInput.accept = '.csv,.xlsx,.xls,.json';
+  } else if (resourceType === 'ipynb') {
+    fileInput.accept = '.ipynb';
   } else {
-    fileInput.accept = '.pdf,.csv,.xlsx,.xls,.txt,.json';
+    fileInput.accept = '.pdf,.csv,.xlsx,.xls,.txt,.json,.ipynb';
   }
 
   // Show file info when selected
