@@ -817,7 +817,9 @@ async function handleCreateExercise(event) {
 
     const submitButton = event.target.querySelector('button[type="submit"]');
     submitButton.disabled = false;
-    submitButton.textContent = modal.dataset.mode === 'edit' ? 'Update Exercise' : 'Create Exercise';
+    // Re-select modal as it might not be in scope if not passed
+    const modal = document.getElementById('createExerciseModal');
+    submitButton.textContent = (modal && modal.dataset.mode === 'edit') ? 'Update Exercise' : 'Create Exercise';
   }
 }
 
