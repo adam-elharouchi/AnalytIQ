@@ -3825,6 +3825,49 @@ def upload_class_resource(class_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
+
+@app.route('/api/classes/<class_id>/resources', methods=['POST'])
+def create_class_resource(class_id):
+    """Create a new resource (Link/URL) via JSON"""
+    try:
+        ensure_resources_table()
+        
+        data = request.json
+        user_id = data.get('user_id')
+        
+        if not user_id:
+             return jsonify({'error': 'Missing user_id'}), 400
+             
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Generate ID
+        import time
+        resource_id = f"res_{int(time.time() * 1000)}"
+        
+        cursor.execute("""
+            INSERT INTO class_resources (resource_id, class_id, user_id, title, description, resource_type, resource_url)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """, (
+            resource_id,
+            class_id,
+            user_id,
+            data.get('title'),
+            data.get('description', ''),
+            data.get('resource_type', 'link'),
+            data.get('resource_url')
+        ))
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        return jsonify({'success': True, 'resource_id': resource_id}), 201
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/classes/<class_id>/resources/<resource_id>', methods=['PUT', 'DELETE', 'OPTIONS'])
 def manage_resource(class_id, resource_id):
     """Update or Delete a resource"""
