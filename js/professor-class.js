@@ -1036,7 +1036,12 @@ async function loadResources() {
         'dataset': { icon: '💾', label: 'Datasets' },
         'video': { icon: '🎥', label: 'Videos' },
         'article': { icon: '📝', label: 'Articles' },
-        'link': { icon: '🔗', label: 'Links' }
+        'link': { icon: '🔗', label: 'Links' },
+        'csv': { icon: '📊', label: 'Data Files (CSV)' },
+        'excel': { icon: '📊', label: 'Excel Worksheets' },
+        'ipynb': { icon: '📓', label: 'Jupyter Notebooks' },
+        'json': { icon: '⚙️', label: 'JSON Data' },
+        'txt': { icon: '📝', label: 'Text Files' }
       };
 
       resourcesList.innerHTML = Object.keys(groupedByType).map(type => {
@@ -1055,7 +1060,12 @@ async function loadResources() {
             resource.resource_type === 'chapter' ? '📖' :
               resource.resource_type === 'tool' ? '🛠️' :
                 resource.resource_type === 'dataset' ? '💾' :
-                  resource.resource_type === 'video' ? '🎥' : '🔗';
+                  resource.resource_type === 'video' ? '🎥' :
+                    resource.resource_type === 'article' ? '📝' :
+                      resource.resource_type === 'ipynb' ? '📓' :
+                        resource.resource_type === 'csv' || resource.resource_type === 'excel' ? '📊' :
+                          resource.resource_type === 'json' ? '⚙️' :
+                            resource.resource_type === 'txt' ? '📝' : '🔗';
 
           let url = resource.resource_url || resource.url || '#';
           // Fix relative URLs to point to API
