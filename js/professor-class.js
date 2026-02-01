@@ -1207,17 +1207,19 @@ function toggleResourceInput() {
   // Update file input accept attribute based on resource type
   const resourceType = document.getElementById('resourceType').value;
   if (resourceType === 'pdf') {
-    fileInput.accept = '.pdf';
+    fileInput.accept = '.pdf,application/pdf';
   } else if (resourceType === 'csv') {
-    fileInput.accept = '.csv';
+    fileInput.accept = '.csv,text/csv,application/vnd.ms-excel';
   } else if (resourceType === 'excel') {
-    fileInput.accept = '.xlsx,.xls';
+    fileInput.accept = '.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel';
   } else if (resourceType === 'dataset') {
-    fileInput.accept = '.csv,.xlsx,.xls,.json';
+    fileInput.accept = '.csv,.xlsx,.xls,.json,.txt,text/csv,application/json,text/plain';
   } else if (resourceType === 'ipynb') {
-    fileInput.accept = '.ipynb';
+    // Mac sometimes needs explicitly wide permissions for unknown types
+    fileInput.accept = '.ipynb,application/x-ipynb+json,application/json,text/json';
   } else {
-    fileInput.accept = '.pdf,.csv,.xlsx,.xls,.txt,.json,.ipynb';
+    // Default catch-all
+    fileInput.accept = '.pdf,.csv,.xlsx,.xls,.txt,.json,.ipynb,.py,image/*';
   }
 
   // Show file info when selected

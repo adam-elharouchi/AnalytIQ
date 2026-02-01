@@ -2004,7 +2004,9 @@ def upload_chapter(class_id):
         if exercise_mode == 'auto' and pdf_text and generate_exercises_from_pdf_content:
             try:
                 # Generate exercises using AI
-                api_key = os.getenv('GEMINI_API_KEY') or 'AIzaSyDURc7Q5UxgJZs_L9H3DaJzQD9Rysme_Ws'
+                api_key = os.getenv('GEMINI_API_KEY')
+                if not api_key:
+                    raise ValueError("GEMINI_API_KEY not set")
                 exercises = generate_exercises_from_pdf_content(pdf_text, chapter_title_result, api_key)
                 
                 # Store exercises in database
@@ -2296,7 +2298,9 @@ def generate_exercises_for_chapter(chapter_id):
             return jsonify({'error': 'Exercise generator not available'}), 500
         
         try:
-            api_key = os.getenv('GEMINI_API_KEY') or 'AIzaSyDURc7Q5UxgJZs_L9H3DaJzQD9Rysme_Ws'
+            api_key = os.getenv('GEMINI_API_KEY')
+            if not api_key:
+                raise ValueError("GEMINI_API_KEY not set")
             exercises = generate_exercises_from_pdf_content(pdf_text, chapter_title, api_key)
         except Exception as e:
             cursor.close()
@@ -2536,7 +2540,10 @@ def generate_exercises(chapter_id):
             return jsonify({'error': 'Could not extract text from PDF'}), 400
         
         # Generate exercises using AI
-        api_key = os.getenv('GEMINI_API_KEY') or 'AIzaSyDURc7Q5UxgJZs_L9H3DaJzQD9Rysme_Ws'
+        api_key = os.getenv('GEMINI_API_KEY')
+        if not api_key:
+             print("Warning: GEMINI_API_KEY not set for chapter content generation")
+             return None
         exercises = generate_exercises_from_pdf_content(pdf_text, chapter_title, api_key)
         
         if not exercises:
