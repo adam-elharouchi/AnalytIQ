@@ -579,6 +579,13 @@ async function loadResources() {
           }
 
           let url = resource.resource_url || '#';
+
+          // Fix relative URLs to point to API (e.g. /api/resources/...)
+          if (url && url.startsWith('/') && window.API_BASE_URL && window.API_BASE_URL.startsWith('http')) {
+            const apiOrigin = new URL(window.API_BASE_URL).origin;
+            url = `${apiOrigin}${url}`;
+          }
+
           let linkTarget = '';
           let linkText = 'Visit Resource';
           let isDownload = false;
