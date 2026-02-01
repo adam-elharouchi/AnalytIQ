@@ -578,7 +578,7 @@ async function loadResources() {
             icon = typeLabels[resource.resource_type].icon;
           }
 
-          let url = resource.resource_url || '#';
+          let url = resource.resource_url || resource.url || '#';
 
           // Fix relative URLs to point to API (e.g. /api/resources/...)
           if (url && url.startsWith('/') && window.API_BASE_URL && window.API_BASE_URL.startsWith('http')) {
