@@ -3366,6 +3366,14 @@ def ensure_exercises_table():
             print("Adding missing exercise_number column to class_exercises")
             cursor.execute("ALTER TABLE class_exercises ADD COLUMN exercise_number INTEGER DEFAULT 1")
             
+        # Check for created_by column (Fix for 500 error on Create Exercise)
+        try:
+            cursor.execute("SELECT created_by FROM class_exercises LIMIT 1")
+        except:
+            conn.rollback()
+            print("Adding missing created_by column to class_exercises")
+            cursor.execute("ALTER TABLE class_exercises ADD COLUMN created_by VARCHAR(255)")
+
         conn.commit()
         cursor.close()
         conn.close()
@@ -3374,69 +3382,12 @@ def ensure_exercises_table():
 
 import uuid
 
-@app.route('/api/chapters/<chapter_id>/exercises', methods=['POST'])
-def create_chapter_exercise(chapter_id):
-    """Create a new exercise for a chapter (manual save)"""
-    try:
-        ensure_exercises_table()
-        
-        data = request.get_json() or {}
-        user_id = data.get('user_id')
-        
-        if not user_id:
-            return jsonify({'error': 'Missing user_id'}), 400
-            
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        # Verify user is professor
-        cursor.execute("""
-            SELECT c.professor_id, cc.class_id
-            FROM class_chapters cc
-            JOIN classes c ON cc.class_id = c.class_id
-            WHERE cc.chapter_id = %s
-        """, (chapter_id,))
-        
-        result = cursor.fetchone()
-        if not result:
-            cursor.close()
-            conn.close()
-            return jsonify({'error': 'Chapter not found'}), 404
-            
-        professor_id, class_id = result
-        if professor_id != user_id:
-            cursor.close()
-            conn.close()
-            return jsonify({'error': 'Only the professor can add exercises'}), 403
-            
-        # Generate Unique ID using UUID to prevent collisions in parallel requests
-        exercise_id = data.get('exercise_id') or f"{chapter_id}_ex_{str(uuid.uuid4())}"
-        
-        cursor.execute("""
-            INSERT INTO class_exercises (exercise_id, chapter_id, class_id, title, description, difficulty, solution_code, exercise_number)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            RETURNING exercise_id
-        """, (
-            exercise_id,
-            chapter_id,
-            class_id,
-            data.get('title', 'Untitled Exercise'),
-            data.get('description', ''),
-            data.get('difficulty', 'medium'),
-            data.get('solution_code', ''),
-            data.get('exercise_number', 1)
-        ))
-        
-        new_id = cursor.fetchone()[0]
-        conn.commit()
-        cursor.close()
-        conn.close()
-        
-        return jsonify({'exercises_generated': len(exercises)}), 200
-        
     except Exception as e:
         print(f"Error generating exercises: {e}")
         return jsonify({'error': str(e)}), 500
+
+# Duplicated function removed to prevent conflict.
+# The correct create_exercise is below, which handles the class_id url param properly.
 
 @app.route('/api/classes/<class_id>/chapters/<chapter_id>/exercises', methods=['POST'])
 def create_exercise(class_id, chapter_id):
