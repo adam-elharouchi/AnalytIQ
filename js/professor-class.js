@@ -1463,7 +1463,11 @@ function hideAddResourceModal() {
   document.getElementById('addResourceModal').style.display = 'none';
   document.getElementById('addResourceForm').reset();
   document.getElementById('addResourceError').style.display = 'none';
-  document.getElementById('resourceInputTypeSection').style.display = 'none';
+  document.getElementById('resourceInputTypeSection').style.display = 'block'; // Restore visibility
+
+  const existingNote = document.getElementById('editSourceNote');
+  if (existingNote) existingNote.remove();
+
   resourceToEditId = null;
 }
 
@@ -1520,6 +1524,23 @@ function openEditResourceModal(resourceId) {
   // Show link mode (can't change file when editing)
   document.getElementById('resourceMethodLink').checked = true;
   toggleResourceMethod();
+
+  // Hide the input type section entirely in edit mode to prevent changing source
+  document.getElementById('resourceInputTypeSection').style.display = 'none';
+  document.getElementById('resourceUrlSection').style.display = 'none';
+  document.getElementById('resourceFileSection').style.display = 'none';
+
+  // Show a note that source cannot be changed
+  const existingNote = document.getElementById('editSourceNote');
+  if (existingNote) existingNote.remove();
+
+  const note = document.createElement('div');
+  note.id = 'editSourceNote';
+  note.style.cssText = 'margin-bottom: 1.5rem; padding: 0.75rem; background: #f1f5f9; color: #64748b; border-radius: 0.375rem; font-size: 0.875rem;';
+  note.textContent = 'To change the file or URL, please delete this resource and create a new one.';
+
+  const typeSection = document.getElementById('resourceInputTypeSection');
+  typeSection.parentNode.insertBefore(note, typeSection);
 
   // Make URL not required for edit (in case it was originally a file)
   document.getElementById('resourceUrl').required = false;

@@ -3737,6 +3737,15 @@ def ensure_resources_table():
                 print(f"Column resource_type likely exists or error adding it: {e}")
                 conn.rollback() 
             
+            # Check for file_data column (Fix for ephemeral storage on Render)
+            try:
+                cursor.execute("SELECT file_data FROM class_resources LIMIT 1")
+            except:
+                conn.rollback()
+                print("Adding missing file_data column to class_resources")
+                cursor.execute("ALTER TABLE class_resources ADD COLUMN file_data BYTEA")
+                cursor.execute("ALTER TABLE class_resources ADD COLUMN filename VARCHAR(255)")
+            
             # Now migrate data
             print("Migrating data from 'type' to 'resource_type'...")
             cursor.execute("UPDATE class_resources SET resource_type = type WHERE resource_type IS NULL OR resource_type = ''")
@@ -3792,20 +3801,19 @@ def upload_class_resource(class_id):
         # I will save to `app.config['UPLOAD_FOLDER']` and return a URL pointing to `serve_resource_file`.
         
         filename = secure_filename(file.filename)
-        # Add timestamp to prevent collision
-        unique_filename = f"{int(datetime.now().timestamp())}_{filename}"
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
-        file.save(file_path)
+        # Store in DB instead of filesystem for Render persistence
+        file_data = file.read()
         
         resource_id = f"res_{int(datetime.now().timestamp() * 1000)}"
-        resource_url = f"/api/resources/files/{unique_filename}"
+        # Use a special URL pattern for DB-served files
+        resource_url = f"/api/resources/{resource_id}/download"
         
         conn = get_db_connection()
         cursor = conn.cursor()
         
         cursor.execute("""
-            INSERT INTO class_resources (resource_id, class_id, user_id, title, description, resource_type, resource_url)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO class_resources (resource_id, class_id, user_id, title, description, resource_type, resource_url, file_data, filename)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         """, (
             resource_id,
             class_id,
@@ -3813,7 +3821,9 @@ def upload_class_resource(class_id):
             request.form.get('title'),
             request.form.get('description', ''),
             request.form.get('resource_type', 'file'),
-            resource_url
+            resource_url,
+            file_data,
+            filename
         ))
         
         conn.commit()
@@ -3912,9 +3922,41 @@ def manage_resource(class_id, resource_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/resources/<resource_id>/download', methods=['GET'])
+def download_resource(resource_id):
+    """Download a file resource from the database"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT file_data, filename, resource_type FROM class_resources WHERE resource_id = %s", (resource_id,))
+        result = cursor.fetchone()
+        
+        cursor.close()
+        conn.close()
+        
+        if not result or not result[0]:
+            return jsonify({'error': 'File not found'}), 404
+            
+        file_data = result[0]
+        filename = result[1] or 'downloaded_file'
+        
+        from flask import Response
+        # Force download with attachment
+        return Response(
+            bytes(file_data),
+            mimetype='application/octet-stream',
+            headers={
+                'Content-Disposition': f'attachment; filename="{filename}"'
+            }
+        )
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/resources/files/<filename>', methods=['GET'])
 def serve_resource_file(filename):
-    """Serve uploaded resource file"""
+    """Serve uploaded resource file (Legacy - kept for older non-migrated files)"""
     try:
         return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
     except Exception as e:
