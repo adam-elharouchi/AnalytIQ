@@ -572,6 +572,10 @@ async function loadResources() {
             </h3>
             <div class="resources-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
               ${resources.map(resource => {
+          // DEBUG: Log resource to inspect URL issues
+          if (['csv', 'ipynb', 'excel'].includes(resource.resource_type)) {
+            console.log('Rendering Resource:', resource.title, resource);
+          }
           // Determine Icon
           let icon = '🔗';
           if (typeLabels[resource.resource_type]) {
