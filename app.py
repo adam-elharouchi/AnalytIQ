@@ -3730,34 +3730,76 @@ def upload_class_resource(class_id):
         # Since Render wipes disk, we should ideally use DB storage (BLOB) or external.
         # Given we added BLOB for chapters, let's just assume we store it in `class_chapters` if it's a PDF?
         # No, resources should be separate.
-        # WARNING: Storing generic files in DB without a dedicated table/column is hard.
-        # I'll default to filesystem (which is ephemeral) but warn, OR I can link it to the chapter logic if it's a PDF.
-        # User said "Upload Assistant... Fails to save".
-        # For Resources Upload, I'll store it in `class_resources` but I didn't add a BLOB column there.
-        # Use Case: "Resources – Cannot Upload Files".
-        # I will simpler: just store the URL as if it was uploaded somewhere, OR implement a basic file save to `UPLOAD_FOLDER` which is enough for the session (but bad for production).
-        # Given "Fix this on Render", ephemeral FS is bad. 
-        # But setting up S3 is out of scope for a quick fix unless configured.
-        # I will save to `app.config['UPLOAD_FOLDER']` and return a URL pointing to `serve_resource_file`.
+            request.form.get('title'),
+            request.form.get('description', ''),
+            request.form.get('resource_type', 'file'),
+            resource_url,
+            psycopg2.Binary(file_data),
+            filename
+        ))
         
-        filename = secure_filename(file.filename)
-        # Store in DB instead of filesystem for Render persistence
-        file_data = file.read()
+        conn.commit()
+        cursor.close()
+        close_conn_safely(conn)
         
-        resource_id = f"res_{int(datetime.now().timestamp() * 1000)}"
-        # Use a special URL pattern for DB-served files
-        resource_url = f"/api/resources/{resource_id}/download"
+        return jsonify({
+            'success': True,
+            'exercises_generated': exercises_generated,
+            'chapter_id': chapter_id
+        }), 201
         
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/resources/<resource_id>/download', methods=['GET'])
+def serve_resource_download(resource_id):
+    """Serve resource file from database (BLOB)"""
+    try:
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        cursor.execute("""
-            INSERT INTO class_resources (resource_id, class_id, user_id, title, description, resource_type, resource_url, file_data, filename)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-        """, (
-            resource_id,
-            class_id,
-            user_id,
+        cursor.execute("SELECT file_data, filename, resource_type FROM class_resources WHERE resource_id = %s", (resource_id,))
+        result = cursor.fetchone()
+        
+        cursor.close()
+        close_conn_safely(conn)
+        
+        if not result:
+            return jsonify({'error': 'Resource not found'}), 404
+        
+        file_data = result[0]
+        filename = result[1] or 'download.file'
+        resource_type = result[2]
+        
+        if not file_data:
+            return jsonify({'error': 'File content is empty'}), 404
+            
+        from flask import Response
+        import mimetypes
+        
+        # Determine mime type
+        mimetype = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+        
+        # Determine disposition (inline for PDF/Images, attachment for others)
+        disposition = 'attachment'
+        if mimetype in ['application/pdf', 'image/jpeg', 'image/png'] or filename.endswith('.pdf'):
+            disposition = 'inline'
+            
+        return Response(
+            bytes(file_data),
+            mimetype=mimetype,
+            headers={
+                'Content-Disposition': f'{disposition}; filename="{filename}"',
+                'Access-Control-Allow-Origin': '*'
+            }
+        )
+        
+    except Exception as e:
+        print(f"Error serving resource: {e}")
+        return jsonify({'error': str(e)}), 500
             request.form.get('title'),
             request.form.get('description', ''),
             request.form.get('resource_type', 'file'),
