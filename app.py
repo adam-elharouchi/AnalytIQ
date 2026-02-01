@@ -3710,57 +3710,6 @@ def ensure_resources_table():
                 description TEXT,
                 resource_type VARCHAR(50) NOT NULL,
                 resource_url TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        """)
-        
-        # Check for user_id column (fix for existing table)
-        try:
-            cursor.execute("SELECT user_id FROM class_resources LIMIT 1")
-        except:
-            conn.rollback()
-            print("Adding missing user_id column to class_resources")
-            cursor.execute("ALTER TABLE class_resources ADD COLUMN user_id VARCHAR(255) NOT NULL DEFAULT 'admin'")
-            
-        # Check for legacy 'type' column (fix for 500 Internal Server Error)
-        try:
-            # Check if 'type' column exists
-            cursor.execute("SELECT type FROM class_resources LIMIT 1")
-            
-            # If we get here, the column exists. We must ensure 'resource_type' exists before copying.
-            print("Detected legacy 'type' column. Ensuring target column exists...")
-            
-            try:
-                cursor.execute("ALTER TABLE class_resources ADD COLUMN IF NOT EXISTS resource_type VARCHAR(50)")
-            except Exception as e:
-                print(f"Column resource_type likely exists or error adding it: {e}")
-                conn.rollback() 
-            
-            # Check for file_data column (Fix for ephemeral storage on Render)
-            try:
-                cursor.execute("SELECT file_data FROM class_resources LIMIT 1")
-            except:
-                conn.rollback()
-                print("Adding missing file_data column to class_resources")
-                cursor.execute("ALTER TABLE class_resources ADD COLUMN file_data BYTEA")
-                cursor.execute("ALTER TABLE class_resources ADD COLUMN filename VARCHAR(255)")
-            
-    """Ensure class_resources table exists and has correct columns (Lazy Migration)"""
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        # Create table if not exists
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS class_resources (
-                resource_id VARCHAR(255) PRIMARY KEY,
-                class_id VARCHAR(255) NOT NULL,
-                user_id VARCHAR(255) NOT NULL,
-                title VARCHAR(255) NOT NULL,
-                description TEXT,
-                resource_type VARCHAR(50) NOT NULL,
-                resource_url TEXT,
                 file_data BYTEA,
                 filename VARCHAR(255),
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
