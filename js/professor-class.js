@@ -1148,6 +1148,10 @@ function showAddResourceModal() {
   const form = document.getElementById('addResourceForm');
   const errorDiv = document.getElementById('addResourceError');
 
+  // Cleanly attach Add Handler
+  form.onsubmit = createResource; // ATTACH CREATE LISTENER
+  resourceToEditId = null; // Ensure ID is null
+
   form.reset();
   errorDiv.style.display = 'none';
 
@@ -1266,8 +1270,32 @@ function hideAddResourceModal() {
 }
 
 // Handle add resource form submission
-async function handleAddResource(event) {
+// Helper Validation Function
+function validateResourceForm(title, inputType, resourceUrl, resourceFile, isEditMode = false) {
+  if (!title) {
+    showAddResourceError('Please enter a resource title');
+    return false;
+  }
+
+  // When editing, URL is optional if not changing logic (but UI hides sections anyway)
+  // If not editing, check required fields
+  if (!isEditMode) {
+    if (inputType === 'link' && !resourceUrl) {
+      showAddResourceError('Please enter a resource URL');
+      return false;
+    }
+    if (inputType === 'upload' && !resourceFile) {
+      showAddResourceError('Please select a file to upload');
+      return false;
+    }
+  }
+  return true;
+}
+
+// Create Resource (POST)
+async function createResource(event) {
   event.preventDefault();
+  console.log("Create Resource Triggered");
 
   const currentUser = getCurrentUser();
   if (!currentUser || !currentUser.user_id || !currentClassId) {
@@ -1282,72 +1310,20 @@ async function handleAddResource(event) {
   const resourceUrl = document.getElementById('resourceUrl').value.trim();
   const resourceFile = document.getElementById('resourceFile').files[0];
 
-  if (!title) {
-    showAddResourceError('Please enter a resource title');
-    return;
-  }
-
-  // When editing, URL is optional (resource may already have one)
-  if (!resourceToEditId && inputType === 'link' && !resourceUrl) {
-    showAddResourceError('Please enter a resource URL');
-    return;
-  }
-
-  if (!resourceToEditId && inputType === 'upload' && !resourceFile) {
-    showAddResourceError('Please select a file to upload');
-    return;
-  }
+  if (!validateResourceForm(title, inputType, resourceUrl, resourceFile, false)) return;
 
   const errorDiv = document.getElementById('addResourceError');
   errorDiv.style.display = 'none';
 
+  const submitButton = event.target.querySelector('button[type="submit"]');
+  submitButton.disabled = true;
+  submitButton.textContent = 'Adding...';
+
   try {
-    const submitButton = event.target.querySelector('button[type="submit"]');
-    submitButton.disabled = true;
-    submitButton.textContent = resourceToEditId ? 'Saving...' : 'Adding...';
-
-    // Check if we're in edit mode
-    if (resourceToEditId) {
-      // Edit mode - use PUT
-      const response = await fetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/resources/${encodeURIComponent(resourceToEditId)}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id: currentUser.user_id,
-          title: title,
-          description: description,
-          resource_type: resourceType,
-          resource_url: resourceUrl
-        })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to update resource');
-      }
-
-      // Success
-      hideAddResourceModal();
-      await loadResources();
-
-      // Show success message
-      const resourcesList = document.getElementById('resourcesList');
-      const successMsg = document.createElement('div');
-      successMsg.style.cssText = 'padding: 1rem; margin-bottom: 1rem; background: #d1fae5; color: #065f46; border-radius: 0.5rem; border: 1px solid #10b981;';
-      successMsg.textContent = '✓ Resource updated successfully!';
-      resourcesList.insertBefore(successMsg, resourcesList.firstChild);
-      setTimeout(() => successMsg.remove(), 3000);
-
-      return;
-    }
-
-    // Add mode - existing logic
     let finalResourceUrl = resourceUrl;
 
-    // If uploading a file, upload it first
+    // File Upload Logic
     if (inputType === 'upload' && resourceFile) {
-      // Create FormData for file upload
       const formData = new FormData();
       formData.append('file', resourceFile);
       formData.append('user_id', currentUser.user_id);
@@ -1356,72 +1332,37 @@ async function handleAddResource(event) {
       formData.append('title', title);
       formData.append('description', description);
 
-      // Upload file - this now also creates the database record
-
-      // Set timeout to warn user about large files
       const uploadTimeout = setTimeout(() => {
         const errorDiv = document.getElementById('addResourceError');
         errorDiv.style.cssText = 'display: block; margin-bottom: 1rem; padding: 0.75rem; background: #eff6ff; color: #1e40af; border-radius: 0.375rem; border: 1px solid #bfdbfe;';
         errorDiv.innerHTML = '<strong>Processing Large File...</strong><br>This is a large file and may take longer to process (up to 5 mins). Please wait and do not close this window.';
-      }, 30000); // 30 seconds
+      }, 30000);
 
       try {
         const uploadResponse = await fetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/resources/upload`, {
           method: 'POST',
           body: formData
         });
-
-        clearTimeout(uploadTimeout); // Clear timeout on response
-
-        const uploadData = await uploadResponse.json();
+        clearTimeout(uploadTimeout);
 
         if (!uploadResponse.ok) {
+          const uploadData = await uploadResponse.json();
           throw new Error(uploadData.error || 'Failed to upload file');
         }
 
-        // Upload endpoint now creates the resource record, so we're done
-        hideAddResourceModal();
-        await loadResources();
-
-        // Show success message
-        const resourcesList = document.getElementById('resourcesList');
-        const successMsg = document.createElement('div');
-        successMsg.style.cssText = 'padding: 1rem; margin-bottom: 1rem; background: #d1fae5; color: #065f46; border-radius: 0.5rem; border: 1px solid #10b981;';
-        successMsg.textContent = '✓ Resource uploaded successfully!';
-        resourcesList.insertBefore(successMsg, resourcesList.firstChild);
-        setTimeout(() => successMsg.remove(), 3000);
+        // Success
+        finishResourceAction('Resource uploaded successfully!');
         return;
       } catch (err) {
         clearTimeout(uploadTimeout);
         throw err;
       }
-
-      const uploadData = await uploadResponse.json();
-
-      if (!uploadResponse.ok) {
-        throw new Error(uploadData.error || 'Failed to upload file');
-      }
-
-      // Upload endpoint now creates the resource record, so we're done
-      hideAddResourceModal();
-      await loadResources();
-
-      // Show success message
-      const resourcesList = document.getElementById('resourcesList');
-      const successMsg = document.createElement('div');
-      successMsg.style.cssText = 'padding: 1rem; margin-bottom: 1rem; background: #d1fae5; color: #065f46; border-radius: 0.5rem; border: 1px solid #10b981;';
-      successMsg.textContent = '✓ Resource uploaded successfully!';
-      resourcesList.insertBefore(successMsg, resourcesList.firstChild);
-      setTimeout(() => successMsg.remove(), 3000);
-      return;
     }
 
-    // URL/link mode - create the resource with the provided URL
+    // Link Logic
     const response = await fetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/resources`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         user_id: currentUser.user_id,
         title: title,
@@ -1432,34 +1373,80 @@ async function handleAddResource(event) {
     });
 
     const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Failed to add resource');
 
-    if (!response.ok) {
-      throw new Error(data.error || 'Failed to add resource');
-    }
-
-    // Success - close modal and refresh resources list
-    hideAddResourceModal();
-    await loadResources();
-
-    // Show success message
-    const resourcesList = document.getElementById('resourcesList');
-    const successMsg = document.createElement('div');
-    successMsg.style.cssText = 'padding: 1rem; margin-bottom: 1rem; background: #d1fae5; color: #065f46; border-radius: 0.5rem; border: 1px solid #10b981;';
-    successMsg.textContent = '✓ Resource added successfully!';
-    resourcesList.insertBefore(successMsg, resourcesList.firstChild);
-
-    setTimeout(() => {
-      successMsg.remove();
-    }, 3000);
+    finishResourceAction('Resource added successfully!');
 
   } catch (error) {
-    console.error('Error saving resource:', error);
-    showAddResourceError(error.message || 'Failed to save resource. Please try again.');
-
-    const submitButton = event.target.querySelector('button[type="submit"]');
+    console.error('Error creating resource:', error);
+    showAddResourceError(error.message || 'Failed to create resource.');
     submitButton.disabled = false;
-    submitButton.textContent = resourceToEditId ? 'Save Changes' : 'Add Resource';
+    submitButton.textContent = 'Add Resource';
   }
+}
+
+// Update Resource (PUT)
+async function updateResource(event) {
+  event.preventDefault();
+  console.log("Update Resource Triggered");
+
+  const currentUser = getCurrentUser();
+  if (!currentUser || !currentUser.user_id || !currentClassId) return;
+
+  const title = document.getElementById('resourceTitle').value.trim();
+  const description = document.getElementById('resourceDescription').value.trim();
+  const resourceType = document.getElementById('resourceType').value;
+  const resourceUrl = document.getElementById('resourceUrl').value.trim();
+
+  // Validate only title for edit (source is fixed)
+  if (!validateResourceForm(title, 'link', resourceUrl, null, true)) return;
+
+  if (!resourceToEditId) {
+    showAddResourceError('Error: No resource selected for update');
+    return;
+  }
+
+  const submitButton = event.target.querySelector('button[type="submit"]');
+  submitButton.disabled = true;
+  submitButton.textContent = 'Saving...';
+
+  try {
+    const response = await fetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/resources/${encodeURIComponent(resourceToEditId)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: currentUser.user_id,
+        title: title,
+        description: description,
+        resource_type: resourceType,
+        resource_url: resourceUrl
+      })
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Failed to update resource');
+
+    finishResourceAction('Resource updated successfully!');
+
+  } catch (error) {
+    console.error('Error updating resource:', error);
+    showAddResourceError(error.message || 'Failed to update resource.');
+    submitButton.disabled = false;
+    submitButton.textContent = 'Save Changes';
+  }
+}
+
+// Helper to close modal and show success
+async function finishResourceAction(message) {
+  hideAddResourceModal();
+  await loadResources();
+  const resourcesList = document.getElementById('resourcesList');
+  const successMsg = document.createElement('div');
+  successMsg.style.cssText = 'padding: 1rem; margin-bottom: 1rem; background: #d1fae5; color: #065f46; border-radius: 0.5rem; border: 1px solid #10b981;';
+  successMsg.textContent = `✓ ${message}`;
+  if (resourcesList.firstChild) resourcesList.insertBefore(successMsg, resourcesList.firstChild);
+  else resourcesList.appendChild(successMsg);
+  setTimeout(() => successMsg.remove(), 3000);
 }
 
 // Delete resource
@@ -1558,6 +1545,9 @@ function openEditResourceModal(resourceId) {
 
   const modal = document.getElementById('addResourceModal');
   const form = document.getElementById('addResourceForm');
+
+  // Cleanly attach Edit Handler
+  form.onsubmit = updateResource; // ATTACH UPDATE LISTENER
   const modalTitle = modal.querySelector('h2');
   const submitBtn = modal.querySelector('button[type="submit"]');
 
