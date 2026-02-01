@@ -1155,6 +1155,11 @@ function showAddResourceModal() {
   form.reset();
   errorDiv.style.display = 'none';
 
+  // RESET BUTTON STATE (Fix for stuck button)
+  const submitBtn = modal.querySelector('button[type="submit"]');
+  submitBtn.textContent = 'Add Resource';
+  submitBtn.disabled = false;
+
   // Reset to default state
   document.getElementById('resourceUrl').required = true;
   document.getElementById('resourceFile').required = false;
@@ -1266,6 +1271,7 @@ function hideAddResourceModal() {
   // Reset to Add mode
   modalTitle.textContent = 'Add Resource';
   submitBtn.textContent = 'Add Resource';
+  submitBtn.disabled = false; // ENABLE BUTTON
   resourceToEditId = null;
 }
 
