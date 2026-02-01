@@ -586,42 +586,53 @@ async function loadResources() {
             url = `${apiOrigin}${url}`;
           }
 
-          let linkTarget = '';
+          let linkTarget = '_blank'; // Default to new tab for everything
           let linkText = 'Visit Resource';
           let isDownload = false;
 
-          // Check if it's a download URL (from our backend)
-          if (url.includes('/download')) {
+          // Check if it's a backend download file
+          if (url && url.includes('/download')) {
             isDownload = true;
-            linkText = 'Download File';
-            if (resource.resource_type === 'ipynb') linkText = 'Download Notebook';
-            else if (resource.resource_type === 'csv') linkText = 'Download CSV';
-            else if (resource.resource_type === 'excel') linkText = 'Download Excel';
+            linkTarget = ''; // Downloads don't need new tab necessarily, but it's fine either way
           }
 
-          // Handle Chapter PDFs
+          // Case 1: Chapter PDF
           if (resource.resource_type === 'pdf' && resource.is_chapter && resource.chapter_id) {
             url = `chapter-view.html?chapter_id=${encodeURIComponent(resource.chapter_id)}&class_id=${encodeURIComponent(currentClassId)}`;
             linkText = 'View PDF';
-            linkTarget = '';
+            linkTarget = ''; // Same tab for app navigation
+            isDownload = false;
           }
-          // Handle Regular PDFs
-          else if (resource.resource_type === 'pdf' && !isDownload) {
+          // Case 2: Regular PDF
+          else if (resource.resource_type === 'pdf') {
             linkText = 'View PDF';
-            linkTarget = 'target="_blank"';
+            isDownload = false; // PDFs usually viewed in browser
           }
-          // Handle Other Links
-          else {
-            const isExternal = url.startsWith('http://') || url.startsWith('https://');
-            if (isExternal || isDownload) {
-              linkTarget = isDownload ? '' : 'target="_blank"'; // Downloads don't strictly need target_blank but often safer
-            }
+          // Case 3: File Types (Explicit Download Label)
+          else if (['csv', 'excel', 'ipynb', 'json', 'txt', 'dataset'].includes(resource.resource_type)) {
+            isDownload = true; // Treat as download for icon purposes unless it's clearly a viewable link
+            if (resource.resource_type === 'ipynb') linkText = 'Download Notebook';
+            else if (resource.resource_type === 'csv') linkText = 'Download CSV';
+            else if (resource.resource_type === 'excel') linkText = 'Download Excel';
+            else if (resource.resource_type === 'json') linkText = 'Download JSON';
+            else if (resource.resource_type === 'txt') linkText = 'Download Text';
+            else if (resource.resource_type === 'dataset') linkText = 'Access Dataset';
 
-            if (!isDownload) {
-              linkText = resource.resource_type === 'video' ? 'Watch Video' :
-                resource.resource_type === 'dataset' ? 'Browse Dataset' :
-                  resource.resource_type === 'tool' ? 'Use Tool' : 'Visit Resource';
+            // If it's NOT a backend download (e.g. external link to CSV), still keep new tab
+            if (!url.includes('/download')) {
+              linkTarget = '_blank';
+              // Adjust text if it's likely a viewable external link? 
+              // User asked for "Download [Type]", so we stick to that or "Access".
             }
+          }
+          // Case 4: Link Types
+          else {
+            linkText = 'Visit Resource';
+            if (resource.resource_type === 'video') linkText = 'Watch Video';
+            else if (resource.resource_type === 'tool') linkText = 'Open Tool';
+            else if (resource.resource_type === 'article') linkText = 'Read Article';
+
+            isDownload = false;
           }
 
           return `
