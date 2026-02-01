@@ -19,12 +19,10 @@ def generate_exercises_from_pdf_content(pdf_text, chapter_title, api_key=None):
     """
     if not api_key:
         api_key = os.getenv('GEMINI_API_KEY')
-        # Fallback to default API key if env var not set
-        if not api_key:
-            api_key = 'REDACTED_GEMINI_API_KEY'
     
     if not api_key:
-        raise Exception("Gemini API key not provided")
+        print("Error: GEMINI_API_KEY not found in environment variables.")
+        raise Exception("Configuration Error: GEMINI_API_KEY is missing. Please set this environment variable in Render.")
     
     # Limit PDF text to avoid token limits (first 10000 characters)
     truncated_text = pdf_text[:10000] if len(pdf_text) > 10000 else pdf_text
