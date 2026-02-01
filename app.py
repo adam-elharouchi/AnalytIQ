@@ -3382,9 +3382,7 @@ def ensure_exercises_table():
 
 import uuid
 
-    except Exception as e:
-        print(f"Error generating exercises: {e}")
-        return jsonify({'error': str(e)}), 500
+
 
 # Duplicated function removed to prevent conflict.
 # The correct create_exercise is below, which handles the class_id url param properly.
