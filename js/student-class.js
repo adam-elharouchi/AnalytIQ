@@ -552,11 +552,16 @@ async function loadResources() {
         'dataset': { icon: '💾', label: 'Datasets' },
         'video': { icon: '🎥', label: 'Videos' },
         'article': { icon: '📝', label: 'Articles' },
-        'link': { icon: '🔗', label: 'Links' }
+        'link': { icon: '🔗', label: 'Links' },
+        'csv': { icon: '📊', label: 'Data Files (CSV)' },
+        'excel': { icon: '📊', label: 'Excel Worksheets' },
+        'ipynb': { icon: '📓', label: 'Jupyter Notebooks' },
+        'json': { icon: '⚙️', label: 'JSON Data' },
+        'txt': { icon: '📝', label: 'Text Files' }
       };
 
       resourcesList.innerHTML = Object.keys(groupedByType).map(type => {
-        const typeInfo = typeLabels[type] || { icon: '🔗', label: 'Resources' };
+        const typeInfo = typeLabels[type] || { icon: '🔗', label: 'Other Resources' };
         const resources = groupedByType[type];
 
         return `
@@ -567,29 +572,49 @@ async function loadResources() {
             </h3>
             <div class="resources-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
               ${resources.map(resource => {
-          const icon = resource.resource_type === 'pdf' ? '📄' :
-            resource.resource_type === 'tool' ? '🛠️' :
-              resource.resource_type === 'dataset' ? '💾' :
-                resource.resource_type === 'video' ? '🎥' : '🔗';
+          // Determine Icon
+          let icon = '🔗';
+          if (typeLabels[resource.resource_type]) {
+            icon = typeLabels[resource.resource_type].icon;
+          }
 
           let url = resource.resource_url || '#';
           let linkTarget = '';
           let linkText = 'Visit Resource';
+          let isDownload = false;
 
-          // Handle PDFs - if it's a chapter PDF, link to chapter viewer
+          // Check if it's a download URL (from our backend)
+          if (url.includes('/download')) {
+            isDownload = true;
+            linkText = 'Download File';
+            if (resource.resource_type === 'ipynb') linkText = 'Download Notebook';
+            else if (resource.resource_type === 'csv') linkText = 'Download CSV';
+            else if (resource.resource_type === 'excel') linkText = 'Download Excel';
+          }
+
+          // Handle Chapter PDFs
           if (resource.resource_type === 'pdf' && resource.is_chapter && resource.chapter_id) {
             url = `chapter-view.html?chapter_id=${encodeURIComponent(resource.chapter_id)}&class_id=${encodeURIComponent(currentClassId)}`;
             linkText = 'View PDF';
-          } else if (resource.resource_type === 'pdf') {
+            linkTarget = '';
+          }
+          // Handle Regular PDFs
+          else if (resource.resource_type === 'pdf' && !isDownload) {
             linkText = 'View PDF';
+            linkTarget = 'target="_blank"';
+          }
+          // Handle Other Links
+          else {
             const isExternal = url.startsWith('http://') || url.startsWith('https://');
-            linkTarget = isExternal ? 'target="_blank"' : '';
-          } else {
-            const isExternal = url.startsWith('http://') || url.startsWith('https://');
-            linkTarget = isExternal ? 'target="_blank"' : '';
-            linkText = resource.resource_type === 'video' ? 'Watch Video' :
-              resource.resource_type === 'dataset' ? 'Browse Dataset' :
-                resource.resource_type === 'tool' ? 'Use Tool' : 'Visit Resource';
+            if (isExternal || isDownload) {
+              linkTarget = isDownload ? '' : 'target="_blank"'; // Downloads don't strictly need target_blank but often safer
+            }
+
+            if (!isDownload) {
+              linkText = resource.resource_type === 'video' ? 'Watch Video' :
+                resource.resource_type === 'dataset' ? 'Browse Dataset' :
+                  resource.resource_type === 'tool' ? 'Use Tool' : 'Visit Resource';
+            }
           }
 
           return `
@@ -598,8 +623,8 @@ async function loadResources() {
                     <h3 style="margin: 0 0 0.5rem 0; color: #222c3e; font-size: 1.125rem;">${escapeHtml(resource.title)}</h3>
                     <p style="color: #64748b; margin: 0 0 1rem 0; font-size: 0.875rem; line-height: 1.5;">${escapeHtml(resource.description || '')}</p>
                     <div style="display: flex; justify-content: space-between; align-items: center;">
-                      <a href="${escapeHtml(url)}" ${linkTarget} class="resource-link" style="color: #2569f4; text-decoration: none; font-weight: 500; font-size: 0.875rem;">
-                        ${linkText} →
+                      <a href="${escapeHtml(url)}" ${linkTarget} class="resource-link" style="color: #2569f4; text-decoration: none; font-weight: 500; font-size: 0.875rem; display: inline-flex; align-items: center; gap: 0.25rem;">
+                        ${isDownload ? '⬇️' : ''} ${linkText} ${!isDownload ? '→' : ''}
                       </a>
                     </div>
                   </div>
