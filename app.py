@@ -1707,8 +1707,10 @@ def get_class_resources(class_id):
                 'resource_id': chapter_id,
                 'title': ch[1],
                 'description': ch[2],
-                'resource_type': 'chapter',
-                'url': pdf_url, 
+                'resource_type': 'pdf',      # Frontend expects 'pdf' for icon
+                'is_chapter': True,          # Flag for chapter logic
+                'chapter_id': chapter_id,    # Link target
+                'resource_url': pdf_url,     # Fallback URL matches field name expected by frontend (resource_url vs url)
                 'created_at': ch[4].isoformat() if ch[4] else None
             })
             
@@ -3509,8 +3511,10 @@ def get_class_resources(class_id):
                 'resource_id': chapter_id,
                 'title': ch[1],
                 'description': ch[2],
-                'resource_type': 'chapter',  # This helps frontend distinguish icons
-                'url': pdf_url, 
+                'resource_type': 'pdf',      # Frontend expects 'pdf' for icon
+                'is_chapter': True,          # Flag for chapter logic
+                'chapter_id': chapter_id,    # Link target
+                'resource_url': pdf_url,     # Fallback URL matches field name expected by frontend (resource_url vs url)
                 'created_at': ch[4].isoformat() if ch[4] else None
             })
             
@@ -3709,9 +3713,17 @@ def ensure_resources_table():
 
 
 
-@app.route('/api/classes/<class_id>/resources/upload', methods=['POST'])
+@app.route('/api/classes/<class_id>/resources/upload', methods=['POST', 'OPTIONS'])
 def upload_class_resource(class_id):
     """Upload a file as a resource"""
+    # Handle CORS preflight explicitly
+    if request.method == 'OPTIONS':
+         response = app.response_class()
+         response.headers['Access-Control-Allow-Origin'] = '*'
+         response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+         response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+         return response
+
     try:
         ensure_resources_table()
         
@@ -3724,17 +3736,32 @@ def upload_class_resource(class_id):
             
         user_id = request.form.get('user_id')
         
-        # In a real app, upload to S3/Blob Storage. 
-        # For this demo, we might store locally or just keep the metadata if we can't save files on Render.
-        # BUT, the user prompt implies "Upload" functionality is expected. 
-        # Since Render wipes disk, we should ideally use DB storage (BLOB) or external.
-        # Given we added BLOB for chapters, let's just assume we store it in `class_chapters` if it's a PDF?
-        # No, resources should be separate.
+        filename = secure_filename(file.filename)
+        # Store in DB
+        file_data = file.read()
+        
+        resource_id = f"res_{int(datetime.now().timestamp() * 1000)}"
+        # Use a special URL pattern for DB-served files
+        resource_url = f"/api/resources/{resource_id}/download"
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Use psycopg2.Binary for BLOB storage
+        from psycopg2.extensions import Binary
+        
+        cursor.execute("""
+            INSERT INTO class_resources (resource_id, class_id, user_id, title, description, resource_type, resource_url, file_data, filename)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (
+            resource_id,
+            class_id,
+            user_id,
             request.form.get('title'),
             request.form.get('description', ''),
             request.form.get('resource_type', 'file'),
             resource_url,
-            psycopg2.Binary(file_data),
+            Binary(file_data),
             filename
         ))
         
@@ -3744,8 +3771,8 @@ def upload_class_resource(class_id):
         
         return jsonify({
             'success': True,
-            'exercises_generated': exercises_generated,
-            'chapter_id': chapter_id
+            'resource_id': resource_id,
+            'resource_url': resource_url
         }), 201
         
     except Exception as e:

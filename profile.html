@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <title>Manage Profile - AnalytIQ</title>
@@ -7,13 +8,14 @@
   <link rel="stylesheet" href="css/styles.css" />
   <script src="js/api-helper.js"></script>
 </head>
+
 <body>
   <nav class="navbar" id="navbar"></nav>
-  
+
   <main class="container">
     <div class="profile-container">
       <h1>Manage Profile</h1>
-      
+
       <div class="profile-content">
         <!-- Profile Picture Section -->
         <div class="profile-section">
@@ -39,18 +41,31 @@
           <form id="personalInfoForm" class="profile-form">
             <div class="form-group">
               <label for="fullName">Full Name</label>
-              <input type="text" id="fullName" name="fullName" class="form-input" placeholder="Enter your full name" autocomplete="name" />
+              <input type="text" id="fullName" name="fullName" class="form-input" placeholder="Enter your full name"
+                autocomplete="name" />
             </div>
             <div class="form-group">
               <label for="email">Email Address</label>
-              <input type="email" id="email" name="email" class="form-input" placeholder="Enter your email" autocomplete="email" />
+              <input type="email" id="email" name="email" class="form-input" placeholder="Enter your email"
+                autocomplete="email" />
             </div>
             <div class="form-group">
               <label for="bio">Bio</label>
-              <textarea id="bio" name="bio" class="form-textarea" rows="4" placeholder="Tell us about yourself..."></textarea>
+              <textarea id="bio" name="bio" class="form-textarea" rows="4"
+                placeholder="Tell us about yourself..."></textarea>
             </div>
             <button type="submit" class="btn-primary">Save Changes</button>
           </form>
+          </form>
+        </div>
+
+        <!-- Notifications Section -->
+        <div class="profile-section">
+          <h2>Notifications</h2>
+          <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem;">
+            <input type="checkbox" id="emailNotifications" name="emailNotifications">
+            <label for="emailNotifications" style="margin-bottom: 0;">Receive email notifications</label>
+          </div>
         </div>
 
         <!-- Change Password Section -->
@@ -59,16 +74,19 @@
           <form id="passwordForm" class="profile-form">
             <div class="form-group">
               <label for="currentPassword">Current Password</label>
-              <input type="password" id="currentPassword" name="currentPassword" class="form-input" placeholder="Enter current password" autocomplete="current-password" />
+              <input type="password" id="currentPassword" name="currentPassword" class="form-input"
+                placeholder="Enter current password" autocomplete="current-password" />
             </div>
             <div class="form-group">
               <label for="newPassword">New Password</label>
-              <input type="password" id="newPassword" name="newPassword" class="form-input" placeholder="Enter new password" autocomplete="new-password" />
+              <input type="password" id="newPassword" name="newPassword" class="form-input"
+                placeholder="Enter new password" autocomplete="new-password" />
               <small class="form-hint">Password must be at least 8 characters long</small>
             </div>
             <div class="form-group">
               <label for="confirmPassword">Confirm New Password</label>
-              <input type="password" id="confirmPassword" name="confirmPassword" class="form-input" placeholder="Confirm new password" autocomplete="new-password" />
+              <input type="password" id="confirmPassword" name="confirmPassword" class="form-input"
+                placeholder="Confirm new password" autocomplete="new-password" />
             </div>
             <button type="submit" class="btn-primary">Update Password</button>
           </form>
@@ -86,13 +104,13 @@
       </div>
     </div>
   </main>
-  
+
   <script src="js/auth.js"></script>
   <script src="js/navigation.js"></script>
   <script src="js/profile.js"></script>
   <script>
     // Require authentication
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
       const authManager = new AuthManager();
       if (!authManager.requireAuth()) {
         return; // Will redirect to login
@@ -100,5 +118,5 @@
     });
   </script>
 </body>
-</html>
 
+</html>

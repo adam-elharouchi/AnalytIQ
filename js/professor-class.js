@@ -1080,13 +1080,24 @@ async function loadResources() {
           let linkText = 'Visit Resource';
 
           // Handle PDFs
-          if (resource.resource_type === 'pdf') {
+          // Handle Chapter PDFs
+          if (resource.resource_type === 'pdf' && resource.is_chapter && resource.chapter_id) {
+            url = `chapter-view.html?chapter_id=${encodeURIComponent(resource.chapter_id)}&class_id=${encodeURIComponent(currentClassId)}`;
+            linkText = 'View PDF';
+            linkTarget = ''; // Open in same tab or new? User said "same chapter in chapters tab", usually implies navigation.
+          } else if (resource.resource_type === 'pdf') {
             linkText = 'View PDF';
             const isExternal = url.startsWith('http://') || url.startsWith('https://');
             linkTarget = isExternal ? 'target="_blank"' : '';
           } else if (resource.resource_type === 'chapter') {
-            linkText = 'View PDF';
-            linkTarget = '_blank';
+            // Legacy fallback if type is still 'chapter'
+            if (resource.chapter_id) {
+              url = `chapter-view.html?chapter_id=${encodeURIComponent(resource.chapter_id)}&class_id=${encodeURIComponent(currentClassId)}`;
+              linkTarget = '';
+            } else {
+              linkText = 'View PDF';
+              linkTarget = '_blank';
+            }
           } else {
             const isExternal = url.startsWith('http://') || url.startsWith('https://');
             linkTarget = isExternal ? 'target="_blank"' : '';
