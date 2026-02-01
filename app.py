@@ -2218,6 +2218,52 @@ def get_class_chapters(class_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/chapters/<chapter_id>', methods=['PUT'])
+def update_chapter(chapter_id):
+    """Update a chapter"""
+    try:
+        data = request.json
+        user_id = data.get('user_id')
+        
+        if not user_id:
+            return jsonify({'error': 'Missing user_id'}), 400
+            
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Verify ownership via class
+        cursor.execute("""
+            SELECT c.professor_id 
+            FROM class_chapters ch
+            JOIN classes c ON ch.class_id = c.class_id
+            WHERE ch.chapter_id = %s
+        """, (chapter_id,))
+        
+        result = cursor.fetchone()
+        if not result:
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'Chapter not found'}), 404
+            
+        if result[0] != user_id:
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'Unauthorized'}), 403
+            
+        cursor.execute("""
+            UPDATE class_chapters 
+            SET title = %s, description = %s, updated_at = CURRENT_TIMESTAMP
+            WHERE chapter_id = %s
+        """, (data.get('title'), data.get('description'), chapter_id))
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        return jsonify({'success': True}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/chapters/<chapter_id>', methods=['DELETE', 'OPTIONS'])
 def delete_chapter(chapter_id):
     """Delete a chapter and all its exercises (professor only)"""
@@ -3386,10 +3432,84 @@ def create_chapter_exercise(chapter_id):
         cursor.close()
         conn.close()
         
-        return jsonify({'success': True, 'exercise_id': new_id}), 201
+        return jsonify({'exercises_generated': len(exercises)}), 200
         
     except Exception as e:
-        print(f"Error creating exercise: {e}")
+        print(f"Error generating exercises: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/classes/<class_id>/chapters/<chapter_id>/exercises', methods=['POST'])
+def create_exercise(class_id, chapter_id):
+    """Manually create a new exercise"""
+    try:
+        ensure_exercises_table()
+        
+        # Handle form data if file is present, otherwise JSON
+        if request.content_type and 'multipart/form-data' in request.content_type:
+             data = request.form
+        else:
+             data = request.json or {}
+
+        user_id = data.get('user_id')
+        
+        if not user_id:
+            return jsonify({'error': 'Missing user_id'}), 400
+            
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Verify ownership
+        cursor.execute("""
+            SELECT c.professor_id
+            FROM classes c
+            WHERE c.class_id = %s
+        """, (class_id,))
+        
+        result = cursor.fetchone()
+        if not result:
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'Class not found'}), 404
+            
+        professor_id = result[0]
+        
+        if professor_id != user_id:
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'Unauthorized'}), 403
+            
+        # Verify chapter belongs to class
+        cursor.execute("SELECT 1 FROM class_chapters WHERE chapter_id = %s AND class_id = %s", (chapter_id, class_id))
+        if not cursor.fetchone():
+             cursor.close()
+             conn.close()
+             return jsonify({'error': 'Chapter not found in this class'}), 404
+            
+        exercise_id = f"ex_{str(uuid.uuid4())[:8]}"
+        
+        cursor.execute("""
+            INSERT INTO class_exercises (
+                exercise_id, class_id, chapter_id, title, description, 
+                difficulty, solution_code, created_by
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        """, (
+            exercise_id,
+            class_id,
+            chapter_id,
+            data.get('title'),
+            data.get('description'),
+            data.get('difficulty', 'medium'),
+            data.get('solution_code', ''),
+            user_id
+        ))
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        return jsonify({'success': True, 'exercise_id': exercise_id}), 201
+        
+    except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/classes/<class_id>/resources', methods=['POST', 'OPTIONS'])
@@ -3659,21 +3779,26 @@ def ensure_resources_table():
             # Check if 'type' column exists
             cursor.execute("SELECT type FROM class_resources LIMIT 1")
             
-            # If we get here, the column exists. We need to drop it because it has a NOT NULL constraint
-            # causing failures when we insert using 'resource_type'.
-            print("Detected legacy 'type' column. Migrating data and dropping column...")
+            # If we get here, the column exists. We must ensure 'resource_type' exists before copying.
+            print("Detected legacy 'type' column. Ensuring target column exists...")
             
-            # First, ensure data is preserved in 'resource_type' if needed
-            # (Assuming resource_type already exists as per CREATE statement)
+            try:
+                cursor.execute("ALTER TABLE class_resources ADD COLUMN IF NOT EXISTS resource_type VARCHAR(50)")
+            except Exception as e:
+                print(f"Column resource_type likely exists or error adding it: {e}")
+                conn.rollback() 
+            
+            # Now migrate data
+            print("Migrating data from 'type' to 'resource_type'...")
             cursor.execute("UPDATE class_resources SET resource_type = type WHERE resource_type IS NULL OR resource_type = ''")
             
             # Drop the legacy column
+            print("Dropping legacy 'type' column...")
             cursor.execute("ALTER TABLE class_resources DROP COLUMN type")
             print("Legacy 'type' column dropped successfully.")
             
         except Exception as e:
-            # If SELECT type fails, the column likely doesn't exist, which is what we want.
-            # Or some other error occurred, but we proceed.
+            # If SELECT type fails, the column likely doesn't exist.
             conn.rollback()
             pass
             
