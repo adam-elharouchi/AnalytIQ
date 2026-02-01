@@ -1158,7 +1158,7 @@ function updateResourceInputType() {
   const inputTypeSection = document.getElementById('resourceInputTypeSection');
 
   // Show link/upload option for file-based resource types
-  const fileBasedTypes = ['pdf', 'csv', 'excel', 'dataset', 'tool'];
+  const fileBasedTypes = ['pdf', 'csv', 'excel', 'dataset', 'tool', 'ipynb'];
   if (fileBasedTypes.includes(resourceType)) {
     inputTypeSection.style.display = 'block';
     toggleResourceInput();
