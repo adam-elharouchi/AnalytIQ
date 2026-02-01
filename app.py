@@ -3808,12 +3808,16 @@ def serve_resource_download(resource_id):
         import mimetypes
         
         # Determine mime type
-        mimetype = mimetypes.guess_type(filename)[0]
-        if not mimetype:
-             if filename.endswith('.ipynb'):
-                 mimetype = 'application/x-ipynb+json'
-             else:
-                 mimetype = 'application/octet-stream'
+        # FORCE generic binary stream for everything except specifically viewable types
+        # This prevents browsers from trying to "render" CSVs or JSON/IPYNBs and failing
+        mimetype = 'application/octet-stream' 
+        
+        # Only set specific mime types for things we WANT to render in-browser
+        guessed_type = mimetypes.guess_type(filename)[0]
+        if guessed_type in ['application/pdf', 'image/jpeg', 'image/png']:
+            mimetype = guessed_type
+        if filename.endswith('.pdf'):
+            mimetype = 'application/pdf'
         
         # Determine disposition (inline for PDF/Images, attachment for others)
         disposition = 'attachment'
