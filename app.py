@@ -39,7 +39,7 @@ app.config['UPLOAD_FOLDER'] = 'Course Content'
 # Ensure upload folder exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-ALLOWED_EXTENSIONS = {'pdf'}
+ALLOWED_EXTENSIONS = {'pdf', 'csv', 'xlsx', 'xls', 'json', 'txt', 'ipynb'}
 
 # Manual CORS handling - works with file:// protocol and all domains
 @app.before_request
