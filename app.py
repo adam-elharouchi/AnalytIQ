@@ -3827,22 +3827,7 @@ def serve_resource_download(resource_id):
     except Exception as e:
         print(f"Error serving resource: {e}")
         return jsonify({'error': str(e)}), 500
-            request.form.get('title'),
-            request.form.get('description', ''),
-            request.form.get('resource_type', 'file'),
-            resource_url,
-            file_data,
-            filename
-        ))
-        
-        conn.commit()
-        cursor.close()
-        close_conn_safely(conn)
-        
-        return jsonify({'success': True, 'resource_id': resource_id, 'url': resource_url}), 201
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+
 
 
 
