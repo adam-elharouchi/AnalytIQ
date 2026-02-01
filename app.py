@@ -1725,6 +1725,7 @@ def get_class_resources(class_id):
             """, (class_id,))
             
             other_resources = cursor.fetchall()
+            for res in other_resources:
                 # Fallback: If URL is missing from DB but it looks like a file upload (no link), generate default download URL
                 resource_url = res[4]
                 if not resource_url and res[0]: # res[0] is resource_id
