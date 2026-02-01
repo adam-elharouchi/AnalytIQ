@@ -590,6 +590,16 @@ async function loadResources() {
             url = `${apiOrigin}${url}`;
           }
 
+          // Fix missing protocol for typically external resources (datasets, links, videos)
+          // Avoid touching 'tool' which can be relative (e.g. code-assistant.html)
+          if (url && !url.startsWith('http') && !url.startsWith('/') && !url.startsWith('#') && !url.startsWith('mailto:')) {
+            // If it's a dataset, link, video, or article, we assume it's external
+            const externalTypes = ['dataset', 'link', 'video', 'article', 'csv', 'excel', 'ipynb', 'json', 'txt'];
+            if (externalTypes.includes(resource.resource_type)) {
+              url = `https://${url}`;
+            }
+          }
+
           let linkTarget = '_blank'; // Default to new tab for everything
           let linkText = 'Visit Resource';
           let isDownload = false;
