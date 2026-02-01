@@ -1464,6 +1464,7 @@ function hideAddResourceModal() {
   document.getElementById('addResourceForm').reset();
   document.getElementById('addResourceError').style.display = 'none';
   document.getElementById('resourceInputTypeSection').style.display = 'block'; // Restore visibility
+  document.getElementById('resourceType').disabled = false; // Enable resource type selection
 
   const existingNote = document.getElementById('editSourceNote');
   if (existingNote) existingNote.remove();
@@ -1519,6 +1520,7 @@ function openEditResourceModal(resourceId) {
   document.getElementById('resourceTitle').value = resource.title || '';
   document.getElementById('resourceDescription').value = resource.description || '';
   document.getElementById('resourceType').value = resource.resource_type || 'link';
+  document.getElementById('resourceType').disabled = true; // Disable resource type in edit mode
   document.getElementById('resourceUrl').value = resource.resource_url || '';
 
   // Show link mode (can't change file when editing)

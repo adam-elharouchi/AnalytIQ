@@ -3746,20 +3746,55 @@ def ensure_resources_table():
                 cursor.execute("ALTER TABLE class_resources ADD COLUMN file_data BYTEA")
                 cursor.execute("ALTER TABLE class_resources ADD COLUMN filename VARCHAR(255)")
             
-            # Now migrate data
-            print("Migrating data from 'type' to 'resource_type'...")
-            cursor.execute("UPDATE class_resources SET resource_type = type WHERE resource_type IS NULL OR resource_type = ''")
-            
-            # Drop the legacy column
-            print("Dropping legacy 'type' column...")
-            cursor.execute("ALTER TABLE class_resources DROP COLUMN type")
-            print("Legacy 'type' column dropped successfully.")
-            
-        except Exception as e:
-            # If SELECT type fails, the column likely doesn't exist.
-            conn.rollback()
-            pass
-            
+    """Ensure class_resources table exists and has correct columns (Lazy Migration)"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Create table if not exists
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS class_resources (
+                resource_id VARCHAR(255) PRIMARY KEY,
+                class_id VARCHAR(255) NOT NULL,
+                user_id VARCHAR(255) NOT NULL,
+                title VARCHAR(255) NOT NULL,
+                description TEXT,
+                resource_type VARCHAR(50) NOT NULL,
+                resource_url TEXT,
+                file_data BYTEA,
+                filename VARCHAR(255),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+        
+        # Explicitly check and add missing columns for existing tables
+        columns_to_check = ['user_id', 'resource_type', 'file_data', 'filename']
+        
+        for col in columns_to_check:
+            try:
+                cursor.execute(f"SELECT {col} FROM class_resources LIMIT 1")
+            except Exception:
+                conn.rollback()
+                print(f"Adding missing column '{col}' to class_resources")
+                if col == 'user_id':
+                    cursor.execute(f"ALTER TABLE class_resources ADD COLUMN {col} VARCHAR(255) NOT NULL DEFAULT 'admin'")
+                elif col == 'file_data':
+                    cursor.execute(f"ALTER TABLE class_resources ADD COLUMN {col} BYTEA")
+                else:
+                    cursor.execute(f"ALTER TABLE class_resources ADD COLUMN {col} VARCHAR(255)")
+                conn.commit()
+
+        # Handle legacy 'type' column migration separately if needed
+        try:
+             cursor.execute("SELECT type FROM class_resources LIMIT 1")
+             print("Migrating legacy 'type' column...")
+             cursor.execute("UPDATE class_resources SET resource_type = type WHERE (resource_type IS NULL OR resource_type = '')")
+             cursor.execute("ALTER TABLE class_resources DROP COLUMN type")
+             conn.commit()
+        except:
+             conn.rollback()
+             
         conn.commit()
         cursor.close()
         conn.close()
