@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, g
 import psycopg2
 from psycopg2 import pool
 from dotenv import load_dotenv
@@ -10,6 +10,10 @@ import json
 from datetime import datetime
 from werkzeug.utils import secure_filename
 import sys
+import time
+
+# Global database pool
+db_pool = None
 
 # Add python directory to path for PDF processor and exercise generator
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'python'))
@@ -77,226 +81,128 @@ def detect_role_from_email(email):
         return 'student'
     return 'student'  # Default to student
 
-def get_db_connection():
-    """Get database connection with IPv4 fallback"""
+def get_db_params():
+    """Parse DATABASE_URL and return connection parameters dictionary"""
     if not DATABASE_URL:
         raise Exception("DATABASE_URL environment variable is not set")
-    
-    # Debug: Check DATABASE_URL format (don't log the full password)
-    if DATABASE_URL:
-        url_preview = DATABASE_URL.split('@')[0] + '@' + (DATABASE_URL.split('@')[1].split('/')[0] if '@' in DATABASE_URL else 'HOST')
-        print(f"DATABASE_URL format check: {url_preview[:60]}...")
-    
+
     # Clean up the database URL - remove invalid query parameters like pgbouncer
-    def clean_db_url(url):
-        """Remove invalid query parameters from database URL"""
-        if '?' not in url:
-            return url.split('?')[0]
-        return url.split('?')[0]
+    clean_url = DATABASE_URL.split('?')[0]
     
-    def parse_connection_string(url):
-        """Parse PostgreSQL connection URL into components"""
-        try:
-            # Handle both postgresql:// and postgres:// schemes
-            if not url.startswith(('postgresql://', 'postgres://')):
-                # If no scheme, try adding postgresql://
-                if '://' not in url:
-                    url = 'postgresql://' + url
-                else:
-                    raise ValueError(f"Unsupported connection string scheme: {url.split('://')[0]}")
-            
-            # Use urllib.parse.unquote to handle URL-encoded characters
-            from urllib.parse import unquote
-            parsed = urlparse(url)
-            
-            if not parsed.hostname:
-                raise ValueError("Hostname is missing from connection string")
-            
-            # Decode URL-encoded username and password
-            username = unquote(parsed.username) if parsed.username else 'postgres'
-            password = unquote(parsed.password) if parsed.password else ''
-            
-            # Get database name (remove leading slash)
-            database = parsed.path[1:] if parsed.path and len(parsed.path) > 1 else 'postgres'
-            
-            result = {
-                'host': parsed.hostname,
-                'port': parsed.port or 5432,
-                'database': database,
-                'user': username,
-                'password': password
-            }
-            
-            print(f"Parsed connection: host={result['host']}, port={result['port']}, database={result['database']}, user={result['user'][:20]}...")
-            return result
-            
-        except Exception as e:
-            print(f"Error parsing connection string: {e}")
-            print(f"URL preview (first 80 chars): {str(url)[:80]}...")
-            import traceback
-            traceback.print_exc()
-            return None
-    
-    def resolve_hostname_to_ipv4(hostname):
-        """Resolve hostname to IPv4 address, avoiding IPv6"""
-        try:
-            # Get all addresses
-            addrinfo = socket.getaddrinfo(hostname, None, socket.AF_INET, socket.SOCK_STREAM)
-            # Return first IPv4 address
-            if addrinfo:
-                return addrinfo[0][4][0]
-        except Exception as e:
-            print(f"Error resolving {hostname} to IPv4: {e}")
-        return hostname  # Fallback to original hostname
-    
-    def connect_with_ipv4(params):
-        """Connect using connection parameters, forcing IPv4"""
-        try:
-            # Resolve hostname to IPv4
-            ipv4_host = resolve_hostname_to_ipv4(params['host'])
-            # Use direct connection with IPv4 host
-            # Build connection string with SSL
-            import urllib.parse
-            conn_str = f"postgresql://{urllib.parse.quote(params['user'])}:{urllib.parse.quote(params['password'])}@{ipv4_host}:{params['port']}/{params['database']}?sslmode=require"
-            conn = psycopg2.connect(conn_str, connect_timeout=10)
-            return conn
-        except Exception as e:
-            print(f"IPv4 connection failed: {e}")
-            # Try with original hostname as fallback
-            try:
-                # Build connection string with SSL mode for fallback
-                import urllib.parse
-                conn_str = f"postgresql://{urllib.parse.quote(params['user'])}:{urllib.parse.quote(params['password'])}@{params['host']}:{params['port']}/{params['database']}?sslmode=require"
-                conn = psycopg2.connect(conn_str, connect_timeout=10)
-                return conn
-            except:
-                raise
-    
-    # Clean the URL first - remove invalid query parameters like pgbouncer
-    # Note: If password contains special characters (@, :, /, ?, #, [, ], !, $, &, ', (, ), *, +, ,, ;, =),
-    # they MUST be URL-encoded in the DATABASE_URL environment variable
-    # Example: password "AEH?!@Supabase" should be "AEH%21%3F%40Supabase"
-    clean_url = clean_db_url(DATABASE_URL)
-    
-    # Validate URL format before attempting connection
     try:
-        parsed_test = urlparse(clean_url)
-        # Check if port exists and is valid
-        if parsed_test.port is not None:
-            try:
-                int(parsed_test.port)
-            except (ValueError, TypeError):
-                raise Exception(f"Invalid port value '{parsed_test.port}' in DATABASE_URL. Port must be a number (e.g., 5432 or 6543). Current URL format: {clean_url.split('@')[0]}@HOST:PORT/...")
-    except Exception as parse_err:
-        # If URL parsing fails, the URL might be malformed
-        raise Exception(f"Failed to parse DATABASE_URL. Error: {parse_err}. Please verify the format is: postgresql://user:password@host:port/database")
-    
-    # Try direct connection first (simplest approach - works with Session Pooler format)
+        # Handle both postgresql:// and postgres:// schemes
+        url = clean_url
+        if not url.startswith(('postgresql://', 'postgres://')):
+            if '://' not in url:
+                url = 'postgresql://' + url
+            else:
+                raise ValueError(f"Unsupported connection string scheme: {url.split('://')[0]}")
+        
+        from urllib.parse import unquote
+        parsed = urlparse(url)
+        
+        if not parsed.hostname:
+            raise ValueError("Hostname is missing from connection string")
+        
+        username = unquote(parsed.username) if parsed.username else 'postgres'
+        password = unquote(parsed.password) if parsed.password else ''
+        database = parsed.path[1:] if parsed.path and len(parsed.path) > 1 else 'postgres'
+        
+        return {
+            'host': parsed.hostname,
+            'port': parsed.port or 5432,
+            'database': database,
+            'user': username,
+            'password': password
+        }
+    except Exception as e:
+        print(f"Error parsing connection string: {e}")
+        return None
+
+def init_db_pool():
+    """Initialize the database connection pool"""
+    global db_pool
+    if db_pool is not None:
+        return
+
     try:
+        # Try to use simple direct connection string first (works with Supabase Pooler)
         # Ensure sslmode is set
+        clean_url = DATABASE_URL
         if 'sslmode' not in clean_url:
             clean_url = clean_url + ('&' if '?' in clean_url else '?') + 'sslmode=require'
-        conn = psycopg2.connect(clean_url, connect_timeout=10)
-        print(f"Connected using direct connection string")
-        return conn
-    except psycopg2.OperationalError as op_error:
-        error_msg = str(op_error)
-        if "invalid integer value" in error_msg and "port" in error_msg:
-            # Extract the invalid port value from error
-            raise Exception(f"Invalid port in DATABASE_URL. The connection string has a malformed port. Please verify your DATABASE_URL in Render. It should look like: postgresql://postgres.PROJECT_REF:[PASSWORD]@aws-0-us-west-2.pooler.supabase.com:5432/postgres. Error: {error_msg}")
-        raise Exception(f"Database connection failed: {error_msg}. Please verify DATABASE_URL is correct in Render environment variables.")
-    except Exception as direct_error:
-        error_str = str(direct_error)
-        if "invalid integer value" in error_str and "port" in error_str:
-            raise Exception(f"Invalid port in DATABASE_URL. Please check your DATABASE_URL format in Render. Error: {error_str}")
-        raise Exception(f"Database connection failed: {error_str}")
-    
-    # For Supabase, try multiple connection methods
-    if "supabase.co" in conn_params['host']:
-        # Check if we're using the old direct connection format (db.PROJECT_REF.supabase.co)
-        # If so, we need to use the pooler format for IPv4 compatibility
-        if conn_params['host'].startswith('db.'):
-            # This is a direct connection format - try to convert to pooler format
-            # Extract project ref from hostname (db.omjttmkczfpnwyzrdzqi.supabase.co -> omjttmkczfpnwyzrdzqi)
-            project_ref = conn_params['host'].split('.')[1]
             
-            # Try Session Pooler first (port 5432, IPv4 compatible, best for persistent connections)
-            # Session pooler uses: aws-0-REGION.pooler.supabase.com format
-            # We'll try common regions, or use a default
-            pooler_hosts = [
-                f"aws-0-us-west-2.pooler.supabase.com",  # Most common
-                f"aws-0-us-east-1.pooler.supabase.com",
-                f"aws-0-eu-west-1.pooler.supabase.com"
-            ]
-            
-            for pooler_host in pooler_hosts:
-                try:
-                    session_params = {
-                        'host': pooler_host,
-                        'port': 5432,
-                        'database': conn_params['database'],
-                        'user': f"{conn_params['user']}.{project_ref}",  # Session pooler uses user.PROJECT_REF format
-                        'password': conn_params['password']
-                    }
-                    conn = connect_with_ipv4(session_params)
-                    print(f"Connected using Supabase Session Pooler (port 5432, IPv4) via {pooler_host}")
-                    return conn
-                except Exception as e:
-                    print(f"Session pooler {pooler_host} failed: {e}")
-                    continue
-            
-            # If session pooler failed, try transaction pooler (port 6543)
-            for pooler_host in pooler_hosts:
-                try:
-                    trans_params = {
-                        'host': pooler_host,
-                        'port': 6543,
-                        'database': conn_params['database'],
-                        'user': f"{conn_params['user']}.{project_ref}",
-                        'password': conn_params['password']
-                    }
-                    conn = connect_with_ipv4(trans_params)
-                    print(f"Connected using Supabase Transaction Pooler (port 6543, IPv4) via {pooler_host}")
-                    return conn
-                except Exception as e:
-                    print(f"Transaction pooler {pooler_host} failed: {e}")
-                    continue
+        print("Initializing connection pool...")
+        db_pool = pool.ThreadedConnectionPool(
+            minconn=1,
+            maxconn=10,
+            dsn=clean_url
+        )
+        print("Database connection pool initialized successfully")
         
-        # If hostname already contains 'pooler', use it as-is
-        if 'pooler' in conn_params['host']:
-            try:
-                conn = connect_with_ipv4(conn_params)
-                print(f"Connected using existing pooler configuration")
-                return conn
-            except Exception as pooler_error:
-                print(f"Existing pooler configuration failed: {pooler_error}")
-        
-        # Last resort: try direct connection (may fail on IPv4-only networks)
+    except psycopg2.OperationalError as e:
+        print(f"Pool initialization failed with direct URL: {e}")
+        # Fallback to resolved params if needed (usually direct URL works for pools)
         try:
-            direct_params = conn_params.copy()
-            direct_params['port'] = 5432
-            conn = connect_with_ipv4(direct_params)
-            print("Connected using Supabase direct connection (port 5432, IPv4)")
-            return conn
-        except Exception as direct_error:
-            # Provide helpful error message with instructions
-            project_ref = conn_params['host'].split('.')[1] if '.' in conn_params['host'] else 'PROJECT_REF'
-            raise Exception(
-                f"Database connection failed. Your current DATABASE_URL uses direct connection which requires IPv6. "
-                f"Render requires IPv4. Please update DATABASE_URL in Render Environment Variables to use Session Pooler (IPv4 compatible):\n"
-                f"postgresql://postgres.{project_ref}:[YOUR-PASSWORD]@aws-0-us-west-2.pooler.supabase.com:5432/postgres\n"
-                f"Get the exact connection string from: https://supabase.com/dashboard/project/{project_ref}/settings/database\n"
-                f"Select 'Connection Pooling' → 'Session mode' → Copy the connection string.\n"
-                f"Original error: {direct_error}"
-            )
+             params = get_db_params()
+             if params:
+                 # Resolve IPv4 if needed
+                 hostname = params['host']
+                 try:
+                    addrinfo = socket.getaddrinfo(hostname, None, socket.AF_INET, socket.SOCK_STREAM)
+                    if addrinfo:
+                        params['host'] = addrinfo[0][4][0]
+                 except:
+                    pass
+                 
+                 db_pool = pool.ThreadedConnectionPool(
+                    minconn=1, 
+                    maxconn=10,
+                    user=params['user'],
+                    password=params['password'],
+                    host=params['host'],
+                    port=params['port'],
+                    database=params['database'],
+                    sslmode='require'
+                 )
+                 print("Database connection pool initialized with params")
+        except Exception as e2:
+             print(f"Critical error initializing pool: {e2}")
+             raise
+
+def get_db_connection():
+    """Get a connection from the global pool"""
+    global db_pool
     
-    # For non-Supabase databases, use direct connection
-    try:
-        conn = connect_with_ipv4(conn_params)
-        print(f"Connected to database at {conn_params['host']}")
-        return conn
-    except Exception as e:
-        raise Exception(f"Database connection failed: {e}")
+    # Store connection in Flask g object for request duration
+    if 'db_conn' not in g:
+        if db_pool is None:
+            init_db_pool()
+        
+        try:
+            g.db_conn = db_pool.getconn()
+        except Exception as e:
+            print(f"Error getting connection from pool: {e}")
+            # Try to re-init pool?
+            init_db_pool()
+            g.db_conn = db_pool.getconn()
+            
+    return g.db_conn
+
+@app.teardown_appcontext
+def close_db_connection(exception):
+    """Return connection to pool at the end of request"""
+    db_conn = g.pop('db_conn', None)
+    if db_conn is not None and db_pool is not None:
+        try:
+            db_pool.putconn(db_conn)
+        except Exception as e:
+            print(f"Error returning connection to pool: {e}")
+
+# Helper to safeguard against code that tries to close pooled connections manually
+def close_conn_safely(conn):
+    """No-op: Connection closing is handled by teardown_appcontext"""
+    pass
 
 def hash_password(password):
     """Simple hash function (same as frontend for compatibility)"""
@@ -336,7 +242,7 @@ def signup():
         cursor.execute("SELECT user_id FROM users WHERE email = %s", (email,))
         if cursor.fetchone():
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'Email already registered'}), 400
         
         # Create user
@@ -352,7 +258,7 @@ def signup():
         
         if not user:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'Failed to create user'}), 500
         
         created_user_id = user[0]
@@ -395,7 +301,7 @@ def signup():
         
         conn.commit()
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         # Return user data - include user_id and role for clarity
         user_role = user[3] if len(user) > 3 else role
@@ -433,7 +339,7 @@ def signin():
         user = cursor.fetchone()
         
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         if not user:
             return jsonify({'error': 'Invalid email or password'}), 401
@@ -468,7 +374,7 @@ def forgot_password():
         user = cursor.fetchone()
         
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         # Always return success to prevent email enumeration
         # In a real implementation, you would:
@@ -514,7 +420,7 @@ def get_profile():
         result = cursor.fetchone()
         
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         if not result:
             return jsonify({'error': 'User not found'}), 404
@@ -569,7 +475,7 @@ def update_profile():
         
         conn.commit()
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         return jsonify({'success': True}), 200
         
@@ -594,7 +500,7 @@ def get_settings():
         result = cursor.fetchone()
         
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         if not result:
             return jsonify({'emailNotifications': False}), 200
@@ -634,7 +540,7 @@ def update_settings():
         
         conn.commit()
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         return jsonify({'success': True}), 200
         
@@ -667,7 +573,7 @@ def update_password():
         )
         if not cursor.fetchone():
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'Current password is incorrect'}), 401
         
         # Update password
@@ -679,7 +585,7 @@ def update_password():
         
         conn.commit()
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         return jsonify({'success': True}), 200
         
@@ -702,7 +608,7 @@ def delete_user():
         
         conn.commit()
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         return jsonify({'success': True}), 200
         
@@ -739,7 +645,7 @@ def get_conversations():
             })
         
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         return jsonify(conversations), 200
         
@@ -773,7 +679,7 @@ def create_conversation():
         conv_id = cursor.fetchone()[0]
         conn.commit()
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         return jsonify({'conversation_id': conv_id}), 201
         
@@ -801,7 +707,7 @@ def get_conversation(conversation_id):
         conv = cursor.fetchone()
         if not conv:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'Conversation not found'}), 404
         
         # Get messages
@@ -821,7 +727,7 @@ def get_conversation(conversation_id):
             })
         
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         return jsonify({
             'id': conv[0],
@@ -883,7 +789,7 @@ def update_conversation(conversation_id):
         
         conn.commit()
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         return jsonify({'success': True}), 200
         
@@ -909,7 +815,7 @@ def delete_conversation(conversation_id):
         
         conn.commit()
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         return jsonify({'success': True}), 200
         
@@ -935,7 +841,7 @@ def get_ai_digest():
         
         result = cursor.fetchone()
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         if not result:
             return jsonify({
@@ -1017,7 +923,7 @@ def update_ai_digest():
         
         conn.commit()
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         return jsonify({'success': True}), 200
         
@@ -1044,7 +950,7 @@ def get_ai_memory():
         
         memory = [row[0] for row in cursor.fetchall()]
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         return jsonify({'memory': memory}), 200
         
@@ -1078,7 +984,7 @@ def update_ai_memory():
         
         conn.commit()
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         return jsonify({'success': True}), 200
         
@@ -1104,7 +1010,7 @@ def get_preferences():
         
         result = cursor.fetchone()
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         if not result:
             return jsonify({
@@ -1162,7 +1068,7 @@ def update_preferences():
         
         conn.commit()
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         return jsonify({'success': True}), 200
         
@@ -1226,7 +1132,7 @@ def get_practice_progress():
                 })
             
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify(progress), 200
         
     except Exception as e:
@@ -1261,7 +1167,7 @@ def update_practice_progress():
         cursor.execute("SELECT user_id FROM users WHERE user_id = %s", (user_id,))
         if not cursor.fetchone():
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'User not found in database. Please sign up first.'}), 404
         
         # Get current best score if exists
@@ -1330,7 +1236,7 @@ def update_practice_progress():
         
         conn.commit()
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         return jsonify({
             'success': True,
@@ -1374,7 +1280,7 @@ def get_all_progress():
             })
         
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         return jsonify({'progress': progress}), 200
         
@@ -1416,7 +1322,7 @@ def get_exercise_leaderboard(exercise_id):
             rank += 1
         
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         return jsonify({'leaderboard': leaderboard}), 200
         
@@ -1463,7 +1369,7 @@ def get_grand_leaderboard():
             rank += 1
         
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         return jsonify({'leaderboard': leaderboard}), 200
         
@@ -1510,7 +1416,7 @@ def submit_contact():
         
         conn.commit()
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         return jsonify({
             'success': True,
@@ -1569,14 +1475,14 @@ def create_class():
         user = cursor.fetchone()
         if not user or user[0] != 'professor':
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'Only professors can create classes'}), 403
         
         # Check if class code already exists
         cursor.execute("SELECT class_id FROM classes WHERE class_id = %s", (class_code,))
         if cursor.fetchone():
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': f'Class code "{class_code}" is already in use. Please choose a different code.'}), 409
         
         # Create class with custom code
@@ -1589,7 +1495,7 @@ def create_class():
         
         conn.commit()
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         return jsonify({
             'class_id': new_class[0],
@@ -1618,7 +1524,7 @@ def get_classes():
         user = cursor.fetchone()
         if not user:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'User not found'}), 404
         
         role = user[0] or 'student'
@@ -1662,7 +1568,7 @@ def get_classes():
             })
         
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         return jsonify({'classes': classes}), 200
         
@@ -1692,7 +1598,7 @@ def get_class(class_id):
         class_data = cursor.fetchone()
         if not class_data:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'Class not found'}), 404
         
         # Check if user has access (professor who created it, or enrolled student)
@@ -1700,7 +1606,7 @@ def get_class(class_id):
         user = cursor.fetchone()
         if not user:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'User not found'}), 404
         
         role = user[0] or 'student'
@@ -1715,7 +1621,7 @@ def get_class(class_id):
             """, (class_id, user_id))
             if not cursor.fetchone():
                 cursor.close()
-                conn.close()
+                close_conn_safely(conn)
                 return jsonify({'error': 'Access denied. You are not enrolled in this class.'}), 403
         
         # Get student count
@@ -1737,7 +1643,7 @@ def get_class(class_id):
         exercise_count = cursor.fetchone()[0] or 0
         
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         return jsonify({
             'class_id': class_data[0],
@@ -1778,7 +1684,7 @@ def get_class_resources(class_id):
         
         if not class_data:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'Class not found'}), 404
         
         # Get chapters to show as resources
@@ -1831,7 +1737,7 @@ def get_class_resources(class_id):
             print(f"Error fetching class_resources: {table_err}")
             
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         return jsonify({'all_resources': resources}), 200
         
@@ -1858,7 +1764,7 @@ def get_exercise_details(exercise_id):
         
         row = cursor.fetchone()
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         if not row:
             return jsonify({'error': 'Exercise not found'}), 404
@@ -1903,7 +1809,7 @@ def update_exercise(exercise_id):
         result = cursor.fetchone()
         if not result or result[0] != user_id:
              cursor.close()
-             conn.close()
+             close_conn_safely(conn)
              return jsonify({'error': 'Not authorized'}), 403
              
         cursor.execute("""
@@ -1920,7 +1826,7 @@ def update_exercise(exercise_id):
         
         conn.commit()
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         return jsonify({'success': True}), 200
     except Exception as e:
@@ -1949,12 +1855,12 @@ def update_class(class_id):
         class_data = cursor.fetchone()
         if not class_data:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'Class not found'}), 404
         
         if class_data[0] != user_id:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'Only the class owner can update the class'}), 403
         
         # Update class
@@ -1969,7 +1875,7 @@ def update_class(class_id):
         
         if not updates:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'No fields to update'}), 400
         
         params.append(class_id)
@@ -1981,7 +1887,7 @@ def update_class(class_id):
         
         conn.commit()
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         return jsonify({'success': True}), 200
         
@@ -2017,29 +1923,29 @@ def upload_chapter(class_id):
         class_data = cursor.fetchone()
         if not class_data:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'Class not found'}), 404
         
         if class_data[0] != user_id:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'Only the class owner can upload chapters'}), 403
         
         # Check if file was uploaded
         if 'pdf_file' not in request.files:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'No PDF file provided'}), 400
         
         file = request.files['pdf_file']
         if file.filename == '':
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'No file selected'}), 400
         
         if not allowed_file(file.filename):
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'Invalid file type. Only PDF files are allowed.'}), 400
         
         # Get form data
@@ -2049,7 +1955,7 @@ def upload_chapter(class_id):
         
         if not title:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'Chapter title is required'}), 400
         
         # Read file content
@@ -2128,7 +2034,7 @@ def upload_chapter(class_id):
         # Commit the transaction to ensure chapter is saved
         conn.commit()
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         return jsonify({
             'chapter_id': chapter_id_result,
@@ -2164,7 +2070,7 @@ def get_class_chapters(class_id):
         class_data = cursor.fetchone()
         if not class_data:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'Class not found'}), 404
         
         # Check if user has access
@@ -2172,7 +2078,7 @@ def get_class_chapters(class_id):
         user = cursor.fetchone()
         if not user:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'User not found'}), 404
         
         role = user[0] or 'student'
@@ -2187,7 +2093,7 @@ def get_class_chapters(class_id):
             """, (class_id, user_id))
             if not cursor.fetchone():
                 cursor.close()
-                conn.close()
+                close_conn_safely(conn)
                 return jsonify({'error': 'Access denied'}), 403
         
         # Get chapters
@@ -2211,7 +2117,7 @@ def get_class_chapters(class_id):
             })
         
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         return jsonify({'chapters': chapters}), 200
         
@@ -2242,12 +2148,12 @@ def update_chapter(chapter_id):
         result = cursor.fetchone()
         if not result:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'Chapter not found'}), 404
             
         if result[0] != user_id:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'Unauthorized'}), 403
             
         cursor.execute("""
@@ -2258,7 +2164,7 @@ def update_chapter(chapter_id):
         
         conn.commit()
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         return jsonify({'success': True}), 200
     except Exception as e:
@@ -2294,7 +2200,7 @@ def delete_chapter(chapter_id):
         
         if not chapter_data:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'Chapter not found'}), 404
         
         class_id = chapter_data[0]
@@ -2303,7 +2209,7 @@ def delete_chapter(chapter_id):
         
         if professor_id != user_id:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'Only the class owner can delete chapters'}), 403
         
         # Delete associated exercises first (foreign key constraint)
@@ -2315,7 +2221,7 @@ def delete_chapter(chapter_id):
         
         conn.commit()
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         return jsonify({'success': True, 'message': 'Chapter deleted successfully'}), 200
         
@@ -2349,7 +2255,7 @@ def generate_exercises_for_chapter(chapter_id):
         result = cursor.fetchone()
         if not result:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'Chapter not found'}), 404
         
         pdf_data, chapter_title, class_id, professor_id = result
@@ -2357,36 +2263,36 @@ def generate_exercises_for_chapter(chapter_id):
         # Verify user is the professor
         if professor_id != user_id:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'Only the class professor can generate exercises'}), 403
         
         if not pdf_data:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'PDF data not found for this chapter'}), 404
         
         # Extract text from PDF binary data
         if not extract_text_from_pdf_bytes:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'PDF processor not available'}), 500
         
         try:
             pdf_text = extract_text_from_pdf_bytes(bytes(pdf_data))
         except Exception as e:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': f'Failed to extract text from PDF: {str(e)}'}), 500
         
         if not pdf_text:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'Could not extract text from PDF. PDF may be empty or image-based.'}), 400
         
         # Generate exercises using AI
         if not generate_exercises_from_pdf_content:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'Exercise generator not available'}), 500
         
         try:
@@ -2394,12 +2300,12 @@ def generate_exercises_for_chapter(chapter_id):
             exercises = generate_exercises_from_pdf_content(pdf_text, chapter_title, api_key)
         except Exception as e:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': f'Failed to generate exercises: {str(e)}'}), 500
         
         if not exercises:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'No exercises were generated'}), 400
         
         # Store exercises in database
@@ -2423,7 +2329,7 @@ def generate_exercises_for_chapter(chapter_id):
         
         conn.commit()
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         return jsonify({
             'success': True,
@@ -2455,12 +2361,12 @@ def delete_class(class_id):
         class_data = cursor.fetchone()
         if not class_data:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'Class not found'}), 404
         
         if class_data[0] != user_id:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'Only the class owner can delete the class'}), 403
         
         # Delete class (cascade will delete enrollments, chapters, exercises)
@@ -2468,7 +2374,7 @@ def delete_class(class_id):
         
         conn.commit()
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         return jsonify({'success': True}), 200
         
@@ -2500,7 +2406,7 @@ def get_chapter_exercises(chapter_id):
         chapter_data = cursor.fetchone()
         if not chapter_data:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'Chapter not found'}), 404
         
         class_id_result = chapter_data[0]
@@ -2511,7 +2417,7 @@ def get_chapter_exercises(chapter_id):
         user = cursor.fetchone()
         if not user:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'User not found'}), 404
         
         role = user[0] or 'student'
@@ -2526,7 +2432,7 @@ def get_chapter_exercises(chapter_id):
             """, (class_id_result, user_id))
             if not cursor.fetchone():
                 cursor.close()
-                conn.close()
+                close_conn_safely(conn)
                 return jsonify({'error': 'Access denied'}), 403
         
         # Get exercises
@@ -2550,7 +2456,7 @@ def get_chapter_exercises(chapter_id):
             })
         
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         return jsonify({'exercises': exercises}), 200
         
@@ -2587,7 +2493,7 @@ def generate_exercises(chapter_id):
         chapter_data = cursor.fetchone()
         if not chapter_data:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'Chapter not found'}), 404
         
         class_id_result = chapter_data[0]
@@ -2597,20 +2503,20 @@ def generate_exercises(chapter_id):
         
         if professor_id != user_id:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'Only the class owner can generate exercises'}), 403
         
         # Check if exercise generator is available
         if not generate_exercises_from_pdf_content:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'Exercise generator not available'}), 500
         
         # Read PDF file and extract text
         pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], pdf_filename)
         if not os.path.exists(pdf_path):
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'PDF file not found'}), 404
         
         pdf_text = None
@@ -2621,12 +2527,12 @@ def generate_exercises(chapter_id):
                     pdf_text = extract_text_from_pdf_bytes(pdf_bytes)
             except Exception as e:
                 cursor.close()
-                conn.close()
+                close_conn_safely(conn)
                 return jsonify({'error': f'Could not extract text from PDF: {str(e)}'}), 500
         
         if not pdf_text:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'Could not extract text from PDF'}), 400
         
         # Generate exercises using AI
@@ -2635,7 +2541,7 @@ def generate_exercises(chapter_id):
         
         if not exercises:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'No exercises generated'}), 500
         
         # Delete existing exercises for this chapter (optional - comment out if you want to keep them)
@@ -2663,7 +2569,7 @@ def generate_exercises(chapter_id):
         
         conn.commit()
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         return jsonify({
             'exercises_generated': len(exercises),
@@ -2707,13 +2613,13 @@ def enroll_in_class():
         user = cursor.fetchone()
         if not user:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'User not found'}), 404
         
         role = user[0] or 'student'
         if role == 'professor':
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'Professors cannot enroll in classes'}), 403
         
         # Verify class exists
@@ -2721,7 +2627,7 @@ def enroll_in_class():
         class_data = cursor.fetchone()
         if not class_data:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'Class not found. Please check the class code.'}), 404
         
         class_name = class_data[1]
@@ -2734,7 +2640,7 @@ def enroll_in_class():
         """, (class_id, user_id))
         if cursor.fetchone():
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'Already enrolled in this class'}), 400
         
         # Enroll student
@@ -2748,7 +2654,7 @@ def enroll_in_class():
         
         conn.commit()
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         return jsonify({
             'class_id': class_id,
@@ -2778,7 +2684,7 @@ def get_enrolled_classes():
         user = cursor.fetchone()
         if not user:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'User not found'}), 404
         
         # Get enrolled classes with class details
@@ -2815,7 +2721,7 @@ def get_enrolled_classes():
             })
         
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         return jsonify({'classes': classes}), 200
         
@@ -2838,12 +2744,12 @@ def get_class_students(class_id):
         class_data = cursor.fetchone()
         if not class_data:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'Class not found'}), 404
         
         if class_data[0] != user_id:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'Only the class owner can view enrolled students'}), 403
         
         # Get enrolled students
@@ -2869,7 +2775,7 @@ def get_class_students(class_id):
             })
         
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         return jsonify({'students': students}), 200
         
@@ -2896,12 +2802,12 @@ def get_class_progress(class_id):
         class_data = cursor.fetchone()
         if not class_data:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'Class not found'}), 404
         
         if class_data[0] != user_id:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'Only the class owner can view progress'}), 403
         
         # Get all exercises for this class
@@ -2962,7 +2868,7 @@ def get_class_progress(class_id):
                 }
         
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         # Convert to list format
         progress_list = list(progress_data.values())
@@ -3049,7 +2955,7 @@ def get_progress():
                 })
         
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         return jsonify({'progress': progress}), 200
         
@@ -3074,13 +2980,13 @@ def get_student_progress(student_id):
         user = cursor.fetchone()
         if not user:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'User not found'}), 404
         
         role = user[0] or 'student'
         if role != 'professor':
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'Only professors can view student progress'}), 403
         
         # Verify student exists
@@ -3088,7 +2994,7 @@ def get_student_progress(student_id):
         student = cursor.fetchone()
         if not student:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'Student not found'}), 404
         
         # Build query based on whether class_id is provided
@@ -3098,7 +3004,7 @@ def get_student_progress(student_id):
             class_data = cursor.fetchone()
             if not class_data or class_data[0] != user_id:
                 cursor.close()
-                conn.close()
+                close_conn_safely(conn)
                 return jsonify({'error': 'Access denied'}), 403
             
             # Get progress for this class only
@@ -3166,7 +3072,7 @@ def get_student_progress(student_id):
                 })
         
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         return jsonify({
             'student_id': student_id,
@@ -3207,7 +3113,7 @@ def get_class_average_leaderboard(class_id):
         
         if not class_data:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'Class not found'}), 404
         
         is_professor = (class_data[0] == user_id)
@@ -3220,7 +3126,7 @@ def get_class_average_leaderboard(class_id):
             """, (class_id, user_id))
             if not cursor.fetchone():
                 cursor.close()
-                conn.close()
+                close_conn_safely(conn)
                 return jsonify({'error': 'Not authorized to view this leaderboard'}), 403
         
         # Get average scores for all students in the class
@@ -3247,7 +3153,7 @@ def get_class_average_leaderboard(class_id):
              students = []
         
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         leaderboard = []
         for rank, student in enumerate(students, 1):
@@ -3288,7 +3194,7 @@ def get_exercise_leaderboard_for_class(class_id, exercise_id):
         
         if not class_data:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'Class not found'}), 404
         
         is_professor = (class_data[0] == user_id)
@@ -3301,7 +3207,7 @@ def get_exercise_leaderboard_for_class(class_id, exercise_id):
             """, (class_id, user_id))
             if not cursor.fetchone():
                 cursor.close()
-                conn.close()
+                close_conn_safely(conn)
                 return jsonify({'error': 'Not authorized to view this leaderboard'}), 403
         
         # Get scores for all students for this specific exercise
@@ -3320,7 +3226,7 @@ def get_exercise_leaderboard_for_class(class_id, exercise_id):
         
         students = cursor.fetchall()
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         leaderboard = []
         for rank, student in enumerate(students, 1):
@@ -3376,7 +3282,7 @@ def ensure_exercises_table():
 
         conn.commit()
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
     except Exception as e:
         print(f"Error checking exercises table: {e}")
 
@@ -3417,21 +3323,21 @@ def create_exercise(class_id, chapter_id):
         result = cursor.fetchone()
         if not result:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'Class not found'}), 404
             
         professor_id = result[0]
         
         if professor_id != user_id:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'Unauthorized'}), 403
             
         # Verify chapter belongs to class
         cursor.execute("SELECT 1 FROM class_chapters WHERE chapter_id = %s AND class_id = %s", (chapter_id, class_id))
         if not cursor.fetchone():
              cursor.close()
-             conn.close()
+             close_conn_safely(conn)
              return jsonify({'error': 'Chapter not found in this class'}), 404
             
         exercise_id = f"ex_{str(uuid.uuid4())[:8]}"
@@ -3454,7 +3360,7 @@ def create_exercise(class_id, chapter_id):
         
         conn.commit()
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         return jsonify({'success': True, 'exercise_id': exercise_id}), 201
         
@@ -3502,7 +3408,7 @@ def add_class_resource(class_id):
         
         conn.commit()
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         return jsonify({'success': True, 'resource_id': resource_id}), 201
         
@@ -3528,7 +3434,7 @@ def get_class_resources(class_id):
         
         if not class_data:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'Class not found'}), 404
         
         # (Auth check skipped for brevity, relies on frontend context usually, but good to add back if needed strict)
@@ -3584,7 +3490,7 @@ def get_class_resources(class_id):
             # Ignore if table doesn't exist yet (though ensure_resources_table should fix it)
             
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         return jsonify({'all_resources': resources}), 200
         
@@ -3614,7 +3520,7 @@ def serve_chapter_pdf(chapter_id):
         
         result = cursor.fetchone()
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         if not result:
             return jsonify({'error': 'Chapter not found'}), 404
@@ -3672,7 +3578,7 @@ def delete_exercise(exercise_id):
         
         if not result:
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'error': 'Exercise not found'}), 404
             
         # Optional: Check if user is professor (omitted for brevity, handled by frontend context usually)
@@ -3682,7 +3588,7 @@ def delete_exercise(exercise_id):
         conn.commit()
         
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         return jsonify({'success': True}), 200
         
@@ -3746,7 +3652,7 @@ def ensure_resources_table():
              
         conn.commit()
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
     except Exception as e:
         print(f"Error checking resources table: {e}")
 
@@ -3812,7 +3718,7 @@ def upload_class_resource(class_id):
         
         conn.commit()
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         return jsonify({'success': True, 'resource_id': resource_id, 'url': resource_url}), 201
         
@@ -3855,7 +3761,7 @@ def create_class_resource(class_id):
         
         conn.commit()
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         return jsonify({'success': True, 'resource_id': resource_id}), 201
         
@@ -3882,7 +3788,7 @@ def manage_resource(class_id, resource_id):
             cursor.execute("DELETE FROM class_resources WHERE resource_id = %s", (resource_id,))
             conn.commit()
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'success': True}), 200
             
         elif request.method == 'PUT':
@@ -3900,7 +3806,7 @@ def manage_resource(class_id, resource_id):
             ))
             conn.commit()
             cursor.close()
-            conn.close()
+            close_conn_safely(conn)
             return jsonify({'success': True}), 200
             
     except Exception as e:
@@ -3917,7 +3823,7 @@ def download_resource(resource_id):
         result = cursor.fetchone()
         
         cursor.close()
-        conn.close()
+        close_conn_safely(conn)
         
         if not result or not result[0]:
             return jsonify({'error': 'File not found'}), 404
