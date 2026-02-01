@@ -3808,7 +3808,12 @@ def serve_resource_download(resource_id):
         import mimetypes
         
         # Determine mime type
-        mimetype = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+        mimetype = mimetypes.guess_type(filename)[0]
+        if not mimetype:
+             if filename.endswith('.ipynb'):
+                 mimetype = 'application/x-ipynb+json'
+             else:
+                 mimetype = 'application/octet-stream'
         
         # Determine disposition (inline for PDF/Images, attachment for others)
         disposition = 'attachment'
