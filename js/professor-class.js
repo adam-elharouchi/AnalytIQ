@@ -1459,6 +1459,38 @@ async function deleteResource(resourceId, chapterId = null) {
 // Edit resource - variable to track which resource is being edited
 let resourceToEditId = null;
 
+function hideAddResourceModal() {
+  document.getElementById('addResourceModal').style.display = 'none';
+  document.getElementById('addResourceForm').reset();
+  document.getElementById('addResourceError').style.display = 'none';
+  document.getElementById('resourceInputTypeSection').style.display = 'none';
+  resourceToEditId = null;
+}
+
+// Toggle resource input method (Link vs Upload)
+function toggleResourceMethod() {
+  const isLink = document.getElementById('resourceMethodLink').checked;
+  const linkSection = document.getElementById('resourceUrlSection');
+  const fileSection = document.getElementById('resourceFileSection');
+  const urlInput = document.getElementById('resourceUrl');
+  const fileInput = document.getElementById('resourceFile');
+
+  if (isLink) {
+    linkSection.style.display = 'block';
+    fileSection.style.display = 'none';
+    urlInput.required = true;
+    fileInput.required = false;
+    fileInput.value = ''; // Clear file selection
+  } else {
+    linkSection.style.display = 'none';
+    fileSection.style.display = 'block';
+    urlInput.required = false; // Not required when uploading
+    fileInput.required = true;
+    urlInput.value = ''; // Clear URL
+  }
+}
+window.toggleResourceInput = toggleResourceMethod; // Alias
+
 // Open edit resource modal by looking up resource ID
 function openEditResourceModal(resourceId) {
   // Find the resource in loadedResources
@@ -1502,60 +1534,7 @@ function editResource(resourceId, title, description, resourceType, resourceUrl)
 }
 
 // Handle resource form submission (add or edit)
-async function handleResourceFormSubmit(event) {
-  event.preventDefault();
-
-  const currentUser = getCurrentUser();
-  if (!currentUser || !currentUser.user_id || !currentClassId) {
-    showAddResourceError('Error: User not logged in');
-    return;
-  }
-
-  const title = document.getElementById('resourceTitle').value.trim();
-  const description = document.getElementById('resourceDescription').value.trim();
-  const resourceType = document.getElementById('resourceType').value;
-  const resourceUrl = document.getElementById('resourceUrl').value.trim();
-
-  if (!title) {
-    showAddResourceError('Title is required');
-    return;
-  }
-
-  try {
-    if (resourceToEditId) {
-      // Edit mode - use PUT
-      const response = await fetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/resources/${encodeURIComponent(resourceToEditId)}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id: currentUser.user_id,
-          title: title,
-          description: description,
-          resource_type: resourceType,
-          resource_url: resourceUrl
-        })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to update resource');
-      }
-
-      // Success
-      hideAddResourceModal();
-      await loadResources();
-      resourceToEditId = null;
-    } else {
-      // Add mode - original form submission will be handled by the existing code
-      // For now, trigger the form's original submit event
-      document.getElementById('addResourceForm').submit();
-    }
-  } catch (error) {
-    console.error('Error saving resource:', error);
-    showAddResourceError('Failed to save resource: ' + error.message);
-  }
-}
+// function handleResourceFormSubmit removed - replaced by handleAddResource
 
 // Show error in add resource modal
 function showAddResourceError(message) {
