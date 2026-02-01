@@ -13,7 +13,8 @@ let aiProvider = 'gemini'; // Only Gemini supported
 let aiAgentInitialized = false;
 let geminiModel = 'gemini-3-pro-preview'; // Default: Best Balance
 // Default API key - accessible to all users
-const GEMINI_API_KEY = 'AIzaSyDURc7Q5UxgJZs_L9H3DaJzQD9Rysme_Ws';
+// Default API key - Managed Server-Side
+const GEMINI_API_KEY = null; // Key is no longer exposed client-side
 let conversationHistoryList = []; // Store conversation history
 let currentConversationId = null;
 let currentConversationTab = 'active'; // Track current tab: 'active' or 'archived'
@@ -751,27 +752,15 @@ async function testAPIConnection(apiKey) {
 
 // Initialize AI Agent
 async function initializeAIAgent() {
-  const apiKey = localStorage.getItem('geminiApiKey') || localStorage.getItem('aiApiKey') || GEMINI_API_KEY;
-
-  if (!apiKey) {
-    console.error('Gemini API key not found');
-    aiAgentInitialized = false;
-    return false;
-  }
-
   try {
-    // Test API connection first (skip test to avoid extra call, just initialize directly)
-    await codeWriterAgent.initialize(apiKey, 'gemini', geminiModel);
+    // API Key is now handled server-side.
+    // Client just initializes the agent with no key.
+    await codeWriterAgent.initialize(null, 'gemini', geminiModel);
     aiAgentInitialized = true;
     return true;
   } catch (error) {
     console.error(`Failed to initialize Gemini AI agent: ${error.message}`);
     aiAgentInitialized = false;
-
-    // Show user-friendly error if API is not enabled
-    if (error.message.includes('not enabled') || error.message.includes('Enable it')) {
-      console.error('⚠️ API Setup Required: Please enable the Generative Language API in Google Cloud Console for this API key.');
-    }
     return false;
   }
 }
@@ -1814,105 +1803,105 @@ function toggleSidebar() {
 
 // Format message content
 function formatMessageContent(content, role = 'assistant') {
-    // Check if it's a user message - simply return escaped content
-    if (role === 'user') {
-        return escapeHtml(content).replace(/\n/g, '<br>');
-    }
+  // Check if it's a user message - simply return escaped content
+  if (role === 'user') {
+    return escapeHtml(content).replace(/\n/g, '<br>');
+  }
 
-    // Step 1: Protect code blocks with placeholders
-    const codeBlockPlaceholders = [];
-    let placeholderIndex = 0;
+  // Step 1: Protect code blocks with placeholders
+  const codeBlockPlaceholders = [];
+  let placeholderIndex = 0;
 
-    content = content.replace(/```(\w*)[^\n]*\n([\s\S]*?)```/g, (match) => {
-        const placeholder = `__CODE_BLOCK_${placeholderIndex}__`;
-        codeBlockPlaceholders[placeholderIndex] = match;
-        placeholderIndex++;
-        return placeholder;
-    });
+  content = content.replace(/```(\w*)[^\n]*\n([\s\S]*?)```/g, (match) => {
+    const placeholder = `__CODE_BLOCK_${placeholderIndex}__`;
+    codeBlockPlaceholders[placeholderIndex] = match;
+    placeholderIndex++;
+    return placeholder;
+  });
 
-    // Step 2: Protect inline code with placeholders
-    const inlineCodePlaceholders = [];
-    let inlineIndex = 0;
+  // Step 2: Protect inline code with placeholders
+  const inlineCodePlaceholders = [];
+  let inlineIndex = 0;
 
-    content = content.replace(/`([^`]+)`/g, (match) => {
-        const placeholder = `__INLINE_CODE_${inlineIndex}__`;
-        inlineCodePlaceholders[inlineIndex] = match;
-        inlineIndex++;
-        return placeholder;
-    });
+  content = content.replace(/`([^`]+)`/g, (match) => {
+    const placeholder = `__INLINE_CODE_${inlineIndex}__`;
+    inlineCodePlaceholders[inlineIndex] = match;
+    inlineIndex++;
+    return placeholder;
+  });
 
-    // Step 3: Apply markdown formatting to remaining text (outside code)
-    if (role === 'assistant') {
-        // Convert markdown headers to HTML
-        content = content.replace(/^#### (.+)$/gm, '<h4>$1</h4>');
-        content = content.replace(/^### (.+)$/gm, '<h3>$1</h3>');
-        content = content.replace(/^## (.+)$/gm, '<h2>$1</h2>');
-        content = content.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+  // Step 3: Apply markdown formatting to remaining text (outside code)
+  if (role === 'assistant') {
+    // Convert markdown headers to HTML
+    content = content.replace(/^#### (.+)$/gm, '<h4>$1</h4>');
+    content = content.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+    content = content.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+    content = content.replace(/^# (.+)$/gm, '<h1>$1</h1>');
 
-        // Handle horizontal rules
-        content = content.replace(/^---$/gm, '<hr>');
+    // Handle horizontal rules
+    content = content.replace(/^---$/gm, '<hr>');
 
-        // Handle bullet points
-        content = content.replace(/^\* (.+)$/gm, '<li>$1</li>');
+    // Handle bullet points
+    content = content.replace(/^\* (.+)$/gm, '<li>$1</li>');
 
-        // Handle numbered lists
-        content = content.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+    // Handle numbered lists
+    content = content.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
 
-        // Handle lists
-        content = content.replace(/^[-*]\s+(.+)$/gm, '<li>$1</li>');
-    }
+    // Handle lists
+    content = content.replace(/^[-*]\s+(.+)$/gm, '<li>$1</li>');
+  }
 
-    // Handle bold (before italic to avoid conflicts)
-    content = content.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  // Handle bold (before italic to avoid conflicts)
+  content = content.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
 
-    // Handle italic
-    content = content.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+  // Handle italic
+  content = content.replace(/\*([^*]+)\*/g, '<em>$1</em>');
 
-    // Step 4: Restore code blocks and format them
-    codeBlockPlaceholders.forEach((codeBlock, index) => {
-        const formatted = codeBlock.replace(/```(\w*)[^\n]*\n([\s\S]*?)```/g, (match, lang, code) => {
-            // Clean the code
-            let cleanCode = code.trim();
-            cleanCode = cleanCode.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  // Step 4: Restore code blocks and format them
+  codeBlockPlaceholders.forEach((codeBlock, index) => {
+    const formatted = codeBlock.replace(/```(\w*)[^\n]*\n([\s\S]*?)```/g, (match, lang, code) => {
+      // Clean the code
+      let cleanCode = code.trim();
+      cleanCode = cleanCode.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 
-            // Preserve newlines and escape HTML
-            const language = lang || 'python';
-            const escapedCode = escapeHtml(cleanCode);
+      // Preserve newlines and escape HTML
+      const language = lang || 'python';
+      const escapedCode = escapeHtml(cleanCode);
 
-            // Use pre tag to preserve whitespace and newlines
-            return `<div class="code-block-container">
+      // Use pre tag to preserve whitespace and newlines
+      return `<div class="code-block-container">
       <pre class="code-block" data-language="${language}"><code>${escapedCode}</code></pre>
     </div>`;
-        });
-        content = content.replace(`__CODE_BLOCK_${index}__`, formatted);
     });
+    content = content.replace(`__CODE_BLOCK_${index}__`, formatted);
+  });
 
-    // Step 5: Restore inline code
-    inlineCodePlaceholders.forEach((inlineCode, index) => {
-        const formatted = inlineCode.replace(/`([^`]+)`/g, '<code>$1</code>');
-        content = content.replace(`__INLINE_CODE_${index}__`, formatted);
-    });
+  // Step 5: Restore inline code
+  inlineCodePlaceholders.forEach((inlineCode, index) => {
+    const formatted = inlineCode.replace(/`([^`]+)`/g, '<code>$1</code>');
+    content = content.replace(`__INLINE_CODE_${index}__`, formatted);
+  });
 
-    // Reduce excessive newlines (3+ consecutive newlines become 2)
-    content = content.replace(/\n{3,}/g, '\n\n');
+  // Reduce excessive newlines (3+ consecutive newlines become 2)
+  content = content.replace(/\n{3,}/g, '\n\n');
 
-    // Convert remaining newlines to <br> (but not around block elements)
-    content = content.replace(/\n/g, '<br>');
+  // Convert remaining newlines to <br> (but not around block elements)
+  content = content.replace(/\n/g, '<br>');
 
-    // Clean up br tags around block elements
-    content = content.replace(/<br>\s*(<h[1-4]>)/g, '$1');
-    content = content.replace(/(<\/h[1-4]>)\s*<br>/g, '$1');
-    content = content.replace(/<br>\s*(<hr>)/g, '$1');
-    content = content.replace(/(<hr>)\s*<br>/g, '$1');
-    content = content.replace(/<br>\s*(<div)/g, '$1');
-    content = content.replace(/(<\/div>)\s*<br>/g, '$1');
-    content = content.replace(/<br>\s*(<li>)/g, '$1');
-    content = content.replace(/(<\/li>)\s*<br>/g, '$1');
+  // Clean up br tags around block elements
+  content = content.replace(/<br>\s*(<h[1-4]>)/g, '$1');
+  content = content.replace(/(<\/h[1-4]>)\s*<br>/g, '$1');
+  content = content.replace(/<br>\s*(<hr>)/g, '$1');
+  content = content.replace(/(<hr>)\s*<br>/g, '$1');
+  content = content.replace(/<br>\s*(<div)/g, '$1');
+  content = content.replace(/(<\/div>)\s*<br>/g, '$1');
+  content = content.replace(/<br>\s*(<li>)/g, '$1');
+  content = content.replace(/(<\/li>)\s*<br>/g, '$1');
 
-    // Wrap lists in ul tags
-    content = content.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+  // Wrap lists in ul tags
+  content = content.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
 
-    return content;
+  return content;
 }
 
 // Format code block for Google Colab compatibility
