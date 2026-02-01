@@ -1344,10 +1344,44 @@ async function handleAddResource(event) {
       formData.append('description', description);
 
       // Upload file - this now also creates the database record
-      const uploadResponse = await fetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/resources/upload`, {
-        method: 'POST',
-        body: formData
-      });
+
+      // Set timeout to warn user about large files
+      const uploadTimeout = setTimeout(() => {
+        const errorDiv = document.getElementById('addResourceError');
+        errorDiv.style.cssText = 'display: block; margin-bottom: 1rem; padding: 0.75rem; background: #eff6ff; color: #1e40af; border-radius: 0.375rem; border: 1px solid #bfdbfe;';
+        errorDiv.innerHTML = '<strong>Processing Large File...</strong><br>This is a large file and may take longer to process (up to 5 mins). Please wait and do not close this window.';
+      }, 30000); // 30 seconds
+
+      try {
+        const uploadResponse = await fetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/resources/upload`, {
+          method: 'POST',
+          body: formData
+        });
+
+        clearTimeout(uploadTimeout); // Clear timeout on response
+
+        const uploadData = await uploadResponse.json();
+
+        if (!uploadResponse.ok) {
+          throw new Error(uploadData.error || 'Failed to upload file');
+        }
+
+        // Upload endpoint now creates the resource record, so we're done
+        hideAddResourceModal();
+        await loadResources();
+
+        // Show success message
+        const resourcesList = document.getElementById('resourcesList');
+        const successMsg = document.createElement('div');
+        successMsg.style.cssText = 'padding: 1rem; margin-bottom: 1rem; background: #d1fae5; color: #065f46; border-radius: 0.5rem; border: 1px solid #10b981;';
+        successMsg.textContent = '✓ Resource uploaded successfully!';
+        resourcesList.insertBefore(successMsg, resourcesList.firstChild);
+        setTimeout(() => successMsg.remove(), 3000);
+        return;
+      } catch (err) {
+        clearTimeout(uploadTimeout);
+        throw err;
+      }
 
       const uploadData = await uploadResponse.json();
 
