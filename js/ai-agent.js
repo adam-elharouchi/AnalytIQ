@@ -457,14 +457,15 @@ ${memoryText}`;
       });
 
     // Use selected Gemini model
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${this.geminiModel}:generateContent?key=${this.apiKey}`,
+    // Use secure backend proxy instead of direct call
+    const response = await fetch(`${window.API_BASE_URL || '/api'}/ai/chat`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
+          model: this.geminiModel,
           contents: contents,
           generationConfig: {
             temperature: 0.7,

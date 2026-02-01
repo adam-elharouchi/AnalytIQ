@@ -2467,6 +2467,50 @@ def get_chapter_exercises(chapter_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/ai/chat', methods=['POST', 'OPTIONS'])
+def proxy_ai_chat():
+    """Secure proxy for Gemini Chat API"""
+    if request.method == 'OPTIONS':
+         response = app.response_class()
+         response.headers['Access-Control-Allow-Origin'] = '*'
+         response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+         response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+         return response
+
+    try:
+        api_key = os.getenv('GEMINI_API_KEY')
+        if not api_key:
+            return jsonify({'error': 'Server configuration error: AI API Key missing'}), 500
+
+        data = request.json
+        model = data.get('model', 'gemini-2.5-flash')
+        # Allow only known safe models to prevent abuse
+        allowed_models = ['gemini-3-pro-preview', 'gemini-3-flash-preview', 
+                          'gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-3-pro-image-preview']
+        
+        if model not in allowed_models:
+             model = 'gemini-2.5-flash' # Fallback to safe default
+        
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+        
+        # Forward the request content to Google
+        google_payload = {
+            'contents': data.get('contents', []),
+            'generationConfig': data.get('generationConfig', {})
+        }
+        
+        import requests
+        response = requests.post(url, json=google_payload, headers={'Content-Type': 'application/json'}, timeout=60)
+        
+        if not response.ok:
+            return jsonify(response.json()), response.status_code
+            
+        return jsonify(response.json())
+
+    except Exception as e:
+        print(f"AI Proxy Error: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/chapters/<chapter_id>/generate-exercises', methods=['POST', 'OPTIONS'])
 def generate_exercises(chapter_id):
     """Generate exercises for a chapter using AI (professor only)"""
@@ -2489,7 +2533,7 @@ def generate_exercises(chapter_id):
         
         # Verify chapter exists and user is the professor
         cursor.execute("""
-            SELECT cc.class_id, cc.title, c.professor_id, cc.pdf_filename
+            SELECT cc.class_id, cc.title, c.professor_id, cc.pdf_filename, cc.pdf_data
             FROM class_chapters cc
             JOIN classes c ON cc.class_id = c.class_id
             WHERE cc.chapter_id = %s
@@ -2504,6 +2548,7 @@ def generate_exercises(chapter_id):
         chapter_title = chapter_data[1]
         professor_id = chapter_data[2]
         pdf_filename = chapter_data[3]
+        pdf_bytes = chapter_data[4] # Get binary data from DB
         
         if professor_id != user_id:
             cursor.close()
@@ -2516,19 +2561,17 @@ def generate_exercises(chapter_id):
             close_conn_safely(conn)
             return jsonify({'error': 'Exercise generator not available'}), 500
         
-        # Read PDF file and extract text
-        pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], pdf_filename)
-        if not os.path.exists(pdf_path):
-            cursor.close()
-            close_conn_safely(conn)
-            return jsonify({'error': 'PDF file not found'}), 404
-        
+        # Extract text from PDF bytes
+        if not pdf_bytes:
+             cursor.close()
+             close_conn_safely(conn)
+             return jsonify({'error': 'PDF content is missing'}), 404
+
         pdf_text = None
         if extract_text_from_pdf_bytes:
             try:
-                with open(pdf_path, 'rb') as f:
-                    pdf_bytes = f.read()
-                    pdf_text = extract_text_from_pdf_bytes(pdf_bytes)
+                # pass memoryview/bytes directly to extractor
+                pdf_text = extract_text_from_pdf_bytes(pdf_bytes)
             except Exception as e:
                 cursor.close()
                 close_conn_safely(conn)
