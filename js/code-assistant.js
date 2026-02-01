@@ -679,7 +679,14 @@ async function initializeGemini() {
   try {
     if (typeof preferencesAPI !== 'undefined') {
       const prefs = await preferencesAPI.get();
-      geminiModel = prefs.geminiModel || 'gemini-3-pro-preview';
+      currentLanguage = prefs.currentLanguage || 'python';
+
+      // Force update to Gemini 3 if user was on old default
+      if (prefs.geminiModel === 'gemini-2.5-flash' || !prefs.geminiModel) {
+        geminiModel = 'gemini-3-pro-preview';
+      } else {
+        geminiModel = prefs.geminiModel;
+      }
       aiProvider = prefs.aiProvider || 'gemini';
     } else {
       // Fallback to localStorage if preferencesAPI not available
