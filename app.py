@@ -227,6 +227,29 @@ def hash_password(password):
         hash_val = hash_val & hash_val  # Convert to 32bit integer
     return str(hash_val)
 
+
+def ensure_password_resets_table():
+    """Ensure password_resets table exists for forgot-password flow."""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS password_resets (
+                id SERIAL PRIMARY KEY,
+                email VARCHAR(255) NOT NULL,
+                token VARCHAR(255) NOT NULL,
+                expires_at TIMESTAMP NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_password_resets_token ON password_resets(token);")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_password_resets_email ON password_resets(email);")
+        conn.commit()
+        cursor.close()
+        close_conn_safely(conn)
+    except Exception as e:
+        print(f"ensure_password_resets_table: {e}")
+
 @app.route('/api/users/signup', methods=['OPTIONS'])
 def signup_options():
     """Handle OPTIONS preflight for signup"""
@@ -374,8 +397,16 @@ def signin():
 @app.route('/api/users/forgot-password', methods=['POST', 'OPTIONS'])
 def forgot_password():
     """Handle forgot password request"""
+    if request.method == 'OPTIONS':
+        response = app.response_class()
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+        response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        response.headers['Access-Control-Max-Age'] = '3600'
+        return response
+
     try:
-        data = request.json
+        data = request.json or {}
         email = data.get('email')
         
         if not email:
@@ -398,29 +429,36 @@ def forgot_password():
         })
 
         if user_row:
-            # User exists - Send Reset Email
-            # Generate a simple temporary token (In PROD, store this in DB with expiry!)
-            # For this quick implementation, we will send a direct reset link or instructions.
-            # To do this securely, we need a 'password_resets' table. 
-            # For now, we will assume the user just needs to know IT WORKS.
-            # Let's generate a fake token for the link.
             import secrets
+            from datetime import timedelta
             token = secrets.token_urlsafe(32)
-            
-            # Construct Reset Link (Point to frontend reset page - assumig one exists or just for demo)
-            # Since we don't have a reset-password page yet, we will just send a text email.
-            reset_link = f"{request.host_url}reset-password?token={token}&email={email}"
-            
+            ensure_password_resets_table()
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            expires_at = datetime.utcnow() + timedelta(hours=1)
+            cursor.execute(
+                "INSERT INTO password_resets (email, token, expires_at) VALUES (%s, %s, %s)",
+                (email, token, expires_at)
+            )
+            conn.commit()
+            cursor.close()
+            close_conn_safely(conn)
+            base_url = (os.getenv('FRONTEND_URL') or request.host_url).rstrip('/') + '/'
+            reset_link = f"{base_url}reset-password.html?token={token}&email={email}"
             if mail:
                 try:
-                    msg = Message("Password Reset Request",
-                                recipients=[email])
-                    msg.body = f"Hello {user_row[1]},\n\nSomeone requested a password reset for your AnalytIQ account.\n\nClick here to reset (Demo Link): {reset_link}\n\nIf you did not request this, please ignore this email."
+                    # Sender: use MAIL_SENDER_NAME + MAIL_DEFAULT_SENDER so recipient sees e.g. "AnalytIQ Services <services.analytiq@gmail.com>"
+                    sender = os.getenv('MAIL_DEFAULT_SENDER') or app.config.get('MAIL_DEFAULT_SENDER')
+                    sender_name = os.getenv('MAIL_SENDER_NAME')
+                    if sender_name and sender:
+                        msg = Message("Password Reset Request", recipients=[email], sender=(sender_name, sender))
+                    else:
+                        msg = Message("Password Reset Request", recipients=[email])
+                    msg.body = f"Hello {user_row[1]},\n\nSomeone requested a password reset for your AnalytIQ account.\n\nClick here to reset your password: {reset_link}\n\nThis link expires in 1 hour. If you did not request this, please ignore this email."
                     mail.send(msg)
                     print(f"Email sent to {email}")
                 except Exception as mail_err:
                     print(f"Failed to send email: {mail_err}")
-                    # Don't fail the request, just log it.
             else:
                 print("Mail not configured. Skipping email.")
 
@@ -428,6 +466,60 @@ def forgot_password():
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/users/reset-password', methods=['POST', 'OPTIONS'])
+def reset_password():
+    """Reset password using token from email link."""
+    if request.method == 'OPTIONS':
+        response = app.response_class()
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+        response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        response.headers['Access-Control-Max-Age'] = '3600'
+        return response
+
+    try:
+        data = request.json or {}
+        token = data.get('token')
+        email = data.get('email')
+        new_password = data.get('newPassword')
+
+        if not token or not email or not new_password:
+            return jsonify({'error': 'Token, email, and new password are required'}), 400
+
+        if len(new_password) < 6:
+            return jsonify({'error': 'Password must be at least 6 characters'}), 400
+
+        ensure_password_resets_table()
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            "SELECT id FROM password_resets WHERE email = %s AND token = %s AND expires_at > %s",
+            (email, token, datetime.utcnow())
+        )
+        row = cursor.fetchone()
+        if not row:
+            cursor.close()
+            close_conn_safely(conn)
+            return jsonify({'error': 'Invalid or expired reset link. Please request a new password reset.'}), 400
+
+        new_hash = hash_password(new_password)
+        cursor.execute(
+            "UPDATE users SET password_hash = %s, updated_at = CURRENT_TIMESTAMP WHERE email = %s",
+            (new_hash, email)
+        )
+        cursor.execute("DELETE FROM password_resets WHERE email = %s AND token = %s", (email, token))
+        conn.commit()
+        cursor.close()
+        close_conn_safely(conn)
+
+        return jsonify({'success': True, 'message': 'Password has been reset. You can now sign in.'}), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 
 @app.route('/api/users/profile', methods=['GET'])
 def get_profile():
