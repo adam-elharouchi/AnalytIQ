@@ -443,7 +443,11 @@ def forgot_password():
             conn.commit()
             cursor.close()
             close_conn_safely(conn)
-            base_url = (os.getenv('FRONTEND_URL') or request.host_url).rstrip('/') + '/'
+            # Reset link must open the frontend (where reset-password.html is hosted), not the API
+            frontend_url = os.getenv('FRONTEND_URL')
+            if not frontend_url and request.host_url and 'onrender.com' in request.host_url:
+                frontend_url = 'https://www.myanalytiq.org'
+            base_url = (frontend_url or request.host_url).rstrip('/') + '/'
             reset_link = f"{base_url}reset-password.html?token={token}&email={email}"
             if mail:
                 try:
