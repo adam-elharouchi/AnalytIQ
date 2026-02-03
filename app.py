@@ -198,7 +198,8 @@ def get_db_connection():
             g.db_conn = db_pool.getconn()
         except Exception as e:
             print(f"Error getting connection from pool: {e}")
-            # Try to re-init pool?
+            # Force re-init pool by clearing the global variable
+            db_pool = None
             init_db_pool()
             g.db_conn = db_pool.getconn()
             
