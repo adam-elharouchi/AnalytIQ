@@ -1,27 +1,20 @@
 #!/bin/bash
-# Simple startup script for AnalytIQ Flask API
-# Usage: ./start_server.sh
 
-# Get the directory where this script is located
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-cd "$SCRIPT_DIR"
+# Start the Flask server on port 5001
+# This script ensures the server runs on the correct port
 
-# Load environment variables from .env file if it exists
-if [ -f .env ]; then
-    export $(cat .env | grep -v '^#' | xargs)
+echo "Starting AnalytIQ Flask Server..."
+echo "Server will be available at: http://localhost:5001"
+echo "Press CTRL+C to stop the server"
+echo ""
+
+# Check if port 5001 is already in use
+if lsof -Pi :5001 -sTCP:LISTEN -t >/dev/null ; then
+    echo "⚠️  Port 5001 is already in use!"
+    echo "Stopping existing process..."
+    lsof -ti:5001 | xargs kill -9
+    sleep 1
 fi
 
-# Set production environment
-export FLASK_ENV=production
-export PORT=${PORT:-5001}
-
-# Check if gunicorn is installed
-if command -v gunicorn &> /dev/null; then
-    echo "Starting AnalytIQ API with Gunicorn on port $PORT..."
-    gunicorn app:app --bind 127.0.0.1:$PORT --workers 4 --timeout 120 --access-logfile - --error-logfile -
-else
-    echo "Gunicorn not found. Install it with: pip install gunicorn"
-    echo "Starting with Flask development server instead..."
-    echo "WARNING: This is not recommended for production!"
-    python3 app.py $PORT
-fi
+# Start the Flask server
+python3 app.py
