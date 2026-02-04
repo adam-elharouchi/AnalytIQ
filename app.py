@@ -55,6 +55,46 @@ except ImportError:
     print("Warning: Flask-Mail not installed. Email features will not work.")
     mail = None
 
+# Rate Limiting Configuration
+try:
+    from flask_limiter import Limiter
+    from flask_limiter.util import get_remote_address
+    
+    limiter = Limiter(
+        app=app,
+        key_func=get_remote_address,
+        default_limits=["200 per day", "50 per hour"],  # Default limits for all routes
+        storage_uri="memory://",  # In-memory storage (use Redis in production)
+        strategy="fixed-window"
+    )
+    print("✅ Rate limiting enabled")
+except ImportError:
+    print("Warning: Flask-Limiter not installed. Rate limiting will not work.")
+    limiter = None
+
+# Structured Logging Configuration
+import logging
+from pythonjsonlogger import jsonlogger
+
+# Create logger
+logger = logging.getLogger('analytiq')
+logger.setLevel(logging.INFO)
+
+# Create console handler with JSON formatter
+log_handler = logging.StreamHandler()
+formatter = jsonlogger.JsonFormatter(
+    '%(asctime)s %(name)s %(levelname)s %(message)s',
+    rename_fields={'asctime': 'timestamp', 'levelname': 'level', 'name': 'service'}
+)
+log_handler.setFormatter(formatter)
+logger.addHandler(log_handler)
+
+# Log startup
+logger.info("Application starting", extra={
+    "environment": os.getenv("ENVIRONMENT", "development"),
+    "debug_mode": app.debug
+})
+
 # Ensure upload folder exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
@@ -160,12 +200,17 @@ def init_db_pool():
             separator = '&' if '?' in clean_url else '?'
             clean_url = clean_url + separator + '&'.join(params_to_add)
             
-        print("Initializing connection pool with timeout settings...")
-        print(f"Connection timeout: 10s, Statement timeout: 30s")
+        logger.info("Initializing connection pool", extra={
+            "connection_timeout": "10s",
+            "statement_timeout": "30s"
+        })
         
+        # Initialize connection pool with increased size for production
+        # Formula: (2 * num_cores) + effective_spindle_count
+        # For typical deployment: 4 cores → 8-10 base + buffer = 20-25 connections
         db_pool = pool.ThreadedConnectionPool(
-            minconn=1,
-            maxconn=10,
+            minconn=2,  # Minimum connections to maintain
+            maxconn=25,  # Increased from 10 to support ~20-25 concurrent users
             dsn=clean_url
         )
         
@@ -280,13 +325,64 @@ def close_conn_safely(conn):
     """No-op: Connection closing is handled by teardown_appcontext"""
     pass
 
-def hash_password(password):
-    """Simple hash function (same as frontend for compatibility)"""
+def hash_password_legacy(password):
+    """
+    DEPRECATED: Legacy hash function for backward compatibility only.
+    This function is insecure and should not be used for new passwords.
+    Kept only to verify old passwords during migration period.
+    """
     hash_val = 0
     for char in password:
         hash_val = ((hash_val << 5) - hash_val) + ord(char)
         hash_val = hash_val & hash_val  # Convert to 32bit integer
     return str(hash_val)
+
+def hash_password(password):
+    """
+    Hash password using bcrypt with automatic salt generation.
+    
+    Args:
+        password (str): Plain text password
+        
+    Returns:
+        str: Bcrypt hashed password (UTF-8 decoded)
+    """
+    import bcrypt
+    # Generate salt and hash password
+    salt = bcrypt.gensalt(rounds=12)  # 12 rounds = good balance of security and performance
+    hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
+    return hashed.decode('utf-8')
+
+def verify_password(password, hashed_password):
+    """
+    Verify password against bcrypt hash.
+    Falls back to legacy hash for backward compatibility during migration.
+    
+    Args:
+        password (str): Plain text password to verify
+        hashed_password (str): Stored hash (bcrypt or legacy)
+        
+    Returns:
+        tuple: (is_valid, needs_rehash)
+            - is_valid: True if password matches
+            - needs_rehash: True if using legacy hash (should update to bcrypt)
+    """
+    import bcrypt
+    
+    # Check if it's a bcrypt hash (starts with $2b$ or $2a$)
+    if hashed_password.startswith('$2'):
+        try:
+            is_valid = bcrypt.checkpw(password.encode('utf-8'), hashed_password.encode('utf-8'))
+            return (is_valid, False)  # Valid bcrypt hash, no rehash needed
+        except Exception as e:
+            print(f"Bcrypt verification error: {e}")
+            return (False, False)
+    else:
+        # Legacy hash - verify and flag for rehashing
+        legacy_hash = hash_password_legacy(password)
+        is_valid = legacy_hash == hashed_password
+        return (is_valid, is_valid)  # If valid, needs rehash
+
 
 
 def ensure_password_resets_table():
@@ -323,6 +419,7 @@ def signup_options():
     return response
 
 @app.route('/api/users/signup', methods=['POST'])
+@limiter.limit("5 per hour")  # Prevent account creation spam
 def signup():
     """Sign up a new user"""
     try:
@@ -369,7 +466,7 @@ def signup():
                 (created_user_id,)
             )
         except Exception as e:
-            print(f"Warning: Could not create user_profiles: {e}")
+            logger.warning("Failed to create user_profiles", extra={"error": str(e)})
         
         # Create default settings (with error handling)
         try:
@@ -378,7 +475,7 @@ def signup():
                 (created_user_id,)
             )
         except Exception as e:
-            print(f"Warning: Could not create user_settings: {e}")
+            logger.warning("Failed to create user_settings", extra={"error": str(e)})
         
         # Create default preferences (with error handling)
         try:
@@ -387,7 +484,7 @@ def signup():
                 (created_user_id,)
             )
         except Exception as e:
-            print(f"Warning: Could not create user_preferences: {e}")
+            logger.warning("Failed to create user_preferences", extra={"error": str(e)})
         
         # Initialize empty AI agent digest (with error handling)
         try:
@@ -396,7 +493,7 @@ def signup():
                 (created_user_id,)
             )
         except Exception as e:
-            print(f"Warning: Could not create ai_agent_digest: {e}")
+            logger.warning("Failed to create ai_agent_digest", extra={"error": str(e)})
         
         conn.commit()
         cursor.close()
@@ -417,8 +514,10 @@ def signup():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/users/signin', methods=['POST', 'OPTIONS'])
+@limiter.limit("10 per minute")  # Prevent brute-force login attacks
 def signin():
     """Sign in a user"""
+    conn = None
     try:
         data = request.json
         email = data.get('email')
@@ -430,32 +529,63 @@ def signin():
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        password_hash = hash_password(password)
+        # Fetch user with password hash
         cursor.execute(
-            "SELECT user_id, name, email, COALESCE(role, 'student') FROM users WHERE email = %s AND password_hash = %s",
-            (email, password_hash)
+            "SELECT user_id, name, email, password_hash, COALESCE(role, 'student') FROM users WHERE email = %s",
+            (email,)
         )
         user = cursor.fetchone()
+        
+        if not user:
+            cursor.close()
+            close_conn_safely(conn)
+            return jsonify({'error': 'Invalid email or password'}), 401
+        
+        user_id, name, user_email, stored_hash, role = user
+        
+        # Verify password (supports both bcrypt and legacy hashes)
+        is_valid, needs_rehash = verify_password(password, stored_hash)
+        
+        if not is_valid:
+            cursor.close()
+            close_conn_safely(conn)
+            return jsonify({'error': 'Invalid email or password'}), 401
+        
+        # If using legacy hash, automatically migrate to bcrypt
+        if needs_rehash:
+            try:
+                new_hash = hash_password(password)
+                cursor.execute(
+                    "UPDATE users SET password_hash = %s WHERE user_id = %s",
+                    (new_hash, user_id)
+                )
+                conn.commit()
+                logger.info("Password migrated to bcrypt", extra={"user_email": email, "migration": "legacy_to_bcrypt"})
+            except Exception as e:
+                logger.warning("Password migration failed", extra={"user_email": email, "error": str(e)})
+                # Don't fail login if migration fails
+                conn.rollback()
         
         cursor.close()
         close_conn_safely(conn)
         
-        if not user:
-            return jsonify({'error': 'Invalid email or password'}), 401
-        
         # Return user data - include user_id and role for clarity
         return jsonify({
-            'id': user[0],  # user_id
-            'user_id': user[0],  # Also return as user_id for compatibility
-            'name': user[1],
-            'email': user[2],
-            'role': user[3] if len(user) > 3 else 'student'
+            'id': user_id,
+            'user_id': user_id,  # Also return as user_id for compatibility
+            'name': name,
+            'email': user_email,
+            'role': role
         }), 200
         
     except Exception as e:
+        if conn:
+            conn.rollback()
         return jsonify({'error': str(e)}), 500
 
+
 @app.route('/api/users/forgot-password', methods=['POST', 'OPTIONS'])
+@limiter.limit("3 per hour")  # Prevent password reset abuse
 def forgot_password():
     """Handle forgot password request"""
     if request.method == 'OPTIONS':
@@ -534,6 +664,7 @@ def forgot_password():
 
 
 @app.route('/api/users/reset-password', methods=['POST', 'OPTIONS'])
+@limiter.limit("5 per hour")  # Prevent password reset token abuse
 def reset_password():
     """Reset password using token from email link."""
     if request.method == 'OPTIONS':
@@ -544,6 +675,7 @@ def reset_password():
         response.headers['Access-Control-Max-Age'] = '3600'
         return response
 
+    conn = None
     try:
         data = request.json or {}
         token = data.get('token')
@@ -570,6 +702,7 @@ def reset_password():
             close_conn_safely(conn)
             return jsonify({'error': 'Invalid or expired reset link. Please request a new password reset.'}), 400
 
+        # Hash new password with bcrypt
         new_hash = hash_password(new_password)
         cursor.execute(
             "UPDATE users SET password_hash = %s, updated_at = CURRENT_TIMESTAMP WHERE email = %s",
@@ -583,7 +716,10 @@ def reset_password():
         return jsonify({'success': True, 'message': 'Password has been reset. You can now sign in.'}), 200
 
     except Exception as e:
+        if conn:
+            conn.rollback()
         return jsonify({'error': str(e)}), 500
+
 
 
 @app.route('/api/users/profile', methods=['GET'])
@@ -740,6 +876,7 @@ def update_settings():
 @app.route('/api/users/password', methods=['PUT'])
 def update_password():
     """Update user password"""
+    conn = None
     try:
         data = request.json
         user_id = data.get('user_id')
@@ -752,18 +889,29 @@ def update_password():
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Verify current password
-        current_hash = hash_password(current_password)
+        # Fetch current password hash
         cursor.execute(
-            "SELECT id FROM users WHERE user_id = %s AND password_hash = %s",
-            (user_id, current_hash)
+            "SELECT password_hash FROM users WHERE user_id = %s",
+            (user_id,)
         )
-        if not cursor.fetchone():
+        result = cursor.fetchone()
+        
+        if not result:
+            cursor.close()
+            close_conn_safely(conn)
+            return jsonify({'error': 'User not found'}), 404
+        
+        stored_hash = result[0]
+        
+        # Verify current password
+        is_valid, _ = verify_password(current_password, stored_hash)
+        
+        if not is_valid:
             cursor.close()
             close_conn_safely(conn)
             return jsonify({'error': 'Current password is incorrect'}), 401
         
-        # Update password
+        # Update password with new bcrypt hash
         new_hash = hash_password(new_password)
         cursor.execute(
             "UPDATE users SET password_hash = %s, updated_at = CURRENT_TIMESTAMP WHERE user_id = %s",
@@ -777,7 +925,10 @@ def update_password():
         return jsonify({'success': True}), 200
         
     except Exception as e:
+        if conn:
+            conn.rollback()
         return jsonify({'error': str(e)}), 500
+
 
 @app.route('/api/users/delete', methods=['DELETE'])
 def delete_user():
@@ -930,6 +1081,7 @@ def get_conversation(conversation_id):
 @app.route('/api/users/conversations/<conversation_id>', methods=['PUT'])
 def update_conversation(conversation_id):
     """Update conversation (title, archive status, etc)"""
+    conn = None
     try:
         data = request.json
         user_id = data.get('user_id')
@@ -943,24 +1095,27 @@ def update_conversation(conversation_id):
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Update conversation
-        updates = []
+        # Update conversation - use explicit field updates to prevent SQL injection
+        # Build update query safely with whitelisted fields
+        update_fields = []
         params = []
+        
         if title is not None:
-            updates.append("title = %s")
+            update_fields.append("title = %s")
             params.append(title)
         if archived is not None:
-            updates.append("archived = %s")
+            update_fields.append("archived = %s")
             params.append(archived)
         
-        if updates:
-            params.append(conversation_id)
-            params.append(user_id)
-            cursor.execute(f"""
+        if update_fields:
+            # Safe: update_fields contains only whitelisted field assignments
+            params.extend([conversation_id, user_id])
+            query = f"""
                 UPDATE conversations
-                SET {', '.join(updates)}, updated_at = CURRENT_TIMESTAMP
+                SET {', '.join(update_fields)}, updated_at = CURRENT_TIMESTAMP
                 WHERE conversation_id = %s AND user_id = %s
-            """, params)
+            """
+            cursor.execute(query, params)
         
         # Update messages if provided
         if messages:
@@ -981,7 +1136,10 @@ def update_conversation(conversation_id):
         return jsonify({'success': True}), 200
         
     except Exception as e:
+        if conn:
+            conn.rollback()
         return jsonify({'error': str(e)}), 500
+
 
 @app.route('/api/users/conversations/<conversation_id>', methods=['DELETE'])
 def delete_conversation(conversation_id):
@@ -1218,6 +1376,7 @@ def get_preferences():
 @app.route('/api/users/preferences', methods=['PUT'])
 def update_preferences():
     """Update user preferences"""
+    conn = None
     try:
         data = request.json
         user_id = data.get('user_id')
@@ -1231,27 +1390,46 @@ def update_preferences():
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        updates = []
-        params = []
-        if current_language is not None:
-            updates.append("current_language = %s")
-            params.append(current_language)
-        if gemini_model is not None:
-            updates.append("gemini_model = %s")
-            params.append(gemini_model)
-        if ai_provider is not None:
-            updates.append("ai_provider = %s")
-            params.append(ai_provider)
+        # Use explicit field updates to prevent SQL injection
+        # Build safe UPSERT query with whitelisted fields
+        update_fields = []
+        insert_fields = []
+        insert_placeholders = []
+        params_insert = [user_id]
+        params_update = []
         
-        if updates:
-            params.append(user_id)
-            cursor.execute(f"""
-                INSERT INTO user_preferences (user_id, {', '.join([u.split(' = ')[0] for u in updates])}, updated_at)
-                VALUES (%s, {', '.join(['%s'] * len(updates))}, CURRENT_TIMESTAMP)
+        if current_language is not None:
+            insert_fields.append("current_language")
+            insert_placeholders.append("%s")
+            params_insert.append(current_language)
+            update_fields.append("current_language = %s")
+            params_update.append(current_language)
+            
+        if gemini_model is not None:
+            insert_fields.append("gemini_model")
+            insert_placeholders.append("%s")
+            params_insert.append(gemini_model)
+            update_fields.append("gemini_model = %s")
+            params_update.append(gemini_model)
+            
+        if ai_provider is not None:
+            insert_fields.append("ai_provider")
+            insert_placeholders.append("%s")
+            params_insert.append(ai_provider)
+            update_fields.append("ai_provider = %s")
+            params_update.append(ai_provider)
+        
+        if update_fields:
+            # Safe: all fields are whitelisted
+            query = f"""
+                INSERT INTO user_preferences (user_id, {', '.join(insert_fields)}, updated_at)
+                VALUES (%s, {', '.join(insert_placeholders)}, CURRENT_TIMESTAMP)
                 ON CONFLICT (user_id) DO UPDATE SET
-                    {', '.join(updates)},
+                    {', '.join(update_fields)},
                     updated_at = CURRENT_TIMESTAMP
-            """, params)
+            """
+            params = params_insert + params_update
+            cursor.execute(query, params)
         
         conn.commit()
         cursor.close()
@@ -1260,7 +1438,10 @@ def update_preferences():
         return jsonify({'success': True}), 200
         
     except Exception as e:
+        if conn:
+            conn.rollback()
         return jsonify({'error': str(e)}), 500
+
 
 @app.route('/api/users/practice-progress', methods=['GET'])
 def get_practice_progress():
@@ -1579,12 +1760,19 @@ def health():
         cursor.execute("SELECT 1")
         cursor.fetchone()
         cursor.close()
+        close_conn_safely(conn)
         health_status['database'] = 'connected'
+        health_status['connection_pool'] = {
+            'max_connections': 25,
+            'min_connections': 2
+        }
+        logger.info("Health check passed")
         return jsonify(health_status), 200
     except Exception as e:
         health_status['status'] = 'degraded'
         health_status['database'] = 'disconnected'
         health_status['error'] = str(e)[:200]  # Limit error message length
+        logger.error("Health check failed", extra={'error': str(e)})
         return jsonify(health_status), 503  # Service Unavailable
 
 # ============================================================================
@@ -2050,6 +2238,7 @@ def update_exercise(exercise_id):
 @app.route('/api/classes/<class_id>', methods=['PUT'])
 def update_class(class_id):
     """Update class (professor only, must be owner)"""
+    conn = None
     try:
         data = request.json
         user_id = data.get('user_id')
@@ -2077,27 +2266,30 @@ def update_class(class_id):
             close_conn_safely(conn)
             return jsonify({'error': 'Only the class owner can update the class'}), 403
         
-        # Update class
-        updates = []
+        # Update class - use explicit field updates to prevent SQL injection
+        update_fields = []
         params = []
+        
         if name is not None:
-            updates.append("name = %s")
+            update_fields.append("name = %s")
             params.append(name)
         if description is not None:
-            updates.append("description = %s")
+            update_fields.append("description = %s")
             params.append(description)
         
-        if not updates:
+        if not update_fields:
             cursor.close()
             close_conn_safely(conn)
             return jsonify({'error': 'No fields to update'}), 400
         
+        # Safe: update_fields contains only whitelisted field assignments
         params.append(class_id)
-        cursor.execute(f"""
+        query = f"""
             UPDATE classes 
-            SET {', '.join(updates)}, updated_at = CURRENT_TIMESTAMP
+            SET {', '.join(update_fields)}, updated_at = CURRENT_TIMESTAMP
             WHERE class_id = %s
-        """, params)
+        """
+        cursor.execute(query, params)
         
         conn.commit()
         cursor.close()
@@ -2106,11 +2298,74 @@ def update_class(class_id):
         return jsonify({'success': True}), 200
         
     except Exception as e:
+        if conn:
+            conn.rollback()
         return jsonify({'error': str(e)}), 500
+
 
 def allowed_file(filename):
     """Check if file extension is allowed"""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def validate_pdf_file(file):
+    """
+    Comprehensive PDF file validation without external dependencies
+    Returns (is_valid, error_message)
+    """
+    # 1. Check file size (50MB max for PDFs)
+    MAX_PDF_SIZE = 50 * 1024 * 1024  # 50MB
+    file.seek(0, 2)  # Seek to end
+    file_size = file.tell()
+    file.seek(0)  # Reset to beginning
+    
+    if file_size > MAX_PDF_SIZE:
+        logger.warning("File upload rejected: too large", extra={"size_mb": file_size / 1024 / 1024})
+        return False, f"File too large: {file_size / 1024 / 1024:.1f}MB (max 50MB)"
+    
+    if file_size == 0:
+        logger.warning("File upload rejected: empty file")
+        return False, "File is empty"
+    
+    # 2. Verify PDF structure (read first 1KB)
+    try:
+        file_header = file.read(1024)
+        file.seek(0)  # Reset
+        
+        # PDF files must start with %PDF-
+        if not file_header.startswith(b'%PDF-'):
+            logger.warning("File upload rejected: invalid PDF header")
+            return False, "Invalid PDF: file does not start with PDF header"
+        
+        # Check for valid PDF version (1.0 through 1.7, and 2.0)
+        valid_versions = [b'%PDF-1.' + bytes([i]) for i in range(ord('0'), ord('8'))] + [b'%PDF-2.0']
+        if not any(file_header.startswith(version) for version in valid_versions):
+            logger.warning("File upload rejected: unsupported PDF version")
+            return False, "Unsupported PDF version (must be 1.0-1.7 or 2.0)"
+        
+        # Check for common malicious patterns (basic security check)
+        suspicious_patterns = [
+            b'/JavaScript',  # Embedded JavaScript
+            b'/JS',          # JavaScript shorthand
+            b'/Launch',      # Launch external programs
+            b'/EmbeddedFile' # Embedded executables
+        ]
+        
+        # Read more of the file for pattern matching (first 10KB)
+        file.seek(0)
+        sample_content = file.read(10240)
+        file.seek(0)
+        
+        for pattern in suspicious_patterns:
+            if pattern in sample_content:
+                logger.warning("File upload rejected: suspicious content", extra={"pattern": pattern.decode('utf-8', errors='ignore')})
+                return False, f"PDF contains potentially unsafe content"
+                
+    except Exception as e:
+        logger.error("PDF validation error", extra={"error": str(e)})
+        return False, f"PDF validation error: {str(e)}"
+    
+    logger.info("PDF validation passed", extra={"size_mb": file_size / 1024 / 1024})
+    return True, None
 
 @app.route('/api/classes/<class_id>/chapters', methods=['POST', 'OPTIONS'])
 def upload_chapter(class_id):
@@ -2161,6 +2416,19 @@ def upload_chapter(class_id):
             cursor.close()
             close_conn_safely(conn)
             return jsonify({'error': 'Invalid file type. Only PDF files are allowed.'}), 400
+        
+        # Comprehensive PDF validation
+        is_valid, error_message = validate_pdf_file(file)
+        if not is_valid:
+            cursor.close()
+            close_conn_safely(conn)
+            logger.warning("PDF upload rejected", extra={
+                "filename": file.filename,
+                "error": error_message,
+                "user_id": user_id,
+                "class_id": class_id
+            })
+            return jsonify({'error': error_message}), 400
         
         # Get form data
         title = request.form.get('title', '').strip()
@@ -3053,6 +3321,7 @@ def get_class_students(class_id):
 @app.route('/api/classes/<class_id>/progress', methods=['GET'])
 def get_class_progress(class_id):
     """Get all students' progress for a class (professor only)"""
+    conn = None
     try:
         user_id = request.args.get('user_id')
         if not user_id:
@@ -3093,42 +3362,65 @@ def get_class_progress(class_id):
         """, (class_id,))
         students = cursor.fetchall()
         
-        # Get progress for each student-exercise combination
+        # OPTIMIZED: Get ALL progress data in a single query using JOIN
+        # This replaces the N*M individual queries (30 students × 10 exercises = 300 queries!)
+        cursor.execute("""
+            SELECT 
+                ce.student_id,
+                ex.exercise_id,
+                COALESCE(pp.best_score, 0) as best_score,
+                COALESCE(pp.best_accuracy, 0) as best_accuracy,
+                COALESCE(pp.total_attempts, 0) as total_attempts,
+                COALESCE(pp.completed, false) as completed,
+                pp.last_completed_at
+            FROM class_enrollments ce
+            CROSS JOIN class_exercises ex
+            LEFT JOIN practice_progress pp 
+                ON pp.user_id = ce.student_id 
+                AND pp.class_exercise_id = ex.exercise_id
+            WHERE ce.class_id = %s AND ex.class_id = %s
+            ORDER BY ce.student_id, ex.exercise_number, ex.created_at
+        """, (class_id, class_id))
+        
+        progress_rows = cursor.fetchall()
+        
+        # Build nested structure from flat result set
         progress_data = {}
+        
+        # Initialize student data structures
         for student in students:
-            student_id = student[0]
-            student_name = student[1]
-            student_email = student[2]
-            
+            student_id, student_name, student_email = student
             progress_data[student_id] = {
                 'student_id': student_id,
                 'student_name': student_name,
                 'student_email': student_email,
                 'exercises': {}
             }
+        
+        # Populate exercise progress from single query result
+        for row in progress_rows:
+            student_id = row[0]
+            exercise_id = row[1]
             
-            for exercise in exercises:
-                exercise_id = exercise[0]
-                exercise_title = exercise[1]
-                exercise_difficulty = exercise[2]
-                
-                cursor.execute("""
-                    SELECT best_score, best_accuracy, total_attempts, completed, last_completed_at
-                    FROM practice_progress
-                    WHERE user_id = %s AND class_exercise_id = %s
-                """, (student_id, exercise_id))
-                
-                progress = cursor.fetchone()
+            if student_id in progress_data:
+                # Find exercise details
+                exercise_title = None
+                exercise_difficulty = None
+                for ex in exercises:
+                    if ex[0] == exercise_id:
+                        exercise_title = ex[1]
+                        exercise_difficulty = ex[2]
+                        break
                 
                 progress_data[student_id]['exercises'][exercise_id] = {
                     'exercise_id': exercise_id,
                     'exercise_title': exercise_title,
                     'difficulty': exercise_difficulty,
-                    'best_score': progress[0] if progress and progress[0] else 0,
-                    'best_accuracy': float(progress[1]) if progress and progress[1] else 0,
-                    'total_attempts': progress[2] if progress and progress[2] else 0,
-                    'completed': progress[3] if progress and progress[3] else False,
-                    'last_completed_at': progress[4].isoformat() if progress and progress[4] else None
+                    'best_score': row[2],
+                    'best_accuracy': float(row[3]),
+                    'total_attempts': row[4],
+                    'completed': row[5],
+                    'last_completed_at': row[6].isoformat() if row[6] else None
                 }
         
         cursor.close()
@@ -3146,7 +3438,10 @@ def get_class_progress(class_id):
     except Exception as e:
         import traceback
         traceback.print_exc()
+        if conn:
+            conn.rollback()
         return jsonify({'error': str(e)}), 500
+
 
 @app.route('/api/progress', methods=['GET'])
 def get_progress():
