@@ -837,7 +837,7 @@
                   : `student-class.html?class_id=${encodeURIComponent(classId)}&tab=exercises`;
                 window.parent.location.href = backUrl;
               } else {
-                window.parent.location.href = 'practice.html';
+                window.parent.location.href = 'student-classes.html';
               }
             } catch (e) {
               // Cross-origin restriction - just navigate the iframe
@@ -848,7 +848,7 @@
                   : `student-class.html?class_id=${encodeURIComponent(classId)}&tab=exercises`;
                 window.location.href = backUrl;
               } else {
-                window.location.href = 'practice.html';
+                window.location.href = 'student-classes.html';
               }
             }
           }
@@ -867,7 +867,7 @@
             }
             window.location.href = backUrl;
           } else {
-            window.location.href = 'practice.html';
+            window.location.href = 'student-classes.html';
           }
         }
       };
@@ -1638,7 +1638,7 @@
         </div>
         <div class="exercise-info">
           <p style="color: #dc2626;">${message}</p>
-          <a href="practice.html" class="btn btn-primary" style="margin-top: 1rem; text-decoration: none; display: inline-block;">Go Back to Practice</a>
+          <a href="student-classes.html" class="btn btn-primary" style="margin-top: 1rem; text-decoration: none; display: inline-block;">Go Back to Practice</a>
         </div>
       `;
     }
