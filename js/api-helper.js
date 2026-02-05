@@ -12,40 +12,42 @@ if (typeof window.API_BASE_URL === 'undefined') {
 }
 
 // Simple Cache Implementation
-const apiCache = {
-    data: new Map(),
-    // Default TTL: 5 minutes (300,000 ms)
-    TTL: 300000,
+if (typeof apiCache === 'undefined') {
+    window.apiCache = {
+        data: new Map(),
+        // Default TTL: 5 minutes (300,000 ms)
+        TTL: 300000,
 
-    set(key, value, customTTL = null) {
-        const expiresAt = Date.now() + (customTTL !== null ? customTTL : this.TTL);
-        this.data.set(key, { value, expiresAt });
-    },
+        set(key, value, customTTL = null) {
+            const expiresAt = Date.now() + (customTTL !== null ? customTTL : this.TTL);
+            this.data.set(key, { value, expiresAt });
+        },
 
-    get(key) {
-        if (!this.data.has(key)) return null;
+        get(key) {
+            if (!this.data.has(key)) return null;
 
-        const item = this.data.get(key);
-        if (Date.now() > item.expiresAt) {
-            this.data.delete(key);
-            return null;
-        }
-        return item.value;
-    },
-
-    clear(keyPattern) {
-        if (!keyPattern) {
-            this.data.clear();
-            return;
-        }
-        // Delete keys matching pattern (string or regex)
-        for (const key of this.data.keys()) {
-            if (key.includes(keyPattern)) {
+            const item = this.data.get(key);
+            if (Date.now() > item.expiresAt) {
                 this.data.delete(key);
+                return null;
+            }
+            return item.value;
+        },
+
+        clear(keyPattern) {
+            if (!keyPattern) {
+                this.data.clear();
+                return;
+            }
+            // Delete keys matching pattern (string or regex)
+            for (const key of this.data.keys()) {
+                if (key.includes(keyPattern)) {
+                    this.data.delete(key);
+                }
             }
         }
-    }
-};
+    };
+}
 
 // Fetch with Cache Wrapper
 async function fetchWithCache(url, options = {}) {
@@ -55,7 +57,7 @@ async function fetchWithCache(url, options = {}) {
     }
 
     const cacheKey = url;
-    const cachedResponse = apiCache.get(cacheKey);
+    const cachedResponse = window.apiCache.get(cacheKey);
 
     if (cachedResponse) {
         // Return a cloned response to allow reading body multiple times if needed
@@ -72,7 +74,7 @@ async function fetchWithCache(url, options = {}) {
             // Clone response to read it and cache it, while returning original to caller
             const clone = response.clone();
             const data = await clone.json();
-            apiCache.set(cacheKey, data);
+            window.apiCache.set(cacheKey, data);
         }
         return response;
     } catch (error) {
