@@ -1,10 +1,9 @@
 // Authentication System
 // API_BASE_URL should be defined in api-helper.js
+// API Configuration - Use relative URLs for better portability
 if (typeof window.API_BASE_URL === 'undefined') {
-  // Use localhost for local testing, production URL for deployed version
-  window.API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://localhost:5001/api'
-    : 'https://analytiq-qbfr.onrender.com/api';
+  // Use relative path - works in both development and production
+  window.API_BASE_URL = window.location.origin + '/api';
 }
 
 class AuthManager {

@@ -32,24 +32,24 @@ except ImportError:
 # Load environment variables
 load_dotenv()
 
-
+# Initialize Flask app
 app = Flask(__name__)
+app.config['SECRET_KEY'] = config.SECRET_KEY
 
 # Disable automatic OPTIONS handling so we can handle CORS manually
-app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
-app.config['MAX_CONTENT_LENGTH'] = 500 * 1024 * 1024  # 500MB max file size
-app.config['UPLOAD_FOLDER'] = 'Course Content'
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = config.SEND_FILE_MAX_AGE_DEFAULT
+app.config['MAX_CONTENT_LENGTH'] = config.MAX_CONTENT_LENGTH
+app.config['UPLOAD_FOLDER'] = config.UPLOAD_FOLDER
 
-# Email Configuration
-app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
-app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 587))
-app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS', 'True') == 'True'
-app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
-app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
-app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER', app.config['MAIL_USERNAME'])
-
+# Email configuration (Flask-Mail)
 try:
     from flask_mail import Mail, Message
+    app.config['MAIL_SERVER'] = config.MAIL_SERVER
+    app.config['MAIL_PORT'] = config.MAIL_PORT
+    app.config['MAIL_USE_TLS'] = config.MAIL_USE_TLS
+    app.config['MAIL_USERNAME'] = config.MAIL_USERNAME
+    app.config['MAIL_PASSWORD'] = config.MAIL_PASSWORD
+    app.config['MAIL_DEFAULT_SENDER'] = config.MAIL_DEFAULT_SENDER
     mail = Mail(app)
 except ImportError:
     print("Warning: Flask-Mail not installed. Email features will not work.")
@@ -63,7 +63,10 @@ try:
     limiter = Limiter(
         app=app,
         key_func=get_remote_address,
-        default_limits=["200 per day", "50 per hour"],  # Default limits for all routes
+        default_limits=[
+            f"{config.RATE_LIMIT_DEFAULT_PER_DAY} per day",
+            f"{config.RATE_LIMIT_DEFAULT_PER_HOUR} per hour"
+        ],
         storage_uri="memory://",  # In-memory storage (use Redis in production)
         strategy="fixed-window"
     )
@@ -201,16 +204,16 @@ def init_db_pool():
             clean_url = clean_url + separator + '&'.join(params_to_add)
             
         logger.info("Initializing connection pool", extra={
-            "connection_timeout": "10s",
-            "statement_timeout": "30s"
+            "connection_timeout": f"{config.DB_CONNECTION_TIMEOUT}s",
+            "statement_timeout": f"{config.DB_STATEMENT_TIMEOUT}s",
+            "min_connections": config.DB_POOL_MIN_CONNECTIONS,
+            "max_connections": config.DB_POOL_MAX_CONNECTIONS
         })
         
-        # Initialize connection pool with increased size for production
-        # Formula: (2 * num_cores) + effective_spindle_count
-        # For typical deployment: 4 cores → 8-10 base + buffer = 20-25 connections
+        # Initialize connection pool with configuration
         db_pool = pool.ThreadedConnectionPool(
-            minconn=2,  # Minimum connections to maintain
-            maxconn=25,  # Increased from 10 to support ~20-25 concurrent users
+            minconn=config.DB_POOL_MIN_CONNECTIONS,
+            maxconn=config.DB_POOL_MAX_CONNECTIONS,
             dsn=clean_url
         )
         
@@ -1746,14 +1749,19 @@ def get_grand_leaderboard():
 
 @app.route('/api/health', methods=['GET'])
 def health():
-    """Health check endpoint with database connectivity test"""
+    """
+    Comprehensive health check endpoint
+    Returns 200 if all critical services healthy, 503 if degraded
+    """
     health_status = {
-        'status': 'ok',
-        'database': 'unknown',
-        'timestamp': datetime.utcnow().isoformat()
+        'status': 'healthy',
+        'timestamp': datetime.utcnow().isoformat(),
+        'services': {}
     }
     
-    # Test database connection
+    all_healthy = True
+    
+    # 1. Database connectivity (CRITICAL)
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -1761,19 +1769,76 @@ def health():
         cursor.fetchone()
         cursor.close()
         close_conn_safely(conn)
-        health_status['database'] = 'connected'
-        health_status['connection_pool'] = {
-            'max_connections': 25,
-            'min_connections': 2
+        health_status['services']['database'] = {
+            'status': 'healthy',
+            'connection_pool': {
+                'max_connections': 25,
+                'min_connections': 2
+            }
         }
-        logger.info("Health check passed")
-        return jsonify(health_status), 200
+        logger.info("Health check: database healthy")
     except Exception as e:
+        all_healthy = False
+        health_status['services']['database'] = {
+            'status': 'unhealthy',
+            'error': str(e)[:200]
+        }
+        logger.error("Health check: database unhealthy", extra={'error': str(e)})
+    
+    # 2. Gemini API (NON-CRITICAL - degrades gracefully)
+    gemini_api_key = os.getenv('GEMINI_API_KEY')
+    if gemini_api_key and gemini_api_key != 'your_gemini_api_key_here':
+        try:
+            # Just verify the key is configured, don't make actual API call
+            health_status['services']['gemini_api'] = {
+                'status': 'configured',
+                'note': 'API key present and configured'
+            }
+            logger.debug("Health check: Gemini API configured")
+        except Exception as e:
+            # Gemini API failure is degraded, not critical
+            health_status['services']['gemini_api'] = {
+                'status': 'degraded',
+                'error': str(e)[:200],
+                'impact': 'Exercise generation may be unavailable'
+            }
+            logger.warning("Health check: Gemini API degraded", extra={'error': str(e)})
+    else:
+        health_status['services']['gemini_api'] = {
+            'status': 'not_configured',
+            'note': 'API key not set - exercise generation disabled',
+            'impact': 'Exercise generation unavailable'
+        }
+    
+    # 3. Email service (NON-CRITICAL - degrades gracefully)
+    try:
+        if mail:
+            health_status['services']['email'] = {
+                'status': 'configured',
+                'note': 'Flask-Mail initialized'
+            }
+        else:
+            health_status['services']['email'] = {
+                'status': 'not_configured',
+                'note': 'Flask-Mail not installed',
+                'impact': 'Password reset emails unavailable'
+            }
+    except Exception as e:
+        health_status['services']['email'] = {
+            'status': 'degraded',
+            'error': str(e)[:200],
+            'impact': 'Email features may be unavailable'
+        }
+        logger.warning("Health check: Email service degraded", extra={'error': str(e)})
+    
+    # Set overall status
+    if not all_healthy:
         health_status['status'] = 'degraded'
-        health_status['database'] = 'disconnected'
-        health_status['error'] = str(e)[:200]  # Limit error message length
-        logger.error("Health check failed", extra={'error': str(e)})
+        logger.warning("Health check: system degraded")
         return jsonify(health_status), 503  # Service Unavailable
+    
+    logger.info("Health check: all systems healthy")
+    return jsonify(health_status), 200
 
 # ============================================================================
 # CLASS MANAGEMENT APIs (Phase 2)
