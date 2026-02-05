@@ -668,8 +668,9 @@
           <div class="input-container-compact">
             <div class="input-wrapper">
               <textarea class="chat-input-compact" id="chatInputField"
-                placeholder="Type your message, paste code, or describe what you need..." rows="2" <button
-                class="btn-send-compact" id="chatSendButton" onclick="sendPlaygroundChatMessage()" title="Send message">Send</button>
+                placeholder="Type your message, paste code, or describe what you need..." rows="2"></textarea>
+              <button class="btn-send-compact" id="chatSendButton" onclick="sendPlaygroundChatMessage()"
+                title="Send message">Send</button>
             </div>
           </div>
         </div>
@@ -726,912 +727,912 @@
             <div class="code-editor-line-numbers" id="lineNumbers"></div>
             <textarea id="codeEditor" class="code-editor" placeholder="Write your code here..." spellcheck="false"
               onscroll="syncLineNumbers()" oninput="updateLineNumbers()"></textarea>
-              <div id="codeDisplay" class="code-display"></div>
-            </div>
+            <div id="codeDisplay" class="code-display"></div>
           </div>
         </div>
-
-        <div class="playground-actions">
-          <button class="btn-submit" id="submitBtn" onclick="submitSolution()">Submit Solution</button>
-          <button class="btn-reset" onclick="resetCode()">Reset Code</button>
-        </div>
       </div>
-      </main>
 
-      <script src="js/auth.js"></script>
-      <script src="js/navigation.js"></script>
+      <div class="playground-actions">
+        <button class="btn-submit" id="submitBtn" onclick="submitSolution()">Submit Solution</button>
+        <button class="btn-reset" onclick="resetCode()">Reset Code</button>
+      </div>
+    </div>
+  </main>
 
-      <script src="js/exercises-database.js"></script>
-      <script src="js/ai-agent.js"></script>
-      <script src="js/code-assistant.js?v=1.1"></script>
-      <script>
-        // Playground chat history (separate from main code assistant)
-        let playgroundChatHistory = [];
+  <script src="js/auth.js"></script>
+  <script src="js/navigation.js"></script>
 
-        // Require authentication
-        document.addEventListener('DOMContentLoaded', function () {
-          const authManager = new AuthManager();
-          if (!authManager.requireAuth()) {
-            return; // Will redirect to login
-          }
+  <script src="js/exercises-database.js"></script>
+  <script src="js/ai-agent.js"></script>
+  <script src="js/code-assistant.js?v=1.1"></script>
+  <script>
+    // Playground chat history (separate from main code assistant)
+    let playgroundChatHistory = [];
 
-          // Load exercise data from URL parameters
-          loadExerciseFromURL();
+    // Require authentication
+    document.addEventListener('DOMContentLoaded', function () {
+      const authManager = new AuthManager();
+      if (!authManager.requireAuth()) {
+        return; // Will redirect to login
+      }
 
-          // Set up back button
-          setupBackButton();
+      // Load exercise data from URL parameters
+      loadExerciseFromURL();
 
-          // Initialize chat input auto-resize
-          const chatInput = document.getElementById('chatInputField');
-          if (chatInput) {
-            chatInput.addEventListener('input', function () {
-              this.style.height = 'auto';
-              this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-            });
-          }
+      // Set up back button
+      setupBackButton();
 
-          // Initialize AI Agent - use the same initialization as main code assistant
-          initializePlaygroundAI();
+      // Initialize chat input auto-resize
+      const chatInput = document.getElementById('chatInputField');
+      if (chatInput) {
+        chatInput.addEventListener('input', function () {
+          this.style.height = 'auto';
+          this.style.height = Math.min(this.scrollHeight, 120) + 'px';
         });
+      }
 
-        async function initializePlaygroundAI() {
-          // Use the same initialization logic as main code assistant
-          // Wait a bit for code-assistant.js to load
-          setTimeout(async () => {
-            try {
-              // Use the same initialization as main code assistant
-              if (typeof initializeAIAgent === 'function') {
-                await initializeAIAgent();
-              } else {
-                // Fallback: initialize directly if function not available yet
-                const apiKey = localStorage.getItem('geminiApiKey') || localStorage.getItem('aiApiKey') || (typeof GEMINI_API_KEY !== 'undefined' ? GEMINI_API_KEY : '');
-                if (apiKey && typeof codeWriterAgent !== 'undefined') {
-                  await codeWriterAgent.initialize(apiKey, 'gemini', 'gemini-3-pro-preview');
-                }
-              }
-              console.log('Playground AI agent ready');
-            } catch (error) {
-              console.error('Failed to initialize playground AI agent:', error);
+      // Initialize AI Agent - use the same initialization as main code assistant
+      initializePlaygroundAI();
+    });
+
+    async function initializePlaygroundAI() {
+      // Use the same initialization logic as main code assistant
+      // Wait a bit for code-assistant.js to load
+      setTimeout(async () => {
+        try {
+          // Use the same initialization as main code assistant
+          if (typeof initializeAIAgent === 'function') {
+            await initializeAIAgent();
+          } else {
+            // Fallback: initialize directly if function not available yet
+            const apiKey = localStorage.getItem('geminiApiKey') || localStorage.getItem('aiApiKey') || (typeof GEMINI_API_KEY !== 'undefined' ? GEMINI_API_KEY : '');
+            if (apiKey && typeof codeWriterAgent !== 'undefined') {
+              await codeWriterAgent.initialize(apiKey, 'gemini', 'gemini-3-pro-preview');
             }
-          }, 100);
+          }
+          console.log('Playground AI agent ready');
+        } catch (error) {
+          console.error('Failed to initialize playground AI agent:', error);
         }
+      }, 100);
+    }
 
-        let exerciseData = null;
-        let hasSubmitted = false;
-        let startTime = null;
-        let timerInterval = null;
-        let elapsedSeconds = 0;
-        let hintInteractions = 0; // Track number of assistant interactions
-        let currentHintLevel = 1; // Current hint level (1-3)
+    let exerciseData = null;
+    let hasSubmitted = false;
+    let startTime = null;
+    let timerInterval = null;
+    let elapsedSeconds = 0;
+    let hintInteractions = 0; // Track number of assistant interactions
+    let currentHintLevel = 1; // Current hint level (1-3)
 
-        function setupBackButton() {
-          const backButton = document.getElementById('backButton');
-          if (!backButton) return;
+    function setupBackButton() {
+      const backButton = document.getElementById('backButton');
+      if (!backButton) return;
 
-          const urlParams = new URLSearchParams(window.location.search);
-          const classId = urlParams.get('class_id');
+      const urlParams = new URLSearchParams(window.location.search);
+      const classId = urlParams.get('class_id');
 
-          // Check if we're in an iframe (embedded mode)
-          const isInIframe = window.self !== window.top;
+      // Check if we're in an iframe (embedded mode)
+      const isInIframe = window.self !== window.top;
 
-          backButton.onclick = function () {
-            if (isInIframe) {
-              // If embedded in iframe, notify parent window to close playground
-              if (window.parent && typeof window.parent.closeEmbeddedPlayground === 'function') {
-                window.parent.closeEmbeddedPlayground();
-                // Reload chapters in parent to ensure they're visible
-                if (window.parent.currentClassId && typeof window.parent.loadClassData === 'function') {
-                  setTimeout(() => {
-                    window.parent.loadClassData(window.parent.currentClassId);
-                  }, 100);
-                }
-              } else {
-                // Fallback: try to navigate parent
-                try {
-                  if (classId) {
-                    // Detect page type from referrer or parent window
-                    const pageType = urlParams.get('page_type') || (document.referrer.includes('professor-class') ? 'professor' : 'student');
-                    const backUrl = pageType === 'professor'
-                      ? `professor-class.html?class_id=${encodeURIComponent(classId)}&tab=exercises`
-                      : `student-class.html?class_id=${encodeURIComponent(classId)}&tab=exercises`;
-                    window.parent.location.href = backUrl;
-                  } else {
-                    window.parent.location.href = 'practice.html';
-                  }
-                } catch (e) {
-                  // Cross-origin restriction - just navigate the iframe
-                  if (classId) {
-                    const pageType = urlParams.get('page_type') || (document.referrer.includes('professor-class') ? 'professor' : 'student');
-                    const backUrl = pageType === 'professor'
-                      ? `professor-class.html?class_id=${encodeURIComponent(classId)}&tab=exercises`
-                      : `student-class.html?class_id=${encodeURIComponent(classId)}&tab=exercises`;
-                    window.location.href = backUrl;
-                  } else {
-                    window.location.href = 'practice.html';
-                  }
-                }
-              }
-            } else {
-              // Standalone mode - navigate back to class page
-              // Detect if we came from professor-class or student-class based on referrer or stored value
-              const chapterId = urlParams.get('chapter_id');
-              const pageType = urlParams.get('page_type') || (document.referrer.includes('professor-class') ? 'professor' : 'student');
-
+      backButton.onclick = function () {
+        if (isInIframe) {
+          // If embedded in iframe, notify parent window to close playground
+          if (window.parent && typeof window.parent.closeEmbeddedPlayground === 'function') {
+            window.parent.closeEmbeddedPlayground();
+            // Reload chapters in parent to ensure they're visible
+            if (window.parent.currentClassId && typeof window.parent.loadClassData === 'function') {
+              setTimeout(() => {
+                window.parent.loadClassData(window.parent.currentClassId);
+              }, 100);
+            }
+          } else {
+            // Fallback: try to navigate parent
+            try {
               if (classId) {
-                let backUrl;
-                if (pageType === 'professor') {
-                  backUrl = `professor-class.html?class_id=${encodeURIComponent(classId)}&tab=exercises`;
-                } else {
-                  backUrl = `student-class.html?class_id=${encodeURIComponent(classId)}&tab=exercises`;
-                }
+                // Detect page type from referrer or parent window
+                const pageType = urlParams.get('page_type') || (document.referrer.includes('professor-class') ? 'professor' : 'student');
+                const backUrl = pageType === 'professor'
+                  ? `professor-class.html?class_id=${encodeURIComponent(classId)}&tab=exercises`
+                  : `student-class.html?class_id=${encodeURIComponent(classId)}&tab=exercises`;
+                window.parent.location.href = backUrl;
+              } else {
+                window.parent.location.href = 'practice.html';
+              }
+            } catch (e) {
+              // Cross-origin restriction - just navigate the iframe
+              if (classId) {
+                const pageType = urlParams.get('page_type') || (document.referrer.includes('professor-class') ? 'professor' : 'student');
+                const backUrl = pageType === 'professor'
+                  ? `professor-class.html?class_id=${encodeURIComponent(classId)}&tab=exercises`
+                  : `student-class.html?class_id=${encodeURIComponent(classId)}&tab=exercises`;
                 window.location.href = backUrl;
               } else {
                 window.location.href = 'practice.html';
               }
             }
-          };
-        }
-
-        async function loadExerciseFromURL() {
-          const urlParams = new URLSearchParams(window.location.search);
-          const exerciseId = urlParams.get('exercise_id') || urlParams.get('id');
+          }
+        } else {
+          // Standalone mode - navigate back to class page
+          // Detect if we came from professor-class or student-class based on referrer or stored value
           const chapterId = urlParams.get('chapter_id');
-          const classId = urlParams.get('class_id');
+          const pageType = urlParams.get('page_type') || (document.referrer.includes('professor-class') ? 'professor' : 'student');
 
-          // Try loading from API if we have exercise_id, chapter_id, and class_id
-          if (exerciseId && chapterId && classId) {
-            try {
-              const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-              const userId = currentUser.user_id || currentUser.id;
-
-              if (!userId) {
-                showError('User not logged in');
-                return;
-              }
-
-              const apiUrl = window.API_BASE_URL || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-                ? 'http://localhost:5001/api'
-                : 'https://analytiq-qbfr.onrender.com/api');
-
-              // Load exercise from API
-              const response = await fetch(`${apiUrl}/chapters/${encodeURIComponent(chapterId)}/exercises?user_id=${userId}`);
-              const data = await response.json();
-
-              if (!response.ok) {
-                throw new Error(data.error || 'Failed to load exercise');
-              }
-
-              const exercise = (data.exercises || []).find(ex => ex.exercise_id === exerciseId);
-
-              if (!exercise) {
-                throw new Error('Exercise not found');
-              }
-
-              // Get solution code - need to fetch full exercise details
-              // For now, use empty starter code
-              exerciseData = {
-                id: exercise.exercise_id,
-                title: exercise.title,
-                description: exercise.description || '',
-                difficulty: exercise.difficulty || 'medium',
-                code: '', // Will be populated if available in solution_code
-                classId: classId // Store class_id for submission tracking
-              };
-
-              // Store solution_code if available (for professors)
-              if (exercise.solution_code) {
-                exerciseData.solution_code = exercise.solution_code;
-              } else if (exercise.exercise_file_url) {
-                // If no solution_code but file exists, try to fetch file content
-                try {
-                  const fileUrl = exercise.exercise_file_url.startsWith("/")
-                    ? `${window.location.origin}${exercise.exercise_file_url}`
-                    : exercise.exercise_file_url;
-                  const fileResponse = await fetch(fileUrl);
-                  if (fileResponse.ok) {
-                    const fileContent = await fileResponse.text();
-                    exerciseData.solution_code = fileContent;
-                  }
-                } catch (fileError) {
-                  console.warn("Could not fetch exercise file content:", fileError);
-                }
-              }
-
-            } catch (error) {
-              console.error('Error loading exercise from API:', error);
-              showError(`Failed to load exercise: ${error.message}`);
-              return;
+          if (classId) {
+            let backUrl;
+            if (pageType === 'professor') {
+              backUrl = `professor-class.html?class_id=${encodeURIComponent(classId)}&tab=exercises`;
+            } else {
+              backUrl = `student-class.html?class_id=${encodeURIComponent(classId)}&tab=exercises`;
             }
+            window.location.href = backUrl;
           } else {
-            // Fallback to URL parameters (old method)
-            const exerciseTitle = urlParams.get('title');
-            const exerciseDescription = urlParams.get('description');
-            const exerciseDifficulty = urlParams.get('difficulty');
-            const exerciseCode = urlParams.get('code');
-
-            if (!exerciseId || !exerciseTitle || !exerciseCode) {
-              showError('Invalid exercise. Please select an exercise from the practice page.');
-              return;
-            }
-
-            // Decode URL-encoded data
-            exerciseData = {
-              id: exerciseId,
-              title: decodeURIComponent(exerciseTitle),
-              description: decodeURIComponent(exerciseDescription || ''),
-              difficulty: exerciseDifficulty || 'easy',
-              code: decodeURIComponent(exerciseCode)
-            };
-          }
-
-          // Display exercise info
-          document.getElementById('exerciseTitle').textContent = exerciseData.title;
-          document.getElementById('exerciseDescription').textContent = exerciseData.description || generateExerciseDescription(exerciseData.title, exerciseData.difficulty);
-
-          const difficultyBadge = document.getElementById('exerciseDifficulty');
-          difficultyBadge.textContent = exerciseData.difficulty.charAt(0).toUpperCase() + exerciseData.difficulty.slice(1);
-          difficultyBadge.className = 'difficulty-badge ' + exerciseData.difficulty;
-
-          // Set initial code template (optional - could be empty or have starter code)
-          document.getElementById('codeEditor').value = '';
-          updateLineNumbers();
-
-          // Start timer
-          startTimer();
-        }
-
-        function startTimer() {
-          startTime = Date.now();
-          elapsedSeconds = 0;
-          document.getElementById('playgroundStats').style.display = 'flex';
-          updateTimerDisplay();
-
-          timerInterval = setInterval(() => {
-            elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
-            updateTimerDisplay();
-          }, 1000);
-        }
-
-        function stopTimer() {
-          if (timerInterval) {
-            clearInterval(timerInterval);
-            timerInterval = null;
+            window.location.href = 'practice.html';
           }
         }
+      };
+    }
 
-        function updateTimerDisplay() {
-          const minutes = Math.floor(elapsedSeconds / 60);
-          const seconds = elapsedSeconds % 60;
-          document.getElementById('timerDisplay').textContent =
-            `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        }
+    async function loadExerciseFromURL() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const exerciseId = urlParams.get('exercise_id') || urlParams.get('id');
+      const chapterId = urlParams.get('chapter_id');
+      const classId = urlParams.get('class_id');
 
-        function formatTime(seconds) {
-          const minutes = Math.floor(seconds / 60);
-          const secs = seconds % 60;
-          return `${minutes}:${secs.toString().padStart(2, '0')}`;
-        }
+      // Try loading from API if we have exercise_id, chapter_id, and class_id
+      if (exerciseId && chapterId && classId) {
+        try {
+          const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+          const userId = currentUser.user_id || currentUser.id;
 
-        function generateExerciseDescription(title, difficulty) {
-          // Generate contextual descriptions based on exercise titles
-          const titleLower = title.toLowerCase();
-
-          if (titleLower.includes('loading') || titleLower.includes('dataset')) {
-            return 'Goal: Load and explore the California Housing dataset. You need to import the dataset using sklearn, access its features and target variables, and examine the data structure.';
-          } else if (titleLower.includes('exploring') || titleLower.includes('structure')) {
-            return 'Goal: Explore the dataset structure. You need to access column names, target variable names, and understand the data format.';
-          } else if (titleLower.includes('dataframe') || titleLower.includes('creation')) {
-            return 'Goal: Create a pandas DataFrame from the dataset. You need to convert the data into a DataFrame, add the target variable as a column, and examine the resulting structure.';
-          } else if (titleLower.includes('exploration') || titleLower.includes('shape')) {
-            return 'Goal: Explore the dataset dimensions. You need to examine the shape of the DataFrame to understand how many rows and columns it contains.';
-          } else if (titleLower.includes('data types') || titleLower.includes('types')) {
-            return 'Goal: Examine and modify data types. You need to check the data types of each column and convert appropriate columns to categorical type.';
-          } else if (titleLower.includes('missing values') || titleLower.includes('missing')) {
-            return 'Goal: Handle missing values in the dataset. You need to identify missing values, visualize their distribution, and apply appropriate imputation strategies (mean, mode, or deletion).';
-          } else if (titleLower.includes('outlier') || titleLower.includes('detection')) {
-            return 'Goal: Detect and remove outliers from the dataset. You need to identify outliers using the IQR method, visualize them with boxplots, and clean the data accordingly.';
-          } else if (titleLower.includes('standardization') || titleLower.includes('standard')) {
-            return 'Goal: Standardize the dataset features. You need to apply standardization (z-score normalization) to normalize the data distribution using sklearn\'s StandardScaler.';
-          } else if (titleLower.includes('normalization') || titleLower.includes('normal')) {
-            return 'Goal: Normalize the dataset features. You need to apply min-max normalization to scale the data to a 0-1 range using sklearn\'s MinMaxScaler.';
-          } else if (titleLower.includes('histogram') || titleLower.includes('univariate')) {
-            return 'Goal: Create histograms for univariate analysis. You need to visualize the distribution of each variable using histograms to understand the data patterns.';
-          } else if (titleLower.includes('boxplot') || titleLower.includes('distribution')) {
-            return 'Goal: Create boxplots for distribution analysis. You need to visualize the distribution, quartiles, and outliers for each variable using boxplots.';
-          } else if (titleLower.includes('scatterplot') || titleLower.includes('bivariate')) {
-            return 'Goal: Create scatterplots for bivariate analysis. You need to visualize relationships between pairs of variables to identify correlations and patterns.';
-          } else if (titleLower.includes('correlation')) {
-            return 'Goal: Analyze correlations between variables. You need to calculate the correlation matrix and visualize it using a heatmap to identify relationships.';
-          } else if (titleLower.includes('pairwise') || titleLower.includes('pairplot')) {
-            return 'Goal: Create pairwise relationship visualizations. You need to use pairplots to visualize relationships between all pairs of variables simultaneously.';
-          } else if (titleLower.includes('multivariate')) {
-            return 'Goal: Create multivariate visualizations. You need to create plots that show relationships between multiple variables simultaneously, using color or size to represent additional dimensions.';
-          } else if (titleLower.includes('descriptive statistics') || titleLower.includes('statistic')) {
-            return 'Goal: Calculate descriptive statistics. You need to compute mean, median, standard deviation, and other summary statistics for the dataset variables.';
-          } else if (titleLower.includes('simple linear regression')) {
-            return 'Goal: Build a simple linear regression model. You need to use a single predictor variable to predict the target, split the data, train the model, and evaluate its performance.';
-          } else if (titleLower.includes('multiple linear regression')) {
-            return 'Goal: Build a multiple linear regression model. You need to use multiple predictor variables to predict the target, train the model, and evaluate its performance using metrics like MSE and R².';
-          } else if (titleLower.includes('coefficients')) {
-            return 'Goal: Analyze model coefficients. You need to examine the regression coefficients, interpret their significance, and understand which features are most important.';
-          } else if (titleLower.includes('diagnostics') || titleLower.includes('residuals')) {
-            return 'Goal: Perform model diagnostics. You need to analyze residuals, check their distribution, and evaluate whether the model assumptions are met.';
-          } else if (titleLower.includes('improvement') || titleLower.includes('model improvement')) {
-            return 'Goal: Improve the regression model. You need to try different techniques like standardization, normalization, feature selection, or removing variables to improve model performance.';
-          }
-
-          // Default description
-          return `Goal: Complete the ${title.toLowerCase()} exercise. Follow best practices for ${difficulty} level programming and ensure your code is clean and well-commented.`;
-        }
-
-        function updateLineNumbers() {
-          const editor = document.getElementById('codeEditor');
-          const codeDisplay = document.getElementById('codeDisplay');
-          const lineNumbers = document.getElementById('lineNumbers');
-
-          // Get line count from either editor or display
-          let lines = 1;
-          if (codeDisplay.classList.contains('show')) {
-            lines = codeDisplay.querySelectorAll('.code-line').length || 1;
-          } else {
-            lines = editor.value.split('\n').length || 1;
-          }
-
-          const minLines = Math.max(lines, 20); // Show at least 20 lines
-
-          let lineNumbersHTML = '';
-          for (let i = 1; i <= minLines; i++) {
-            lineNumbersHTML += i + '<br>';
-          }
-          lineNumbers.innerHTML = lineNumbersHTML;
-        }
-
-        function syncLineNumbers() {
-          const editor = document.getElementById('codeEditor');
-          const lineNumbers = document.getElementById('lineNumbers');
-          lineNumbers.scrollTop = editor.scrollTop;
-        }
-
-        async function submitSolution() {
-          const codeEditor = document.getElementById('codeEditor');
-          const userCode = codeEditor.value.trim();
-
-          if (!userCode) {
-            showSubmissionMessage('Please write some code before submitting.', 'info');
+          if (!userId) {
+            showError('User not logged in');
             return;
           }
 
-          // Stop timer
-          stopTimer();
+          const apiUrl = window.API_BASE_URL || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? 'http://localhost:5001/api'
+            : 'https://analytiq-qbfr.onrender.com/api');
 
-          // Mark as submitted
-          hasSubmitted = true;
+          // Load exercise from API
+          const response = await fetch(`${apiUrl}/chapters/${encodeURIComponent(chapterId)}/exercises?user_id=${userId}`);
+          const data = await response.json();
 
-          // Calculate accuracy and score (use solution_code if available from API, otherwise use code)
-          const solutionCode = exerciseData.solution_code || exerciseData.code || '';
-          let comparison, accuracy, score;
-
-          if (solutionCode) {
-            comparison = compareCode(userCode, solutionCode);
-            accuracy = comparison.accuracy;
-            score = calculateScore(elapsedSeconds, accuracy, hintInteractions);
-          } else {
-            // No solution code available - just mark as submitted
-            accuracy = 0;
-            score = 0;
-            comparison = { accuracy: 0, userLines: [], solutionLines: [] };
+          if (!response.ok) {
+            throw new Error(data.error || 'Failed to load exercise');
           }
 
-          // Update stats display
-          document.getElementById('accuracyDisplay').textContent = `${Math.round(accuracy)}%`;
-          document.getElementById('scoreDisplay').textContent = score;
+          const exercise = (data.exercises || []).find(ex => ex.exercise_id === exerciseId);
 
-          // Hide code editor and show formatted code display
-          codeEditor.style.display = 'none';
-          const codeDisplay = document.getElementById('codeDisplay');
-          codeDisplay.classList.add('show');
-
-          // Render formatted code with highlighting
-          renderFormattedCode(comparison);
-
-          // Update title
-          document.getElementById('codeEditorTitle').textContent = 'Solution Comparison';
-
-          // Disable submit button
-          const submitBtn = document.getElementById('submitBtn');
-          submitBtn.disabled = true;
-          submitBtn.textContent = 'Submitted';
-
-          // Show submission message with score
-          let submissionMessage = `Solution submitted! Accuracy: ${Math.round(accuracy)}% | Score: ${score} | Time: ${formatTime(elapsedSeconds)}`;
-          if (hintInteractions > 0) {
-            submissionMessage += ` | Hints used: ${hintInteractions}`;
+          if (!exercise) {
+            throw new Error('Exercise not found');
           }
-          showSubmissionMessage(submissionMessage, 'success');
 
-          // Save score to backend
-          const saveSuccess = await saveExerciseScore(exerciseData.id, exerciseData.title, score, accuracy, elapsedSeconds);
-
-          sessionStorage.setItem('practiceProgressNeedsRefresh', 'true');
-          sessionStorage.setItem('lastSubmittedExerciseId', exerciseData.id);
-
-          if (saveSuccess) {
-            console.log('Solution submitted successfully, refresh flag set for exercise:', exerciseData.id);
-          }
-        }
-
-        async function saveExerciseScore(exerciseId, exerciseTitle, score, accuracy, timeSpent) {
-          try {
-            const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-
-            // Get user_id - check both 'id' and 'user_id' fields for compatibility
-            const userId = currentUser.user_id || currentUser.id;
-
-            if (!userId) {
-              console.warn('No user logged in, score not saved to database');
-              return;
-            }
-
-            const apiUrl = window.API_BASE_URL || 'https://analytiq-qbfr.onrender.com/api';
-
-            console.log('Saving exercise score:', { userId, exerciseId, score, accuracy, timeSpent });
-
-            const response = await fetch(`${apiUrl}/users/practice-progress`, {
-              method: 'PUT',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                user_id: String(userId),  // Ensure it's a string
-                exercise_id: exerciseId,
-                exercise_title: exerciseTitle,
-                score: Math.round(score),
-                accuracy: parseFloat(accuracy.toFixed(2)),
-                time_spent: Math.round(timeSpent),
-                // Add class context if available
-                class_id: exerciseData ? exerciseData.classId : null,
-                class_exercise_id: exerciseData ? exerciseData.id : null,
-                progress_data: {
-                  exercise_title: exerciseTitle
-                }
-              })
-            });
-
-            if (response.ok) {
-              const data = await response.json();
-              console.log('Score saved successfully:', data);
-              if (data.is_new_best) {
-                console.log('🎉 New personal best!');
-              }
-              return true;
-            } else {
-              const errorData = await response.json().catch(() => ({}));
-              console.error('Failed to save score:', response.status, errorData);
-              return false;
-            }
-          } catch (error) {
-            console.error('Error saving exercise score:', error);
-            return false;
-          }
-        }
-
-        function compareCode(userCode, solutionCode) {
-          // Filter out comment lines (starting with #) from code
-          const filterComments = (code) => {
-            return code
-              .split('\n')
-              .map(line => line.trim())
-              .filter(line => {
-                // Remove empty lines and comment lines (starting with #)
-                return line.length > 0 && !line.startsWith('#');
-              })
-              .join('\n');
+          // Get solution code - need to fetch full exercise details
+          // For now, use empty starter code
+          exerciseData = {
+            id: exercise.exercise_id,
+            title: exercise.title,
+            description: exercise.description || '',
+            difficulty: exercise.difficulty || 'medium',
+            code: '', // Will be populated if available in solution_code
+            classId: classId // Store class_id for submission tracking
           };
 
-          // Normalize code for comparison (without comments) - format-agnostic
-          const normalizeCode = (code) => {
-            const codeWithoutComments = filterComments(code);
-            return codeWithoutComments
-              .split('\n')
-              .map(line => line.trim())
-              .filter(line => line.length > 0)
-              .map(line => {
-                // Remove all formatting - focus only on code logic
-                return line
-                  .replace(/\s+/g, '') // Remove ALL whitespace
-                  .replace(/[=(),\[\]{}:]/g, '|') // Normalize operators/punctuation to single separator
-                  .toLowerCase();
-              })
-              .join('|') // Use separator between lines
-              .replace(/\|+/g, '|') // Collapse multiple separators
-              .trim();
+          // Store solution_code if available (for professors)
+          if (exercise.solution_code) {
+            exerciseData.solution_code = exercise.solution_code;
+          } else if (exercise.exercise_file_url) {
+            // If no solution_code but file exists, try to fetch file content
+            try {
+              const fileUrl = exercise.exercise_file_url.startsWith("/")
+                ? `${window.location.origin}${exercise.exercise_file_url}`
+                : exercise.exercise_file_url;
+              const fileResponse = await fetch(fileUrl);
+              if (fileResponse.ok) {
+                const fileContent = await fileResponse.text();
+                exerciseData.solution_code = fileContent;
+              }
+            } catch (fileError) {
+              console.warn("Could not fetch exercise file content:", fileError);
+            }
+          }
+
+        } catch (error) {
+          console.error('Error loading exercise from API:', error);
+          showError(`Failed to load exercise: ${error.message}`);
+          return;
+        }
+      } else {
+        // Fallback to URL parameters (old method)
+        const exerciseTitle = urlParams.get('title');
+        const exerciseDescription = urlParams.get('description');
+        const exerciseDifficulty = urlParams.get('difficulty');
+        const exerciseCode = urlParams.get('code');
+
+        if (!exerciseId || !exerciseTitle || !exerciseCode) {
+          showError('Invalid exercise. Please select an exercise from the practice page.');
+          return;
+        }
+
+        // Decode URL-encoded data
+        exerciseData = {
+          id: exerciseId,
+          title: decodeURIComponent(exerciseTitle),
+          description: decodeURIComponent(exerciseDescription || ''),
+          difficulty: exerciseDifficulty || 'easy',
+          code: decodeURIComponent(exerciseCode)
+        };
+      }
+
+      // Display exercise info
+      document.getElementById('exerciseTitle').textContent = exerciseData.title;
+      document.getElementById('exerciseDescription').textContent = exerciseData.description || generateExerciseDescription(exerciseData.title, exerciseData.difficulty);
+
+      const difficultyBadge = document.getElementById('exerciseDifficulty');
+      difficultyBadge.textContent = exerciseData.difficulty.charAt(0).toUpperCase() + exerciseData.difficulty.slice(1);
+      difficultyBadge.className = 'difficulty-badge ' + exerciseData.difficulty;
+
+      // Set initial code template (optional - could be empty or have starter code)
+      document.getElementById('codeEditor').value = '';
+      updateLineNumbers();
+
+      // Start timer
+      startTimer();
+    }
+
+    function startTimer() {
+      startTime = Date.now();
+      elapsedSeconds = 0;
+      document.getElementById('playgroundStats').style.display = 'flex';
+      updateTimerDisplay();
+
+      timerInterval = setInterval(() => {
+        elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+        updateTimerDisplay();
+      }, 1000);
+    }
+
+    function stopTimer() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+    }
+
+    function updateTimerDisplay() {
+      const minutes = Math.floor(elapsedSeconds / 60);
+      const seconds = elapsedSeconds % 60;
+      document.getElementById('timerDisplay').textContent =
+        `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    function formatTime(seconds) {
+      const minutes = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      return `${minutes}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    function generateExerciseDescription(title, difficulty) {
+      // Generate contextual descriptions based on exercise titles
+      const titleLower = title.toLowerCase();
+
+      if (titleLower.includes('loading') || titleLower.includes('dataset')) {
+        return 'Goal: Load and explore the California Housing dataset. You need to import the dataset using sklearn, access its features and target variables, and examine the data structure.';
+      } else if (titleLower.includes('exploring') || titleLower.includes('structure')) {
+        return 'Goal: Explore the dataset structure. You need to access column names, target variable names, and understand the data format.';
+      } else if (titleLower.includes('dataframe') || titleLower.includes('creation')) {
+        return 'Goal: Create a pandas DataFrame from the dataset. You need to convert the data into a DataFrame, add the target variable as a column, and examine the resulting structure.';
+      } else if (titleLower.includes('exploration') || titleLower.includes('shape')) {
+        return 'Goal: Explore the dataset dimensions. You need to examine the shape of the DataFrame to understand how many rows and columns it contains.';
+      } else if (titleLower.includes('data types') || titleLower.includes('types')) {
+        return 'Goal: Examine and modify data types. You need to check the data types of each column and convert appropriate columns to categorical type.';
+      } else if (titleLower.includes('missing values') || titleLower.includes('missing')) {
+        return 'Goal: Handle missing values in the dataset. You need to identify missing values, visualize their distribution, and apply appropriate imputation strategies (mean, mode, or deletion).';
+      } else if (titleLower.includes('outlier') || titleLower.includes('detection')) {
+        return 'Goal: Detect and remove outliers from the dataset. You need to identify outliers using the IQR method, visualize them with boxplots, and clean the data accordingly.';
+      } else if (titleLower.includes('standardization') || titleLower.includes('standard')) {
+        return 'Goal: Standardize the dataset features. You need to apply standardization (z-score normalization) to normalize the data distribution using sklearn\'s StandardScaler.';
+      } else if (titleLower.includes('normalization') || titleLower.includes('normal')) {
+        return 'Goal: Normalize the dataset features. You need to apply min-max normalization to scale the data to a 0-1 range using sklearn\'s MinMaxScaler.';
+      } else if (titleLower.includes('histogram') || titleLower.includes('univariate')) {
+        return 'Goal: Create histograms for univariate analysis. You need to visualize the distribution of each variable using histograms to understand the data patterns.';
+      } else if (titleLower.includes('boxplot') || titleLower.includes('distribution')) {
+        return 'Goal: Create boxplots for distribution analysis. You need to visualize the distribution, quartiles, and outliers for each variable using boxplots.';
+      } else if (titleLower.includes('scatterplot') || titleLower.includes('bivariate')) {
+        return 'Goal: Create scatterplots for bivariate analysis. You need to visualize relationships between pairs of variables to identify correlations and patterns.';
+      } else if (titleLower.includes('correlation')) {
+        return 'Goal: Analyze correlations between variables. You need to calculate the correlation matrix and visualize it using a heatmap to identify relationships.';
+      } else if (titleLower.includes('pairwise') || titleLower.includes('pairplot')) {
+        return 'Goal: Create pairwise relationship visualizations. You need to use pairplots to visualize relationships between all pairs of variables simultaneously.';
+      } else if (titleLower.includes('multivariate')) {
+        return 'Goal: Create multivariate visualizations. You need to create plots that show relationships between multiple variables simultaneously, using color or size to represent additional dimensions.';
+      } else if (titleLower.includes('descriptive statistics') || titleLower.includes('statistic')) {
+        return 'Goal: Calculate descriptive statistics. You need to compute mean, median, standard deviation, and other summary statistics for the dataset variables.';
+      } else if (titleLower.includes('simple linear regression')) {
+        return 'Goal: Build a simple linear regression model. You need to use a single predictor variable to predict the target, split the data, train the model, and evaluate its performance.';
+      } else if (titleLower.includes('multiple linear regression')) {
+        return 'Goal: Build a multiple linear regression model. You need to use multiple predictor variables to predict the target, train the model, and evaluate its performance using metrics like MSE and R².';
+      } else if (titleLower.includes('coefficients')) {
+        return 'Goal: Analyze model coefficients. You need to examine the regression coefficients, interpret their significance, and understand which features are most important.';
+      } else if (titleLower.includes('diagnostics') || titleLower.includes('residuals')) {
+        return 'Goal: Perform model diagnostics. You need to analyze residuals, check their distribution, and evaluate whether the model assumptions are met.';
+      } else if (titleLower.includes('improvement') || titleLower.includes('model improvement')) {
+        return 'Goal: Improve the regression model. You need to try different techniques like standardization, normalization, feature selection, or removing variables to improve model performance.';
+      }
+
+      // Default description
+      return `Goal: Complete the ${title.toLowerCase()} exercise. Follow best practices for ${difficulty} level programming and ensure your code is clean and well-commented.`;
+    }
+
+    function updateLineNumbers() {
+      const editor = document.getElementById('codeEditor');
+      const codeDisplay = document.getElementById('codeDisplay');
+      const lineNumbers = document.getElementById('lineNumbers');
+
+      // Get line count from either editor or display
+      let lines = 1;
+      if (codeDisplay.classList.contains('show')) {
+        lines = codeDisplay.querySelectorAll('.code-line').length || 1;
+      } else {
+        lines = editor.value.split('\n').length || 1;
+      }
+
+      const minLines = Math.max(lines, 20); // Show at least 20 lines
+
+      let lineNumbersHTML = '';
+      for (let i = 1; i <= minLines; i++) {
+        lineNumbersHTML += i + '<br>';
+      }
+      lineNumbers.innerHTML = lineNumbersHTML;
+    }
+
+    function syncLineNumbers() {
+      const editor = document.getElementById('codeEditor');
+      const lineNumbers = document.getElementById('lineNumbers');
+      lineNumbers.scrollTop = editor.scrollTop;
+    }
+
+    async function submitSolution() {
+      const codeEditor = document.getElementById('codeEditor');
+      const userCode = codeEditor.value.trim();
+
+      if (!userCode) {
+        showSubmissionMessage('Please write some code before submitting.', 'info');
+        return;
+      }
+
+      // Stop timer
+      stopTimer();
+
+      // Mark as submitted
+      hasSubmitted = true;
+
+      // Calculate accuracy and score (use solution_code if available from API, otherwise use code)
+      const solutionCode = exerciseData.solution_code || exerciseData.code || '';
+      let comparison, accuracy, score;
+
+      if (solutionCode) {
+        comparison = compareCode(userCode, solutionCode);
+        accuracy = comparison.accuracy;
+        score = calculateScore(elapsedSeconds, accuracy, hintInteractions);
+      } else {
+        // No solution code available - just mark as submitted
+        accuracy = 0;
+        score = 0;
+        comparison = { accuracy: 0, userLines: [], solutionLines: [] };
+      }
+
+      // Update stats display
+      document.getElementById('accuracyDisplay').textContent = `${Math.round(accuracy)}%`;
+      document.getElementById('scoreDisplay').textContent = score;
+
+      // Hide code editor and show formatted code display
+      codeEditor.style.display = 'none';
+      const codeDisplay = document.getElementById('codeDisplay');
+      codeDisplay.classList.add('show');
+
+      // Render formatted code with highlighting
+      renderFormattedCode(comparison);
+
+      // Update title
+      document.getElementById('codeEditorTitle').textContent = 'Solution Comparison';
+
+      // Disable submit button
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitted';
+
+      // Show submission message with score
+      let submissionMessage = `Solution submitted! Accuracy: ${Math.round(accuracy)}% | Score: ${score} | Time: ${formatTime(elapsedSeconds)}`;
+      if (hintInteractions > 0) {
+        submissionMessage += ` | Hints used: ${hintInteractions}`;
+      }
+      showSubmissionMessage(submissionMessage, 'success');
+
+      // Save score to backend
+      const saveSuccess = await saveExerciseScore(exerciseData.id, exerciseData.title, score, accuracy, elapsedSeconds);
+
+      sessionStorage.setItem('practiceProgressNeedsRefresh', 'true');
+      sessionStorage.setItem('lastSubmittedExerciseId', exerciseData.id);
+
+      if (saveSuccess) {
+        console.log('Solution submitted successfully, refresh flag set for exercise:', exerciseData.id);
+      }
+    }
+
+    async function saveExerciseScore(exerciseId, exerciseTitle, score, accuracy, timeSpent) {
+      try {
+        const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+
+        // Get user_id - check both 'id' and 'user_id' fields for compatibility
+        const userId = currentUser.user_id || currentUser.id;
+
+        if (!userId) {
+          console.warn('No user logged in, score not saved to database');
+          return;
+        }
+
+        const apiUrl = window.API_BASE_URL || 'https://analytiq-qbfr.onrender.com/api';
+
+        console.log('Saving exercise score:', { userId, exerciseId, score, accuracy, timeSpent });
+
+        const response = await fetch(`${apiUrl}/users/practice-progress`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            user_id: String(userId),  // Ensure it's a string
+            exercise_id: exerciseId,
+            exercise_title: exerciseTitle,
+            score: Math.round(score),
+            accuracy: parseFloat(accuracy.toFixed(2)),
+            time_spent: Math.round(timeSpent),
+            // Add class context if available
+            class_id: exerciseData ? exerciseData.classId : null,
+            class_exercise_id: exerciseData ? exerciseData.id : null,
+            progress_data: {
+              exercise_title: exerciseTitle
+            }
+          })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Score saved successfully:', data);
+          if (data.is_new_best) {
+            console.log('🎉 New personal best!');
+          }
+          return true;
+        } else {
+          const errorData = await response.json().catch(() => ({}));
+          console.error('Failed to save score:', response.status, errorData);
+          return false;
+        }
+      } catch (error) {
+        console.error('Error saving exercise score:', error);
+        return false;
+      }
+    }
+
+    function compareCode(userCode, solutionCode) {
+      // Filter out comment lines (starting with #) from code
+      const filterComments = (code) => {
+        return code
+          .split('\n')
+          .map(line => line.trim())
+          .filter(line => {
+            // Remove empty lines and comment lines (starting with #)
+            return line.length > 0 && !line.startsWith('#');
+          })
+          .join('\n');
+      };
+
+      // Normalize code for comparison (without comments) - format-agnostic
+      const normalizeCode = (code) => {
+        const codeWithoutComments = filterComments(code);
+        return codeWithoutComments
+          .split('\n')
+          .map(line => line.trim())
+          .filter(line => line.length > 0)
+          .map(line => {
+            // Remove all formatting - focus only on code logic
+            return line
+              .replace(/\s+/g, '') // Remove ALL whitespace
+              .replace(/[=(),\[\]{}:]/g, '|') // Normalize operators/punctuation to single separator
+              .toLowerCase();
+          })
+          .join('|') // Use separator between lines
+          .replace(/\|+/g, '|') // Collapse multiple separators
+          .trim();
+      };
+
+      // Split into lines for detailed comparison (excluding comments)
+      const userLines = filterComments(userCode)
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0);
+
+      const solutionLines = filterComments(solutionCode)
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0);
+
+      // Line-by-line comparison
+      const comparison = {
+        userLines: [],
+        solutionLines: [],
+        matchedLines: 0,
+        totalSolutionLines: solutionLines.length,
+        accuracy: 0
+      };
+
+      // Normalize for similarity check
+      const normalizedUser = normalizeCode(userCode);
+      const normalizedSolution = normalizeCode(solutionCode);
+
+      // Calculate accuracy using multiple methods and average them
+      let accuracyMethods = [];
+
+      // Method 1: Overall code similarity using Levenshtein distance
+      if (normalizedSolution.length > 0) {
+        const distance = levenshteinDistance(normalizedUser, normalizedSolution);
+        const maxLength = Math.max(normalizedUser.length, normalizedSolution.length);
+        const similarity1 = maxLength > 0 ? (1 - (distance / maxLength)) * 100 : 0;
+        accuracyMethods.push(similarity1);
+      }
+
+      // Method 2: Line-by-line comparison (more accurate for code structure)
+      let matchedLines = 0;
+      let totalLineSimilarity = 0;
+      const maxLines = Math.max(userLines.length, solutionLines.length);
+
+      for (let i = 0; i < maxLines; i++) {
+        const userLine = i < userLines.length ? userLines[i] : null;
+        const solutionLine = i < solutionLines.length ? solutionLines[i] : null;
+
+        const normalizedUserLine = userLine ? normalizeCode(userLine) : '';
+        const normalizedSolutionLine = solutionLine ? normalizeCode(solutionLine) : '';
+
+        let matchStatus = 'missing';
+        let lineSimilarity = 0;
+
+        if (userLine && solutionLine) {
+          // Normalize lines for format-agnostic comparison
+          const normalizeLine = (line) => {
+            return line
+              .trim()
+              .replace(/\s+/g, '') // Remove ALL whitespace
+              .replace(/[=(),\[\]{}:]/g, '|') // Normalize operators/punctuation
+              .toLowerCase()
+              .replace(/\|+/g, '|'); // Collapse separators
           };
 
-          // Split into lines for detailed comparison (excluding comments)
-          const userLines = filterComments(userCode)
-            .split('\n')
-            .map(line => line.trim())
-            .filter(line => line.length > 0);
+          const normalizedUserLineNoFormat = normalizeLine(userLine);
+          const normalizedSolutionLineNoFormat = normalizeLine(solutionLine);
 
-          const solutionLines = filterComments(solutionCode)
-            .split('\n')
-            .map(line => line.trim())
-            .filter(line => line.length > 0);
-
-          // Line-by-line comparison
-          const comparison = {
-            userLines: [],
-            solutionLines: [],
-            matchedLines: 0,
-            totalSolutionLines: solutionLines.length,
-            accuracy: 0
-          };
-
-          // Normalize for similarity check
-          const normalizedUser = normalizeCode(userCode);
-          const normalizedSolution = normalizeCode(solutionCode);
-
-          // Calculate accuracy using multiple methods and average them
-          let accuracyMethods = [];
-
-          // Method 1: Overall code similarity using Levenshtein distance
-          if (normalizedSolution.length > 0) {
-            const distance = levenshteinDistance(normalizedUser, normalizedSolution);
-            const maxLength = Math.max(normalizedUser.length, normalizedSolution.length);
-            const similarity1 = maxLength > 0 ? (1 - (distance / maxLength)) * 100 : 0;
-            accuracyMethods.push(similarity1);
-          }
-
-          // Method 2: Line-by-line comparison (more accurate for code structure)
-          let matchedLines = 0;
-          let totalLineSimilarity = 0;
-          const maxLines = Math.max(userLines.length, solutionLines.length);
-
-          for (let i = 0; i < maxLines; i++) {
-            const userLine = i < userLines.length ? userLines[i] : null;
-            const solutionLine = i < solutionLines.length ? solutionLines[i] : null;
-
-            const normalizedUserLine = userLine ? normalizeCode(userLine) : '';
-            const normalizedSolutionLine = solutionLine ? normalizeCode(solutionLine) : '';
-
-            let matchStatus = 'missing';
-            let lineSimilarity = 0;
-
-            if (userLine && solutionLine) {
-              // Normalize lines for format-agnostic comparison
-              const normalizeLine = (line) => {
-                return line
-                  .trim()
-                  .replace(/\s+/g, '') // Remove ALL whitespace
-                  .replace(/[=(),\[\]{}:]/g, '|') // Normalize operators/punctuation
-                  .toLowerCase()
-                  .replace(/\|+/g, '|'); // Collapse separators
-              };
-
-              const normalizedUserLineNoFormat = normalizeLine(userLine);
-              const normalizedSolutionLineNoFormat = normalizeLine(solutionLine);
-
-              // Check if lines are identical when formatting is ignored
-              if (normalizedUserLineNoFormat === normalizedSolutionLineNoFormat) {
-                matchStatus = 'correct';
-                matchedLines++;
-                lineSimilarity = 1.0;
-              } else {
-                // Check similarity (more lenient now that formatting is normalized)
-                lineSimilarity = calculateLineSimilarity(normalizedUserLineNoFormat, normalizedSolutionLineNoFormat);
-
-                // Very lenient matching: 75% similarity = correct (only logical differences matter now)
-                if (lineSimilarity >= 0.75) {
-                  matchStatus = 'correct';
-                  matchedLines++;
-                } else if (lineSimilarity > 0.5) {
-                  matchStatus = 'incorrect'; // Partial match
-                } else {
-                  matchStatus = 'incorrect';
-                }
-              }
-              totalLineSimilarity += lineSimilarity;
-            } else if (!userLine && solutionLine) {
-              matchStatus = 'missing';
-              lineSimilarity = 0;
-            } else if (userLine && !solutionLine) {
-              matchStatus = 'extra';
-              lineSimilarity = 0;
-            }
-
-            comparison.userLines.push({
-              text: userLine || '',
-              status: matchStatus === 'correct' ? 'correct' : matchStatus === 'incorrect' ? 'incorrect' : 'extra'
-            });
-
-            comparison.solutionLines.push({
-              text: solutionLine || '',
-              status: matchStatus === 'missing' ? 'missing' : matchStatus === 'correct' ? 'correct' : 'incorrect'
-            });
-          }
-
-          // Calculate line-based accuracy
-          if (solutionLines.length > 0) {
-            const lineAccuracy = (matchedLines / solutionLines.length) * 100;
-            accuracyMethods.push(lineAccuracy);
-
-            // Also use average line similarity
-            const avgLineSimilarity = totalLineSimilarity / Math.max(maxLines, 1) * 100;
-            accuracyMethods.push(avgLineSimilarity);
-          }
-
-          // Weighted average: Prioritize line matching (most accurate for code)
-          // 30% overall similarity, 50% line matching, 20% average line similarity
-          if (accuracyMethods.length > 0) {
-            let weightedSum = 0;
-            if (accuracyMethods.length >= 3) {
-              // Line matching is most important (50%), then overall similarity (30%), then avg similarity (20%)
-              weightedSum = (accuracyMethods[0] * 0.3) + (accuracyMethods[1] * 0.5) + (accuracyMethods[2] * 0.2);
-            } else if (accuracyMethods.length === 2) {
-              // If we have line matching, prioritize it more (60%)
-              weightedSum = (accuracyMethods[0] * 0.4) + (accuracyMethods[1] * 0.6);
-            } else {
-              weightedSum = accuracyMethods[0];
-            }
-            comparison.accuracy = Math.min(100, Math.max(0, weightedSum));
-            comparison.matchedLines = matchedLines;
+          // Check if lines are identical when formatting is ignored
+          if (normalizedUserLineNoFormat === normalizedSolutionLineNoFormat) {
+            matchStatus = 'correct';
+            matchedLines++;
+            lineSimilarity = 1.0;
           } else {
-            comparison.accuracy = 0;
-          }
+            // Check similarity (more lenient now that formatting is normalized)
+            lineSimilarity = calculateLineSimilarity(normalizedUserLineNoFormat, normalizedSolutionLineNoFormat);
 
-          return comparison;
-        }
-
-        function calculateLineSimilarity(line1, line2) {
-          if (line1 === line2) return 1.0;
-          if (line1.length === 0 || line2.length === 0) return 0.0;
-
-          // Calculate Levenshtein distance similarity
-          const maxLength = Math.max(line1.length, line2.length);
-          const distance = levenshteinDistance(line1, line2);
-          return 1 - (distance / maxLength);
-        }
-
-        function levenshteinDistance(str1, str2) {
-          const m = str1.length;
-          const n = str2.length;
-          const dp = Array(m + 1).fill(null).map(() => Array(n + 1).fill(0));
-
-          for (let i = 0; i <= m; i++) dp[i][0] = i;
-          for (let j = 0; j <= n; j++) dp[0][j] = j;
-
-          for (let i = 1; i <= m; i++) {
-            for (let j = 1; j <= n; j++) {
-              if (str1[i - 1] === str2[j - 1]) {
-                dp[i][j] = dp[i - 1][j - 1];
-              } else {
-                dp[i][j] = Math.min(
-                  dp[i - 1][j] + 1,
-                  dp[i][j - 1] + 1,
-                  dp[i - 1][j - 1] + 1
-                );
-              }
-            }
-          }
-
-          return dp[m][n];
-        }
-
-        function renderFormattedCode(comparison) {
-          const codeDisplay = document.getElementById('codeDisplay');
-          const solutionCode = exerciseData.solution_code || exerciseData.code || '';
-          const userCode = document.getElementById('codeEditor').value.trim();
-
-          // Filter out comment lines from solution
-          const solutionLines = solutionCode
-            .split('\n')
-            .filter(line => {
-              const trimmed = line.trim();
-              return trimmed.length > 0 && !trimmed.startsWith('#');
-            });
-
-          // Filter out comment lines from user code
-          const userLines = userCode
-            .split('\n')
-            .filter(line => {
-              const trimmed = line.trim();
-              return trimmed.length > 0 && !trimmed.startsWith('#');
-            })
-            .map(line => line.trim());
-
-          let html = '';
-
-          // Compare line by line and highlight text
-          for (let i = 0; i < solutionLines.length; i++) {
-            const solutionLine = solutionLines[i].trim();
-            const userLine = i < userLines.length ? userLines[i] : null;
-
-            if (userLine) {
-              // Compare characters/words in the line
-              const highlighted = highlightLineComparison(solutionLine, userLine);
-              html += `<div class="code-line">${highlighted}</div>`;
+            // Very lenient matching: 75% similarity = correct (only logical differences matter now)
+            if (lineSimilarity >= 0.75) {
+              matchStatus = 'correct';
+              matchedLines++;
+            } else if (lineSimilarity > 0.5) {
+              matchStatus = 'incorrect'; // Partial match
             } else {
-              // Missing line - show in orange
-              html += `<div class="code-line"><span class="code-text-missing">${escapeHtml(solutionLine)}</span></div>`;
+              matchStatus = 'incorrect';
             }
           }
-
-          codeDisplay.innerHTML = html;
-          updateLineNumbers();
+          totalLineSimilarity += lineSimilarity;
+        } else if (!userLine && solutionLine) {
+          matchStatus = 'missing';
+          lineSimilarity = 0;
+        } else if (userLine && !solutionLine) {
+          matchStatus = 'extra';
+          lineSimilarity = 0;
         }
 
-        function highlightLineComparison(solutionLine, userLine) {
-          // Normalize for comparison (remove extra whitespace, convert to lowercase)
-          const normalize = (str) => str.replace(/\s+/g, ' ').trim().toLowerCase();
+        comparison.userLines.push({
+          text: userLine || '',
+          status: matchStatus === 'correct' ? 'correct' : matchStatus === 'incorrect' ? 'incorrect' : 'extra'
+        });
 
-          const normalizedSolution = normalize(solutionLine);
-          const normalizedUser = normalize(userLine);
+        comparison.solutionLines.push({
+          text: solutionLine || '',
+          status: matchStatus === 'missing' ? 'missing' : matchStatus === 'correct' ? 'correct' : 'incorrect'
+        });
+      }
 
-          // Simple approach: if lines are very similar, mark as correct
-          if (normalizedSolution === normalizedUser) {
-            // Exact match - all green
-            return `<span class="code-text-correct">${escapeHtml(solutionLine)}</span>`;
+      // Calculate line-based accuracy
+      if (solutionLines.length > 0) {
+        const lineAccuracy = (matchedLines / solutionLines.length) * 100;
+        accuracyMethods.push(lineAccuracy);
+
+        // Also use average line similarity
+        const avgLineSimilarity = totalLineSimilarity / Math.max(maxLines, 1) * 100;
+        accuracyMethods.push(avgLineSimilarity);
+      }
+
+      // Weighted average: Prioritize line matching (most accurate for code)
+      // 30% overall similarity, 50% line matching, 20% average line similarity
+      if (accuracyMethods.length > 0) {
+        let weightedSum = 0;
+        if (accuracyMethods.length >= 3) {
+          // Line matching is most important (50%), then overall similarity (30%), then avg similarity (20%)
+          weightedSum = (accuracyMethods[0] * 0.3) + (accuracyMethods[1] * 0.5) + (accuracyMethods[2] * 0.2);
+        } else if (accuracyMethods.length === 2) {
+          // If we have line matching, prioritize it more (60%)
+          weightedSum = (accuracyMethods[0] * 0.4) + (accuracyMethods[1] * 0.6);
+        } else {
+          weightedSum = accuracyMethods[0];
+        }
+        comparison.accuracy = Math.min(100, Math.max(0, weightedSum));
+        comparison.matchedLines = matchedLines;
+      } else {
+        comparison.accuracy = 0;
+      }
+
+      return comparison;
+    }
+
+    function calculateLineSimilarity(line1, line2) {
+      if (line1 === line2) return 1.0;
+      if (line1.length === 0 || line2.length === 0) return 0.0;
+
+      // Calculate Levenshtein distance similarity
+      const maxLength = Math.max(line1.length, line2.length);
+      const distance = levenshteinDistance(line1, line2);
+      return 1 - (distance / maxLength);
+    }
+
+    function levenshteinDistance(str1, str2) {
+      const m = str1.length;
+      const n = str2.length;
+      const dp = Array(m + 1).fill(null).map(() => Array(n + 1).fill(0));
+
+      for (let i = 0; i <= m; i++) dp[i][0] = i;
+      for (let j = 0; j <= n; j++) dp[0][j] = j;
+
+      for (let i = 1; i <= m; i++) {
+        for (let j = 1; j <= n; j++) {
+          if (str1[i - 1] === str2[j - 1]) {
+            dp[i][j] = dp[i - 1][j - 1];
           } else {
-            // Compare word by word
-            const solutionWords = solutionLine.split(/(\s+)/);
-            const userWords = userLine.split(/(\s+)/);
-
-            let result = '';
-            let userWordIndex = 0;
-
-            for (let i = 0; i < solutionWords.length; i++) {
-              const solutionWord = solutionWords[i];
-
-              // Skip whitespace-only tokens but preserve them
-              if (/^\s+$/.test(solutionWord)) {
-                result += solutionWord;
-                continue;
-              }
-
-              // Find matching word in user code
-              let found = false;
-              let matchType = 'missing';
-
-              // Look ahead in user code for matching word
-              for (let j = userWordIndex; j < Math.min(userWordIndex + 3, userWords.length); j++) {
-                const normalizedSolutionWord = normalize(solutionWord);
-                const normalizedUserWord = normalize(userWords[j]);
-
-                if (normalizedSolutionWord === normalizedUserWord) {
-                  found = true;
-                  matchType = 'correct';
-                  userWordIndex = j + 1;
-                  break;
-                } else if (normalizedSolutionWord.includes(normalizedUserWord) || normalizedUserWord.includes(normalizedSolutionWord)) {
-                  // Partial match - could be correct or incorrect
-                  matchType = 'incorrect';
-                }
-              }
-
-              if (!found) {
-                // Check if this word appears later in user code (misordered)
-                const normalizedSolutionWord = normalize(solutionWord);
-                for (let j = userWordIndex; j < userWords.length; j++) {
-                  if (normalize(userWords[j]) === normalizedSolutionWord) {
-                    matchType = 'incorrect'; // Wrong position
-                    break;
-                  }
-                }
-              }
-
-              // Apply appropriate highlighting
-              if (matchType === 'correct') {
-                result += `<span class="code-text-correct">${escapeHtml(solutionWord)}</span>`;
-              } else if (matchType === 'incorrect') {
-                result += `<span class="code-text-incorrect">${escapeHtml(solutionWord)}</span>`;
-              } else {
-                result += `<span class="code-text-missing">${escapeHtml(solutionWord)}</span>`;
-              }
-
-              if (!found && matchType !== 'incorrect') {
-                // Word not found - don't advance user index
-                continue;
-              }
-            }
-
-            return result;
+            dp[i][j] = Math.min(
+              dp[i - 1][j] + 1,
+              dp[i][j - 1] + 1,
+              dp[i - 1][j - 1] + 1
+            );
           }
         }
+      }
 
-        function escapeHtml(text) {
-          const div = document.createElement('div');
-          div.textContent = text;
-          return div.innerHTML;
+      return dp[m][n];
+    }
+
+    function renderFormattedCode(comparison) {
+      const codeDisplay = document.getElementById('codeDisplay');
+      const solutionCode = exerciseData.solution_code || exerciseData.code || '';
+      const userCode = document.getElementById('codeEditor').value.trim();
+
+      // Filter out comment lines from solution
+      const solutionLines = solutionCode
+        .split('\n')
+        .filter(line => {
+          const trimmed = line.trim();
+          return trimmed.length > 0 && !trimmed.startsWith('#');
+        });
+
+      // Filter out comment lines from user code
+      const userLines = userCode
+        .split('\n')
+        .filter(line => {
+          const trimmed = line.trim();
+          return trimmed.length > 0 && !trimmed.startsWith('#');
+        })
+        .map(line => line.trim());
+
+      let html = '';
+
+      // Compare line by line and highlight text
+      for (let i = 0; i < solutionLines.length; i++) {
+        const solutionLine = solutionLines[i].trim();
+        const userLine = i < userLines.length ? userLines[i] : null;
+
+        if (userLine) {
+          // Compare characters/words in the line
+          const highlighted = highlightLineComparison(solutionLine, userLine);
+          html += `<div class="code-line">${highlighted}</div>`;
+        } else {
+          // Missing line - show in orange
+          html += `<div class="code-line"><span class="code-text-missing">${escapeHtml(solutionLine)}</span></div>`;
         }
+      }
 
-        function calculateScore(timeSeconds, accuracy, hintPenalty = 0) {
-          // Base score from accuracy (0-70 points)
-          // Accuracy is already a percentage (0-100)
-          const accuracyScore = Math.max(0, Math.min(70, (accuracy / 100) * 70));
+      codeDisplay.innerHTML = html;
+      updateLineNumbers();
+    }
 
-          // Time bonus (faster = more points, max 30 points)
-          // Base time for bonus calculation: 5 minutes (300 seconds)
-          const baseTime = 300;
-          let timeBonus = 0;
+    function highlightLineComparison(solutionLine, userLine) {
+      // Normalize for comparison (remove extra whitespace, convert to lowercase)
+      const normalize = (str) => str.replace(/\s+/g, ' ').trim().toLowerCase();
 
-          if (timeSeconds > 0 && timeSeconds <= baseTime) {
-            // Linear bonus from 30 points at 0 seconds to 0 points at baseTime
-            timeBonus = 30 * (1 - (timeSeconds / baseTime));
+      const normalizedSolution = normalize(solutionLine);
+      const normalizedUser = normalize(userLine);
+
+      // Simple approach: if lines are very similar, mark as correct
+      if (normalizedSolution === normalizedUser) {
+        // Exact match - all green
+        return `<span class="code-text-correct">${escapeHtml(solutionLine)}</span>`;
+      } else {
+        // Compare word by word
+        const solutionWords = solutionLine.split(/(\s+)/);
+        const userWords = userLine.split(/(\s+)/);
+
+        let result = '';
+        let userWordIndex = 0;
+
+        for (let i = 0; i < solutionWords.length; i++) {
+          const solutionWord = solutionWords[i];
+
+          // Skip whitespace-only tokens but preserve them
+          if (/^\s+$/.test(solutionWord)) {
+            result += solutionWord;
+            continue;
           }
 
-          // Cap time bonus at 30 points
-          timeBonus = Math.max(0, Math.min(30, timeBonus));
+          // Find matching word in user code
+          let found = false;
+          let matchType = 'missing';
 
-          // Hint penalty: reduce score by 2 points per interaction (max 20 points reduction)
-          const maxHintPenalty = 20;
-          const penalty = Math.min(hintPenalty * 2, maxHintPenalty);
+          // Look ahead in user code for matching word
+          for (let j = userWordIndex; j < Math.min(userWordIndex + 3, userWords.length); j++) {
+            const normalizedSolutionWord = normalize(solutionWord);
+            const normalizedUserWord = normalize(userWords[j]);
 
-          // Total score: accuracy (0-70) + time bonus (0-30) - hint penalty (0-20) = 0-100 points
-          const totalScore = accuracyScore + timeBonus - penalty;
-
-          // Round to nearest integer, ensure non-negative
-          return Math.max(0, Math.round(totalScore));
-        }
-
-        function resetCode() {
-          if (hasSubmitted) {
-            if (!confirm('Resetting will allow you to submit again. Continue?')) {
-              return;
+            if (normalizedSolutionWord === normalizedUserWord) {
+              found = true;
+              matchType = 'correct';
+              userWordIndex = j + 1;
+              break;
+            } else if (normalizedSolutionWord.includes(normalizedUserWord) || normalizedUserWord.includes(normalizedSolutionWord)) {
+              // Partial match - could be correct or incorrect
+              matchType = 'incorrect';
             }
           }
 
-          // Reset timer
-          stopTimer();
-          startTimer();
+          if (!found) {
+            // Check if this word appears later in user code (misordered)
+            const normalizedSolutionWord = normalize(solutionWord);
+            for (let j = userWordIndex; j < userWords.length; j++) {
+              if (normalize(userWords[j]) === normalizedSolutionWord) {
+                matchType = 'incorrect'; // Wrong position
+                break;
+              }
+            }
+          }
 
-          const codeEditor = document.getElementById('codeEditor');
-          const codeDisplay = document.getElementById('codeDisplay');
+          // Apply appropriate highlighting
+          if (matchType === 'correct') {
+            result += `<span class="code-text-correct">${escapeHtml(solutionWord)}</span>`;
+          } else if (matchType === 'incorrect') {
+            result += `<span class="code-text-incorrect">${escapeHtml(solutionWord)}</span>`;
+          } else {
+            result += `<span class="code-text-missing">${escapeHtml(solutionWord)}</span>`;
+          }
 
-          codeEditor.value = '';
-          codeEditor.disabled = false;
-          codeEditor.style.display = 'block';
-          codeDisplay.classList.remove('show');
-          codeDisplay.innerHTML = '';
-
-          updateLineNumbers();
-
-          // Reset stats
-          document.getElementById('accuracyDisplay').textContent = '0%';
-          document.getElementById('scoreDisplay').textContent = '0';
-          document.getElementById('codeEditorTitle').textContent = 'Your Code';
-
-          // Reset hint tracking
-          hintInteractions = 0;
-          currentHintLevel = 1;
-
-          const submitBtn = document.getElementById('submitBtn');
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'Submit Solution';
-
-          const submissionMessage = document.getElementById('submissionMessage');
-          submissionMessage.classList.remove('show');
-
-          hasSubmitted = false;
-
-          codeEditor.focus();
-        }
-
-        function showSubmissionMessage(message, type) {
-          const messageEl = document.getElementById('submissionMessage');
-          messageEl.textContent = message;
-          messageEl.className = 'submission-message ' + type + ' show';
-
-          // Auto-hide after 5 seconds for info messages
-          if (type === 'info') {
-            setTimeout(() => {
-              messageEl.classList.remove('show');
-            }, 5000);
+          if (!found && matchType !== 'incorrect') {
+            // Word not found - don't advance user index
+            continue;
           }
         }
 
-        function showError(message) {
-          const container = document.querySelector('.playground-container');
-          container.innerHTML = `
+        return result;
+      }
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function calculateScore(timeSeconds, accuracy, hintPenalty = 0) {
+      // Base score from accuracy (0-70 points)
+      // Accuracy is already a percentage (0-100)
+      const accuracyScore = Math.max(0, Math.min(70, (accuracy / 100) * 70));
+
+      // Time bonus (faster = more points, max 30 points)
+      // Base time for bonus calculation: 5 minutes (300 seconds)
+      const baseTime = 300;
+      let timeBonus = 0;
+
+      if (timeSeconds > 0 && timeSeconds <= baseTime) {
+        // Linear bonus from 30 points at 0 seconds to 0 points at baseTime
+        timeBonus = 30 * (1 - (timeSeconds / baseTime));
+      }
+
+      // Cap time bonus at 30 points
+      timeBonus = Math.max(0, Math.min(30, timeBonus));
+
+      // Hint penalty: reduce score by 2 points per interaction (max 20 points reduction)
+      const maxHintPenalty = 20;
+      const penalty = Math.min(hintPenalty * 2, maxHintPenalty);
+
+      // Total score: accuracy (0-70) + time bonus (0-30) - hint penalty (0-20) = 0-100 points
+      const totalScore = accuracyScore + timeBonus - penalty;
+
+      // Round to nearest integer, ensure non-negative
+      return Math.max(0, Math.round(totalScore));
+    }
+
+    function resetCode() {
+      if (hasSubmitted) {
+        if (!confirm('Resetting will allow you to submit again. Continue?')) {
+          return;
+        }
+      }
+
+      // Reset timer
+      stopTimer();
+      startTimer();
+
+      const codeEditor = document.getElementById('codeEditor');
+      const codeDisplay = document.getElementById('codeDisplay');
+
+      codeEditor.value = '';
+      codeEditor.disabled = false;
+      codeEditor.style.display = 'block';
+      codeDisplay.classList.remove('show');
+      codeDisplay.innerHTML = '';
+
+      updateLineNumbers();
+
+      // Reset stats
+      document.getElementById('accuracyDisplay').textContent = '0%';
+      document.getElementById('scoreDisplay').textContent = '0';
+      document.getElementById('codeEditorTitle').textContent = 'Your Code';
+
+      // Reset hint tracking
+      hintInteractions = 0;
+      currentHintLevel = 1;
+
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Submit Solution';
+
+      const submissionMessage = document.getElementById('submissionMessage');
+      submissionMessage.classList.remove('show');
+
+      hasSubmitted = false;
+
+      codeEditor.focus();
+    }
+
+    function showSubmissionMessage(message, type) {
+      const messageEl = document.getElementById('submissionMessage');
+      messageEl.textContent = message;
+      messageEl.className = 'submission-message ' + type + ' show';
+
+      // Auto-hide after 5 seconds for info messages
+      if (type === 'info') {
+        setTimeout(() => {
+          messageEl.classList.remove('show');
+        }, 5000);
+      }
+    }
+
+    function showError(message) {
+      const container = document.querySelector('.playground-container');
+      container.innerHTML = `
         <div class="playground-header">
           <h1>Error</h1>
         </div>
@@ -1640,191 +1641,191 @@
           <a href="practice.html" class="btn btn-primary" style="margin-top: 1rem; text-decoration: none; display: inline-block;">Go Back to Practice</a>
         </div>
       `;
+    }
+
+    // Code Assistant Chat Functions
+    function toggleChatWidget() {
+      const container = document.getElementById('chatWidgetContainer');
+      const button = document.getElementById('chatWidgetButton');
+
+      container.classList.toggle('show');
+
+      if (container.classList.contains('show')) {
+        button.classList.add('hidden');
+        setTimeout(() => {
+          document.getElementById('chatInputField').focus();
+        }, 300);
+      } else {
+        button.classList.remove('hidden');
+      }
+    }
+
+
+
+    // Add message to playground chat (adapted from code-assistant.js)
+    function addPlaygroundMessage(role, content) {
+      const container = document.getElementById('chatMessagesContainer');
+      if (!container) return;
+
+      // Hide welcome section if it exists
+      const welcomeSection = document.getElementById('playgroundWelcomeSection');
+      if (welcomeSection) {
+        welcomeSection.style.display = 'none';
+      }
+
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${role}-message`;
+
+      const contentDiv = document.createElement('div');
+      contentDiv.className = 'message-content';
+
+      // Use the same message formatting as main code assistant
+      if (typeof formatMessageContent === 'function') {
+        contentDiv.innerHTML = formatMessageContent(content);
+      } else {
+        // Fallback if formatMessageContent not available
+        contentDiv.textContent = content;
+      }
+
+      messageDiv.appendChild(contentDiv);
+      container.appendChild(messageDiv);
+
+      // Scroll to bottom
+      container.scrollTop = container.scrollHeight;
+
+      // Attach copy buttons for code blocks
+      setTimeout(() => {
+        if (typeof attachCopyButtons === 'function') {
+          attachCopyButtons();
         }
+      }, 100);
+    }
 
-        // Code Assistant Chat Functions
-        function toggleChatWidget() {
-          const container = document.getElementById('chatWidgetContainer');
-          const button = document.getElementById('chatWidgetButton');
+    // Add loading message to playground chat
+    function addPlaygroundLoadingMessage() {
+      const container = document.getElementById('chatMessagesContainer');
+      if (!container) return null;
 
-          container.classList.toggle('show');
+      const messageDiv = document.createElement('div');
+      messageDiv.className = 'message assistant-message';
+      messageDiv.id = 'playground-loading-message';
 
-          if (container.classList.contains('show')) {
-            button.classList.add('hidden');
-            setTimeout(() => {
-              document.getElementById('chatInputField').focus();
-            }, 300);
-          } else {
-            button.classList.remove('hidden');
-          }
-        }
+      const contentDiv = document.createElement('div');
+      contentDiv.className = 'message-content';
+      contentDiv.innerHTML = '<div class="loading-indicator"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div>';
 
+      messageDiv.appendChild(contentDiv);
+      container.appendChild(messageDiv);
+      container.scrollTop = container.scrollHeight;
 
+      return 'playground-loading-message';
+    }
 
-        // Add message to playground chat (adapted from code-assistant.js)
-        function addPlaygroundMessage(role, content) {
-          const container = document.getElementById('chatMessagesContainer');
-          if (!container) return;
+    // Remove loading message from playground chat
+    function removePlaygroundLoadingMessage(id) {
+      const loadingMsg = document.getElementById(id);
+      if (loadingMsg) {
+        loadingMsg.remove();
+      }
+    }
 
-          // Hide welcome section if it exists
-          const welcomeSection = document.getElementById('playgroundWelcomeSection');
-          if (welcomeSection) {
-            welcomeSection.style.display = 'none';
-          }
+    // Send message in playground chat (uses same logic as main code assistant)
+    async function sendPlaygroundChatMessage() {
+      const input = document.getElementById('chatInputField');
+      if (!input) return;
 
-          const messageDiv = document.createElement('div');
-          messageDiv.className = `message ${role}-message`;
+      const message = input.value.trim();
+      if (!message) return;
 
-          const contentDiv = document.createElement('div');
-          contentDiv.className = 'message-content';
+      // Hide welcome section
+      const welcomeSection = document.getElementById('playgroundWelcomeSection');
+      if (welcomeSection) {
+        welcomeSection.style.display = 'none';
+      }
 
-          // Use the same message formatting as main code assistant
-          if (typeof formatMessageContent === 'function') {
-            contentDiv.innerHTML = formatMessageContent(content);
-          } else {
-            // Fallback if formatMessageContent not available
-            contentDiv.textContent = content;
-          }
+      // Add user message
+      addPlaygroundMessage('user', message);
+      input.value = '';
+      input.style.height = 'auto';
 
-          messageDiv.appendChild(contentDiv);
-          container.appendChild(messageDiv);
+      // Add to chat history
+      playgroundChatHistory.push({ role: 'user', content: message });
 
-          // Scroll to bottom
-          container.scrollTop = container.scrollHeight;
+      // Show loading
+      const loadingId = addPlaygroundLoadingMessage();
 
-          // Attach copy buttons for code blocks
-          setTimeout(() => {
-            if (typeof attachCopyButtons === 'function') {
-              attachCopyButtons();
-            }
-          }, 100);
-        }
+      // Disable send button
+      const sendButton = document.getElementById('chatSendButton');
+      if (sendButton) {
+        sendButton.disabled = true;
+      }
 
-        // Add loading message to playground chat
-        function addPlaygroundLoadingMessage() {
-          const container = document.getElementById('chatMessagesContainer');
-          if (!container) return null;
-
-          const messageDiv = document.createElement('div');
-          messageDiv.className = 'message assistant-message';
-          messageDiv.id = 'playground-loading-message';
-
-          const contentDiv = document.createElement('div');
-          contentDiv.className = 'message-content';
-          contentDiv.innerHTML = '<div class="loading-indicator"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div>';
-
-          messageDiv.appendChild(contentDiv);
-          container.appendChild(messageDiv);
-          container.scrollTop = container.scrollHeight;
-
-          return 'playground-loading-message';
-        }
-
-        // Remove loading message from playground chat
-        function removePlaygroundLoadingMessage(id) {
-          const loadingMsg = document.getElementById(id);
-          if (loadingMsg) {
-            loadingMsg.remove();
-          }
-        }
-
-        // Send message in playground chat (uses same logic as main code assistant)
-        async function sendPlaygroundChatMessage() {
-          const input = document.getElementById('chatInputField');
-          if (!input) return;
-
-          const message = input.value.trim();
-          if (!message) return;
-
-          // Hide welcome section
-          const welcomeSection = document.getElementById('playgroundWelcomeSection');
-          if (welcomeSection) {
-            welcomeSection.style.display = 'none';
-          }
-
-          // Add user message
-          addPlaygroundMessage('user', message);
-          input.value = '';
-          input.style.height = 'auto';
-
-          // Add to chat history
-          playgroundChatHistory.push({ role: 'user', content: message });
-
-          // Show loading
-          const loadingId = addPlaygroundLoadingMessage();
-
-          // Disable send button
-          const sendButton = document.getElementById('chatSendButton');
-          if (sendButton) {
-            sendButton.disabled = true;
-          }
-
-          try {
-            // Ensure AI agent is initialized
-            if (typeof aiAgentInitialized !== 'undefined' && !aiAgentInitialized) {
-              if (typeof initializeAIAgent === 'function') {
-                const initialized = await initializeAIAgent();
-                if (!initialized) {
-                  throw new Error('Failed to initialize AI agent. The API key may be invalid or the API may not be enabled.');
-                }
-              }
-            }
-
-            // Use the same AI agent as main code assistant
-            if (typeof codeWriterAgent === 'undefined') {
-              throw new Error('AI agent not available. Please refresh the page.');
-            }
-
-            // Increment hint interactions
-            hintInteractions++;
-
-            // Detect if user is asking for a stronger hint
-            const messageLower = message.toLowerCase();
-            if (messageLower.includes('stronger hint') || messageLower.includes('more help') ||
-              messageLower.includes('give me more') || messageLower.includes('need more guidance')) {
-              currentHintLevel = Math.min(currentHintLevel + 1, 3);
-            }
-
-            // Provide solution-aware context to AI agent
-            // Include all exercises for context, but focus hints on current exercise
-            const playgroundContext = {
-              exerciseId: exerciseData.id,
-              exerciseTitle: exerciseData.title,
-              exerciseDescription: exerciseData.description || generateExerciseDescription(exerciseData.title, exerciseData.difficulty),
-              solutionCode: exerciseData.code,
-              difficulty: exerciseData.difficulty,
-              hintLevel: currentHintLevel,
-              allExercises: typeof ALL_EXERCISES !== 'undefined' ? ALL_EXERCISES : []
-            };
-
-            const response = await codeWriterAgent.processMessage(message, playgroundContext);
-
-            removePlaygroundLoadingMessage(loadingId);
-            addPlaygroundMessage('assistant', response);
-            playgroundChatHistory.push({ role: 'assistant', content: response });
-          } catch (error) {
-            removePlaygroundLoadingMessage(loadingId);
-            let errorMessage = `❌ Error: ${error.message}`;
-
-            // Provide specific guidance for API not enabled error
-            if (error.message.includes('not enabled') || error.message.includes('Enable it')) {
-              errorMessage += `\n\n🔧 Setup Required:\nThe Generative Language API needs to be enabled for your API key's Google Cloud project.\n\n1. Go to: https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com\n2. Select the project associated with your API key\n3. Click "Enable"\n4. Wait a few minutes for changes to propagate\n5. Refresh this page and try again`;
-            } else {
-              errorMessage += `\n\nPlease ensure the API key is configured correctly and has the necessary permissions.`;
-            }
-
-            addPlaygroundMessage('assistant', errorMessage);
-            playgroundChatHistory.push({ role: 'assistant', content: errorMessage });
-          } finally {
-            if (sendButton) {
-              sendButton.disabled = false;
-            }
-            if (input) {
-              input.focus();
+      try {
+        // Ensure AI agent is initialized
+        if (typeof aiAgentInitialized !== 'undefined' && !aiAgentInitialized) {
+          if (typeof initializeAIAgent === 'function') {
+            const initialized = await initializeAIAgent();
+            if (!initialized) {
+              throw new Error('Failed to initialize AI agent. The API key may be invalid or the API may not be enabled.');
             }
           }
         }
-      </script>
+
+        // Use the same AI agent as main code assistant
+        if (typeof codeWriterAgent === 'undefined') {
+          throw new Error('AI agent not available. Please refresh the page.');
+        }
+
+        // Increment hint interactions
+        hintInteractions++;
+
+        // Detect if user is asking for a stronger hint
+        const messageLower = message.toLowerCase();
+        if (messageLower.includes('stronger hint') || messageLower.includes('more help') ||
+          messageLower.includes('give me more') || messageLower.includes('need more guidance')) {
+          currentHintLevel = Math.min(currentHintLevel + 1, 3);
+        }
+
+        // Provide solution-aware context to AI agent
+        // Include all exercises for context, but focus hints on current exercise
+        const playgroundContext = {
+          exerciseId: exerciseData.id,
+          exerciseTitle: exerciseData.title,
+          exerciseDescription: exerciseData.description || generateExerciseDescription(exerciseData.title, exerciseData.difficulty),
+          solutionCode: exerciseData.code,
+          difficulty: exerciseData.difficulty,
+          hintLevel: currentHintLevel,
+          allExercises: typeof ALL_EXERCISES !== 'undefined' ? ALL_EXERCISES : []
+        };
+
+        const response = await codeWriterAgent.processMessage(message, playgroundContext);
+
+        removePlaygroundLoadingMessage(loadingId);
+        addPlaygroundMessage('assistant', response);
+        playgroundChatHistory.push({ role: 'assistant', content: response });
+      } catch (error) {
+        removePlaygroundLoadingMessage(loadingId);
+        let errorMessage = `❌ Error: ${error.message}`;
+
+        // Provide specific guidance for API not enabled error
+        if (error.message.includes('not enabled') || error.message.includes('Enable it')) {
+          errorMessage += `\n\n🔧 Setup Required:\nThe Generative Language API needs to be enabled for your API key's Google Cloud project.\n\n1. Go to: https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com\n2. Select the project associated with your API key\n3. Click "Enable"\n4. Wait a few minutes for changes to propagate\n5. Refresh this page and try again`;
+        } else {
+          errorMessage += `\n\nPlease ensure the API key is configured correctly and has the necessary permissions.`;
+        }
+
+        addPlaygroundMessage('assistant', errorMessage);
+        playgroundChatHistory.push({ role: 'assistant', content: errorMessage });
+      } finally {
+        if (sendButton) {
+          sendButton.disabled = false;
+        }
+        if (input) {
+          input.focus();
+        }
+      }
+    }
+  </script>
 </body>
 
 </html>
