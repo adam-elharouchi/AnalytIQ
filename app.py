@@ -13,6 +13,8 @@ import sys
 import time
 import config
 import utils
+from cache import cache_health_check
+from supabase_storage import storage_health_check
 
 
 # Global database pool
@@ -1933,6 +1935,31 @@ def health():
         }
         logger.warning("Health check: Email service degraded", extra={'error': str(e)})
     
+    # 4. Redis Cache (NON-CRITICAL - degrades to no-cache)
+    if os.getenv('FEATURE_CACHING') == 'True':
+        try:
+            cache_status = cache_health_check()
+            health_status['services']['cache'] = cache_status
+            if cache_status['status'] != 'healthy':
+                logger.warning(f"Health check: Cache status: {cache_status['status']}")
+        except Exception as e:
+            health_status['services']['cache'] = {'status': 'error', 'error': str(e)}
+            logger.error(f"Health check: Cache error: {e}")
+    else:
+        health_status['services']['cache'] = {'status': 'disabled', 'note': 'Caching feature flag off'}
+
+    # 5. Supabase Storage (CRITICAL for PDFs)
+    try:
+        storage_status = storage_health_check()
+        health_status['services']['storage'] = storage_status
+        if storage_status['status'] != 'healthy':
+            all_healthy = False
+            logger.error(f"Health check: Storage status: {storage_status['status']}")
+    except Exception as e:
+        all_healthy = False
+        health_status['services']['storage'] = {'status': 'error', 'error': str(e)}
+        logger.error(f"Health check: Storage error: {e}")
+
     # Set overall status
     if not all_healthy:
         health_status['status'] = 'degraded'
