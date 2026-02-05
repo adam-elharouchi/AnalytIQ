@@ -11,6 +11,7 @@ from datetime import datetime
 from werkzeug.utils import secure_filename
 import sys
 import time
+import config
 
 # Global database pool
 db_pool = None
