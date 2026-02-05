@@ -1940,8 +1940,9 @@ def health():
         try:
             cache_status = cache_health_check()
             health_status['services']['cache'] = cache_status
-            if cache_status['status'] != 'healthy':
-                logger.warning(f"Health check: Cache status: {cache_status['status']}")
+            # Check 'healthy' boolean instead of 'status' string
+            if not cache_status.get('healthy', False):
+                logger.warning(f"Health check: Cache unhealthy: {cache_status.get('message')}")
         except Exception as e:
             health_status['services']['cache'] = {'status': 'error', 'error': str(e)}
             logger.error(f"Health check: Cache error: {e}")
@@ -1952,9 +1953,10 @@ def health():
     try:
         storage_status = storage_health_check()
         health_status['services']['storage'] = storage_status
-        if storage_status['status'] != 'healthy':
+        # Check 'healthy' boolean instead of 'status' string
+        if not storage_status.get('healthy', False):
             all_healthy = False
-            logger.error(f"Health check: Storage status: {storage_status['status']}")
+            logger.error(f"Health check: Storage unhealthy: {storage_status.get('message')}")
     except Exception as e:
         all_healthy = False
         health_status['services']['storage'] = {'status': 'error', 'error': str(e)}
