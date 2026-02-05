@@ -10,78 +10,93 @@ import shutil
 import subprocess
 from pathlib import Path
 
+
 def main():
     print("🚀 Setting up new AnalytIQ repository...")
-    
+
     # Define paths
     source_dir = Path("/Users/aelharouchi/Documents/GitHub/AnalytIQ")
     target_dir = Path("/Users/aelharouchi/Documents/GitHub/AnalytIQ-Test")
-    
+
     # Remove old directory if exists
     if target_dir.exists():
         print("⚠️  Removing old AnalytIQ-Test directory...")
         shutil.rmtree(target_dir)
-    
+
     # Create new directory
     print("📁 Creating new directory...")
     target_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Files/directories to exclude
     excludes = {
-        '.git', 'node_modules', '__pycache__', '.DS_Store',
-        '*.pyc', '*.log', '*.pid', 'flask_server.log',
-        'flask_server.pid', 'flask_final.log', 'flask_server_new.log',
-        'test_*.py', 'test_*.html', 'migrate_*.py', 'check_*.py',
-        'create_tables.py', 'export_*.html', 'export_*.js', 'mock_data.json'
+        ".git",
+        "node_modules",
+        "__pycache__",
+        ".DS_Store",
+        "*.pyc",
+        "*.log",
+        "*.pid",
+        "flask_server.log",
+        "flask_server.pid",
+        "flask_final.log",
+        "flask_server_new.log",
+        "test_*.py",
+        "test_*.html",
+        "migrate_*.py",
+        "check_*.py",
+        "create_tables.py",
+        "export_*.html",
+        "export_*.js",
+        "mock_data.json",
     }
-    
+
     # Copy files
     print("📋 Copying files...")
     copied = 0
     skipped = 0
-    
+
     for root, dirs, files in os.walk(source_dir):
         # Filter out excluded directories
-        dirs[:] = [d for d in dirs if d not in excludes and not d.startswith('.')]
-        
+        dirs[:] = [d for d in dirs if d not in excludes and not d.startswith(".")]
+
         # Calculate relative path
         rel_path = os.path.relpath(root, source_dir)
-        if rel_path == '.':
+        if rel_path == ".":
             target_root = target_dir
         else:
             target_root = target_dir / rel_path
-        
+
         # Create target directory
         target_root.mkdir(parents=True, exist_ok=True)
-        
+
         # Copy files
         for file in files:
             # Skip excluded files
             skip = False
             for exclude in excludes:
-                if exclude.startswith('*') and file.endswith(exclude[1:]):
+                if exclude.startswith("*") and file.endswith(exclude[1:]):
                     skip = True
                     break
-                elif file == exclude or file.startswith(exclude.replace('*', '')):
+                elif file == exclude or file.startswith(exclude.replace("*", "")):
                     skip = True
                     break
-            
-            if skip or file.endswith('.pyc') or file.endswith('.log') or file.endswith('.pid'):
+
+            if skip or file.endswith(".pyc") or file.endswith(".log") or file.endswith(".pid"):
                 skipped += 1
                 continue
-            
+
             source_file = Path(root) / file
             target_file = target_root / file
-            
+
             try:
                 shutil.copy2(source_file, target_file)
                 copied += 1
             except Exception as e:
                 print(f"⚠️  Could not copy {source_file}: {e}")
                 skipped += 1
-    
+
     print(f"✅ Copied {copied} files, skipped {skipped} files")
-    
+
     # Create .gitignore
     print("📝 Creating .gitignore...")
     gitignore_content = """# Environment variables
@@ -170,10 +185,10 @@ migrate_*.py
 check_*.py
 create_tables.py
 """
-    
-    with open(target_dir / '.gitignore', 'w') as f:
+
+    with open(target_dir / ".gitignore", "w") as f:
         f.write(gitignore_content)
-    
+
     # Create README
     print("📝 Creating README.md...")
     readme_content = """# AnalytIQ - Data Analytics Learning Platform
@@ -256,36 +271,41 @@ Navigate to `http://localhost:8000` in your browser
 
 Copyright (c) 2026 AnalytIQ. All rights reserved. Adam El Harouchi.
 """
-    
-    with open(target_dir / 'README.md', 'w') as f:
+
+    with open(target_dir / "README.md", "w") as f:
         f.write(readme_content)
-    
+
     # Initialize git
     print("🔧 Initializing git repository...")
     os.chdir(target_dir)
-    subprocess.run(['git', 'init'], check=True)
-    subprocess.run(['git', 'branch', '-M', 'main'], check=True)
-    
+    subprocess.run(["git", "init"], check=True)
+    subprocess.run(["git", "branch", "-M", "main"], check=True)
+
     # Stage all files
     print("📦 Staging files for commit...")
-    subprocess.run(['git', 'add', '-A'], check=True)
-    
+    subprocess.run(["git", "add", "-A"], check=True)
+
     # Make initial commit
     print("💾 Creating initial commit...")
-    subprocess.run([
-        'git', 'commit', '-m',
-        'Initial commit: Complete AnalytIQ platform\n\n'
-        '- Professor dashboard with class management\n'
-        '- PDF chapter upload with text extraction\n'
-        '- AI-powered exercise generation\n'
-        '- Student enrollment and progress tracking\n'
-        '- Practice exercises with leaderboards\n'
-        '- AI code assistant\n'
-        '- Contact form integration\n'
-        '- Resources management\n'
-        '- Full UI with responsive design'
-    ], check=True)
-    
+    subprocess.run(
+        [
+            "git",
+            "commit",
+            "-m",
+            "Initial commit: Complete AnalytIQ platform\n\n"
+            "- Professor dashboard with class management\n"
+            "- PDF chapter upload with text extraction\n"
+            "- AI-powered exercise generation\n"
+            "- Student enrollment and progress tracking\n"
+            "- Practice exercises with leaderboards\n"
+            "- AI code assistant\n"
+            "- Contact form integration\n"
+            "- Resources management\n"
+            "- Full UI with responsive design",
+        ],
+        check=True,
+    )
+
     print("")
     print("✅ Repository setup complete!")
     print("")
@@ -302,5 +322,6 @@ Copyright (c) 2026 AnalytIQ. All rights reserved. Adam El Harouchi.
     print("")
     print("🎉 Ready to push to GitHub!")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
