@@ -141,6 +141,42 @@ PASSWORD_RESET_TOKEN_EXPIRY = timedelta(hours=PASSWORD_RESET_TOKEN_EXPIRY_HOURS)
 FEATURE_AI_EXERCISES = os.getenv('FEATURE_AI_EXERCISES', 'True').lower() == 'true'
 FEATURE_EMAIL_NOTIFICATIONS = os.getenv('FEATURE_EMAIL', 'False').lower() == 'true'
 FEATURE_ANALYTICS = os.getenv('FEATURE_ANALYTICS', 'True').lower() == 'true'
+FEATURE_CSRF_PROTECTION = os.getenv('FEATURE_CSRF', 'False').lower() == 'true'
+FEATURE_ASYNC_TASKS = os.getenv('FEATURE_ASYNC_TASKS', 'False').lower() == 'true'
+
+
+# ============================================================================
+# CSRF PROTECTION
+# ============================================================================
+
+# CSRF Configuration
+WTF_CSRF_ENABLED = FEATURE_CSRF_PROTECTION
+WTF_CSRF_TIME_LIMIT = int(os.getenv('CSRF_TIME_LIMIT', 3600))  # 1 hour default
+WTF_CSRF_SSL_STRICT = ENV == 'production'
+WTF_CSRF_CHECK_DEFAULT = FEATURE_CSRF_PROTECTION
+
+
+# ============================================================================
+# SUPABASE STORAGE
+# ============================================================================
+
+# Supabase Configuration
+SUPABASE_URL = os.getenv('SUPABASE_URL')
+SUPABASE_KEY = os.getenv('SUPABASE_KEY')
+SUPABASE_BUCKET = os.getenv('SUPABASE_BUCKET', 'pdfs')
+
+
+# ============================================================================
+# REDIS CACHING
+# ============================================================================
+
+# Redis Configuration
+REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+CACHE_DEFAULT_TTL = int(os.getenv('CACHE_TTL', 300))  # 5 minutes default
+FEATURE_CACHING = os.getenv('FEATURE_CACHING', 'False').lower() == 'true'
+
+
+
 
 # ============================================================================
 # VALIDATION

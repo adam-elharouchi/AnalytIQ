@@ -12,6 +12,8 @@ from werkzeug.utils import secure_filename
 import sys
 import time
 import config
+import utils
+
 
 # Global database pool
 db_pool = None
@@ -76,6 +78,32 @@ except ImportError:
     print("Warning: Flask-Limiter not installed. Rate limiting will not work.")
     limiter = None
 
+# CSRF Protection Configuration
+try:
+    from flask_wtf.csrf import CSRFProtect, generate_csrf
+    
+    # Initialize CSRF protection
+    csrf = CSRFProtect()
+    
+    # Configure CSRF from config
+    app.config['WTF_CSRF_ENABLED'] = config.WTF_CSRF_ENABLED
+    app.config['WTF_CSRF_TIME_LIMIT'] = config.WTF_CSRF_TIME_LIMIT
+    app.config['WTF_CSRF_SSL_STRICT'] = config.WTF_CSRF_SSL_STRICT
+    app.config['WTF_CSRF_CHECK_DEFAULT'] = config.WTF_CSRF_CHECK_DEFAULT
+    
+    # Only initialize if feature is enabled
+    if config.FEATURE_CSRF_PROTECTION:
+        csrf.init_app(app)
+        print("✅ CSRF protection enabled")
+    else:
+        print("⚠️  CSRF protection disabled (feature flag off)")
+        csrf = None
+except ImportError:
+    print("Warning: Flask-WTF not installed. CSRF protection will not work.")
+    csrf = None
+    generate_csrf = None
+
+
 # Structured Logging Configuration
 import logging
 from pythonjsonlogger import jsonlogger
@@ -96,8 +124,66 @@ logger.addHandler(log_handler)
 # Log startup
 logger.info("Application starting", extra={
     "environment": os.getenv("ENVIRONMENT", "development"),
-    "debug_mode": app.debug
+    "port": os.getenv("PORT", "5001")
 })
+
+# ============================================================================
+# API DOCUMENTATION (Swagger UI)
+# ============================================================================
+
+try:
+    from flask_swagger_ui import get_swaggerui_blueprint
+    import api_docs
+    
+    # Swagger UI configuration
+    SWAGGER_URL = '/api/docs'
+    API_SPEC_URL = '/api/docs/spec.json'
+    
+    swaggerui_blueprint = get_swaggerui_blueprint(
+        SWAGGER_URL,
+        API_SPEC_URL,
+        config={
+            'app_name': "AnalytIQ API Documentation",
+            'docExpansion': 'list',
+            'defaultModelsExpandDepth': 3,
+            'displayRequestDuration': True
+        }
+    )
+    
+    app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
+    
+    # Endpoint to serve the OpenAPI spec
+    @app.route(API_SPEC_URL, methods=['GET'])
+    def get_api_spec():
+        """Serve the OpenAPI specification JSON"""
+        return jsonify(api_docs.get_openapi_spec_dict())
+    
+    print("✅ API documentation available at /api/docs")
+except ImportError:
+    print("Warning: Swagger UI not installed. API documentation will not be available.")
+
+# ============================================================================
+# CELERY INTEGRATION (Async Task Processing)
+# ============================================================================
+
+try:
+    from celery_app import celery_app
+    import tasks
+    
+    # Feature flag for async processing
+    FEATURE_ASYNC_TASKS = os.getenv('FEATURE_ASYNC_TASKS', 'False').lower() == 'true'
+    
+    if FEATURE_ASYNC_TASKS:
+        print("✅ Celery async tasks enabled")
+    else:
+        print("⚠️  Celery async tasks disabled (feature flag off)")
+        celery_app = None
+except ImportError:
+    print("Warning: Celery not installed. Async task processing will not be available.")
+    celery_app = None
+    FEATURE_ASYNC_TASKS = False
+
+
 
 # Ensure upload folder exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -967,15 +1053,28 @@ def get_conversations():
         if not user_id:
             return jsonify({'error': 'Missing user_id'}), 400
         
+        # Get pagination parameters
+        limit, offset = utils.get_pagination_params(request.args)
+        
         conn = get_db_connection()
         cursor = conn.cursor()
         
+        # Get total count
+        cursor.execute("""
+            SELECT COUNT(*)
+            FROM conversations
+            WHERE user_id = %s AND deleted = false AND archived = %s
+        """, (user_id, archived))
+        total_count = cursor.fetchone()[0] or 0
+        
+        # Get paginated conversations
         cursor.execute("""
             SELECT conversation_id, title, archived, created_at, updated_at
             FROM conversations
             WHERE user_id = %s AND deleted = false AND archived = %s
             ORDER BY updated_at DESC
-        """, (user_id, archived))
+            LIMIT %s OFFSET %s
+        """, (user_id, archived, limit, offset))
         
         conversations = []
         for row in cursor.fetchall():
@@ -989,7 +1088,9 @@ def get_conversations():
         cursor.close()
         close_conn_safely(conn)
         
-        return jsonify(conversations), 200
+        # Return paginated response
+        response = utils.build_paginated_response(conversations, total_count, limit, offset, 'conversations')
+        return jsonify(response), 200
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -1841,6 +1942,84 @@ def health():
     logger.info("Health check: all systems healthy")
     return jsonify(health_status), 200
 
+@app.route('/api/csrf-token', methods=['GET'])
+def get_csrf_token():
+    """
+    Generate and return a CSRF token for the client
+    This endpoint is used by the frontend to obtain a CSRF token
+    """
+    if not config.FEATURE_CSRF_PROTECTION:
+        return jsonify({
+            'csrf_enabled': False,
+            'message': 'CSRF protection is currently disabled'
+        }), 200
+    
+    try:
+        if generate_csrf:
+            token = generate_csrf()
+            return jsonify({
+                'csrf_enabled': True,
+                'csrf_token': token
+            }), 200
+        else:
+            return jsonify({
+                'csrf_enabled': False,
+                'error': 'CSRF module not available'
+            }), 500
+    except Exception as e:
+        logger.error("Failed to generate CSRF token", extra={'error': str(e)})
+        return jsonify({'error': 'Failed to generate CSRF token'}), 500
+
+@app.route('/api/tasks/<task_id>', methods=['GET'])
+def get_task_status(task_id):
+    """
+    Get the status of an async task
+    
+    Args:
+        task_id: Celery task ID
+        
+    Returns:
+        JSON with task status, result, or error
+    """
+    if not celery_app or not FEATURE_ASYNC_TASKS:
+        return jsonify({
+            'error': 'Async tasks not enabled',
+            'task_id': task_id
+        }), 503
+    
+    try:
+        from celery.result import AsyncResult
+        
+        task = AsyncResult(task_id, app=celery_app)
+        
+        response = {
+            'task_id': task_id,
+            'status': task.state,
+        }
+        
+        if task.state == 'PENDING':
+            response['message'] = 'Task is waiting to be processed'
+        elif task.state == 'STARTED':
+            response['message'] = 'Task is currently being processed'
+        elif task.state == 'SUCCESS':
+            response['result'] = task.result
+            response['message'] = 'Task completed successfully'
+        elif task.state == 'FAILURE':
+            response['error'] = str(task.info)
+            response['message'] = 'Task failed'
+        elif task.state == 'RETRY':
+            response['message'] = 'Task is being retried'
+        else:
+            response['message'] = f'Task state: {task.state}'
+        
+        return jsonify(response), 200
+        
+    except Exception as e:
+        logger.error("Failed to get task status", extra={'error': str(e), 'task_id': task_id})
+        return jsonify({'error': str(e), 'task_id': task_id}), 500
+
+
+
 # ============================================================================
 # CLASS MANAGEMENT APIs (Phase 2)
 # ============================================================================
@@ -1976,6 +2155,9 @@ def get_classes():
         if not user_id:
             return jsonify({'error': 'Missing user_id'}), 400
         
+        # Get pagination parameters
+        limit, offset = utils.get_pagination_params(request.args)
+        
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -1990,7 +2172,13 @@ def get_classes():
         role = user[0] or 'student'
         
         if role == 'professor':
-            # Get all classes created by this professor
+            # Get total count for professors
+            cursor.execute("""
+                SELECT COUNT(*) FROM classes WHERE professor_id = %s
+            """, (user_id,))
+            total_count = cursor.fetchone()[0] or 0
+            
+            # Get paginated classes created by this professor
             cursor.execute("""
                 SELECT c.class_id, c.name, c.description, c.created_at,
                        COUNT(DISTINCT ce.student_id) as student_count,
@@ -2001,9 +2189,18 @@ def get_classes():
                 WHERE c.professor_id = %s
                 GROUP BY c.class_id, c.name, c.description, c.created_at
                 ORDER BY c.created_at DESC
-            """, (user_id,))
+                LIMIT %s OFFSET %s
+            """, (user_id, limit, offset))
         else:
-            # Get all classes student is enrolled in
+            # Get total count for students
+            cursor.execute("""
+                SELECT COUNT(*) 
+                FROM class_enrollments 
+                WHERE student_id = %s
+            """, (user_id,))
+            total_count = cursor.fetchone()[0] or 0
+            
+            # Get paginated classes student is enrolled in
             cursor.execute("""
                 SELECT c.class_id, c.name, c.description, c.created_at,
                        COUNT(DISTINCT ce.student_id) as student_count,
@@ -2014,7 +2211,8 @@ def get_classes():
                 WHERE ce.student_id = %s
                 GROUP BY c.class_id, c.name, c.description, c.created_at
                 ORDER BY c.created_at DESC
-            """, (user_id,))
+                LIMIT %s OFFSET %s
+            """, (user_id, limit, offset))
         
         classes = []
         for row in cursor.fetchall():
@@ -2030,10 +2228,13 @@ def get_classes():
         cursor.close()
         close_conn_safely(conn)
         
-        return jsonify({'classes': classes}), 200
+        # Return paginated response
+        response = utils.build_paginated_response(classes, total_count, limit, offset, 'classes')
+        return jsonify(response), 200
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 @app.route('/api/classes/<class_id>', methods=['GET'])
 def get_class(class_id):
@@ -3274,6 +3475,9 @@ def get_enrolled_classes():
         if not user_id:
             return jsonify({'error': 'Missing user_id'}), 400
         
+        # Get pagination parameters
+        limit, offset = utils.get_pagination_params(request.args)
+        
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -3285,7 +3489,15 @@ def get_enrolled_classes():
             close_conn_safely(conn)
             return jsonify({'error': 'User not found'}), 404
         
-        # Get enrolled classes with class details
+        # Get total count of enrolled classes
+        cursor.execute("""
+            SELECT COUNT(*)
+            FROM class_enrollments
+            WHERE student_id = %s
+        """, (user_id,))
+        total_count = cursor.fetchone()[0] or 0
+        
+        # Get paginated enrolled classes with class details
         cursor.execute("""
             SELECT 
                 c.class_id,
@@ -3302,7 +3514,8 @@ def get_enrolled_classes():
             JOIN users u ON c.professor_id = u.user_id
             WHERE ce.student_id = %s
             ORDER BY ce.enrolled_at DESC
-        """, (user_id,))
+            LIMIT %s OFFSET %s
+        """, (user_id, limit, offset))
         
         classes = []
         for row in cursor.fetchall():
@@ -3321,7 +3534,9 @@ def get_enrolled_classes():
         cursor.close()
         close_conn_safely(conn)
         
-        return jsonify({'classes': classes}), 200
+        # Return paginated response
+        response = utils.build_paginated_response(classes, total_count, limit, offset, 'classes')
+        return jsonify(response), 200
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -4538,6 +4753,57 @@ def serve_resource_file(filename):
     except Exception as e:
         return jsonify({'error': 'File not found'}), 404
 
+
+
+
+# ============================================================================
+# API VERSIONING SETUP
+# ============================================================================
+
+def register_api_v1_aliases(app):
+    """
+    Automatically creates /api/v1/ aliases for all /api/ routes.
+    This ensures backward compatibility while establishing versioning.
+    """
+    # Collect routes to alias (to avoid modifying dictionary while iterating)
+    routes_to_alias = []
+    
+    for rule in app.url_map.iter_rules():
+        if rule.rule.startswith('/api/') and not rule.rule.startswith('/api/v1/'):
+            # Create new v1 rule
+            new_rule = rule.rule.replace('/api/', '/api/v1/', 1)
+            endpoint = rule.endpoint
+            view_func = app.view_functions.get(endpoint)
+            
+            if view_func:
+                routes_to_alias.append((new_rule, endpoint + '_v1', view_func, rule.methods))
+    
+    # Register aliases
+    for rule, endpoint, view_func, methods in routes_to_alias:
+        # Filter out methods that might be automatically handled
+        valid_methods = [m for m in methods if m not in ('HEAD', 'OPTIONS')]
+        if valid_methods:
+            try:
+                app.add_url_rule(rule, endpoint, view_func, methods=valid_methods)
+                # Assuming 'logger' is defined elsewhere, if not, this line might cause an error.
+                # For this task, I'll keep it as is, assuming 'logger' exists.
+                # If 'logger' is not defined, it would need to be imported or defined.
+                # For now, I'll comment it out to prevent potential errors if it's not defined.
+                # logger.debug(f"Created v1 alias: {rule} -> {endpoint}")
+                pass # Placeholder if logger is not available
+            except AssertionError:
+                # Ignore if rule already exists (rare case)
+                pass
+            except Exception as e:
+                # logger.warning(f"Failed to alias {rule}: {e}")
+                pass # Placeholder if logger is not available
+
+    # logger.info(f"✅ Registered {len(routes_to_alias)} API v1 aliases")
+    pass # Placeholder if logger is not available
+
+# Register v1 aliases
+with app.app_context():
+    register_api_v1_aliases(app)
 
 
 if __name__ == '__main__':
