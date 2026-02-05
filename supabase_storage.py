@@ -159,7 +159,7 @@ def migrate_pdf_from_db(chapter_id, pdf_data, pdf_filename):
         }
 
 
-def check_storage_health():
+def storage_health_check():
     """
     Check if Supabase Storage is accessible
     
