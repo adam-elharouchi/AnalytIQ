@@ -1,4 +1,3 @@
-
 import os
 import psycopg2
 from dotenv import load_dotenv
@@ -8,6 +7,7 @@ from urllib.parse import urlparse
 load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
+
 
 def get_db_connection():
     if not DATABASE_URL:
@@ -20,6 +20,7 @@ def get_db_connection():
         print(f"Error connecting to database: {e}")
         return None
 
+
 def create_contact_table():
     conn = get_db_connection()
     if not conn:
@@ -27,9 +28,10 @@ def create_contact_table():
 
     try:
         cur = conn.cursor()
-        
+
         print("Creating contact_submissions table...")
-        cur.execute("""
+        cur.execute(
+            """
             CREATE TABLE IF NOT EXISTS contact_submissions (
                 submission_id SERIAL PRIMARY KEY,
                 user_id VARCHAR(255),
@@ -40,11 +42,12 @@ def create_contact_table():
                 status VARCHAR(50) DEFAULT 'submitted',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
-        """)
-        
+        """
+        )
+
         conn.commit()
         print("Successfully created contact_submissions table.")
-        
+
         cur.close()
         conn.close()
     except Exception as e:
@@ -52,6 +55,7 @@ def create_contact_table():
         if conn:
             conn.rollback()
             conn.close()
+
 
 if __name__ == "__main__":
     create_contact_table()

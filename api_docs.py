@@ -2,6 +2,7 @@
 AnalytIQ API Documentation Generator
 Generates OpenAPI 3.0 specification for all API endpoints
 """
+
 from apispec import APISpec
 from apispec.ext.marshmallow import MarshmallowPlugin
 import json
@@ -9,31 +10,19 @@ import json
 
 def create_api_spec():
     """Create and return the OpenAPI specification"""
-    
+
     spec = APISpec(
         title="AnalytIQ API",
         version="1.0.0",
         openapi_version="3.0.0",
         info=dict(
             description="AnalytIQ Learning Management System API - Complete reference for all endpoints",
-            contact=dict(
-                name="AnalytIQ Support",
-                email="support@analytiq.com"
-            ),
-            license=dict(
-                name="MIT",
-                url="https://opensource.org/licenses/MIT"
-            )
+            contact=dict(name="AnalytIQ Support", email="support@analytiq.com"),
+            license=dict(name="MIT", url="https://opensource.org/licenses/MIT"),
         ),
         servers=[
-            dict(
-                url="https://analytiq-qbfr.onrender.com",
-                description="Production server"
-            ),
-            dict(
-                url="http://localhost:5001",
-                description="Local development server"
-            )
+            dict(url="https://analytiq-qbfr.onrender.com", description="Production server"),
+            dict(url="http://localhost:5001", description="Local development server"),
         ],
         tags=[
             dict(name="Authentication", description="User authentication and account management"),
@@ -42,14 +31,14 @@ def create_api_spec():
             dict(name="Exercises", description="Exercise management and progress tracking"),
             dict(name="AI", description="AI-powered features"),
             dict(name="Health", description="System health and monitoring"),
-            dict(name="CSRF", description="CSRF token management")
-        ]
+            dict(name="CSRF", description="CSRF token management"),
+        ],
     )
-    
+
     # ========================================================================
     # AUTHENTICATION ENDPOINTS
     # ========================================================================
-    
+
     spec.path(
         path="/api/users/signup",
         operations=dict(
@@ -66,13 +55,25 @@ def create_api_spec():
                                 "required": ["name", "email", "password"],
                                 "properties": {
                                     "name": {"type": "string", "example": "John Doe"},
-                                    "email": {"type": "string", "format": "email", "example": "john@example.com"},
-                                    "password": {"type": "string", "format": "password", "example": "SecurePass123!"},
-                                    "role": {"type": "string", "enum": ["student", "professor"], "default": "student"}
-                                }
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john@example.com",
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "SecurePass123!",
+                                    },
+                                    "role": {
+                                        "type": "string",
+                                        "enum": ["student", "professor"],
+                                        "default": "student",
+                                    },
+                                },
                             }
                         }
-                    }
+                    },
                 ),
                 responses={
                     "201": {
@@ -85,19 +86,19 @@ def create_api_spec():
                                         "user_id": {"type": "string"},
                                         "name": {"type": "string"},
                                         "email": {"type": "string"},
-                                        "role": {"type": "string"}
-                                    }
+                                        "role": {"type": "string"},
+                                    },
                                 }
                             }
-                        }
+                        },
                     },
                     "400": {"description": "Invalid input or missing required fields"},
-                    "409": {"description": "Email already registered"}
-                }
+                    "409": {"description": "Email already registered"},
+                },
             )
-        )
+        ),
     )
-    
+
     spec.path(
         path="/api/users/signin",
         operations=dict(
@@ -114,11 +115,11 @@ def create_api_spec():
                                 "required": ["email", "password"],
                                 "properties": {
                                     "email": {"type": "string", "format": "email"},
-                                    "password": {"type": "string", "format": "password"}
-                                }
+                                    "password": {"type": "string", "format": "password"},
+                                },
                             }
                         }
-                    }
+                    },
                 ),
                 responses={
                     "200": {
@@ -131,22 +132,22 @@ def create_api_spec():
                                         "user_id": {"type": "string"},
                                         "name": {"type": "string"},
                                         "email": {"type": "string"},
-                                        "role": {"type": "string"}
-                                    }
+                                        "role": {"type": "string"},
+                                    },
                                 }
                             }
-                        }
+                        },
                     },
-                    "401": {"description": "Invalid credentials"}
-                }
+                    "401": {"description": "Invalid credentials"},
+                },
             )
-        )
+        ),
     )
-    
+
     # ========================================================================
     # CLASS ENDPOINTS
     # ========================================================================
-    
+
     spec.path(
         path="/api/classes",
         operations=dict(
@@ -160,22 +161,22 @@ def create_api_spec():
                         "in": "query",
                         "required": True,
                         "schema": {"type": "string"},
-                        "description": "User ID"
+                        "description": "User ID",
                     },
                     {
                         "name": "limit",
                         "in": "query",
                         "required": False,
                         "schema": {"type": "integer", "default": 20, "maximum": 100},
-                        "description": "Number of items per page"
+                        "description": "Number of items per page",
                     },
                     {
                         "name": "offset",
                         "in": "query",
                         "required": False,
                         "schema": {"type": "integer", "default": 0, "minimum": 0},
-                        "description": "Number of items to skip"
-                    }
+                        "description": "Number of items to skip",
+                    },
                 ],
                 responses={
                     "200": {
@@ -193,11 +194,14 @@ def create_api_spec():
                                                     "class_id": {"type": "string"},
                                                     "name": {"type": "string"},
                                                     "description": {"type": "string"},
-                                                    "created_at": {"type": "string", "format": "date-time"},
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                    },
                                                     "student_count": {"type": "integer"},
-                                                    "chapter_count": {"type": "integer"}
-                                                }
-                                            }
+                                                    "chapter_count": {"type": "integer"},
+                                                },
+                                            },
                                         },
                                         "pagination": {
                                             "type": "object",
@@ -207,15 +211,15 @@ def create_api_spec():
                                                 "offset": {"type": "integer"},
                                                 "has_more": {"type": "boolean"},
                                                 "current_page": {"type": "integer"},
-                                                "total_pages": {"type": "integer"}
-                                            }
-                                        }
-                                    }
+                                                "total_pages": {"type": "integer"},
+                                            },
+                                        },
+                                    },
                                 }
                             }
-                        }
+                        },
                     }
-                }
+                },
             ),
             post=dict(
                 tags=["Classes"],
@@ -232,25 +236,29 @@ def create_api_spec():
                                     "user_id": {"type": "string"},
                                     "name": {"type": "string"},
                                     "description": {"type": "string"},
-                                    "class_code": {"type": "string", "minLength": 3, "maxLength": 20}
-                                }
+                                    "class_code": {
+                                        "type": "string",
+                                        "minLength": 3,
+                                        "maxLength": 20,
+                                    },
+                                },
                             }
                         }
-                    }
+                    },
                 ),
                 responses={
                     "201": {"description": "Class created successfully"},
                     "403": {"description": "Only professors can create classes"},
-                    "409": {"description": "Class code already in use"}
-                }
-            )
-        )
+                    "409": {"description": "Class code already in use"},
+                },
+            ),
+        ),
     )
-    
+
     # ========================================================================
     # CONVERSATION ENDPOINTS
     # ========================================================================
-    
+
     spec.path(
         path="/api/users/conversations",
         operations=dict(
@@ -263,26 +271,26 @@ def create_api_spec():
                         "name": "user_id",
                         "in": "query",
                         "required": True,
-                        "schema": {"type": "string"}
+                        "schema": {"type": "string"},
                     },
                     {
                         "name": "archived",
                         "in": "query",
                         "required": False,
-                        "schema": {"type": "boolean", "default": False}
+                        "schema": {"type": "boolean", "default": False},
                     },
                     {
                         "name": "limit",
                         "in": "query",
                         "required": False,
-                        "schema": {"type": "integer", "default": 20, "maximum": 100}
+                        "schema": {"type": "integer", "default": 20, "maximum": 100},
                     },
                     {
                         "name": "offset",
                         "in": "query",
                         "required": False,
-                        "schema": {"type": "integer", "default": 0}
-                    }
+                        "schema": {"type": "integer", "default": 0},
+                    },
                 ],
                 responses={
                     "200": {
@@ -300,9 +308,12 @@ def create_api_spec():
                                                     "id": {"type": "string"},
                                                     "title": {"type": "string"},
                                                     "archived": {"type": "boolean"},
-                                                    "date": {"type": "string", "format": "date-time"}
-                                                }
-                                            }
+                                                    "date": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                    },
+                                                },
+                                            },
                                         },
                                         "pagination": {
                                             "type": "object",
@@ -310,23 +321,23 @@ def create_api_spec():
                                                 "total": {"type": "integer"},
                                                 "limit": {"type": "integer"},
                                                 "offset": {"type": "integer"},
-                                                "has_more": {"type": "boolean"}
-                                            }
-                                        }
-                                    }
+                                                "has_more": {"type": "boolean"},
+                                            },
+                                        },
+                                    },
                                 }
                             }
-                        }
+                        },
                     }
-                }
+                },
             )
-        )
+        ),
     )
-    
+
     # ========================================================================
     # HEALTH & CSRF ENDPOINTS
     # ========================================================================
-    
+
     spec.path(
         path="/api/health",
         operations=dict(
@@ -342,27 +353,30 @@ def create_api_spec():
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "status": {"type": "string", "enum": ["healthy", "degraded"]},
+                                        "status": {
+                                            "type": "string",
+                                            "enum": ["healthy", "degraded"],
+                                        },
                                         "timestamp": {"type": "string", "format": "date-time"},
                                         "services": {
                                             "type": "object",
                                             "properties": {
                                                 "database": {"type": "object"},
                                                 "gemini_api": {"type": "object"},
-                                                "email": {"type": "object"}
-                                            }
-                                        }
-                                    }
+                                                "email": {"type": "object"},
+                                            },
+                                        },
+                                    },
                                 }
                             }
-                        }
+                        },
                     },
-                    "503": {"description": "System degraded or unhealthy"}
-                }
+                    "503": {"description": "System degraded or unhealthy"},
+                },
             )
-        )
+        ),
     )
-    
+
     spec.path(
         path="/api/csrf-token",
         operations=dict(
@@ -380,17 +394,17 @@ def create_api_spec():
                                     "properties": {
                                         "csrf_enabled": {"type": "boolean"},
                                         "csrf_token": {"type": "string"},
-                                        "message": {"type": "string"}
-                                    }
+                                        "message": {"type": "string"},
+                                    },
                                 }
                             }
-                        }
+                        },
                     }
-                }
+                },
             )
-        )
+        ),
     )
-    
+
     return spec
 
 

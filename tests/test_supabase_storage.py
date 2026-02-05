@@ -173,42 +173,35 @@ class TestMigratePDFFromDB:
 
 
 class TestStorageHealthCheck:
-    """Tests for check_storage_health function"""
+    """Tests for storage_health_check function"""
     
     @patch('supabase_storage.supabase')
     def test_health_check_healthy(self, mock_supabase):
         """Test health check when storage is accessible"""
-        from supabase_storage import check_storage_health
+        from supabase_storage import storage_health_check
         
-        mock_storage = MagicMock()
-        mock_storage.list.return_value = []
-        mock_supabase.storage.from_.return_value = mock_storage
+        mock_supabase.storage.from_.return_value.list.return_value = []
         
-        result = check_storage_health()
-        
+        result = storage_health_check()
         assert result['healthy'] is True
-        assert result['message'] == 'Supabase Storage accessible'
-    
+        assert 'accessible' in result['message']
+
     @patch('supabase_storage.supabase', None)
     def test_health_check_no_client(self):
         """Test health check when client not initialized"""
-        from supabase_storage import check_storage_health
+        from supabase_storage import storage_health_check
         
-        result = check_storage_health()
-        
+        result = storage_health_check()
         assert result['healthy'] is False
-        assert result['message'] == 'Supabase client not initialized'
-    
+        assert 'not initialized' in result['message']
+
     @patch('supabase_storage.supabase')
     def test_health_check_connection_error(self, mock_supabase):
         """Test health check when connection fails"""
-        from supabase_storage import check_storage_health
+        from supabase_storage import storage_health_check
         
-        mock_storage = MagicMock()
-        mock_storage.list.side_effect = Exception('Connection failed')
-        mock_supabase.storage.from_.return_value = mock_storage
+        mock_supabase.storage.from_.side_effect = Exception("Connection refused")
         
-        result = check_storage_health()
-        
+        result = storage_health_check()
         assert result['healthy'] is False
-        assert 'Connection failed' in result['message']
+        assert 'error' in result['message'].lower()

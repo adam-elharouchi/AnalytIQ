@@ -7,14 +7,16 @@ load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
+
 def create_tables():
     """Create database tables for user management"""
     try:
         connection = psycopg2.connect(DATABASE_URL)
         cursor = connection.cursor()
-        
+
         # Create users table
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
                 user_id VARCHAR(255) UNIQUE NOT NULL,
@@ -24,10 +26,12 @@ def create_tables():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
-        """)
-        
+        """
+        )
+
         # Create user_profiles table
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS user_profiles (
                 id SERIAL PRIMARY KEY,
                 user_id VARCHAR(255) UNIQUE NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
@@ -37,10 +41,12 @@ def create_tables():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
-        """)
-        
+        """
+        )
+
         # Create user_settings table
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS user_settings (
                 id SERIAL PRIMARY KEY,
                 user_id VARCHAR(255) UNIQUE NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
@@ -49,10 +55,12 @@ def create_tables():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
-        """)
-        
+        """
+        )
+
         # Create conversations table (code assistant chats)
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS conversations (
                 id SERIAL PRIMARY KEY,
                 conversation_id VARCHAR(255) UNIQUE NOT NULL,
@@ -63,10 +71,12 @@ def create_tables():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
-        """)
-        
+        """
+        )
+
         # Create conversation_messages table
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS conversation_messages (
                 id SERIAL PRIMARY KEY,
                 conversation_id VARCHAR(255) NOT NULL REFERENCES conversations(conversation_id) ON DELETE CASCADE,
@@ -75,10 +85,12 @@ def create_tables():
                 message_order INTEGER NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
-        """)
-        
+        """
+        )
+
         # Create ai_agent_digest table
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS ai_agent_digest (
                 id SERIAL PRIMARY KEY,
                 user_id VARCHAR(255) UNIQUE NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
@@ -90,20 +102,24 @@ def create_tables():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
-        """)
-        
+        """
+        )
+
         # Create ai_agent_memory table
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS ai_agent_memory (
                 id SERIAL PRIMARY KEY,
                 user_id VARCHAR(255) NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
                 memory_item TEXT NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
-        """)
-        
+        """
+        )
+
         # Create user_preferences table
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS user_preferences (
                 id SERIAL PRIMARY KEY,
                 user_id VARCHAR(255) UNIQUE NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
@@ -113,10 +129,12 @@ def create_tables():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
-        """)
-        
+        """
+        )
+
         # Create practice_progress table (track exercise scores and progress)
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS practice_progress (
                 id SERIAL PRIMARY KEY,
                 user_id VARCHAR(255) NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
@@ -135,10 +153,12 @@ def create_tables():
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE(user_id, exercise_id)
             );
-        """)
-        
+        """
+        )
+
         # Create exercise_attempts table (track all attempts for detailed history)
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS exercise_attempts (
                 id SERIAL PRIMARY KEY,
                 user_id VARCHAR(255) NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
@@ -149,28 +169,39 @@ def create_tables():
                 attempt_number INTEGER NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
-        """)
-        
+        """
+        )
+
         # Create indexes for better performance
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_users_user_id ON users(user_id);")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_conversations_user_id ON conversations(user_id);")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_conversations_conversation_id ON conversations(conversation_id);")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_messages_conversation_id ON conversation_messages(conversation_id);")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_ai_memory_user_id ON ai_agent_memory(user_id);")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_practice_user_id ON practice_progress(user_id);")
-        
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_conversations_user_id ON conversations(user_id);"
+        )
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_conversations_conversation_id ON conversations(conversation_id);"
+        )
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_messages_conversation_id ON conversation_messages(conversation_id);"
+        )
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_ai_memory_user_id ON ai_agent_memory(user_id);"
+        )
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_practice_user_id ON practice_progress(user_id);"
+        )
+
         connection.commit()
         print("Tables created successfully!")
-        
+
         cursor.close()
         connection.close()
-        
+
     except Exception as e:
         print(f"Error creating tables: {e}")
         if connection:
             connection.close()
 
+
 if __name__ == "__main__":
     create_tables()
-
