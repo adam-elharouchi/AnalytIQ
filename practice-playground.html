@@ -1662,10 +1662,8 @@
     }
 
     function handleChatInputKeydown(event) {
-      if (event.key === 'Enter' && !event.shiftKey) {
-        event.preventDefault();
-        sendPlaygroundChatMessage();
-      }
+      // Allow Enter key to create new lines
+      // Users can use the Send button to submit messages
     }
 
     // Add message to playground chat (adapted from code-assistant.js)
