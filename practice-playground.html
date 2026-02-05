@@ -669,7 +669,7 @@
             <div class="input-wrapper">
               <textarea class="chat-input-compact" id="chatInputField"
                 placeholder="Type your message, paste code, or describe what you need..." rows="2"
-                onkeydown="handleChatInputKeydown(event)"></textarea>
+                placeholder="Type your message, paste code, or describe what you need..." rows="2"></textarea>
               <button class="btn-send-compact" id="chatSendButton" onclick="sendPlaygroundChatMessage()"
                 title="Send message">Send</button>
             </div>
@@ -1661,10 +1661,7 @@
       }
     }
 
-    function handleChatInputKeydown(event) {
-      // Allow Enter key to create new lines
-      // Users can use the Send button to submit messages
-    }
+
 
     // Add message to playground chat (adapted from code-assistant.js)
     function addPlaygroundMessage(role, content) {
