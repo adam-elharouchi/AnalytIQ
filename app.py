@@ -4860,13 +4860,21 @@ def serve_chapter_pdf(chapter_id):
         pdf_filename = result[1] or "chapter.pdf"
         pdf_url = result[2]
 
+        # NEW: If pdf_url exists (Supabase), redirect to it
+        if pdf_url:
+            from flask import redirect
+
+            return redirect(pdf_url)
+
         # NEW: If pdf_data exists in database, serve from database
         if pdf_data:
             pdf_bytes = bytes(pdf_data)
             from flask import Response
 
             response = Response(pdf_bytes, mimetype="application/pdf")
-            response.headers["Content-Disposition"] = f'inline; filename="{pdf_filename}"'
+            response.headers["Content-Disposition"] = (
+                f'inline; filename="{pdf_filename}"'
+            )
             response.headers["Access-Control-Allow-Origin"] = "*"
             return response
 
@@ -4874,15 +4882,13 @@ def serve_chapter_pdf(chapter_id):
         elif pdf_filename:
             pdf_path = os.path.join(app.config["UPLOAD_FOLDER"], pdf_filename)
             if os.path.exists(pdf_path):
-
                 response = send_from_directory(app.config["UPLOAD_FOLDER"], pdf_filename)
                 response.headers["Access-Control-Allow-Origin"] = "*"
                 return response
             else:
                 return jsonify({"error": f"PDF file not found: {pdf_filename}"}), 404
 
-        else:
-            return jsonify({"error": "No PDF data available"}), 404
+        return jsonify({"error": "No PDF data available"}), 404
 
     except Exception as e:
         import traceback
