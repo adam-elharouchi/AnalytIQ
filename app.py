@@ -2425,6 +2425,12 @@ def get_classes():
         # Get pagination parameters
         limit, offset = utils.get_pagination_params(request.args)
 
+        # Try cache first
+        cache_key = f"classes:user:{user_id}:limit:{limit}:offset:{offset}"
+        cached_result = cache.get_cached(cache_key)
+        if cached_result:
+            return jsonify(cached_result), 200
+
         conn = get_db_connection()
         cursor = conn.cursor()
 
@@ -2510,7 +2516,13 @@ def get_classes():
         close_conn_safely(conn)
 
         # Return paginated response
-        response = utils.build_paginated_response(classes, total_count, limit, offset, "classes")
+        response = utils.build_paginated_response(
+            classes, total_count, limit, offset, "classes"
+        )
+
+        # Cache for 5 minutes
+        cache.set_cached(cache_key, response, ttl=300)
+
         return jsonify(response), 200
 
     except Exception as e:
