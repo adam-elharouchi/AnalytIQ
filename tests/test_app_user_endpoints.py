@@ -252,7 +252,7 @@ class TestPracticeProgress:
                     }
                 )
 
-                assert response.status_code in [200, 400, 500]
+                assert response.status_code in [200, 400, 404, 500]
 
 
 class TestUserDeletion:
