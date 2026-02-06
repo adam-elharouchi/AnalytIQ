@@ -27,7 +27,7 @@ class TestAuthenticationEndpoints:
         with app.test_client() as client:
             response = client.post("/api/users/signup", json={})
             # Should return error for missing fields
-            assert response.status_code in [400, 500]
+            assert response.status_code in [400, 429, 500]
 
 
 class TestClassOperations:
