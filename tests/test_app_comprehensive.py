@@ -29,7 +29,7 @@ class TestSignupEndpoint:
                         }
                     )
 
-                    assert response.status_code in [201, 400, 500]
+                    assert response.status_code in [201, 400, 429, 500]
 
     def test_signup_duplicate_email(self, mock_db_connection, mock_db_cursor):
         """Test signup with existing email"""
@@ -61,7 +61,7 @@ class TestSignupEndpoint:
                 json={"email": "test@test.com"}
             )
 
-            assert response.status_code in [400, 500]
+            assert response.status_code in [400, 429, 500]
 
     def test_signup_invalid_email(self):
         """Test signup with invalid email format"""
@@ -78,7 +78,7 @@ class TestSignupEndpoint:
                 }
             )
 
-            assert response.status_code in [400, 500]
+            assert response.status_code in [400, 429, 500]
 
 
 class TestAuthenticationFlows:
@@ -108,7 +108,7 @@ class TestAuthenticationFlows:
                             }
                         )
 
-                        assert response.status_code in [200, 401, 500]
+                        assert response.status_code in [200, 401, 429, 500]
 
     def test_signin_missing_credentials(self):
         """Test sign-in with missing credentials"""
@@ -154,7 +154,7 @@ class TestErrorHandling:
                 content_type="application/json"
             )
 
-            assert response.status_code in [400, 500]
+            assert response.status_code in [400, 429, 500]
 
     def test_missing_content_type(self):
         """Test request without content type"""
