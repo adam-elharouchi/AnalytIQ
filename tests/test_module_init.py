@@ -9,7 +9,7 @@ import pytest
 import sys
 import os
 import importlib
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, call
 
 
 # ========================================================================
@@ -151,3 +151,68 @@ class TestSupabaseStorageInit:
             else:
                 sys.modules.pop("supabase", None)
             importlib.reload(supa_module)
+
+
+# ========================================================================
+# celery_app.py if __name__ == "__main__" (line 52)
+# ========================================================================
+
+class TestCeleryAppMain:
+    """Cover celery_app.py line 52: celery_app.start()"""
+
+    def test_celery_main_block(self):
+        """Line 52: celery_app.start() when run as __main__"""
+        import celery_app as celery_module
+
+        # Read the source file and exec it with __name__ = "__main__"
+        import types
+
+        mock_celery = MagicMock()
+        mock_celery_class = MagicMock(return_value=mock_celery)
+
+        # Create a fake module namespace simulating __main__ execution
+        fake_globals = {
+            "__name__": "__main__",
+            "__file__": celery_module.__file__,
+        }
+
+        # Patch Celery constructor to return our mock
+        with patch("celery.Celery", mock_celery_class):
+            with patch("dotenv.load_dotenv"):
+                source_path = os.path.join(
+                    os.path.dirname(os.path.dirname(__file__)), "celery_app.py"
+                )
+                with open(source_path) as f:
+                    code = f.read()
+                exec(compile(code, source_path, "exec"), fake_globals)
+
+        # The mock celery instance's start() should have been called
+        mock_celery.start.assert_called_once()
+
+
+# ========================================================================
+# app.py v1 alias exception handlers (lines 5076-5081)
+# ========================================================================
+
+class TestAppV1AliasExceptions:
+    """Cover register_api_v1_aliases exception handlers in app.py"""
+
+    def test_v1_alias_assertion_error(self):
+        """Lines 5076-5078: AssertionError when rule already exists"""
+        from app import app as flask_app, register_api_v1_aliases
+
+        # Mock add_url_rule to raise AssertionError (rule already exists)
+        with patch.object(flask_app, "add_url_rule", side_effect=AssertionError("Rule exists")):
+            with flask_app.app_context():
+                # Should not raise - AssertionError is caught and ignored
+                register_api_v1_aliases(flask_app)
+
+    def test_v1_alias_generic_exception(self):
+        """Lines 5079-5081: generic Exception during alias registration"""
+        from app import app as flask_app, register_api_v1_aliases
+
+        # Mock add_url_rule to raise a generic Exception
+        with patch.object(flask_app, "add_url_rule", side_effect=Exception("Something broke")):
+            with flask_app.app_context():
+                # Should not raise - Exception is caught and ignored
+                register_api_v1_aliases(flask_app)
