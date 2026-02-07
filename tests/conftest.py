@@ -19,8 +19,43 @@ def setup_test_environment():
     os.environ['REDIS_URL'] = 'redis://localhost:6379/1'
     os.environ['FEATURE_ASYNC_TASKS'] = 'False'
     os.environ['FEATURE_CACHING'] = 'False'
+    os.environ['FEATURE_CSRF_PROTECTION'] = 'False'
     yield
     # Cleanup after all tests
+
+
+# ============================================================================
+# Flask App Fixtures
+# ============================================================================
+
+@pytest.fixture
+def app():
+    """Create minimal Flask app for testing"""
+    # Set test environment before importing app
+    os.environ['FLASK_ENV'] = 'testing'
+    os.environ['FEATURE_ASYNC_TASKS'] = 'False'
+    os.environ['FEATURE_CACHING'] = 'False'
+    os.environ['FEATURE_CSRF_PROTECTION'] = 'False'
+    
+    from app import app as flask_app
+    flask_app.config['TESTING'] = True
+    flask_app.config['WTF_CSRF_ENABLED'] = False
+    
+    # Disable rate limiting in tests to avoid 429 errors
+    try:
+        from app import limiter
+        if limiter:
+            limiter.enabled = False
+    except (ImportError, AttributeError):
+        pass
+    
+    return flask_app
+
+
+@pytest.fixture
+def client(app):
+    """Create test client"""
+    return app.test_client()
 
 
 # ============================================================================
@@ -47,6 +82,19 @@ def mock_db_connection(mock_db_cursor):
     conn.rollback = Mock()
     conn.close = Mock()
     return conn
+
+
+@pytest.fixture
+def mock_db(mock_db_connection, monkeypatch):
+    """Mock database for testing - patches get_db_connection"""
+    def mock_get_db():
+        return mock_db_connection
+    
+    # Patch the get_db_connection function in app module
+    monkeypatch.setattr('app.get_db_connection', mock_get_db)
+    
+    return mock_db_connection
+
 
 
 # ============================================================================

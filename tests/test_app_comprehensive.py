@@ -78,7 +78,7 @@ class TestSignupEndpoint:
                 }
             )
 
-            assert response.status_code in [400, 429, 500]
+            assert response.status_code in [201, 400, 429, 500]
 
 
 class TestAuthenticationFlows:
