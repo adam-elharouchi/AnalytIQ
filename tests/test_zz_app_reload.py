@@ -233,90 +233,104 @@ class TestAppApiDocsSpec:
 
 
 class TestAppMainBlock:
-    """Cover app.py lines 5093-5122: if __name__ == '__main__' block"""
+    """
+    Cover app.py lines 5092-5122: if __name__ == '__main__' block.
+
+    Uses compile() with app.py's real file path + line-number padding
+    so that coverage's sys.settrace records these lines against app.py.
+    """
+
+    def _get_main_block_source(self):
+        """Read app.py and extract the if __name__ == '__main__' block,
+        padded so that line numbers match the original file."""
+        import app as app_module
+        source_path = os.path.abspath(app_module.__file__)
+
+        with open(source_path) as f:
+            all_lines = f.readlines()
+
+        # The `if __name__ == "__main__":` is on line 5092 (1-indexed)
+        # so index 5091 in 0-indexed list
+        main_start = 5091
+        main_block = all_lines[main_start:]
+
+        # Pad with empty lines so compile() produces correct line numbers
+        padded = "\n" * main_start + "".join(main_block)
+        code = compile(padded, source_path, "exec")
+        return code, source_path
 
     def test_main_block_normal_start(self):
-        """Lines 5093-5115: normal startup"""
-        import app as app_module
+        """Lines 5092-5115: normal startup with default port"""
+        code, source_path = self._get_main_block_source()
 
         mock_app = MagicMock()
-        main_code = '''
-import os
-port = int(os.getenv("PORT", 5001))
-if len(argv) > 1:
-    port = int(argv[1])
-debug_mode = os.getenv("FLASK_DEBUG", "False").lower() == "true" or (
-    os.getenv("FLASK_ENV") == "development" and "localhost" in os.getenv("HOST", "")
-)
-host = "0.0.0.0" if os.getenv("FLASK_ENV") == "production" else "127.0.0.1"
-try:
-    app.run(debug=debug_mode, port=port, host=host)
-except OSError as e:
-    if "Address already in use" in str(e):
-        pass
-    else:
-        raise
-'''
-        fake_globals = {"__name__": "__main__", "app": mock_app, "argv": ["app.py"]}
-        exec(main_code, fake_globals)
+        namespace = {"__name__": "__main__", "__file__": source_path, "app": mock_app}
+
+        with patch.object(sys, "argv", ["app.py"]):
+            exec(code, namespace)
+
         mock_app.run.assert_called_once()
 
+    def test_main_block_with_argv_port(self):
+        """Line 5097-5098: port from sys.argv[1]"""
+        code, source_path = self._get_main_block_source()
+
+        mock_app = MagicMock()
+        namespace = {"__name__": "__main__", "__file__": source_path, "app": mock_app}
+
+        with patch.object(sys, "argv", ["app.py", "8080"]):
+            exec(code, namespace)
+
+        mock_app.run.assert_called_once_with(debug=False, port=8080, host="127.0.0.1")
+
     def test_main_block_address_in_use(self):
-        """Lines 5116-5120: OSError with 'Address already in use'"""
+        """Lines 5116-5120: OSError 'Address already in use' is caught"""
+        code, source_path = self._get_main_block_source()
+
         mock_app = MagicMock()
         mock_app.run.side_effect = OSError("Address already in use")
+        namespace = {"__name__": "__main__", "__file__": source_path, "app": mock_app}
 
-        main_code = '''
-import os
-port = int(os.getenv("PORT", 5001))
-debug_mode = False
-host = "127.0.0.1"
-try:
-    app.run(debug=debug_mode, port=port, host=host)
-except OSError as e:
-    if "Address already in use" in str(e):
-        pass
-    else:
-        raise
-'''
-        fake_globals = {"__name__": "__main__", "app": mock_app, "argv": ["app.py"]}
-        exec(main_code, fake_globals)  # Should not raise
+        with patch.object(sys, "argv", ["app.py"]):
+            exec(code, namespace)  # Should not raise
 
-    def test_main_block_other_os_error(self):
-        """Lines 5121-5122: OSError that's NOT address-in-use re-raises"""
+    def test_main_block_other_os_error_reraises(self):
+        """Lines 5121-5122: other OSError is re-raised"""
+        code, source_path = self._get_main_block_source()
+
         mock_app = MagicMock()
         mock_app.run.side_effect = OSError("Permission denied")
+        namespace = {"__name__": "__main__", "__file__": source_path, "app": mock_app}
 
-        main_code = '''
-import os
-port = int(os.getenv("PORT", 5001))
-debug_mode = False
-host = "127.0.0.1"
-try:
-    app.run(debug=debug_mode, port=port, host=host)
-except OSError as e:
-    if "Address already in use" in str(e):
-        pass
-    else:
-        raise
-'''
-        fake_globals = {"__name__": "__main__", "app": mock_app, "argv": ["app.py"]}
-        with pytest.raises(OSError, match="Permission denied"):
-            exec(main_code, fake_globals)
+        with patch.object(sys, "argv", ["app.py"]):
+            with pytest.raises(OSError, match="Permission denied"):
+                exec(code, namespace)
 
-    def test_main_block_with_argv_port(self):
-        """Line 5098: port from sys.argv"""
+    def test_main_block_production_host(self):
+        """Line 5112: production mode uses 0.0.0.0"""
+        code, source_path = self._get_main_block_source()
+
         mock_app = MagicMock()
+        namespace = {"__name__": "__main__", "__file__": source_path, "app": mock_app}
 
-        main_code = '''
-import os
-port = int(os.getenv("PORT", 5001))
-if len(argv) > 1:
-    port = int(argv[1])
-debug_mode = False
-host = "127.0.0.1"
-app.run(debug=debug_mode, port=port, host=host)
-'''
-        fake_globals = {"__name__": "__main__", "app": mock_app, "argv": ["app.py", "8080"]}
-        exec(main_code, fake_globals)
-        mock_app.run.assert_called_once_with(debug=False, port=8080, host="127.0.0.1")
+        with patch.object(sys, "argv", ["app.py"]):
+            with patch.dict(os.environ, {"FLASK_ENV": "production", "HOST": ""}):
+                exec(code, namespace)
+
+        # In production mode, host should be 0.0.0.0
+        call_kwargs = mock_app.run.call_args
+        assert call_kwargs[1]["host"] == "0.0.0.0" or call_kwargs.kwargs.get("host") == "0.0.0.0"
+
+    def test_main_block_debug_mode(self):
+        """Lines 5101-5103: debug mode when FLASK_DEBUG=true"""
+        code, source_path = self._get_main_block_source()
+
+        mock_app = MagicMock()
+        namespace = {"__name__": "__main__", "__file__": source_path, "app": mock_app}
+
+        with patch.object(sys, "argv", ["app.py"]):
+            with patch.dict(os.environ, {"FLASK_DEBUG": "true"}):
+                exec(code, namespace)
+
+        call_kwargs = mock_app.run.call_args
+        assert call_kwargs[1]["debug"] is True or call_kwargs.kwargs.get("debug") is True
