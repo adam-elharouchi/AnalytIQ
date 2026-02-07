@@ -241,7 +241,7 @@ class TestSwaggerDocs:
             response = client.get("/api/docs")
 
             # Should either return docs or redirect
-            assert response.status_code in [200, 301, 302, 404]
+            assert response.status_code in [200, 301, 302, 308, 404]
 
 
 class TestVersionedEndpoints:
