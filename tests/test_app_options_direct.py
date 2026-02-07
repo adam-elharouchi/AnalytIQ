@@ -132,3 +132,4 @@ class TestOptionsHandlersDirect:
             assert response.status_code == 200
         finally:
             self._restore_before_request(app, original)
+
