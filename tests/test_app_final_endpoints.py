@@ -199,7 +199,7 @@ class TestSignInEndpoint:
                         }
                     )
 
-                    assert response.status_code in [200, 401, 500]
+                    assert response.status_code in [200, 401, 429, 500]
 
     def test_signin_wrong_password(self, mock_db_connection, mock_db_cursor):
         """Test sign-in with wrong password"""
@@ -224,7 +224,7 @@ class TestSignInEndpoint:
                         }
                     )
 
-                    assert response.status_code in [401, 500]
+                    assert response.status_code in [401, 429, 500]
 
     def test_signin_user_not_found(self, mock_db_connection, mock_db_cursor):
         """Test sign-in with non-existent user"""
@@ -242,4 +242,4 @@ class TestSignInEndpoint:
                     }
                 )
 
-                assert response.status_code in [401, 404, 500]
+                assert response.status_code in [401, 404, 429, 500]

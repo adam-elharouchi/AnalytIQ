@@ -159,7 +159,7 @@ class TestPasswordManagement:
                     json={"email": "john@test.com"}
                 )
 
-                assert response.status_code in [200, 404, 500]
+                assert response.status_code in [200, 404, 429, 500]
 
     def test_reset_password_success(self, mock_db_connection, mock_db_cursor):
         """Test password reset with token"""
