@@ -2111,21 +2111,12 @@ def health():
     # 2. Gemini API (NON-CRITICAL - degrades gracefully)
     gemini_api_key = os.getenv("GEMINI_API_KEY")
     if gemini_api_key and gemini_api_key != "your_gemini_api_key_here":
-        try:
-            # Just verify the key is configured, don't make actual API call
-            health_status["services"]["gemini_api"] = {
-                "status": "configured",
-                "note": "API key present and configured",
-            }
-            logger.debug("Health check: Gemini API configured")
-        except Exception as e:
-            # Gemini API failure is degraded, not critical
-            health_status["services"]["gemini_api"] = {
-                "status": "degraded",
-                "error": str(e)[:200],
-                "impact": "Exercise generation may be unavailable",
-            }
-            logger.warning("Health check: Gemini API degraded", extra={"error": str(e)})
+        # Just verify the key is configured, don't make actual API call
+        health_status["services"]["gemini_api"] = {
+            "status": "configured",
+            "note": "API key present and configured",
+        }
+        logger.debug("Health check: Gemini API configured")
     else:
         health_status["services"]["gemini_api"] = {
             "status": "not_configured",
@@ -3330,14 +3321,6 @@ def update_chapter(chapter_id):
 def delete_chapter(chapter_id):
     """Delete a chapter and all its exercises (professor only)"""
     try:
-        if request.method == "OPTIONS":
-            response = app.response_class()
-            response.headers["Access-Control-Allow-Origin"] = "*"
-            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
-            response.headers["Access-Control-Allow-Methods"] = "DELETE, OPTIONS"
-            response.status_code = 200
-            return response
-
         user_id = request.args.get("user_id")
         if not user_id:
             return jsonify({"error": "Missing user_id"}), 400
@@ -3708,140 +3691,6 @@ def proxy_ai_chat():
 
     except Exception as e:
         print(f"AI Proxy Error: {str(e)}")
-        return jsonify({"error": str(e)}), 500
-
-
-@app.route("/api/chapters/<chapter_id>/generate-exercises", methods=["POST", "OPTIONS"])
-def generate_exercises(chapter_id):
-    """Generate exercises for a chapter using AI (professor only)"""
-    try:
-        if request.method == "OPTIONS":
-            response = app.response_class()
-            response.headers["Access-Control-Allow-Origin"] = "*"
-            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
-            response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
-            response.status_code = 200
-            return response
-
-        data = request.json
-        user_id = data.get("user_id")
-        if not user_id:
-            return jsonify({"error": "Missing user_id"}), 400
-
-        conn = get_db_connection()
-        cursor = conn.cursor()
-
-        # Verify chapter exists and user is the professor
-        cursor.execute(
-            """
-            SELECT cc.class_id, cc.title, c.professor_id, cc.pdf_filename, cc.pdf_data
-            FROM class_chapters cc
-            JOIN classes c ON cc.class_id = c.class_id
-            WHERE cc.chapter_id = %s
-        """,
-            (chapter_id,),
-        )
-        chapter_data = cursor.fetchone()
-        if not chapter_data:
-            cursor.close()
-            close_conn_safely(conn)
-            return jsonify({"error": "Chapter not found"}), 404
-
-        class_id_result = chapter_data[0]
-        chapter_title = chapter_data[1]
-        professor_id = chapter_data[2]
-        pdf_filename = chapter_data[3]
-        pdf_bytes = chapter_data[4]  # Get binary data from DB
-
-        if professor_id != user_id:
-            cursor.close()
-            close_conn_safely(conn)
-            return jsonify({"error": "Only the class owner can generate exercises"}), 403
-
-        # Check if exercise generator is available
-        if not generate_exercises_from_pdf_content:
-            cursor.close()
-            close_conn_safely(conn)
-            return jsonify({"error": "Exercise generator not available"}), 500
-
-        # Extract text from PDF bytes
-        if not pdf_bytes:
-            cursor.close()
-            close_conn_safely(conn)
-            return jsonify({"error": "PDF content is missing"}), 404
-
-        pdf_text = None
-        if extract_text_from_pdf_bytes:
-            try:
-                # pass memoryview/bytes directly to extractor
-                pdf_text = extract_text_from_pdf_bytes(pdf_bytes)
-            except Exception as e:
-                cursor.close()
-                close_conn_safely(conn)
-                return jsonify({"error": f"Could not extract text from PDF: {str(e)}"}), 500
-
-        if not pdf_text:
-            cursor.close()
-            close_conn_safely(conn)
-            return jsonify({"error": "Could not extract text from PDF"}), 400
-
-        # Generate exercises using AI
-        api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key:
-            print("Warning: GEMINI_API_KEY not set for chapter content generation")
-            return None
-        exercises = generate_exercises_from_pdf_content(pdf_text, chapter_title, api_key)
-
-        if not exercises:
-            cursor.close()
-            close_conn_safely(conn)
-            return jsonify({"error": "No exercises generated"}), 500
-
-        # Delete existing exercises for this chapter (optional - comment out if you want to keep them)
-        cursor.execute("DELETE FROM class_exercises WHERE chapter_id = %s", (chapter_id,))
-
-        # Store exercises in database
-        exercise_ids = []
-        for idx, exercise in enumerate(exercises, 1):
-            exercise_id = f"{chapter_id}_ex_{idx}_{int(datetime.now().timestamp() * 1000)}"
-            cursor.execute(
-                """
-                INSERT INTO class_exercises (exercise_id, chapter_id, class_id, title, description, difficulty, solution_code, exercise_number)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-                RETURNING exercise_id
-            """,
-                (
-                    exercise_id,
-                    chapter_id,
-                    class_id_result,
-                    exercise["title"],
-                    exercise["description"],
-                    exercise["difficulty"],
-                    exercise["solution_code"],
-                    idx,
-                ),
-            )
-            exercise_ids.append(cursor.fetchone()[0])
-
-        conn.commit()
-        cursor.close()
-        close_conn_safely(conn)
-
-        return (
-            jsonify(
-                {
-                    "exercises_generated": len(exercises),
-                    "exercise_ids": exercise_ids,
-                    "success": True,
-                }
-            ),
-            201,
-        )
-
-    except Exception as e:
-        import traceback
-
-        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
 
@@ -4653,8 +4502,6 @@ def get_exercise_leaderboard_for_class(class_id, exercise_id):
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
-        return jsonify({"error": str(e)}), 500
-
 
 def ensure_exercises_table():
     """Ensure class_exercises table has all required columns (Lazy Migration)"""
@@ -4790,14 +4637,6 @@ def create_exercise(class_id, chapter_id):
 def add_class_resource(class_id):
     """Add a new resource (link) to the class"""
     try:
-        if request.method == "OPTIONS":
-            response = app.response_class()
-            response.headers["Access-Control-Allow-Origin"] = "*"
-            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
-            response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
-            response.status_code = 200
-            return response
-
         ensure_resources_table()
 
         data = request.json
@@ -4901,8 +4740,6 @@ def serve_chapter_pdf(chapter_id):
             else:
                 return jsonify({"error": f"PDF file not found: {pdf_filename}"}), 404
 
-        return jsonify({"error": "No PDF data available"}), 404
-
     except Exception as e:
         import traceback
 
@@ -4914,14 +4751,6 @@ def serve_chapter_pdf(chapter_id):
 def delete_exercise(exercise_id):
     """Delete a specific exercise"""
     try:
-        if request.method == "OPTIONS":
-            response = app.response_class()
-            response.headers["Access-Control-Allow-Origin"] = "*"
-            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
-            response.headers["Access-Control-Allow-Methods"] = "DELETE, OPTIONS"
-            response.status_code = 200
-            return response
-
         conn = get_db_connection()
         cursor = conn.cursor()
 
@@ -5151,52 +4980,6 @@ def serve_resource_download(resource_id):
         return jsonify({"error": str(e)}), 500
 
 
-@app.route("/api/classes/<class_id>/resources", methods=["POST"])
-def create_class_resource(class_id):
-    """Create a new resource (Link/URL) via JSON"""
-    try:
-        ensure_resources_table()
-
-        data = request.json
-        user_id = data.get("user_id")
-
-        if not user_id:
-            return jsonify({"error": "Missing user_id"}), 400
-
-        conn = get_db_connection()
-        cursor = conn.cursor()
-
-        # Generate ID
-        import time
-
-        resource_id = f"res_{int(time.time() * 1000)}"
-
-        cursor.execute(
-            """
-            INSERT INTO class_resources (resource_id, class_id, user_id, title, description, resource_type, resource_url)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-        """,
-            (
-                resource_id,
-                class_id,
-                user_id,
-                data.get("title"),
-                data.get("description", ""),
-                data.get("resource_type", "link"),
-                data.get("resource_url"),
-            ),
-        )
-
-        conn.commit()
-        cursor.close()
-        close_conn_safely(conn)
-
-        return jsonify({"success": True, "resource_id": resource_id}), 201
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
 @app.route("/api/classes/<class_id>/resources/<resource_id>", methods=["PUT", "DELETE", "OPTIONS"])
 def manage_resource(class_id, resource_id):
     """Update or Delete a resource"""
@@ -5240,41 +5023,6 @@ def manage_resource(class_id, resource_id):
             cursor.close()
             close_conn_safely(conn)
             return jsonify({"success": True}), 200
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-@app.route("/api/resources/<resource_id>/download", methods=["GET"])
-def download_resource(resource_id):
-    """Download a file resource from the database"""
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-
-        cursor.execute(
-            "SELECT file_data, filename, resource_type FROM class_resources WHERE resource_id = %s",
-            (resource_id,),
-        )
-        result = cursor.fetchone()
-
-        cursor.close()
-        close_conn_safely(conn)
-
-        if not result or not result[0]:
-            return jsonify({"error": "File not found"}), 404
-
-        file_data = result[0]
-        filename = result[1] or "downloaded_file"
-
-        from flask import Response
-
-        # Force download with attachment
-        return Response(
-            bytes(file_data),
-            mimetype="application/octet-stream",
-            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
-        )
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
