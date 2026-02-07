@@ -12,6 +12,7 @@ import sys
 import time
 import config
 import utils
+import cache
 from cache import cache_health_check
 from supabase_storage import storage_health_check
 
