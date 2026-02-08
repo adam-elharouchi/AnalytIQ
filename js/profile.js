@@ -28,7 +28,7 @@ async function loadProfileData() {
 
     try {
       // Fetch profile from API (update in background)
-      const response = await fetch(`${window.API_BASE_URL}/users/profile?user_id=${currentUser.id}`);
+      const response = await authFetch(`${window.API_BASE_URL}/users/profile`);
       const profileData = await response.json();
 
       if (response.ok) {
@@ -59,7 +59,7 @@ async function loadProfileData() {
         }
 
         // Load settings
-        const settingsResponse = await fetch(`${window.API_BASE_URL}/users/settings?user_id=${currentUser.id}`);
+        const settingsResponse = await authFetch(`${window.API_BASE_URL}/users/settings`);
         const settings = await settingsResponse.json();
 
         if (settingsResponse.ok) {
@@ -132,13 +132,9 @@ async function handleProfilePictureUpload(event) {
 
     try {
       // Update via API
-      const response = await fetch(`${window.API_BASE_URL}/users/profile`, {
+      const response = await authFetch(`${window.API_BASE_URL}/users/profile`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
         body: JSON.stringify({
-          user_id: currentUser.id,
           profilePicture: imageData
         })
       });
@@ -188,13 +184,9 @@ async function handlePersonalInfoSubmit(event) {
 
   try {
     // Update via API
-    const response = await fetch(`${window.API_BASE_URL}/users/profile`, {
+    const response = await authFetch(`${window.API_BASE_URL}/users/profile`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json'
-      },
       body: JSON.stringify({
-        user_id: currentUser.id,
         fullName: fullName,
         email: email,
         bio: bio
@@ -252,13 +244,9 @@ async function handlePasswordChange(event) {
 
   try {
     // Update password via API
-    const response = await fetch(`${window.API_BASE_URL}/users/password`, {
+    const response = await authFetch(`${window.API_BASE_URL}/users/password`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json'
-      },
       body: JSON.stringify({
-        user_id: currentUser.id,
         currentPassword: currentPassword,
         newPassword: newPassword
       })
@@ -295,13 +283,9 @@ async function saveSettings() {
 
   try {
     // Try to save via API (non-blocking)
-    const response = await fetch(`${window.API_BASE_URL}/users/settings`, {
+    const response = await authFetch(`${window.API_BASE_URL}/users/settings`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json'
-      },
       body: JSON.stringify({
-        user_id: currentUser.id,
         emailNotifications: settings.emailNotifications
       })
     });
@@ -340,11 +324,8 @@ async function deleteAccount() {
 
   try {
     // Delete via API - ensure user_id is a string
-    const response = await fetch(`${window.API_BASE_URL}/users/delete?user_id=${String(userId)}`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json'
-      }
+    const response = await authFetch(`${window.API_BASE_URL}/users/delete`, {
+      method: 'DELETE'
     });
 
     const data = await response.json();

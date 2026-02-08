@@ -26,6 +26,21 @@ class AuthManager {
     this.currentUser = user;
   }
 
+  // Get JWT token
+  getToken() {
+    return localStorage.getItem('authToken');
+  }
+
+  // Save JWT token
+  saveToken(token) {
+    localStorage.setItem('authToken', token);
+  }
+
+  // Remove JWT token
+  removeToken() {
+    localStorage.removeItem('authToken');
+  }
+
   // Sign up new user
   async signUp(name, email, password) {
     try {
@@ -50,6 +65,11 @@ class AuthManager {
       // Extract user ID - use user_id if available, otherwise fall back to id
       const userId = data.user_id || data.id || data.user?.user_id || data.user?.id || Date.now().toString();
 
+      // Save JWT token
+      if (data.token) {
+        this.saveToken(data.token);
+      }
+
       // Auto sign in - save user with consistent user_id
       const userData = {
         id: userId,  // Store as 'id' for compatibility with existing code
@@ -60,7 +80,6 @@ class AuthManager {
       };
 
       this.saveUser(userData);
-
 
       return { ...data, user: userData };
     } catch (error) {
@@ -91,6 +110,11 @@ class AuthManager {
       // Extract user ID - use user_id if available, otherwise fall back to id
       const userId = data.user_id || data.id || data.user?.user_id || data.user?.id;
 
+      // Save JWT token
+      if (data.token) {
+        this.saveToken(data.token);
+      }
+
       // Save current user (without password) - store user_id consistently
       const userData = {
         id: userId,  // Store as 'id' for compatibility with existing code
@@ -111,6 +135,7 @@ class AuthManager {
   // Sign out
   signOut() {
     localStorage.removeItem('currentUser');
+    this.removeToken();
     this.currentUser = null;
   }
 

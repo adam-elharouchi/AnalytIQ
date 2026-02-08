@@ -52,17 +52,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
       try {
         // Send to API endpoint
-        const response = await fetch(`${window.API_BASE_URL}/contact`, {
+        const response = await authFetch(`${window.API_BASE_URL}/contact`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
           body: JSON.stringify({
             name: formData.name,
             email: formData.email,
             subject: formData.subject,
-            message: formData.message,
-            user_id: currentUser?.id || currentUser?.user_id || null
+            message: formData.message
           })
         });
 

@@ -39,7 +39,7 @@ async function loadEnrolledClasses() {
     emptyState.style.display = 'none';
     classesGrid.style.display = 'none';
 
-    const response = await fetch(`${window.API_BASE_URL}/classes/enrolled?user_id=${currentUser.user_id}`);
+    const response = await authFetch(`${window.API_BASE_URL}/classes/enrolled`);
     const data = await response.json();
 
     if (!response.ok) {
@@ -163,13 +163,9 @@ async function handleJoinClass(event) {
     submitButton.disabled = true;
     submitButton.textContent = 'Joining...';
 
-    const response = await fetch(`${window.API_BASE_URL}/classes/enroll`, {
+    const response = await authFetch(`${window.API_BASE_URL}/classes/enroll`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
       body: JSON.stringify({
-        user_id: currentUser.user_id,
         class_id: classCode
       })
     });

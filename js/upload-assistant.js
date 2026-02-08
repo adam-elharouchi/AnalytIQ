@@ -61,7 +61,7 @@ function toggleChapterSource(source) {
 async function loadExistingChapters() {
     const select = document.getElementById('existingChapterSelect');
     try {
-        const response = await fetch(`${API_BASE_URL}/classes/${currentClassId}/chapters?user_id=${getCurrentUserId()}`);
+        const response = await authFetch(`${API_BASE_URL}/classes/${currentClassId}/chapters`);
         const data = await response.json();
 
         if (!response.ok) throw new Error(data.error);
@@ -110,10 +110,9 @@ async function processExistingChapter(chapterId) {
     updateStage('stageAnalyze', 'active');
 
     // Generate exercises (backend stores them and returns IDs)
-    const response = await fetch(`${API_BASE_URL}/chapters/${chapterId}/generate-exercises`, {
+    const response = await authFetch(`${API_BASE_URL}/chapters/${chapterId}/generate-exercises`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: getCurrentUserId() })
+        body: JSON.stringify({})
     });
 
     if (!response.ok) {
@@ -128,7 +127,7 @@ async function processExistingChapter(chapterId) {
     }
 
     // Fetch the generated exercises from the database
-    const exercisesResponse = await fetch(`${API_BASE_URL}/chapters/${chapterId}/exercises?user_id=${getCurrentUserId()}`);
+    const exercisesResponse = await authFetch(`${API_BASE_URL}/chapters/${chapterId}/exercises`);
     if (!exercisesResponse.ok) {
         throw new Error('Failed to fetch generated exercises');
     }
@@ -277,11 +276,10 @@ async function processUpload(file, title) {
     formData.append('pdf_file', file);
     formData.append('title', title);
     formData.append('exercise_mode', 'manual'); // Don't auto-generate yet
-    formData.append('user_id', getCurrentUserId());
     formData.append('chapter_number', 999); // Auto-increment ideally
 
     // Create the chapter first
-    const chapterResp = await fetch(`${API_BASE_URL}/classes/${currentClassId}/chapters`, {
+    const chapterResp = await authFetch(`${API_BASE_URL}/classes/${currentClassId}/chapters`, {
         method: 'POST',
         body: formData
     });
@@ -300,10 +298,9 @@ async function processUpload(file, title) {
     updateStage('stageExtract', 'active');
     updateStage('stageAnalyze', 'active');
 
-    const response = await fetch(`${API_BASE_URL}/chapters/${selectedChapterId}/generate-exercises`, {
+    const response = await authFetch(`${API_BASE_URL}/chapters/${selectedChapterId}/generate-exercises`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: getCurrentUserId() })
+        body: JSON.stringify({})
     });
 
     if (!response.ok) {
@@ -318,7 +315,7 @@ async function processUpload(file, title) {
     }
 
     // Fetch the generated exercises from the database
-    const exercisesResponse = await fetch(`${API_BASE_URL}/chapters/${selectedChapterId}/exercises?user_id=${getCurrentUserId()}`);
+    const exercisesResponse = await authFetch(`${API_BASE_URL}/chapters/${selectedChapterId}/exercises`);
     if (!exercisesResponse.ok) {
         throw new Error('Failed to fetch generated exercises');
     }
@@ -411,11 +408,9 @@ async function saveAll() {
         // Save all exercises in parallel for speed
         // The exercises already exist (generated in previous step), so we update them using PUT
         const savePromises = finalExercises.map(ex =>
-            fetch(`${API_BASE_URL}/exercises/${ex.exercise_id}`, {
+            authFetch(`${API_BASE_URL}/exercises/${ex.exercise_id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    user_id: getCurrentUserId(),
                     title: ex.title,
                     description: ex.description,
                     difficulty: ex.difficulty,
