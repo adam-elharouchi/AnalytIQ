@@ -66,7 +66,7 @@ async function loadClassData(classId) {
     classHeader.style.display = 'none';
     tabsContainer.style.display = 'none';
 
-    const response = await fetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(classId)}?user_id=${currentUser.user_id}`);
+    const response = await authFetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(classId)}`);
     const data = await response.json();
 
     if (!response.ok) {
@@ -157,7 +157,7 @@ async function loadChapters() {
   try {
     chaptersList.innerHTML = '<div style="text-align: center; padding: 2rem; color: #64748b;">Loading chapters...</div>';
 
-    const response = await fetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/chapters?user_id=${currentUser.user_id}`);
+    const response = await authFetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/chapters`);
     const data = await response.json();
 
     if (!response.ok) {
@@ -222,7 +222,7 @@ async function loadStudents() {
     studentsList.innerHTML = '<div style="text-align: center; padding: 2rem; color: #64748b;">Loading students...</div>';
 
     // Fetch students
-    const response = await fetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/students?user_id=${currentUser.user_id}`);
+    const response = await authFetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/students`);
     const data = await response.json();
 
     if (!response.ok) throw new Error(data.error);
@@ -233,7 +233,7 @@ async function loadStudents() {
     // Fetch progress data for the class
     let progressData = {};
     try {
-      const progressResponse = await fetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/progress?user_id=${currentUser.user_id}`);
+      const progressResponse = await authFetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/progress`);
       if (progressResponse.ok) {
         const pd = await progressResponse.json();
         // Map progress by student ID
@@ -252,13 +252,13 @@ async function loadStudents() {
     let totalExercises = dataCache.totalExercises || 0;
     if (!totalExercises && !dataCache.isValid('totalExercises')) {
       try {
-        const chaptersResponse = await fetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/chapters?user_id=${currentUser.user_id}`);
+        const chaptersResponse = await authFetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/chapters`);
         if (chaptersResponse.ok) {
           const chaptersData = await chaptersResponse.json();
           const chapters = chaptersData.chapters || [];
           // Fetch all exercises in parallel for speed
           const exercisePromises = chapters.map(chapter =>
-            fetch(`${window.API_BASE_URL}/chapters/${encodeURIComponent(chapter.chapter_id)}/exercises?user_id=${currentUser.user_id}`)
+            authFetch(`${window.API_BASE_URL}/chapters/${encodeURIComponent(chapter.chapter_id)}/exercises`)
               .then(r => r.ok ? r.json() : { exercises: [] })
               .catch(() => ({ exercises: [] }))
           );
@@ -334,7 +334,7 @@ async function loadProgress() {
   try {
     progressOverview.innerHTML = '<div style="text-align: center; padding: 2rem; color: #64748b;">Loading progress...</div>';
 
-    const response = await fetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/progress?user_id=${currentUser.user_id}`);
+    const response = await authFetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/progress`);
     const data = await response.json();
 
     if (!response.ok) throw new Error(data.error);
@@ -450,7 +450,7 @@ async function loadAvgLeaderboard() {
     const currentUser = getCurrentUser();
     if (!currentUser) return;
 
-    const response = await fetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/leaderboard/average?user_id=${currentUser.user_id}`);
+    const response = await authFetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/leaderboard/average`);
     const data = await response.json();
 
     if (!response.ok) throw new Error(data.error);
@@ -509,7 +509,7 @@ async function loadExerciseLeaderboard(exerciseId) {
     const currentUser = getCurrentUser();
     if (!currentUser) return;
 
-    const response = await fetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/leaderboard/exercise/${exerciseId}?user_id=${currentUser.user_id}`);
+    const response = await authFetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/leaderboard/exercise/${exerciseId}`);
     const data = await response.json();
 
     if (!response.ok) throw new Error(data.error);
@@ -567,7 +567,7 @@ async function loadExercises() {
     exercisesList.innerHTML = '<div style="text-align: center; padding: 2rem; color: #64748b;">Loading exercises...</div>';
 
     // First, get all chapters to group exercises by chapter
-    const chaptersResponse = await fetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/chapters?user_id=${currentUser.user_id}`);
+    const chaptersResponse = await authFetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/chapters`);
     const chaptersData = await chaptersResponse.json();
 
     if (!chaptersResponse.ok) {
@@ -590,7 +590,7 @@ async function loadExercises() {
     let allExercises = [];
     for (const chapter of chapters) {
       try {
-        const exercisesResponse = await fetch(`${window.API_BASE_URL}/chapters/${encodeURIComponent(chapter.chapter_id)}/exercises?user_id=${currentUser.user_id}`);
+        const exercisesResponse = await authFetch(`${window.API_BASE_URL}/chapters/${encodeURIComponent(chapter.chapter_id)}/exercises`);
         if (exercisesResponse.ok) {
           const exercisesData = await exercisesResponse.json();
           const exercises = exercisesData.exercises || [];
@@ -745,9 +745,7 @@ async function handleCreateExercise(event) {
       // For edit, use JSON (file changes not supported in edit mode)
       requestOptions = {
         method: method,
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          user_id: currentUser.user_id,
           title: title,
           description: description,
           difficulty: difficulty,
@@ -762,7 +760,6 @@ async function handleCreateExercise(event) {
       // Use FormData if file is attached, otherwise JSON
       if (exerciseFile) {
         const formData = new FormData();
-        formData.append('user_id', currentUser.user_id);
         formData.append('title', title);
         formData.append('description', description);
         formData.append('difficulty', difficulty);
@@ -776,9 +773,7 @@ async function handleCreateExercise(event) {
       } else {
         requestOptions = {
           method: method,
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            user_id: currentUser.user_id,
             title: title,
             description: description,
             difficulty: difficulty,
@@ -788,7 +783,7 @@ async function handleCreateExercise(event) {
       }
     }
 
-    const response = await fetch(url, requestOptions);
+    const response = await authFetch(url, requestOptions);
 
     const data = await response.json();
 
@@ -871,7 +866,7 @@ async function editExercise(exerciseId) {
     // Let's assumes we find it.
     // Actually, I'll search all chapters for now.
 
-    const chaptersResponse = await fetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/chapters?user_id=${currentUser.user_id}`);
+    const chaptersResponse = await authFetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/chapters`);
     const chaptersData = await chaptersResponse.json();
     const chapters = chaptersData.chapters || [];
 
@@ -879,7 +874,7 @@ async function editExercise(exerciseId) {
     let foundChapterId = null;
 
     for (const chapter of chapters) {
-      const exResp = await fetch(`${window.API_BASE_URL}/chapters/${encodeURIComponent(chapter.chapter_id)}/exercises?user_id=${currentUser.user_id}`);
+      const exResp = await authFetch(`${window.API_BASE_URL}/chapters/${encodeURIComponent(chapter.chapter_id)}/exercises`);
       const exData = await exResp.json();
       const exercises = exData.exercises || [];
       const match = exercises.find(e => e.exercise_id === exerciseId);
@@ -945,7 +940,7 @@ async function loadResources() {
   try {
     resourcesList.innerHTML = '<div style="text-align: center; padding: 2rem; color: #64748b;">Loading resources...</div>';
 
-    const response = await fetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/resources?user_id=${currentUser.user_id}`);
+    const response = await authFetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/resources`);
     const data = await response.json();
 
     if (!response.ok) {
@@ -1342,7 +1337,6 @@ async function createResource(event) {
     if (inputType === 'upload' && resourceFile) {
       const formData = new FormData();
       formData.append('file', resourceFile);
-      formData.append('user_id', currentUser.user_id);
       formData.append('class_id', currentClassId);
       formData.append('resource_type', resourceType);
       formData.append('title', title);
@@ -1355,7 +1349,7 @@ async function createResource(event) {
       }, 30000);
 
       try {
-        const uploadResponse = await fetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/resources/upload`, {
+        const uploadResponse = await authFetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/resources/upload`, {
           method: 'POST',
           body: formData
         });
@@ -1376,11 +1370,9 @@ async function createResource(event) {
     }
 
     // Link Logic
-    const response = await fetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/resources`, {
+    const response = await authFetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/resources`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        user_id: currentUser.user_id,
         title: title,
         description: description,
         resource_type: resourceType,
@@ -1427,11 +1419,9 @@ async function updateResource(event) {
   submitButton.textContent = 'Saving...';
 
   try {
-    const response = await fetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/resources/${encodeURIComponent(resourceToEditId)}`, {
+    const response = await authFetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/resources/${encodeURIComponent(resourceToEditId)}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        user_id: currentUser.user_id,
         title: title,
         description: description,
         resource_type: resourceType,
@@ -1483,12 +1473,12 @@ async function deleteResource(resourceId, chapterId = null) {
     // If it's a chapter PDF, delete the chapter instead
     if (chapterId || resourceId.startsWith('pdf_')) {
       const actualChapterId = chapterId || resourceId.replace('pdf_', '');
-      response = await fetch(`${window.API_BASE_URL}/chapters/${encodeURIComponent(actualChapterId)}?user_id=${currentUser.user_id}`, {
+      response = await authFetch(`${window.API_BASE_URL}/chapters/${encodeURIComponent(actualChapterId)}`, {
         method: 'DELETE'
       });
     } else {
       // Regular resource deletion
-      response = await fetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/resources/${encodeURIComponent(resourceId)}?user_id=${currentUser.user_id}`, {
+      response = await authFetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/resources/${encodeURIComponent(resourceId)}`, {
         method: 'DELETE'
       });
     }
@@ -1666,7 +1656,7 @@ async function loadDetailedProgress() {
   container.innerHTML = '<div style="text-align: center; padding: 2rem; color: #64748b;">Loading progress data...</div>';
 
   try {
-    const response = await fetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/progress?user_id=${currentUser.user_id}`);
+    const response = await authFetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/progress`);
     const data = await response.json();
 
     if (!response.ok) throw new Error(data.error || 'Failed to load progress data');
@@ -1783,7 +1773,7 @@ async function loadAvgLeaderboard() {
   container.innerHTML = '<div style="text-align: center; padding: 2rem; color: #64748b;">Loading leaderboard...</div>';
 
   try {
-    const response = await fetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/leaderboard/average?user_id=${currentUser.user_id}`);
+    const response = await authFetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/leaderboard/average`);
     const data = await response.json();
 
     if (!response.ok) throw new Error(data.error || 'Failed to load leaderboard');
@@ -1848,7 +1838,7 @@ async function loadLeaderboardExercises() {
   select.disabled = true;
 
   try {
-    const response = await fetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/progress?user_id=${currentUser.user_id}`);
+    const response = await authFetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/progress`);
     const data = await response.json();
 
     if (!response.ok) throw new Error(data.error);
@@ -1884,7 +1874,7 @@ async function loadExerciseLeaderboard(exerciseId) {
   container.innerHTML = '<div style="text-align: center; padding: 2rem; color: #64748b;">Loading scores...</div>';
 
   try {
-    const response = await fetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/leaderboard/exercise/${encodeURIComponent(exerciseId)}?user_id=${currentUser.user_id}`);
+    const response = await authFetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/leaderboard/exercise/${encodeURIComponent(exerciseId)}`);
     const data = await response.json();
 
     if (!response.ok) {
@@ -2010,13 +2000,12 @@ async function handleUploadChapter(event) {
 
     // Create FormData
     const formData = new FormData();
-    formData.append('user_id', currentUser.user_id);
     formData.append('title', title);
     formData.append('description', description);
     formData.append('pdf_file', pdfFile);
     formData.append('exercise_mode', exerciseMode);
 
-    const response = await fetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/chapters`, {
+    const response = await authFetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/chapters`, {
       method: 'POST',
       body: formData
     });
@@ -2105,13 +2094,9 @@ async function handleEditClass(event) {
     submitButton.disabled = true;
     submitButton.textContent = 'Saving...';
 
-    const response = await fetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}`, {
+    const response = await authFetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json'
-      },
       body: JSON.stringify({
-        user_id: currentUser.user_id,
         name: name,
         description: description
       })
@@ -2177,7 +2162,7 @@ async function loadChapterOptions() {
   if (!currentUser || !currentClassId) return;
 
   try {
-    const response = await fetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/chapters?user_id=${currentUser.user_id}`);
+    const response = await authFetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/chapters`);
     const data = await response.json();
 
     if (response.ok) {
@@ -2212,7 +2197,7 @@ async function editExercise(exerciseId) {
     document.getElementById('createExerciseForm').reset();
 
     // Fetch exercise details
-    const response = await fetch(`${window.API_BASE_URL}/exercises/${exerciseId}?user_id=${currentUser.user_id}`);
+    const response = await authFetch(`${window.API_BASE_URL}/exercises/${exerciseId}`);
     const data = await response.json();
 
     if (!response.ok) throw new Error(data.error);
@@ -2264,7 +2249,7 @@ async function showEditChapterModal(chapterId) {
     const currentUser = getCurrentUser();
 
     // Fetch chapters list to find the chapter
-    const response = await fetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/chapters?user_id=${currentUser.user_id}`);
+    const response = await authFetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/chapters`);
     const data = await response.json();
 
     if (!response.ok) throw new Error('Failed to load chapter details');
@@ -2311,13 +2296,9 @@ async function handleEditChapter(event) {
 
     const currentUser = getCurrentUser();
 
-    const response = await fetch(`${window.API_BASE_URL}/chapters/${encodeURIComponent(chapterId)}`, {
+    const response = await authFetch(`${window.API_BASE_URL}/chapters/${encodeURIComponent(chapterId)}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json'
-      },
       body: JSON.stringify({
-        user_id: currentUser.user_id,
         title: title,
         description: description
       })
@@ -2372,7 +2353,7 @@ async function handleDeleteChapter() {
 
     const currentUser = getCurrentUser();
 
-    const response = await fetch(`${window.API_BASE_URL}/chapters/${encodeURIComponent(chapterToDeleteId)}?user_id=${currentUser.user_id}`, {
+    const response = await authFetch(`${window.API_BASE_URL}/chapters/${encodeURIComponent(chapterToDeleteId)}`, {
       method: 'DELETE'
     });
 
@@ -2408,7 +2389,7 @@ async function deleteExercise(exerciseId, exerciseTitle) {
   }
 
   try {
-    const response = await fetch(`${window.API_BASE_URL}/exercises/${encodeURIComponent(exerciseId)}?user_id=${currentUser.user_id}`, {
+    const response = await authFetch(`${window.API_BASE_URL}/exercises/${encodeURIComponent(exerciseId)}`, {
       method: 'DELETE'
     });
 
@@ -2503,10 +2484,9 @@ async function handleUploadChapter(event) {
     formData.append('title', title);
     formData.append('description', description);
     formData.append('exercise_mode', exerciseMode);
-    formData.append('user_id', currentUser.user_id);
     formData.append('chapter_number', 999); // Auto-increment
 
-    const response = await fetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/chapters`, {
+    const response = await authFetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/chapters`, {
       method: 'POST',
       body: formData
     });

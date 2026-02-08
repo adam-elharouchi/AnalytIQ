@@ -84,6 +84,11 @@ SESSION_COOKIE_SECURE = ENV == "production"
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
 
+# JWT Authentication
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", SECRET_KEY)
+JWT_ACCESS_TOKEN_EXPIRES_HOURS = int(os.getenv("JWT_EXPIRY_HOURS", 168))  # 7 days default
+JWT_ALGORITHM = "HS256"
+
 # CORS
 CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*").split(",")
 CORS_MAX_AGE = int(os.getenv("CORS_MAX_AGE", 3600))

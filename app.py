@@ -37,6 +37,36 @@ except ImportError:
 # Load environment variables
 load_dotenv()
 
+# Sentry SDK Initialization
+try:
+    import sentry_sdk
+    from sentry_sdk.integrations.flask import FlaskIntegration
+    
+    sentry_sdk.init(
+        dsn=os.getenv("SENTRY_DSN", "https://af52c0b187b184c92d8792a7aaf65a9e@o4510847021613056.ingest.us.sentry.io/4510848475791360"),
+        integrations=[FlaskIntegration()],
+        # Add data like request headers and IP for users,
+        # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
+        send_default_pii=True,
+        # Enable sending logs to Sentry
+        enable_logs=True,
+        # Set traces_sample_rate to 1.0 to capture 100%
+        # of transactions for tracing.
+        traces_sample_rate=1.0,
+        # Set profile_session_sample_rate to 1.0 to profile 100%
+        # of profile sessions.
+        profile_session_sample_rate=1.0,
+        # Set profile_lifecycle to "trace" to automatically
+        # run the profiler on when there is an active transaction
+        profile_lifecycle="trace",
+        environment=os.getenv("FLASK_ENV", "production"),
+    )
+    print("✅ Sentry SDK initialized")
+except ImportError:
+    print("Warning: sentry-sdk not installed. Sentry will not be active.")
+except Exception as e:
+    print(f"Warning: Failed to initialize Sentry: {e}")
+
 # Initialize Flask app
 app = Flask(__name__)
 app.config["SECRET_KEY"] = config.SECRET_KEY
@@ -66,6 +96,9 @@ try:
     from flask_limiter import Limiter
     from flask_limiter.util import get_remote_address
 
+    # Use Redis for rate limiting in production (shared across workers),
+    # fall back to in-memory for development
+    _rate_limit_storage = config.REDIS_URL if not config.DEBUG else "memory://"
     limiter = Limiter(
         app=app,
         key_func=get_remote_address,
@@ -73,10 +106,10 @@ try:
             f"{config.RATE_LIMIT_DEFAULT_PER_DAY} per day",
             f"{config.RATE_LIMIT_DEFAULT_PER_HOUR} per hour",
         ],
-        storage_uri="memory://",  # In-memory storage (use Redis in production)
+        storage_uri=_rate_limit_storage,
         strategy="fixed-window",
     )
-    print("✅ Rate limiting enabled")
+    print(f"✅ Rate limiting enabled (storage: {'redis' if 'redis' in _rate_limit_storage else 'memory'})")
 except ImportError:
     print("Warning: Flask-Limiter not installed. Rate limiting will not work.")
     limiter = None
@@ -196,16 +229,37 @@ os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 ALLOWED_EXTENSIONS = {"pdf", "csv", "xlsx", "xls", "json", "txt", "ipynb"}
 
 
-# Manual CORS handling - works with file:// protocol and all domains
+# CORS handling - uses configured origins (set CORS_ORIGINS env var in production)
+def _get_cors_origin():
+    """Return the allowed origin for the current request, or None."""
+    origin = request.headers.get("Origin", "")
+    allowed = config.CORS_ORIGINS  # list from env, e.g. ["https://www.myanalytiq.org"]
+
+    # If wildcard is configured (development), allow everything
+    if "*" in allowed:
+        return "*"
+
+    # Check if the request origin is in the allowed list
+    if origin in allowed:
+        return origin
+
+    # Also allow file:// protocol for local development
+    if not origin or origin == "null":
+        return "*" if config.DEBUG else None
+
+    return None
+
+
 @app.before_request
 def handle_options():
     if request.method == "OPTIONS":
-        # Create response for OPTIONS preflight
         response = app.response_class()
-        response.headers.add("Access-Control-Allow-Origin", "*")
+        cors_origin = _get_cors_origin()
+        if cors_origin:
+            response.headers.add("Access-Control-Allow-Origin", cors_origin)
         response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization")
         response.headers.add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-        response.headers.add("Access-Control-Max-Age", "3600")
+        response.headers.add("Access-Control-Max-Age", str(config.CORS_MAX_AGE))
         response.status_code = 200
         return response
 
@@ -214,10 +268,22 @@ def handle_options():
 def after_request(response):
     # Add CORS headers to all API responses
     if request.path.startswith("/api"):
-        response.headers["Access-Control-Allow-Origin"] = "*"
+        cors_origin = _get_cors_origin()
+        if cors_origin:
+            response.headers["Access-Control-Allow-Origin"] = cors_origin
         response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
         response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
         response.headers["Access-Control-Allow-Credentials"] = "false"
+
+        # Security headers
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        if not config.DEBUG:
+            response.headers["Strict-Transport-Security"] = (
+                "max-age=31536000; includeSubDomains"
+            )
     return response
 
 
@@ -443,6 +509,99 @@ def close_conn_safely(conn):
     pass
 
 
+# ============================================================================
+# JWT AUTHENTICATION
+# ============================================================================
+
+import jwt
+import functools
+from datetime import timedelta
+
+
+def create_jwt_token(user_id, role="student", name=None, email=None):
+    """
+    Create a JWT token for an authenticated user.
+
+    Args:
+        user_id: The user's ID
+        role: The user's role (student/professor)
+        name: The user's name (optional, included in token for convenience)
+        email: The user's email (optional, included in token for convenience)
+
+    Returns:
+        str: Encoded JWT token
+    """
+    payload = {
+        "user_id": user_id,
+        "role": role,
+        "iat": datetime.utcnow(),
+        "exp": datetime.utcnow()
+        + timedelta(hours=config.JWT_ACCESS_TOKEN_EXPIRES_HOURS),
+    }
+    if name:
+        payload["name"] = name
+    if email:
+        payload["email"] = email
+
+    return jwt.encode(payload, config.JWT_SECRET_KEY, algorithm=config.JWT_ALGORITHM)
+
+
+def decode_jwt_token(token):
+    """
+    Decode and verify a JWT token.
+
+    Args:
+        token: The JWT token string
+
+    Returns:
+        dict: Decoded token payload
+
+    Raises:
+        jwt.ExpiredSignatureError: If token has expired
+        jwt.InvalidTokenError: If token is invalid
+    """
+    return jwt.decode(token, config.JWT_SECRET_KEY, algorithms=[config.JWT_ALGORITHM])
+
+
+def require_auth(f):
+    """
+    Decorator that requires a valid JWT token in the Authorization header.
+    Sets g.user_id and g.user_role for the decorated function.
+
+    Usage:
+        @app.route('/api/some-endpoint')
+        @require_auth
+        def some_endpoint():
+            user_id = g.user_id
+            role = g.user_role
+    """
+
+    @functools.wraps(f)
+    def decorated(*args, **kwargs):
+        token = None
+
+        # Extract token from Authorization: Bearer <token>
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            token = auth_header.split(" ", 1)[1]
+
+        if not token:
+            return jsonify({"error": "Authentication required"}), 401
+
+        try:
+            payload = decode_jwt_token(token)
+            g.user_id = str(payload["user_id"])
+            g.user_role = payload.get("role", "student")
+        except jwt.ExpiredSignatureError:
+            return jsonify({"error": "Token expired. Please sign in again."}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({"error": "Invalid token. Please sign in again."}), 401
+
+        return f(*args, **kwargs)
+
+    return decorated
+
+
 def hash_password_legacy(password):
     """
     DEPRECATED: Legacy hash function for backward compatibility only.
@@ -538,10 +697,12 @@ def ensure_password_resets_table():
 def signup_options():
     """Handle OPTIONS preflight for signup"""
     response = app.response_class()
-    response.headers["Access-Control-Allow-Origin"] = "*"
+    cors_origin = _get_cors_origin()
+    if cors_origin:
+        response.headers["Access-Control-Allow-Origin"] = cors_origin
     response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
     response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
-    response.headers["Access-Control-Max-Age"] = "3600"
+    response.headers["Access-Control-Max-Age"] = str(config.CORS_MAX_AGE)
     response.status_code = 200
     return response
 
@@ -627,16 +788,20 @@ def signup():
         cursor.close()
         close_conn_safely(conn)
 
-        # Return user data - include user_id and role for clarity
+        # Return user data with JWT token
         user_role = user[3] if len(user) > 3 else role
+        token = create_jwt_token(
+            created_user_id, role=user_role, name=user[1], email=user[2]
+        )
         return (
             jsonify(
                 {
-                    "id": created_user_id,  # This is the user_id from database
-                    "user_id": created_user_id,  # Also return as user_id for compatibility
+                    "id": created_user_id,
+                    "user_id": created_user_id,
                     "name": user[1],
                     "email": user[2],
                     "role": user_role,
+                    "token": token,
                     "success": True,
                 }
             ),
@@ -707,15 +872,17 @@ def signin():
         cursor.close()
         close_conn_safely(conn)
 
-        # Return user data - include user_id and role for clarity
+        # Return user data with JWT token
+        token = create_jwt_token(user_id, role=role, name=name, email=user_email)
         return (
             jsonify(
                 {
                     "id": user_id,
-                    "user_id": user_id,  # Also return as user_id for compatibility
+                    "user_id": user_id,
                     "name": name,
                     "email": user_email,
                     "role": role,
+                    "token": token,
                 }
             ),
             200,
@@ -733,7 +900,9 @@ def forgot_password():
     """Handle forgot password request"""
     if request.method == "OPTIONS":
         response = app.response_class()
-        response.headers["Access-Control-Allow-Origin"] = "*"
+        cors_origin = _get_cors_origin()
+        if cors_origin:
+            response.headers["Access-Control-Allow-Origin"] = cors_origin
         response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
         response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
         response.headers["Access-Control-Max-Age"] = "3600"
@@ -821,7 +990,9 @@ def reset_password():
     """Reset password using token from email link."""
     if request.method == "OPTIONS":
         response = app.response_class()
-        response.headers["Access-Control-Allow-Origin"] = "*"
+        cors_origin = _get_cors_origin()
+        if cors_origin:
+            response.headers["Access-Control-Allow-Origin"] = cors_origin
         response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
         response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
         response.headers["Access-Control-Max-Age"] = "3600"
@@ -884,12 +1055,11 @@ def reset_password():
 
 
 @app.route("/api/users/profile", methods=["GET"])
+@require_auth
 def get_profile():
     """Get user profile"""
     try:
-        user_id = request.args.get("user_id")
-        if not user_id:
-            return jsonify({"error": "Missing user_id"}), 400
+        user_id = g.user_id
 
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -931,11 +1101,12 @@ def get_profile():
 
 
 @app.route("/api/users/profile", methods=["PUT"])
+@require_auth
 def update_profile():
     """Update user profile"""
     try:
         data = request.json
-        user_id = data.get("user_id")
+        user_id = g.user_id
         full_name = data.get("fullName")
         email = data.get("email")
         bio = data.get("bio")
@@ -986,12 +1157,11 @@ def update_profile():
 
 
 @app.route("/api/users/settings", methods=["GET"])
+@require_auth
 def get_settings():
     """Get user settings"""
     try:
-        user_id = request.args.get("user_id")
-        if not user_id:
-            return jsonify({"error": "Missing user_id"}), 400
+        user_id = g.user_id
 
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -1021,15 +1191,13 @@ def get_settings():
 
 
 @app.route("/api/users/settings", methods=["PUT"])
+@require_auth
 def update_settings():
     """Update user settings"""
     try:
         data = request.json
-        user_id = data.get("user_id")
+        user_id = g.user_id
         email_notifications = data.get("emailNotifications")
-
-        if not user_id:
-            return jsonify({"error": "Missing user_id"}), 400
 
         # Ensure boolean values (handle None/undefined)
         email_notifications = (
@@ -1066,16 +1234,17 @@ def update_settings():
 
 
 @app.route("/api/users/password", methods=["PUT"])
+@require_auth
 def update_password():
     """Update user password"""
     conn = None
     try:
         data = request.json
-        user_id = data.get("user_id")
+        user_id = g.user_id
         current_password = data.get("currentPassword")
         new_password = data.get("newPassword")
 
-        if not user_id or not current_password or not new_password:
+        if not current_password or not new_password:
             return jsonify({"error": "Missing required fields"}), 400
 
         conn = get_db_connection()
@@ -1120,12 +1289,11 @@ def update_password():
 
 
 @app.route("/api/users/delete", methods=["DELETE"])
+@require_auth
 def delete_user():
     """Delete user account"""
     try:
-        user_id = request.args.get("user_id")
-        if not user_id:
-            return jsonify({"error": "Missing user_id"}), 400
+        user_id = g.user_id
 
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -1144,14 +1312,12 @@ def delete_user():
 
 
 @app.route("/api/users/conversations", methods=["GET"])
+@require_auth
 def get_conversations():
     """Get all conversations for a user"""
     try:
-        user_id = request.args.get("user_id")
+        user_id = g.user_id
         archived = request.args.get("archived", "false").lower() == "true"
-
-        if not user_id:
-            return jsonify({"error": "Missing user_id"}), 400
 
         # Get pagination parameters
         limit, offset = utils.get_pagination_params(request.args)
@@ -1207,16 +1373,14 @@ def get_conversations():
 
 
 @app.route("/api/users/conversations", methods=["POST"])
+@require_auth
 def create_conversation():
     """Create a new conversation"""
     try:
         data = request.json
-        user_id = data.get("user_id")
+        user_id = g.user_id
         conversation_id = data.get("conversation_id") or str(int(datetime.now().timestamp() * 1000))
         title = data.get("title", "New Conversation")
-
-        if not user_id:
-            return jsonify({"error": "Missing user_id"}), 400
 
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -1245,12 +1409,11 @@ def create_conversation():
 
 
 @app.route("/api/users/conversations/<conversation_id>", methods=["GET"])
+@require_auth
 def get_conversation(conversation_id):
     """Get a specific conversation with messages"""
     try:
-        user_id = request.args.get("user_id")
-        if not user_id:
-            return jsonify({"error": "Missing user_id"}), 400
+        user_id = g.user_id
 
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -1307,18 +1470,16 @@ def get_conversation(conversation_id):
 
 
 @app.route("/api/users/conversations/<conversation_id>", methods=["PUT"])
+@require_auth
 def update_conversation(conversation_id):
     """Update conversation (title, archive status, etc)"""
     conn = None
     try:
         data = request.json
-        user_id = data.get("user_id")
+        user_id = g.user_id
         title = data.get("title")
         archived = data.get("archived")
         messages = data.get("messages", [])
-
-        if not user_id:
-            return jsonify({"error": "Missing user_id"}), 400
 
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -1375,12 +1536,11 @@ def update_conversation(conversation_id):
 
 
 @app.route("/api/users/conversations/<conversation_id>", methods=["DELETE"])
+@require_auth
 def delete_conversation(conversation_id):
     """Delete (soft delete) a conversation"""
     try:
-        user_id = request.args.get("user_id")
-        if not user_id:
-            return jsonify({"error": "Missing user_id"}), 400
+        user_id = g.user_id
 
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -1405,12 +1565,11 @@ def delete_conversation(conversation_id):
 
 
 @app.route("/api/users/ai-digest", methods=["GET"])
+@require_auth
 def get_ai_digest():
     """Get AI agent digest for user"""
     try:
-        user_id = request.args.get("user_id")
-        if not user_id:
-            return jsonify({"error": "Missing user_id"}), 400
+        user_id = g.user_id
 
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -1471,15 +1630,13 @@ def get_ai_digest():
 
 
 @app.route("/api/users/ai-digest", methods=["PUT"])
+@require_auth
 def update_ai_digest():
     """Update AI agent digest"""
     try:
         data = request.json
-        user_id = data.get("user_id")
+        user_id = g.user_id
         digest = data.get("digest", {})
-
-        if not user_id:
-            return jsonify({"error": "Missing user_id"}), 400
 
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -1531,12 +1688,11 @@ def update_ai_digest():
 
 
 @app.route("/api/users/ai-memory", methods=["GET"])
+@require_auth
 def get_ai_memory():
     """Get AI agent memory for user"""
     try:
-        user_id = request.args.get("user_id")
-        if not user_id:
-            return jsonify({"error": "Missing user_id"}), 400
+        user_id = g.user_id
 
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -1562,15 +1718,13 @@ def get_ai_memory():
 
 
 @app.route("/api/users/ai-memory", methods=["PUT"])
+@require_auth
 def update_ai_memory():
     """Update AI agent memory (replaces all)"""
     try:
         data = request.json
-        user_id = data.get("user_id")
+        user_id = g.user_id
         memory_items = data.get("memory", [])
-
-        if not user_id:
-            return jsonify({"error": "Missing user_id"}), 400
 
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -1600,12 +1754,11 @@ def update_ai_memory():
 
 
 @app.route("/api/users/preferences", methods=["GET"])
+@require_auth
 def get_preferences():
     """Get user preferences"""
     try:
-        user_id = request.args.get("user_id")
-        if not user_id:
-            return jsonify({"error": "Missing user_id"}), 400
+        user_id = g.user_id
 
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -1651,18 +1804,16 @@ def get_preferences():
 
 
 @app.route("/api/users/preferences", methods=["PUT"])
+@require_auth
 def update_preferences():
     """Update user preferences"""
     conn = None
     try:
         data = request.json
-        user_id = data.get("user_id")
+        user_id = g.user_id
         current_language = data.get("currentLanguage")
         gemini_model = data.get("geminiModel")
         ai_provider = data.get("aiProvider")
-
-        if not user_id:
-            return jsonify({"error": "Missing user_id"}), 400
 
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -1721,14 +1872,12 @@ def update_preferences():
 
 
 @app.route("/api/users/practice-progress", methods=["GET"])
+@require_auth
 def get_practice_progress():
     """Get practice progress for user"""
     try:
-        user_id = request.args.get("user_id")
+        user_id = g.user_id
         exercise_id = request.args.get("exercise_id")
-
-        if not user_id:
-            return jsonify({"error": "Missing user_id"}), 400
 
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -1798,18 +1947,16 @@ def get_practice_progress():
 
 
 @app.route("/api/users/practice-progress", methods=["PUT"])
+@require_auth
 def update_practice_progress():
     """Update practice progress"""
     try:
         data = request.json
-        user_id = data.get("user_id")
+        user_id = g.user_id
         exercise_id = data.get("exercise_id")
 
-        if not user_id or not exercise_id:
-            return jsonify({"error": "Missing user_id or exercise_id"}), 400
-
-        # Ensure user_id is a string (in case it's passed as number)
-        user_id = str(user_id)
+        if not exercise_id:
+            return jsonify({"error": "Missing exercise_id"}), 400
 
         exercise_title = data.get("exercise_title", "")
         score = data.get("score", 0)
@@ -1930,12 +2077,11 @@ def update_practice_progress():
 
 
 @app.route("/api/exercises/progress", methods=["GET"])
+@require_auth
 def get_all_progress():
     """Get progress for all exercises for current user"""
     try:
-        user_id = request.headers.get("X-User-Id") or request.args.get("user_id")
-        if not user_id:
-            return jsonify({"error": "User ID required"}), 400
+        user_id = g.user_id
 
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -2275,7 +2421,16 @@ def submit_contact():
         email = data.get("email")
         subject = data.get("subject")
         message = data.get("message")
-        user_id = data.get("user_id")  # Optional - may be null for non-logged-in users
+
+        # Optional: extract user_id from JWT if present
+        user_id = None
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            try:
+                payload = decode_jwt_token(auth_header.split(" ", 1)[1])
+                user_id = str(payload["user_id"])
+            except Exception:
+                pass  # Contact form works without auth
 
         if not all([name, email, subject, message]):
             return jsonify({"error": "Missing required fields"}), 400
@@ -2318,25 +2473,28 @@ def generate_class_code():
 
 
 @app.route("/api/classes", methods=["POST", "OPTIONS"])
+@require_auth
 def create_class():
     """Create a new class (professor only)"""
     try:
         if request.method == "OPTIONS":
             response = app.response_class()
-            response.headers["Access-Control-Allow-Origin"] = "*"
+            cors_origin = _get_cors_origin()
+            if cors_origin:
+                response.headers["Access-Control-Allow-Origin"] = cors_origin
             response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
             response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
             response.status_code = 200
             return response
 
         data = request.json
-        user_id = data.get("user_id")
+        user_id = g.user_id
         name = data.get("name")
         description = data.get("description", "")
         class_code = data.get("class_code", "").strip().upper()  # Custom code from professor
 
-        if not user_id or not name:
-            return jsonify({"error": "Missing required fields (user_id, name)"}), 400
+        if not name:
+            return jsonify({"error": "Missing required field (name)"}), 400
 
         if not class_code:
             return (
@@ -2407,12 +2565,11 @@ def create_class():
 
 
 @app.route("/api/classes", methods=["GET"])
+@require_auth
 def get_classes():
     """Get classes for current user (professor sees their classes, student sees enrolled classes)"""
     try:
-        user_id = request.args.get("user_id")
-        if not user_id:
-            return jsonify({"error": "Missing user_id"}), 400
+        user_id = g.user_id
 
         # Get pagination parameters
         limit, offset = utils.get_pagination_params(request.args)
@@ -2522,12 +2679,11 @@ def get_classes():
 
 
 @app.route("/api/classes/<class_id>", methods=["GET"])
+@require_auth
 def get_class(class_id):
     """Get class details"""
     try:
-        user_id = request.args.get("user_id")
-        if not user_id:
-            return jsonify({"error": "Missing user_id"}), 400
+        user_id = g.user_id
 
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -2633,11 +2789,12 @@ def get_class(class_id):
 
 
 @app.route("/api/classes/<class_id>/resources", methods=["GET"])
+@require_auth
 def get_class_resources(class_id):
     """Get all resources for a class (including chapters as resources)"""
     # ... Implementation check ...
     try:
-        user_id = request.args.get("user_id")
+        user_id = g.user_id
         if not user_id:
             return jsonify({"error": "Missing user_id"}), 400
 
@@ -2736,10 +2893,11 @@ def get_class_resources(class_id):
 
 
 @app.route("/api/exercises/<exercise_id>", methods=["GET"])
+@require_auth
 def get_exercise_details(exercise_id):
     """Get details of a single exercise"""
     try:
-        user_id = request.args.get("user_id")
+        user_id = g.user_id
         if not user_id:
             return jsonify({"error": "Missing user_id"}), 400
 
@@ -2784,15 +2942,13 @@ def get_exercise_details(exercise_id):
 
 
 @app.route("/api/exercises/<exercise_id>", methods=["PUT"])
+@require_auth
 def update_exercise(exercise_id):
     """Update an existing exercise"""
     try:
         ensure_exercises_table()
         data = request.json
-        user_id = data.get("user_id")
-
-        if not user_id:
-            return jsonify({"error": "Missing user_id"}), 400
+        user_id = g.user_id
 
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -2839,17 +2995,15 @@ def update_exercise(exercise_id):
 
 
 @app.route("/api/classes/<class_id>", methods=["PUT"])
+@require_auth
 def update_class(class_id):
     """Update class (professor only, must be owner)"""
     conn = None
     try:
         data = request.json
-        user_id = data.get("user_id")
+        user_id = g.user_id
         name = data.get("name")
         description = data.get("description")
-
-        if not user_id:
-            return jsonify({"error": "Missing user_id"}), 400
 
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -2983,19 +3137,22 @@ def validate_pdf_file(file):
 
 
 @app.route("/api/classes/<class_id>/chapters", methods=["POST", "OPTIONS"])
+@require_auth
 def upload_chapter(class_id):
     """Upload PDF and create chapter for a class (professor only)"""
     try:
         if request.method == "OPTIONS":
             response = app.response_class()
-            response.headers["Access-Control-Allow-Origin"] = "*"
+            cors_origin = _get_cors_origin()
+            if cors_origin:
+                response.headers["Access-Control-Allow-Origin"] = cors_origin
             response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
             response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
             response.status_code = 200
             return response
 
-        # Get user_id from form data
-        user_id = request.form.get("user_id")
+        # Get user_id from JWT token
+        user_id = g.user_id
         if not user_id:
             return jsonify({"error": "Missing user_id"}), 400
 
@@ -3186,10 +3343,11 @@ def upload_chapter(class_id):
 
 
 @app.route("/api/classes/<class_id>/chapters", methods=["GET"])
+@require_auth
 def get_class_chapters(class_id):
     """Get all chapters for a class"""
     try:
-        user_id = request.args.get("user_id")
+        user_id = g.user_id
         if not user_id:
             return jsonify({"error": "Missing user_id"}), 400
 
@@ -3265,14 +3423,12 @@ def get_class_chapters(class_id):
 
 
 @app.route("/api/chapters/<chapter_id>", methods=["PUT"])
+@require_auth
 def update_chapter(chapter_id):
     """Update a chapter"""
     try:
         data = request.json
-        user_id = data.get("user_id")
-
-        if not user_id:
-            return jsonify({"error": "Missing user_id"}), 400
+        user_id = g.user_id
 
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -3318,10 +3474,11 @@ def update_chapter(chapter_id):
 
 
 @app.route("/api/chapters/<chapter_id>", methods=["DELETE", "OPTIONS"])
+@require_auth
 def delete_chapter(chapter_id):
     """Delete a chapter and all its exercises (professor only)"""
     try:
-        user_id = request.args.get("user_id")
+        user_id = g.user_id
         if not user_id:
             return jsonify({"error": "Missing user_id"}), 400
 
@@ -3374,14 +3531,12 @@ def delete_chapter(chapter_id):
 
 
 @app.route("/api/chapters/<chapter_id>/generate-exercises", methods=["POST"])
+@require_auth
 def generate_exercises_for_chapter(chapter_id):
     """Generate exercises from an existing chapter's PDF data"""
     try:
         data = request.get_json() or {}
-        user_id = data.get("user_id")
-
-        if not user_id:
-            return jsonify({"error": "User ID required"}), 400
+        user_id = g.user_id
 
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -3505,10 +3660,11 @@ def generate_exercises_for_chapter(chapter_id):
 
 
 @app.route("/api/classes/<class_id>", methods=["DELETE"])
+@require_auth
 def delete_class(class_id):
     """Delete class (professor only, must be owner)"""
     try:
-        user_id = request.args.get("user_id")
+        user_id = g.user_id
         if not user_id:
             return jsonify({"error": "Missing user_id"}), 400
 
@@ -3552,10 +3708,11 @@ def delete_class(class_id):
 
 
 @app.route("/api/chapters/<chapter_id>/exercises", methods=["GET"])
+@require_auth
 def get_chapter_exercises(chapter_id):
     """Get all exercises for a chapter"""
     try:
-        user_id = request.args.get("user_id")
+        user_id = g.user_id
         if not user_id:
             return jsonify({"error": "Missing user_id"}), 400
 
@@ -3642,11 +3799,14 @@ def get_chapter_exercises(chapter_id):
 
 
 @app.route("/api/ai/chat", methods=["POST", "OPTIONS"])
+@require_auth
 def proxy_ai_chat():
     """Secure proxy for Gemini Chat API"""
     if request.method == "OPTIONS":
         response = app.response_class()
-        response.headers["Access-Control-Allow-Origin"] = "*"
+        cors_origin = _get_cors_origin()
+        if cors_origin:
+            response.headers["Access-Control-Allow-Origin"] = cors_origin
         response.headers["Access-Control-Allow-Headers"] = "Content-Type"
         response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
         return response
@@ -3700,23 +3860,26 @@ def proxy_ai_chat():
 
 
 @app.route("/api/classes/enroll", methods=["POST", "OPTIONS"])
+@require_auth
 def enroll_in_class():
     """Enroll student in a class using class_id (class code)"""
     try:
         if request.method == "OPTIONS":
             response = app.response_class()
-            response.headers["Access-Control-Allow-Origin"] = "*"
+            cors_origin = _get_cors_origin()
+            if cors_origin:
+                response.headers["Access-Control-Allow-Origin"] = cors_origin
             response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
             response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
             response.status_code = 200
             return response
 
         data = request.json
-        user_id = data.get("user_id")
+        user_id = g.user_id
         class_id = data.get("class_id")
 
-        if not user_id or not class_id:
-            return jsonify({"error": "Missing required fields (user_id, class_id)"}), 400
+        if not class_id:
+            return jsonify({"error": "Missing required field (class_id)"}), 400
 
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -3797,10 +3960,11 @@ def enroll_in_class():
 
 
 @app.route("/api/classes/enrolled", methods=["GET"])
+@require_auth
 def get_enrolled_classes():
     """Get all classes a student is enrolled in"""
     try:
-        user_id = request.args.get("user_id")
+        user_id = g.user_id
         if not user_id:
             return jsonify({"error": "Missing user_id"}), 400
 
@@ -3880,10 +4044,11 @@ def get_enrolled_classes():
 
 
 @app.route("/api/classes/<class_id>/students", methods=["GET"])
+@require_auth
 def get_class_students(class_id):
     """Get all students enrolled in a class (professor only)"""
     try:
-        user_id = request.args.get("user_id")
+        user_id = g.user_id
         if not user_id:
             return jsonify({"error": "Missing user_id"}), 400
 
@@ -3945,11 +4110,12 @@ def get_class_students(class_id):
 
 
 @app.route("/api/classes/<class_id>/progress", methods=["GET"])
+@require_auth
 def get_class_progress(class_id):
     """Get all students' progress for a class (professor only)"""
     conn = None
     try:
-        user_id = request.args.get("user_id")
+        user_id = g.user_id
         if not user_id:
             return jsonify({"error": "Missing user_id"}), 400
 
@@ -4088,10 +4254,11 @@ def get_class_progress(class_id):
 
 
 @app.route("/api/progress", methods=["GET"])
+@require_auth
 def get_progress():
     """Get student's progress for exercises (optionally filtered by class_id)"""
     try:
-        user_id = request.args.get("user_id")
+        user_id = g.user_id
         class_id = request.args.get("class_id")
 
         if not user_id:
@@ -4177,10 +4344,11 @@ def get_progress():
 
 
 @app.route("/api/students/<student_id>/progress", methods=["GET"])
+@require_auth
 def get_student_progress(student_id):
     """Get specific student's progress (professor only for their classes)"""
     try:
-        user_id = request.args.get("user_id")  # professor's user_id
+        user_id = g.user_id  # professor's user_id
         class_id = request.args.get("class_id")  # optional: filter by class
 
         if not user_id:
@@ -4327,10 +4495,11 @@ def get_student_progress(student_id):
 
 
 @app.route("/api/classes/<class_id>/leaderboard/average", methods=["GET"])
+@require_auth
 def get_class_average_leaderboard(class_id):
     """Get average leaderboard for a class (all students ranked by average score)"""
     try:
-        user_id = request.args.get("user_id")
+        user_id = g.user_id
         if not user_id:
             return jsonify({"error": "Missing user_id"}), 400
 
@@ -4420,10 +4589,11 @@ def get_class_average_leaderboard(class_id):
 
 
 @app.route("/api/classes/<class_id>/leaderboard/exercise/<exercise_id>", methods=["GET"])
+@require_auth
 def get_exercise_leaderboard_for_class(class_id, exercise_id):
     """Get leaderboard for a specific exercise in a class"""
     try:
-        user_id = request.args.get("user_id")
+        user_id = g.user_id
         if not user_id:
             return jsonify({"error": "Missing user_id"}), 400
 
@@ -4550,6 +4720,7 @@ import uuid
 
 
 @app.route("/api/classes/<class_id>/chapters/<chapter_id>/exercises", methods=["POST"])
+@require_auth
 def create_exercise(class_id, chapter_id):
     """Manually create a new exercise"""
     try:
@@ -4561,10 +4732,7 @@ def create_exercise(class_id, chapter_id):
         else:
             data = request.json or {}
 
-        user_id = data.get("user_id")
-
-        if not user_id:
-            return jsonify({"error": "Missing user_id"}), 400
+        user_id = g.user_id
 
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -4634,16 +4802,14 @@ def create_exercise(class_id, chapter_id):
 
 
 @app.route("/api/classes/<class_id>/resources", methods=["POST", "OPTIONS"])
+@require_auth
 def add_class_resource(class_id):
     """Add a new resource (link) to the class"""
     try:
         ensure_resources_table()
 
         data = request.json
-        user_id = data.get("user_id")
-
-        if not user_id:
-            return jsonify({"error": "Missing user_id"}), 400
+        user_id = g.user_id
 
         # Generate Unique ID using UUID
         resource_id = f"res_{str(uuid.uuid4())}"
@@ -4727,7 +4893,9 @@ def serve_chapter_pdf(chapter_id):
             response.headers["Content-Disposition"] = (
                 f'inline; filename="{pdf_filename}"'
             )
-            response.headers["Access-Control-Allow-Origin"] = "*"
+            cors_origin = _get_cors_origin()
+            if cors_origin:
+                response.headers["Access-Control-Allow-Origin"] = cors_origin
             return response
 
         # OLD: Fallback to filesystem for legacy chapters
@@ -4735,7 +4903,9 @@ def serve_chapter_pdf(chapter_id):
             pdf_path = os.path.join(app.config["UPLOAD_FOLDER"], pdf_filename)
             if os.path.exists(pdf_path):
                 response = send_from_directory(app.config["UPLOAD_FOLDER"], pdf_filename)
-                response.headers["Access-Control-Allow-Origin"] = "*"
+                cors_origin = _get_cors_origin()
+                if cors_origin:
+                    response.headers["Access-Control-Allow-Origin"] = cors_origin
                 return response
             else:
                 return jsonify({"error": f"PDF file not found: {pdf_filename}"}), 404
@@ -4748,6 +4918,7 @@ def serve_chapter_pdf(chapter_id):
 
 
 @app.route("/api/exercises/<exercise_id>", methods=["DELETE", "OPTIONS"])
+@require_auth
 def delete_exercise(exercise_id):
     """Delete a specific exercise"""
     try:
@@ -4850,12 +5021,15 @@ def ensure_resources_table():
 
 
 @app.route("/api/classes/<class_id>/resources/upload", methods=["POST", "OPTIONS"])
+@require_auth
 def upload_class_resource(class_id):
     """Upload a file as a resource"""
     # Handle CORS preflight explicitly
     if request.method == "OPTIONS":
         response = app.response_class()
-        response.headers["Access-Control-Allow-Origin"] = "*"
+        cors_origin = _get_cors_origin()
+        if cors_origin:
+            response.headers["Access-Control-Allow-Origin"] = cors_origin
         response.headers["Access-Control-Allow-Headers"] = "Content-Type"
         response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
         return response
@@ -4870,7 +5044,7 @@ def upload_class_resource(class_id):
         if file.filename == "":
             return jsonify({"error": "No selected file"}), 400
 
-        user_id = request.form.get("user_id")
+        user_id = g.user_id
 
         filename = secure_filename(file.filename)
         # Store in DB
@@ -4971,7 +5145,7 @@ def serve_resource_download(resource_id):
             mimetype=mimetype,
             headers={
                 "Content-Disposition": f'{disposition}; filename="{filename}"',
-                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Origin": _get_cors_origin() or "",
             },
         )
 
@@ -4986,7 +5160,9 @@ def manage_resource(class_id, resource_id):
     try:
         if request.method == "OPTIONS":
             response = app.response_class()
-            response.headers["Access-Control-Allow-Origin"] = "*"
+            cors_origin = _get_cors_origin()
+            if cors_origin:
+                response.headers["Access-Control-Allow-Origin"] = cors_origin
             response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
             response.headers["Access-Control-Allow-Methods"] = "PUT, DELETE, OPTIONS"
             response.status_code = 200

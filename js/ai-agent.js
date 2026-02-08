@@ -458,12 +458,9 @@ ${memoryText}`;
 
     // Use selected Gemini model
     // Use secure backend proxy instead of direct call
-    const response = await fetch(`${window.API_BASE_URL || '/api'}/ai/chat`,
+    const response = await authFetch(`${window.API_BASE_URL || '/api'}/ai/chat`,
       {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
         body: JSON.stringify({
           model: this.geminiModel,
           contents: contents,

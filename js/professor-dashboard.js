@@ -20,7 +20,7 @@ async function loadClasses() {
     emptyState.style.display = 'none';
     classesGrid.style.display = 'none';
 
-    const response = await fetch(`${window.API_BASE_URL}/classes?user_id=${currentUser.user_id}`);
+    const response = await authFetch(`${window.API_BASE_URL}/classes`);
     const data = await response.json();
 
     if (!response.ok) {
@@ -168,13 +168,9 @@ async function handleCreateClass(event) {
     submitButton.disabled = true;
     submitButton.textContent = 'Creating...';
 
-    const response = await fetch(`${window.API_BASE_URL}/classes`, {
+    const response = await authFetch(`${window.API_BASE_URL}/classes`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
       body: JSON.stringify({
-        user_id: currentUser.user_id,
         class_code: classCode.toUpperCase(),
         name: name,
         description: description
@@ -241,11 +237,8 @@ async function deleteClass(classId, className) {
   if (!confirmed) return;
 
   try {
-    const response = await fetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(classId)}?user_id=${currentUser.user_id}`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json'
-      }
+    const response = await authFetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(classId)}`, {
+      method: 'DELETE'
     });
 
     const data = await response.json();
