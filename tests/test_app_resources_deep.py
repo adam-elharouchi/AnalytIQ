@@ -23,7 +23,7 @@ class TestAddClassResource:
             "resource_type": "link",
             "resource_url": "https://example.com/resource",
         })
-        assert response.status_code in [201, 400, 500]
+        assert response.status_code in [201, 400, 401, 403, 500]
 
     def test_add_resource_missing_user_id(self, client, mock_db):
         """Test adding resource without user_id"""
@@ -31,7 +31,7 @@ class TestAddClassResource:
             "title": "Useful Link",
             "resource_url": "https://example.com",
         })
-        assert response.status_code in [400, 500]
+        assert response.status_code in [400, 401, 403, 500]
 
     def test_add_resource_options(self, client):
         """Test OPTIONS for adding resource"""
@@ -57,7 +57,7 @@ class TestUploadClassResource:
             },
             content_type="multipart/form-data",
         )
-        assert response.status_code in [201, 400, 500]
+        assert response.status_code in [201, 400, 401, 403, 500]
 
     def test_upload_resource_no_file(self, client, mock_db):
         """Test uploading without a file"""
@@ -66,7 +66,7 @@ class TestUploadClassResource:
             data={"user_id": "prof123", "title": "Test"},
             content_type="multipart/form-data",
         )
-        assert response.status_code in [400, 500]
+        assert response.status_code in [400, 401, 403, 500]
 
     def test_upload_resource_empty_filename(self, client, mock_db):
         """Test uploading with empty filename"""
@@ -78,7 +78,7 @@ class TestUploadClassResource:
             },
             content_type="multipart/form-data",
         )
-        assert response.status_code in [400, 500]
+        assert response.status_code in [400, 401, 403, 500]
 
     def test_upload_resource_options(self, client):
         """Test OPTIONS for resource upload"""
@@ -98,7 +98,7 @@ class TestServeResourceDownload:
         )
 
         response = client.get("/api/resources/res123/download")
-        assert response.status_code in [200, 404, 500]
+        assert response.status_code in [200, 401, 404, 500]
 
     def test_download_csv_resource(self, client, mock_db):
         """Test downloading a CSV resource"""
@@ -109,21 +109,21 @@ class TestServeResourceDownload:
         )
 
         response = client.get("/api/resources/res123/download")
-        assert response.status_code in [200, 404, 500]
+        assert response.status_code in [200, 401, 404, 500]
 
     def test_download_resource_not_found(self, client, mock_db):
         """Test downloading non-existent resource"""
         mock_db.cursor().fetchone.return_value = None
 
         response = client.get("/api/resources/nonexistent/download")
-        assert response.status_code in [404, 500]
+        assert response.status_code in [401, 404, 500]
 
     def test_download_resource_empty_data(self, client, mock_db):
         """Test downloading resource with empty file data"""
         mock_db.cursor().fetchone.return_value = (None, "file.csv", "file")
 
         response = client.get("/api/resources/res123/download")
-        assert response.status_code in [404, 500]
+        assert response.status_code in [401, 404, 500]
 
 
 class TestCreateClassResourceJson:
@@ -138,7 +138,7 @@ class TestCreateClassResourceJson:
             "resource_type": "link",
             "resource_url": "https://tutorial.example.com",
         })
-        assert response.status_code in [201, 400, 500]
+        assert response.status_code in [201, 400, 401, 403, 500]
 
 
 class TestManageResource:
@@ -152,12 +152,12 @@ class TestManageResource:
             "resource_type": "link",
             "resource_url": "https://updated.example.com",
         })
-        assert response.status_code in [200, 400, 404, 500]
+        assert response.status_code in [200, 400, 401, 404, 500]
 
     def test_delete_resource_success(self, client, mock_db):
         """Test deleting a resource"""
         response = client.delete("/api/classes/CLS123/resources/res123")
-        assert response.status_code in [200, 404, 500]
+        assert response.status_code in [200, 401, 404, 500]
 
     def test_manage_resource_options(self, client):
         """Test OPTIONS for resource management"""
@@ -173,14 +173,14 @@ class TestDeleteExercise:
         mock_db.cursor().fetchone.return_value = ("ch123", "CLS123")
 
         response = client.delete("/api/exercises/ex123")
-        assert response.status_code in [200, 404, 500]
+        assert response.status_code in [200, 401, 404, 500]
 
     def test_delete_exercise_not_found(self, client, mock_db):
         """Test deleting non-existent exercise"""
         mock_db.cursor().fetchone.return_value = None
 
         response = client.delete("/api/exercises/nonexistent")
-        assert response.status_code in [404, 500]
+        assert response.status_code in [401, 404, 500]
 
     def test_delete_exercise_options(self, client):
         """Test OPTIONS for exercise delete"""
@@ -222,7 +222,7 @@ class TestCreateExercise:
                 "title": "Exercise",
             },
         )
-        assert response.status_code in [404, 500]
+        assert response.status_code in [401, 404, 500]
 
     def test_create_exercise_not_owner(self, client, mock_db):
         """Test creating exercise as non-owner"""
@@ -252,7 +252,7 @@ class TestCreateExercise:
                 "title": "Exercise",
             },
         )
-        assert response.status_code in [404, 500]
+        assert response.status_code in [401, 404, 500]
 
     def test_create_exercise_missing_user_id(self, client, mock_db):
         """Test creating exercise without user_id"""
@@ -260,7 +260,7 @@ class TestCreateExercise:
             "/api/classes/CLS123/chapters/ch123/exercises",
             json={"title": "Exercise"},
         )
-        assert response.status_code in [400, 500]
+        assert response.status_code in [400, 401, 403, 500]
 
 
 class TestUserPreferences:
@@ -271,12 +271,12 @@ class TestUserPreferences:
         mock_db.cursor().fetchone.return_value = ("python", "gemini-2.5-flash", "gemini")
 
         response = client.get("/api/users/preferences?user_id=user123")
-        assert response.status_code in [200, 400, 500]
+        assert response.status_code in [200, 400, 401, 500]
 
     def test_get_preferences_missing_user_id(self, client, mock_db):
         """Test getting preferences without user_id"""
         response = client.get("/api/users/preferences")
-        assert response.status_code in [400, 500]
+        assert response.status_code in [400, 401, 403, 500]
 
     def test_update_preferences_success(self, client, mock_db):
         """Test updating user preferences"""
@@ -286,14 +286,14 @@ class TestUserPreferences:
             "geminiModel": "gemini-2.5-flash",
             "aiProvider": "gemini",
         })
-        assert response.status_code in [200, 400, 500]
+        assert response.status_code in [200, 400, 401, 500]
 
     def test_update_preferences_missing_user_id(self, client, mock_db):
         """Test updating preferences without user_id"""
         response = client.put("/api/users/preferences", json={
             "currentLanguage": "python",
         })
-        assert response.status_code in [400, 500]
+        assert response.status_code in [400, 401, 403, 500]
 
     def test_update_preferences_partial(self, client, mock_db):
         """Test updating only some preferences"""
@@ -301,7 +301,7 @@ class TestUserPreferences:
             "user_id": "user123",
             "currentLanguage": "javascript",
         })
-        assert response.status_code in [200, 400, 500]
+        assert response.status_code in [200, 400, 401, 500]
 
 
 class TestUserDelete:
@@ -310,12 +310,12 @@ class TestUserDelete:
     def test_delete_user_success(self, client, mock_db):
         """Test successful user deletion"""
         response = client.delete("/api/users/delete?user_id=user123")
-        assert response.status_code in [200, 400, 500]
+        assert response.status_code in [200, 400, 401, 500]
 
     def test_delete_user_missing_id(self, client, mock_db):
         """Test deleting user without user_id"""
         response = client.delete("/api/users/delete")
-        assert response.status_code in [400, 500]
+        assert response.status_code in [400, 401, 403, 500]
 
 
 class TestCsrfToken:

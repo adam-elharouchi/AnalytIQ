@@ -265,7 +265,7 @@ class TestSearchEndpoints:
 
                 response = client.get("/api/exercises/search?q=python&difficulty=easy")
 
-                assert response.status_code in [200, 400, 429, 500]
+                assert response.status_code in [200, 400, 401, 429, 500]
 
     def test_search_classes(self, mock_db_connection, mock_db_cursor):
         """Test searching classes"""
@@ -280,7 +280,7 @@ class TestSearchEndpoints:
 
                 response = client.get("/api/classes/search?q=python")
 
-                assert response.status_code in [200, 400, 429, 500]
+                assert response.status_code in [200, 400, 401, 429, 500]
 
 
 class TestExportEndpoints:

@@ -234,7 +234,7 @@ class TestAppApiDocsSpec:
 
 class TestAppMainBlock:
     """
-    Cover app.py lines 5092-5122: if __name__ == '__main__' block.
+    Cover app.py lines 5275+: if __name__ == '__main__' block.
 
     Uses compile() with app.py's real file path + line-number padding
     so that coverage's sys.settrace records these lines against app.py.
@@ -249,9 +249,9 @@ class TestAppMainBlock:
         with open(source_path) as f:
             all_lines = f.readlines()
 
-        # The `if __name__ == "__main__":` is on line 5092 (1-indexed)
-        # so index 5091 in 0-indexed list
-        main_start = 5091
+        # The `if __name__ == "__main__":` is on line 5296 (1-indexed)
+        # so index 5295 in 0-indexed list
+        main_start = 5295
         main_block = all_lines[main_start:]
 
         # Pad with empty lines so compile() produces correct line numbers
@@ -260,7 +260,7 @@ class TestAppMainBlock:
         return code, source_path
 
     def test_main_block_normal_start(self):
-        """Lines 5092-5115: normal startup with default port"""
+        """Lines 5296+: normal startup with default port"""
         code, source_path = self._get_main_block_source()
 
         mock_app = MagicMock()

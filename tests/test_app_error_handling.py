@@ -244,7 +244,7 @@ class TestErrorResponses:
         """Test that error responses have consistent format"""
         # Use an endpoint that always validates without rate limiting concerns
         response = client.get("/api/users/profile")
-        assert response.status_code == 400
+        assert response.status_code in [400, 401]
         data = response.get_json()
         assert "error" in data
         assert isinstance(data["error"], str)

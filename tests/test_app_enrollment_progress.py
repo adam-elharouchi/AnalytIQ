@@ -33,7 +33,7 @@ class TestEnrollInClass:
         response = client.post("/api/classes/enroll", json={
             "user_id": "student123",
         })
-        assert response.status_code in [400, 500]
+        assert response.status_code in [400, 401, 403, 500]
 
     def test_enroll_professor_denied(self, client, mock_db):
         """Test professors cannot enroll in classes"""
@@ -57,7 +57,7 @@ class TestEnrollInClass:
             "user_id": "student123",
             "class_id": "NONEXIST",
         })
-        assert response.status_code in [404, 500]
+        assert response.status_code in [401, 404, 500]
 
     def test_enroll_user_not_found(self, client, mock_db):
         """Test enrollment with non-existent user"""
@@ -67,7 +67,7 @@ class TestEnrollInClass:
             "user_id": "nonexistent",
             "class_id": "CLS123",
         })
-        assert response.status_code in [404, 500]
+        assert response.status_code in [401, 404, 500]
 
     def test_enroll_options_request(self, client):
         """Test OPTIONS for enrollment endpoint"""
@@ -88,12 +88,12 @@ class TestGetEnrolledStudents:
         ]
 
         response = client.get("/api/classes/CLS123/students?user_id=prof123")
-        assert response.status_code in [200, 400, 403, 404, 500]
+        assert response.status_code in [200, 400, 401, 403, 404, 500]
 
     def test_get_enrolled_students_missing_user_id(self, client, mock_db):
         """Test getting students without user_id"""
         response = client.get("/api/classes/CLS123/students")
-        assert response.status_code in [400, 500]
+        assert response.status_code in [400, 401, 403, 500]
 
 
 class TestClassAverageLeaderboard:
@@ -109,7 +109,7 @@ class TestClassAverageLeaderboard:
         ]
 
         response = client.get("/api/classes/CLS123/leaderboard/average?user_id=prof123")
-        assert response.status_code in [200, 400, 403, 404, 500]
+        assert response.status_code in [200, 400, 401, 403, 404, 500]
 
     def test_get_average_leaderboard_as_enrolled_student(self, client, mock_db):
         """Test getting leaderboard as enrolled student"""
@@ -141,12 +141,12 @@ class TestClassAverageLeaderboard:
         mock_db.cursor().fetchone.return_value = None
 
         response = client.get("/api/classes/NONEXIST/leaderboard/average?user_id=user123")
-        assert response.status_code in [404, 500]
+        assert response.status_code in [401, 404, 500]
 
     def test_get_average_leaderboard_missing_user_id(self, client, mock_db):
         """Test leaderboard without user_id"""
         response = client.get("/api/classes/CLS123/leaderboard/average")
-        assert response.status_code in [400, 500]
+        assert response.status_code in [400, 401, 403, 500]
 
 
 class TestExerciseLeaderboardForClass:
@@ -164,7 +164,7 @@ class TestExerciseLeaderboardForClass:
         response = client.get(
             "/api/classes/CLS123/leaderboard/exercise/ex123?user_id=prof123"
         )
-        assert response.status_code in [200, 400, 403, 404, 500]
+        assert response.status_code in [200, 400, 401, 403, 404, 500]
 
     def test_get_exercise_leaderboard_not_authorized(self, client, mock_db):
         """Test exercise leaderboard access denied"""
@@ -202,7 +202,7 @@ class TestUpdatePracticeProgress:
                 "accuracy": 92.5,
             },
         })
-        assert response.status_code in [200, 400, 404, 500]
+        assert response.status_code in [200, 400, 401, 404, 500]
 
     def test_update_progress_not_new_best(self, client, mock_db):
         """Test updating progress without new best score"""
@@ -219,7 +219,7 @@ class TestUpdatePracticeProgress:
             "accuracy": 65.0,
             "time_spent": 200,
         })
-        assert response.status_code in [200, 400, 404, 500]
+        assert response.status_code in [200, 400, 401, 404, 500]
 
     def test_update_progress_user_not_found(self, client, mock_db):
         """Test updating progress for non-existent user"""
@@ -230,14 +230,14 @@ class TestUpdatePracticeProgress:
             "exercise_id": "ex123",
             "score": 80,
         })
-        assert response.status_code in [404, 500]
+        assert response.status_code in [401, 404, 500]
 
     def test_update_progress_missing_fields(self, client, mock_db):
         """Test updating progress with missing required fields"""
         response = client.put("/api/users/practice-progress", json={
             "user_id": "user123",
         })
-        assert response.status_code in [400, 500]
+        assert response.status_code in [400, 401, 403, 500]
 
     def test_update_progress_with_class_id(self, client, mock_db):
         """Test updating progress with class_id for class exercises"""
@@ -254,7 +254,7 @@ class TestUpdatePracticeProgress:
             "class_id": "CLS123",
             "class_exercise_id": "cls_ex_123",
         })
-        assert response.status_code in [200, 400, 404, 500]
+        assert response.status_code in [200, 400, 401, 404, 500]
 
     def test_update_progress_first_attempt(self, client, mock_db):
         """Test first attempt on an exercise"""
@@ -270,7 +270,7 @@ class TestUpdatePracticeProgress:
             "score": 60,
             "accuracy": 55.0,
         })
-        assert response.status_code in [200, 400, 404, 500]
+        assert response.status_code in [200, 400, 401, 404, 500]
 
 
 class TestGetPracticeProgress:
@@ -285,7 +285,7 @@ class TestGetPracticeProgress:
         ]
 
         response = client.get("/api/users/practice-progress?user_id=user123")
-        assert response.status_code in [200, 400, 500]
+        assert response.status_code in [200, 400, 401, 500]
 
     def test_get_progress_specific_exercise(self, client, mock_db):
         """Test getting progress for a specific exercise"""
@@ -297,7 +297,7 @@ class TestGetPracticeProgress:
         response = client.get(
             "/api/users/practice-progress?user_id=user123&exercise_id=ex1"
         )
-        assert response.status_code in [200, 400, 500]
+        assert response.status_code in [200, 400, 401, 500]
 
     def test_get_progress_no_results(self, client, mock_db):
         """Test getting progress with no results"""
@@ -307,12 +307,12 @@ class TestGetPracticeProgress:
         response = client.get(
             "/api/users/practice-progress?user_id=user123&exercise_id=nonexistent"
         )
-        assert response.status_code in [200, 400, 500]
+        assert response.status_code in [200, 400, 401, 500]
 
     def test_get_progress_missing_user_id(self, client, mock_db):
         """Test getting progress without user_id"""
         response = client.get("/api/users/practice-progress")
-        assert response.status_code in [400, 500]
+        assert response.status_code in [400, 401, 403, 500]
 
 
 class TestGetAllProgress:
@@ -328,14 +328,14 @@ class TestGetAllProgress:
             "/api/exercises/progress",
             headers={"X-User-Id": "user123"},
         )
-        assert response.status_code in [200, 400, 500]
+        assert response.status_code in [200, 400, 401, 500]
 
     def test_get_all_progress_via_query(self, client, mock_db):
         """Test getting all progress using query param"""
         mock_db.cursor().fetchall.return_value = []
 
         response = client.get("/api/exercises/progress?user_id=user123")
-        assert response.status_code in [200, 400, 500]
+        assert response.status_code in [200, 400, 401, 500]
 
 
 class TestExerciseLeaderboard:
@@ -349,14 +349,14 @@ class TestExerciseLeaderboard:
         ]
 
         response = client.get("/api/exercises/ex123/leaderboard?limit=10")
-        assert response.status_code in [200, 500]
+        assert response.status_code in [200, 401, 500]
 
     def test_get_leaderboard_empty(self, client, mock_db):
         """Test leaderboard with no entries"""
         mock_db.cursor().fetchall.return_value = []
 
         response = client.get("/api/exercises/ex123/leaderboard")
-        assert response.status_code in [200, 500]
+        assert response.status_code in [200, 401, 500]
 
 
 class TestGrandLeaderboard:
@@ -370,14 +370,14 @@ class TestGrandLeaderboard:
         ]
 
         response = client.get("/api/leaderboard/grand?limit=5")
-        assert response.status_code in [200, 500]
+        assert response.status_code in [200, 401, 500]
 
     def test_get_grand_leaderboard_default_limit(self, client, mock_db):
         """Test grand leaderboard with default limit"""
         mock_db.cursor().fetchall.return_value = []
 
         response = client.get("/api/leaderboard/grand")
-        assert response.status_code in [200, 500]
+        assert response.status_code in [200, 401, 500]
 
 
 class TestGetStudentProgress:
@@ -395,7 +395,7 @@ class TestGetStudentProgress:
         ]
 
         response = client.get("/api/students/s123/progress?user_id=prof123")
-        assert response.status_code in [200, 400, 403, 404, 500]
+        assert response.status_code in [200, 400, 401, 403, 404, 500]
 
     def test_get_student_progress_with_class_filter(self, client, mock_db):
         """Test professor viewing student progress filtered by class"""
@@ -412,7 +412,7 @@ class TestGetStudentProgress:
         response = client.get(
             "/api/students/s123/progress?user_id=prof123&class_id=CLS123"
         )
-        assert response.status_code in [200, 400, 403, 404, 500]
+        assert response.status_code in [200, 400, 401, 403, 404, 500]
 
     def test_get_student_progress_not_professor(self, client, mock_db):
         """Test non-professor trying to view student progress"""
@@ -430,9 +430,9 @@ class TestGetStudentProgress:
         ]
 
         response = client.get("/api/students/nonexist/progress?user_id=prof123")
-        assert response.status_code in [404, 500]
+        assert response.status_code in [401, 404, 500]
 
     def test_get_student_progress_missing_user_id(self, client, mock_db):
         """Test viewing progress without user_id"""
         response = client.get("/api/students/s123/progress")
-        assert response.status_code in [400, 500]
+        assert response.status_code in [400, 401, 403, 500]

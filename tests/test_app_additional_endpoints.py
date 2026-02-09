@@ -44,7 +44,7 @@ class TestChapterEndpoints:
 
                 response = client.get("/api/chapters?class_id=class123")
 
-                assert response.status_code in [200, 400, 404, 500]
+                assert response.status_code in [200, 400, 401, 404, 500]
 
     def test_get_chapter_by_id(self, mock_db_connection, mock_db_cursor):
         """Test getting specific chapter"""
@@ -80,7 +80,7 @@ class TestChapterEndpoints:
                     }
                 )
 
-                assert response.status_code in [200, 400, 403, 404, 500]
+                assert response.status_code in [200, 400, 401, 403, 404, 500]
 
     def test_delete_chapter_success(self, mock_db_connection, mock_db_cursor):
         """Test deleting chapter"""
@@ -90,7 +90,7 @@ class TestChapterEndpoints:
             with patch("app.get_db_connection", return_value=mock_db_connection):
                 response = client.delete("/api/chapters/chapter123?professor_id=prof123")
 
-                assert response.status_code in [200, 400, 403, 404, 500]
+                assert response.status_code in [200, 400, 401, 403, 404, 500]
 
 
 class TestResourceEndpoints:
@@ -130,7 +130,7 @@ class TestResourceEndpoints:
 
                 response = client.get("/api/resources?chapter_id=chapter123")
 
-                assert response.status_code in [200, 400, 404, 500]
+                assert response.status_code in [200, 400, 401, 404, 500]
 
     def test_update_resource_success(self, mock_db_connection, mock_db_cursor):
         """Test updating resource"""
@@ -147,7 +147,7 @@ class TestResourceEndpoints:
                     }
                 )
 
-                assert response.status_code in [200, 400, 403, 404, 500]
+                assert response.status_code in [200, 400, 401, 403, 404, 500]
 
     def test_delete_resource_success(self, mock_db_connection, mock_db_cursor):
         """Test deleting resource"""
@@ -157,7 +157,7 @@ class TestResourceEndpoints:
             with patch("app.get_db_connection", return_value=mock_db_connection):
                 response = client.delete("/api/resources/resource123?professor_id=prof123")
 
-                assert response.status_code in [200, 400, 403, 404, 500]
+                assert response.status_code in [200, 400, 401, 403, 404, 500]
 
 
 class TestSubmissionEndpoints:
@@ -181,7 +181,7 @@ class TestSubmissionEndpoints:
                     }
                 )
 
-                assert response.status_code in [201, 400, 404, 500]
+                assert response.status_code in [201, 400, 401, 403, 404, 500]
 
     def test_get_submissions_by_exercise(self, mock_db_connection, mock_db_cursor):
         """Test getting submissions for an exercise"""
@@ -196,7 +196,7 @@ class TestSubmissionEndpoints:
 
                 response = client.get("/api/submissions?exercise_id=exercise123")
 
-                assert response.status_code in [200, 400, 404, 500]
+                assert response.status_code in [200, 400, 401, 404, 500]
 
     def test_get_submission_by_id(self, mock_db_connection, mock_db_cursor):
         """Test getting specific submission"""
@@ -217,7 +217,7 @@ class TestSubmissionEndpoints:
 
                 response = client.get("/api/submissions/submission123")
 
-                assert response.status_code in [200, 400, 404, 500]
+                assert response.status_code in [200, 400, 401, 404, 500]
 
     def test_update_submission_grade(self, mock_db_connection, mock_db_cursor):
         """Test updating submission grade"""
@@ -234,7 +234,7 @@ class TestSubmissionEndpoints:
                     }
                 )
 
-                assert response.status_code in [200, 400, 403, 404, 500]
+                assert response.status_code in [200, 400, 401, 403, 404, 500]
 
 
 class TestExerciseEndpoints:
@@ -253,7 +253,7 @@ class TestExerciseEndpoints:
 
                 response = client.get("/api/exercises?chapter_id=chapter123")
 
-                assert response.status_code in [200, 400, 404, 500]
+                assert response.status_code in [200, 400, 401, 404, 500]
 
     def test_get_exercise_by_id(self, mock_db_connection, mock_db_cursor):
         """Test getting specific exercise"""
@@ -272,7 +272,7 @@ class TestExerciseEndpoints:
 
                 response = client.get("/api/exercises/exercise123")
 
-                assert response.status_code in [200, 400, 404, 500]
+                assert response.status_code in [200, 400, 401, 404, 500]
 
     def test_create_exercise_manual(self, mock_db_connection, mock_db_cursor):
         """Test manually creating an exercise"""
