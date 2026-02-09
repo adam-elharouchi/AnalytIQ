@@ -897,7 +897,7 @@
             : 'https://analytiq-qbfr.onrender.com/api');
 
           // Load exercise from API
-          const response = await fetch(`${apiUrl}/chapters/${encodeURIComponent(chapterId)}/exercises?user_id=${userId}`);
+          const response = await fetchWithCache(`${apiUrl}/chapters/${encodeURIComponent(chapterId)}/exercises?user_id=${userId}`);
           const data = await response.json();
 
           if (!response.ok) {
@@ -924,16 +924,28 @@
           // Store solution_code if available (for professors)
           if (exercise.solution_code) {
             exerciseData.solution_code = exercise.solution_code;
-          } else if (exercise.exercise_file_url) {
-            // If no solution_code but file exists, try to fetch file content
+          }
+
+          // If no solution_code but file exists, try to fetch file content
+          if (!exerciseData.solution_code && exercise.exercise_file_url) {
             try {
+              const isInternal = exercise.exercise_file_url.startsWith("/") ||
+                exercise.exercise_file_url.includes(window.location.hostname);
+
               const fileUrl = exercise.exercise_file_url.startsWith("/")
                 ? `${window.location.origin}${exercise.exercise_file_url}`
                 : exercise.exercise_file_url;
-              const fileResponse = await fetch(fileUrl);
+
+              // Use authFetch for internal URLs to ensure we send creds, regular fetch for external
+              const fileResponse = isInternal
+                ? await authFetch(fileUrl)
+                : await fetch(fileUrl);
+
               if (fileResponse.ok) {
                 const fileContent = await fileResponse.text();
-                exerciseData.solution_code = fileContent;
+                if (!exerciseData.solution_code) {
+                  exerciseData.solution_code = fileContent;
+                }
               }
             } catch (fileError) {
               console.warn("Could not fetch exercise file content:", fileError);
@@ -1179,7 +1191,7 @@
 
         console.log('Saving exercise score:', { userId, exerciseId, score, accuracy, timeSpent });
 
-        const response = await fetch(`${apiUrl}/users/practice-progress`, {
+        const response = await authFetch(`${apiUrl}/users/practice-progress`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json'
