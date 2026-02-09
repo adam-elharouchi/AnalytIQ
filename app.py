@@ -4850,40 +4850,9 @@ def add_class_resource(class_id):
 # ============================================================================
 
 
-@app.route("/api/chapters/<chapter_id>/pdf", methods=["GET", "OPTIONS"])
+@app.route("/api/chapters/<chapter_id>/pdf", methods=["GET"])
 def serve_chapter_pdf(chapter_id):
     """Serve PDF file from database binary storage or filesystem (backward compatibility)"""
-    # Handle OPTIONS preflight for CORS
-    if request.method == "OPTIONS":
-        response = app.response_class()
-        cors_origin = _get_cors_origin()
-        if cors_origin:
-            response.headers["Access-Control-Allow-Origin"] = cors_origin
-        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
-        response.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
-        response.status_code = 200
-        return response
-    
-    # Require authentication for GET requests
-    token = None
-    auth_header = request.headers.get("Authorization")
-    if auth_header and auth_header.startswith("Bearer "):
-        token = auth_header.split(" ", 1)[1]
-    
-    if not token:
-        return jsonify({"error": "Authentication required"}), 401
-    
-    # Verify token
-    try:
-        payload = jwt.decode(token, config.JWT_SECRET_KEY, algorithms=["HS256"])
-        user_id = payload.get("user_id")
-        if not user_id:
-            return jsonify({"error": "Invalid token"}), 401
-    except jwt.ExpiredSignatureError:
-        return jsonify({"error": "Token expired"}), 401
-    except jwt.InvalidTokenError:
-        return jsonify({"error": "Invalid token"}), 401
-    
     try:
         conn = get_db_connection()
         cursor = conn.cursor()

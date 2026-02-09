@@ -196,14 +196,11 @@
           ? 'http://localhost:5001/api'
           : 'https://analytiq-qbfr.onrender.com/api');
 
-        // Get all chapters for the class using authFetch
+        // Get all chapters for the class
         const chapterResponse = await authFetch(`${apiUrl}/classes/${encodeURIComponent(currentClassId)}/chapters`);
         const chaptersData = await chapterResponse.json();
 
         if (!chapterResponse.ok) {
-          if (chapterResponse.status === 401 || chapterResponse.status === 403) {
-            throw new Error('Authentication required. Please log in again.');
-          }
           throw new Error(chaptersData.error || 'Failed to load chapters');
         }
 
@@ -228,27 +225,7 @@
 
       } catch (error) {
         console.error('Error:', error);
-        let errorMessage = error.message;
-        
-        // Provide more helpful error messages
-        if (errorMessage.includes('Authentication required') || errorMessage.includes('401') || errorMessage.includes('403')) {
-          errorMessage = 'Authentication required. Please log in again.';
-          // Clear auth and redirect to login after a delay
-          setTimeout(() => {
-            localStorage.removeItem('authToken');
-            localStorage.removeItem('currentUser');
-            window.location.href = 'index.html';
-          }, 3000);
-        }
-        
-        container.innerHTML = `
-          <div class="loading-state">
-            <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
-            <p style="color: #ef4444; font-weight: 600;">Error loading PDF</p>
-            <p style="color: #64748b; margin-top: 0.5rem;">${escapeHtml(errorMessage)}</p>
-            <button class="btn btn-primary" onclick="javascript:history.back()" style="margin-top: 1rem;">Go Back</button>
-          </div>
-        `;
+        container.innerHTML = `<div class="loading-state"><p>Error loading PDF: ${error.message}</p><button class="btn btn-primary" onclick="javascript:history.back()" style="margin-top: 1rem;">Go Back</button></div>`;
       }
     }
 
@@ -260,26 +237,8 @@
       pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
       try {
-        // Load PDF document with auth headers
-        const token = localStorage.getItem('authToken');
-        
-        // PDF.js doesn't support Authorization headers directly for CORS requests
-        // So we need to fetch the PDF as a blob first, then load it
-        const response = await fetch(pdfPath, {
-          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-        });
-
-        if (!response.ok) {
-          if (response.status === 401 || response.status === 403) {
-            throw new Error('Authentication required. Please log in again.');
-          }
-          throw new Error(`Failed to load PDF: ${response.statusText}`);
-        }
-
-        const blob = await response.blob();
-        const blobUrl = URL.createObjectURL(blob);
-
-        const loadingTask = pdfjsLib.getDocument(blobUrl);
+        // Load PDF document
+        const loadingTask = pdfjsLib.getDocument(pdfPath);
         const pdf = await loadingTask.promise;
 
         container.innerHTML = '';
@@ -316,9 +275,6 @@
 
           container.appendChild(pageDiv);
         }
-
-        // Clean up blob URL
-        URL.revokeObjectURL(blobUrl);
       } catch (error) {
         console.error('PDF rendering error:', error);
         throw new Error(`Failed to load PDF: ${error.message}`);
