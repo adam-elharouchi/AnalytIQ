@@ -37,38 +37,17 @@ except ImportError:
 # Load environment variables
 load_dotenv()
 
-# Sentry SDK Initialization
-try:
-    import sentry_sdk
-    from sentry_sdk.integrations.flask import FlaskIntegration
-    
-    sentry_sdk.init(
-        dsn=os.getenv("SENTRY_DSN", "https://af52c0b187b184c92d8792a7aaf65a9e@o4510847021613056.ingest.us.sentry.io/4510848475791360"),
-        integrations=[FlaskIntegration()],
-        # Add data like request headers and IP for users,
-        # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
-        send_default_pii=True,
-        # Enable sending logs to Sentry
-        enable_logs=True,
-        # Set traces_sample_rate to 1.0 to capture 100%
-        # of transactions for tracing.
-        traces_sample_rate=1.0,
-        # Set profile_session_sample_rate to 1.0 to profile 100%
-        # of profile sessions.
-        profile_session_sample_rate=1.0,
-        # Set profile_lifecycle to "trace" to automatically
-        # run the profiler on when there is an active transaction
-        profile_lifecycle="trace",
-        environment=os.getenv("FLASK_ENV", "production"),
-    )
-    print("✅ Sentry SDK initialized")
-except ImportError:
-    print("Warning: sentry-sdk not installed. Sentry will not be active.")
-except Exception as e:
-    print(f"Warning: Failed to initialize Sentry: {e}")
-
 # Initialize Flask app
 app = Flask(__name__)
+
+# Initialize Sentry with proper configuration (PII filtering, etc.)
+try:
+    from sentry_config import init_sentry
+    init_sentry(app)
+except ImportError:
+    print("Warning: sentry_config not available. Sentry will not be active.")
+except Exception as e:
+    print(f"Warning: Failed to initialize Sentry: {e}")
 app.config["SECRET_KEY"] = config.SECRET_KEY
 
 # Disable automatic OPTIONS handling so we can handle CORS manually
