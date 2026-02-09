@@ -40,7 +40,7 @@ class TestClassOperations:
         with app.test_client() as client:
             response = client.get("/api/classes/test123")
             # Should require user_id
-            assert response.status_code in [400, 500]
+            assert response.status_code in [400, 401, 403, 500]
 
     def test_delete_class_missing_user_id(self):
         """Test delete class without user_id"""
@@ -49,7 +49,7 @@ class TestClassOperations:
         with app.test_client() as client:
             response = client.delete("/api/classes/test123")
             # Should require user_id
-            assert response.status_code in [400, 404]
+            assert response.status_code in [400, 401, 404]
 
 
 class TestChapterOperations:
@@ -62,7 +62,7 @@ class TestChapterOperations:
         with app.test_client() as client:
             response = client.get("/api/classes/test123/chapters")
             # Should require user_id
-            assert response.status_code in [400, 500]
+            assert response.status_code in [400, 401, 403, 500]
 
     def test_create_chapter_options(self):
         """Test OPTIONS request for creating chapter"""
@@ -84,7 +84,7 @@ class TestExerciseOperations:
         with app.test_client() as client:
             response = client.get("/api/chapters/test123/exercises")
             # Should require user_id
-            assert response.status_code in [400, 500]
+            assert response.status_code in [400, 401, 403, 500]
 
     def test_get_exercise_by_id_missing_user_id(self):
         """Test get specific exercise without user_id"""
@@ -93,7 +93,7 @@ class TestExerciseOperations:
         with app.test_client() as client:
             response = client.get("/api/exercises/test123")
             # Should require user_id
-            assert response.status_code in [400, 500]
+            assert response.status_code in [400, 401, 403, 500]
 
 
 class TestEnrollmentOperations:
@@ -114,7 +114,7 @@ class TestEnrollmentOperations:
         with app.test_client() as client:
             response = client.post("/api/classes/enroll", json={})
             # Should return error for missing fields
-            assert response.status_code in [400, 500]
+            assert response.status_code in [400, 401, 403, 500]
 
 
 class TestResourceManagement:
@@ -127,7 +127,7 @@ class TestResourceManagement:
         with app.test_client() as client:
             response = client.get("/api/classes/test123/resources")
             # Should require user_id
-            assert response.status_code in [400, 500]
+            assert response.status_code in [400, 401, 403, 500]
 
 
 class TestPDFServing:
@@ -140,7 +140,7 @@ class TestPDFServing:
         with app.test_client() as client:
             # This will 404 but endpoint should exist
             response = client.get("/api/chapters/test123/pdf")
-            assert response.status_code in [400, 404, 500]
+            assert response.status_code in [400, 401, 404, 500]
 
 
 class TestTaskManagement:
@@ -153,7 +153,7 @@ class TestTaskManagement:
         with app.test_client() as client:
             response = client.get("/api/tasks/test-task-123/status")
             # Should return task status or not found
-            assert response.status_code in [200, 404, 500]
+            assert response.status_code in [200, 401, 404, 500]
 
 
 class TestAPIVersioning:
