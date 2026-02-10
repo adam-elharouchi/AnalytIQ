@@ -167,6 +167,39 @@
     .pdf-highlight-pink  { background: rgba(249, 168, 212, 0.7) !important; }
     .pdf-highlight-green { background: rgba(134, 239, 172, 0.7) !important; }
 
+    /* Freeform marker layer (for drawing highlights anywhere on the page) */
+    .pdf-mark-layer {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none; /* Enabled in JS only when marker mode is active */
+    }
+
+    .marker-rect {
+      position: absolute;
+      border-radius: 4px;
+      background: rgba(253, 224, 71, 0.6);
+      pointer-events: none;
+    }
+
+    .marker-rect-yellow {
+      background: rgba(253, 224, 71, 0.6);
+    }
+
+    .marker-rect-blue {
+      background: rgba(147, 197, 253, 0.6);
+    }
+
+    .marker-rect-pink {
+      background: rgba(249, 168, 212, 0.6);
+    }
+
+    .marker-rect-green {
+      background: rgba(134, 239, 172, 0.6);
+    }
+
     .page-number {
       margin-top: 0.35rem;
       color: #64748b;
@@ -174,7 +207,7 @@
       font-weight: 600;
     }
 
-    /* Left sidebar: highlight bar scrolls alongside pages */
+    /* Left sidebar: highlight bar next to PDF, sticky so it stays in view when scrolling */
     .study-toolbar-sidebar {
       position: sticky;
       top: 1.5rem;
@@ -232,7 +265,8 @@
     }
 
     .study-toolbar-sidebar .btn-bookmark,
-    .study-toolbar-sidebar .btn-notes-panel {
+    .study-toolbar-sidebar .btn-notes-panel,
+    .study-toolbar-sidebar .btn-add-note {
       display: flex;
       align-items: center;
       justify-content: center;
@@ -250,7 +284,8 @@
     }
 
     .study-toolbar-sidebar .btn-bookmark:hover,
-    .study-toolbar-sidebar .btn-notes-panel:hover {
+    .study-toolbar-sidebar .btn-notes-panel:hover,
+    .study-toolbar-sidebar .btn-add-note:hover {
       background: #f1f5f9;
       color: #2569f4;
     }
@@ -259,6 +294,44 @@
       background: #fef3c7;
       border-color: #f59e0b;
       color: #b45309;
+    }
+
+    /* Marker / eraser mode toggle buttons */
+    .marker-mode-toggle {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      align-items: center;
+      margin-top: 0.25rem;
+    }
+
+    .marker-mode-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      border: 1px solid #e2e8f0;
+      background: #f8fafc;
+      color: #475569;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.1s;
+    }
+
+    .marker-mode-btn:hover {
+      background: #e5edff;
+      border-color: #2569f4;
+      color: #2569f4;
+      transform: translateY(-1px);
+    }
+
+    .marker-mode-btn.active {
+      background: #2569f4;
+      border-color: #2569f4;
+      color: #ffffff;
+      box-shadow: 0 0 0 2px rgba(37, 105, 244, 0.3);
     }
 
     /* Selection popup for highlight / add note */
@@ -305,7 +378,7 @@
       color: white;
     }
 
-    /* Study layout: left sidebar | main content | study panel */
+    /* Study layout: main content; left bar and right panel are fixed so they don't get cut off when scrolling */
     .study-layout {
       display: flex;
       gap: 1rem;
@@ -317,6 +390,7 @@
       min-width: 0;
       display: flex;
       gap: 1rem;
+      transition: margin-right 0.2s ease;
     }
 
     .study-side-panel {
@@ -327,11 +401,12 @@
       border-radius: 0.75rem;
       box-shadow: 0 2px 8px rgba(0,0,0,0.06);
       overflow: hidden;
-      max-height: calc(100vh - 12rem);
+      max-height: calc(100vh - 8rem);
       display: flex;
       flex-direction: column;
       position: sticky;
       top: 1.5rem;
+      align-self: flex-start;
     }
 
     .study-side-panel.hidden {
@@ -509,6 +584,73 @@
       text-align: center;
     }
 
+    /* Add note popup inside study panel (right side, under "My study panel") */
+    .add-note-panel-popup {
+      padding: 1rem;
+      margin-bottom: 1rem;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.5rem;
+    }
+
+    .add-note-panel-popup.hidden {
+      display: none !important;
+    }
+
+    .add-note-panel-popup:not(.hidden) {
+      display: block;
+    }
+
+    .add-note-panel-label {
+      margin: 0 0 0.5rem 0;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #0f172a;
+    }
+
+    .add-note-panel-popup textarea {
+      width: 100%;
+      min-height: 72px;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+      font-family: inherit;
+      resize: vertical;
+      margin-bottom: 0.75rem;
+      box-sizing: border-box;
+    }
+
+    .add-note-panel-popup textarea:focus {
+      outline: none;
+      border-color: #2569f4;
+    }
+
+    .add-note-panel-actions {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: flex-end;
+    }
+
+    .add-note-panel-actions button {
+      padding: 0.4rem 0.75rem;
+      font-size: 0.8125rem;
+      border-radius: 0.375rem;
+      cursor: pointer;
+    }
+
+    .add-note-panel-actions .btn-cancel-note-panel {
+      border: 1px solid #e2e8f0;
+      background: white;
+      color: #475569;
+    }
+
+    .add-note-panel-actions .btn-save-note-panel {
+      border: none;
+      background: #2569f4;
+      color: white;
+    }
+
     /* In-page add-note card (no browser prompt) */
     .add-note-card {
       position: fixed;
@@ -681,11 +823,14 @@
         <button type="button" class="highlight-btn blue" data-color="blue" title="Blue" aria-label="Blue"></button>
         <button type="button" class="highlight-btn pink" data-color="pink" title="Pink" aria-label="Pink"></button>
         <button type="button" class="highlight-btn green" data-color="green" title="Green" aria-label="Green"></button>
+        <div class="marker-mode-toggle" aria-label="Highlighter tools">
+          <button type="button" class="marker-mode-btn active" id="btnMarkerMode" title="Marker mode" aria-label="Marker mode">🖍️</button>
+          <button type="button" class="marker-mode-btn" id="btnEraserMode" title="Eraser mode" aria-label="Eraser mode">🧽</button>
+        </div>
         <span class="toolbar-divider"></span>
         <button type="button" class="btn-bookmark" id="btnBookmark" title="Bookmark current page" aria-label="Bookmark page"><span aria-hidden="true">🔖</span></button>
         <button type="button" class="btn-notes-panel" id="btnNotesPanel" title="My study panel" aria-label="Study panel">📋</button>
-        <span class="toolbar-divider"></span>
-        <button type="button" class="btn-notes-panel" id="btnDownloadPdf" title="Download PDF with my highlights" aria-label="Download annotated PDF">⬇</button>
+        <button type="button" class="btn-add-note" id="btnAddNote" title="Add note" aria-label="Add note">📝</button>
       </div>
 
       <div class="study-main">
@@ -704,6 +849,15 @@
           <button type="button" id="closeStudyPanel" aria-label="Close panel">×</button>
         </div>
         <div class="study-side-panel-content">
+          <!-- Add note popup: appears under "My study panel" when Note button is clicked -->
+          <div class="add-note-panel-popup hidden" id="addNotePanelPopup">
+            <p class="add-note-panel-label" id="addNotePanelLabel">Add a note for this page</p>
+            <textarea id="addNotePanelTextarea" rows="3" placeholder="Type your note..."></textarea>
+            <div class="add-note-panel-actions">
+              <button type="button" class="btn-cancel-note-panel" id="btnCancelNotePanel">Cancel</button>
+              <button type="button" class="btn-save-note-panel" id="btnSaveNotePanel">Save note</button>
+            </div>
+          </div>
           <div class="study-panel-section">
             <h4>Bookmarks</h4>
             <div id="bookmarksList"></div>
@@ -751,6 +905,13 @@
     let studyData = { highlights: [], bookmarks: [], notes: [] };
     let pageTextItems = [];  // text content items per page for coordinate lookup
     let cachedSelection = null;  // cache selection info before it's cleared by button click
+
+    // Marker / eraser (freeform highlighter) state
+    let markerMode = true;              // When true, dragging acts like a marker on the page
+    let eraserMode = false;             // When true, clicks erase existing marker highlights
+    let isDrawingMarker = false;
+    let markerStart = null;
+    let markerCurrentEl = null;
 
     const STUDY_STORAGE_KEY = () => `analytiq_study_${currentUserId}_${currentChapterId}`;
 
@@ -841,7 +1002,177 @@
     function applySavedHighlights() {
       const data = getStudyData();
       (data.highlights || []).forEach(h => {
+        // Skip area/marker highlights here – they are rendered separately
+        if (h.type === 'area' || (typeof h.x === 'number' && typeof h.width === 'number')) return;
         applyHighlightToRange(h.pageIndex, h.startIdx, h.endIdx, h.color);
+      });
+    }
+
+    function renderMarkerHighlights() {
+      const data = getStudyData();
+      (data.highlights || []).forEach(function (h) {
+        if (!(h.type === 'area' || (typeof h.x === 'number' && typeof h.width === 'number'))) return;
+        const layer = document.querySelector('.pdf-mark-layer[data-page-index="' + h.pageIndex + '"]');
+        if (!layer) return;
+        const baseWidth = parseFloat(layer.style.width) || layer.offsetWidth || 1;
+        const baseHeight = parseFloat(layer.style.height) || layer.offsetHeight || 1;
+        const el = document.createElement('div');
+        el.className = 'marker-rect marker-rect-' + (h.color || 'yellow');
+        var highlightId = h.id;
+        if (!highlightId) {
+          highlightId = 'legacy_' + h.pageIndex + '_' + (h.x || 0) + '_' + (h.y || 0) + '_' + (h.width || 0) + '_' + (h.height || 0);
+        }
+        el.setAttribute('data-highlight-id', highlightId);
+        const x = (h.x || 0) * baseWidth;
+        const y = (h.y || 0) * baseHeight;
+        const w = (h.width || 0) * baseWidth;
+        const ht = (h.height || 0) * baseHeight;
+        el.style.left = x + 'px';
+        el.style.top = y + 'px';
+        el.style.width = w + 'px';
+        el.style.height = ht + 'px';
+        layer.appendChild(el);
+      });
+    }
+
+    function setupMarkerLayerEvents(layer, pageIndex) {
+      // Layer is created once per page; attach drawing / erasing handlers
+      layer.addEventListener('mousedown', function (e) {
+        if (e.button !== 0) return;
+
+        const bounds = layer.getBoundingClientRect();
+        const baseWidth = parseFloat(layer.style.width) || bounds.width || 1;
+        const baseHeight = parseFloat(layer.style.height) || bounds.height || 1;
+        const scaleX = bounds.width / baseWidth;
+        const scaleY = bounds.height / baseHeight;
+        const localX = (e.clientX - bounds.left) / scaleX;
+        const localY = (e.clientY - bounds.top) / scaleY;
+
+        // Eraser mode: click to remove any marker highlight under the cursor
+        if (eraserMode && !markerMode) {
+          e.preventDefault();
+          const rects = Array.from(layer.querySelectorAll('.marker-rect'));
+          let removedAny = false;
+          const baseW = parseFloat(layer.style.width) || 1;
+          const baseH = parseFloat(layer.style.height) || 1;
+          rects.forEach(function (el) {
+            const r = el.getBoundingClientRect();
+            const within =
+              e.clientX >= r.left &&
+              e.clientX <= r.right &&
+              e.clientY >= r.top &&
+              e.clientY <= r.bottom;
+            if (!within) return;
+            var hid = el.getAttribute('data-highlight-id');
+            var nx = (parseFloat(el.style.left) || 0) / baseW;
+            var ny = (parseFloat(el.style.top) || 0) / baseH;
+            var nw = (parseFloat(el.style.width) || 0) / baseW;
+            var nh = (parseFloat(el.style.height) || 0) / baseH;
+            el.remove();
+            if (hid) {
+              if (hid.indexOf('legacy_') === 0) {
+                studyData.highlights = (studyData.highlights || []).filter(function (h) {
+                  if (!(h.type === 'area' || (typeof h.x === 'number' && typeof h.width === 'number'))) return true;
+                  if (h.pageIndex !== pageIndex) return true;
+                  var dx = Math.abs((h.x || 0) - nx);
+                  var dy = Math.abs((h.y || 0) - ny);
+                  var dw = Math.abs((h.width || 0) - nw);
+                  var dh = Math.abs((h.height || 0) - nh);
+                  return !(dx < 0.002 && dy < 0.002 && dw < 0.002 && dh < 0.002);
+                });
+              } else {
+                studyData.highlights = (studyData.highlights || []).filter(function (h) {
+                  return h.id !== hid;
+                });
+              }
+              removedAny = true;
+            }
+          });
+          if (removedAny) {
+            saveStudyData();
+            showToast('Highlight erased', 'success');
+          }
+          return;
+        }
+
+        // Marker mode: drag to draw a new highlight area (freeform marker)
+        if (!markerMode) return;
+        e.preventDefault();
+        isDrawingMarker = true;
+        markerStart = {
+          x: localX,
+          y: localY,
+          pageIndex: pageIndex,
+        };
+        markerCurrentEl = document.createElement('div');
+        markerCurrentEl.className = 'marker-rect marker-rect-' + currentHighlightColor;
+        markerCurrentEl.style.left = localX + 'px';
+        markerCurrentEl.style.top = localY + 'px';
+        markerCurrentEl.style.width = '1px';
+        markerCurrentEl.style.height = '1px';
+        layer.appendChild(markerCurrentEl);
+      });
+
+      layer.addEventListener('mousemove', function (e) {
+        if (!isDrawingMarker || !markerCurrentEl) return;
+        const bounds = layer.getBoundingClientRect();
+        const baseWidth = parseFloat(layer.style.width) || bounds.width || 1;
+        const baseHeight = parseFloat(layer.style.height) || bounds.height || 1;
+        const scaleX = bounds.width / baseWidth;
+        const scaleY = bounds.height / baseHeight;
+        const x = (e.clientX - bounds.left) / scaleX;
+        const y = (e.clientY - bounds.top) / scaleY;
+        const startX = markerStart.x;
+        const startY = markerStart.y;
+        const left = Math.min(startX, x);
+        const top = Math.min(startY, y);
+        const width = Math.abs(x - startX);
+        const height = Math.abs(y - startY);
+        markerCurrentEl.style.left = left + 'px';
+        markerCurrentEl.style.top = top + 'px';
+        markerCurrentEl.style.width = Math.max(width, 1) + 'px';
+        markerCurrentEl.style.height = Math.max(height, 1) + 'px';
+      });
+
+      ['mouseup', 'mouseleave'].forEach(function (evt) {
+        layer.addEventListener(evt, function () {
+          if (!isDrawingMarker || !markerCurrentEl) return;
+          const bounds = layer.getBoundingClientRect();
+          const baseWidth = parseFloat(layer.style.width) || bounds.width || 1;
+          const baseHeight = parseFloat(layer.style.height) || bounds.height || 1;
+          const w = parseFloat(markerCurrentEl.style.width) || 0;
+          const h = parseFloat(markerCurrentEl.style.height) || 0;
+          // If the drawn area is tiny, treat it as a cancel
+          if (w < 4 || h < 4) {
+            markerCurrentEl.remove();
+            markerCurrentEl = null;
+            isDrawingMarker = false;
+            return;
+          }
+
+          const left = parseFloat(markerCurrentEl.style.left) || 0;
+          const top = parseFloat(markerCurrentEl.style.top) || 0;
+
+          const id = 'ah_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+          const areaHighlight = {
+            id: id,
+            type: 'area',
+            pageIndex: pageIndex,
+            color: currentHighlightColor,
+            x: left / baseWidth,
+            y: top / baseHeight,
+            width: w / baseWidth,
+            height: h / baseHeight,
+          };
+
+          markerCurrentEl.setAttribute('data-highlight-id', id);
+
+          studyData.highlights.push(areaHighlight);
+          saveStudyData();
+
+          markerCurrentEl = null;
+          isDrawingMarker = false;
+        });
       });
     }
 
@@ -902,6 +1233,7 @@
         return;
       }
       var btn = document.getElementById('btnDownloadPdf');
+      if (!btn) return;
       var origText = btn.textContent;
       btn.textContent = '...';
       btn.disabled = true;
@@ -1010,7 +1342,51 @@
         text = cachedSelection.text;
         indices = cachedSelection.indices;
       }
+      // Cache the latest selection for the add-note card and then show it
+      if (indices && text) {
+        cachedSelection = { text: text, indices: indices };
+      }
       showAddNoteCard();
+    }
+
+    function openAddNotePanelPopup() {
+      const pageIndex = getCurrentPageIndex();
+      document.getElementById('studySidePanel').classList.remove('hidden');
+      var layout = document.querySelector('.study-layout');
+      if (layout) layout.classList.add('panel-open');
+      const popup = document.getElementById('addNotePanelPopup');
+      const label = document.getElementById('addNotePanelLabel');
+      const textarea = document.getElementById('addNotePanelTextarea');
+      label.textContent = 'Add a note for this page (Page ' + (pageIndex + 1) + ')';
+      textarea.value = '';
+      popup.classList.remove('hidden');
+      popup.dataset.pendingPageIndex = String(pageIndex);
+      setTimeout(function () { textarea.focus(); }, 150);
+    }
+
+    function hideAddNotePanelPopup() {
+      const popup = document.getElementById('addNotePanelPopup');
+      popup.classList.add('hidden');
+      popup.removeAttribute('data-pending-page-index');
+      document.getElementById('addNotePanelTextarea').value = '';
+    }
+
+    function saveAddNoteFromPanel() {
+      const popup = document.getElementById('addNotePanelPopup');
+      const textarea = document.getElementById('addNotePanelTextarea');
+      const content = textarea.value.trim();
+      if (!content) return;
+      const pageIndex = parseInt(popup.dataset.pendingPageIndex || '0', 10);
+      studyData.notes.push({
+        id: 'n_' + Date.now(),
+        pageIndex: pageIndex,
+        content: content,
+        quoted: null,
+        createdAt: new Date().toISOString()
+      });
+      saveStudyData();
+      renderStudyPanel();
+      hideAddNotePanelPopup();
     }
 
     function getCurrentPageIndex() {
@@ -1046,23 +1422,39 @@
 
     function addBookmark() {
       const pageIndex = getCurrentPageIndex();
-      const existing = studyData.bookmarks.find(b => b.pageIndex === pageIndex);
-      if (existing) return;
+      const existingIndex = studyData.bookmarks.findIndex(function (b) { return b.pageIndex === pageIndex; });
+      const btn = document.getElementById('btnBookmark');
+
+      // If this page is already bookmarked, unbookmark it
+      if (existingIndex !== -1) {
+        studyData.bookmarks.splice(existingIndex, 1);
+        saveStudyData();
+        renderStudyPanel();
+        if (btn) {
+          btn.classList.remove('bookmarked');
+          btn.innerHTML = '<span aria-hidden="true">🔖</span>';
+        }
+        showToast('Bookmark removed', 'success');
+        return;
+      }
+
+      // Otherwise add a new bookmark for this page
       studyData.bookmarks.push({
         id: 'b_' + Date.now(),
-        pageIndex,
+        pageIndex: pageIndex,
         label: `Page ${pageIndex + 1}`,
         createdAt: new Date().toISOString()
       });
       saveStudyData();
       renderStudyPanel();
-      const btn = document.getElementById('btnBookmark');
-      btn.classList.add('bookmarked');
-      btn.innerHTML = '<span aria-hidden="true">✓</span>';
-      setTimeout(function () {
-        btn.classList.remove('bookmarked');
-        btn.innerHTML = '<span aria-hidden="true">🔖</span>';
-      }, 1500);
+      if (btn) {
+        btn.classList.add('bookmarked');
+        btn.innerHTML = '<span aria-hidden="true">✓</span>';
+        setTimeout(function () {
+          btn.classList.remove('bookmarked');
+          btn.innerHTML = '<span aria-hidden="true">🔖</span>';
+        }, 1500);
+      }
       showToast('Page bookmarked', 'success');
     }
 
@@ -1130,7 +1522,7 @@
       }
 
       if (!data.notes || data.notes.length === 0) {
-        notesList.innerHTML = '<div class="study-empty">No notes yet. Select text and click Add note, or add a page note from the toolbar.</div>';
+        notesList.innerHTML = '<div class="study-empty">No notes yet. Click the 📝 button in the toolbar to add a note for the current page.</div>';
       } else {
         notesList.innerHTML = data.notes
           .slice()
@@ -1208,7 +1600,8 @@
         await renderPDFPages(pdfUrl, container);
 
         getStudyData();
-        applySavedHighlights();
+        applySavedHighlights();      // Text-based highlights (legacy)
+        renderMarkerHighlights();    // Freeform marker highlights
         renderStudyPanel();
 
         document.getElementById('studyToolbar').style.display = 'flex';
@@ -1218,21 +1611,61 @@
             currentHighlightColor = this.getAttribute('data-color');
             document.querySelectorAll('.highlight-btn').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
+            // When a highlight color is chosen, enable marker mode so students can draw anywhere
+            markerMode = true;
+            eraserMode = false;
+            document.getElementById('btnMarkerMode')?.classList.add('active');
+            document.getElementById('btnEraserMode')?.classList.remove('active');
+            // Enable pointer events on all marker layers
+            document.querySelectorAll('.pdf-mark-layer').forEach(function (layer) {
+              layer.style.pointerEvents = 'auto';
+            });
           });
         });
+        const btnMarkerMode = document.getElementById('btnMarkerMode');
+        const btnEraserMode = document.getElementById('btnEraserMode');
+        if (btnMarkerMode && btnEraserMode) {
+          btnMarkerMode.addEventListener('click', function () {
+            markerMode = true;
+            eraserMode = false;
+            btnMarkerMode.classList.add('active');
+            btnEraserMode.classList.remove('active');
+            document.querySelectorAll('.pdf-mark-layer').forEach(function (layer) {
+              layer.style.pointerEvents = 'auto';
+            });
+          });
+          btnEraserMode.addEventListener('click', function () {
+            markerMode = false;
+            eraserMode = true;
+            btnMarkerMode.classList.remove('active');
+            btnEraserMode.classList.add('active');
+            document.querySelectorAll('.pdf-mark-layer').forEach(function (layer) {
+              layer.style.pointerEvents = 'auto';
+            });
+          });
+        }
         document.getElementById('btnBookmark').addEventListener('click', addBookmark);
         document.getElementById('btnNotesPanel').addEventListener('click', function () {
           document.getElementById('studySidePanel').classList.remove('hidden');
         });
+        document.getElementById('btnAddNote').addEventListener('click', openAddNotePanelPopup);
+        document.getElementById('btnNotesPanel').addEventListener('click', function () {
+          var panel = document.getElementById('studySidePanel');
+          panel.classList.remove('hidden');
+          document.querySelector('.study-layout').classList.add('panel-open');
+        });
         document.getElementById('closeStudyPanel').addEventListener('click', function () {
           document.getElementById('studySidePanel').classList.add('hidden');
+          document.querySelector('.study-layout').classList.remove('panel-open');
+          hideAddNotePanelPopup();
         });
+        document.getElementById('btnSaveNotePanel').addEventListener('click', saveAddNoteFromPanel);
+        document.getElementById('btnCancelNotePanel').addEventListener('click', hideAddNotePanelPopup);
         document.getElementById('btnHighlightSelection').addEventListener('click', addHighlightFromSelection);
         document.getElementById('btnRemoveHighlightSelection').addEventListener('click', removeHighlightFromSelection);
         document.getElementById('btnAddNoteSelection').addEventListener('click', addNoteFromSelection);
         document.getElementById('btnSaveNote').addEventListener('click', saveAddNoteFromCard);
         document.getElementById('btnCancelNote').addEventListener('click', hideAddNoteCard);
-        document.getElementById('btnDownloadPdf').addEventListener('click', downloadAnnotatedPDF);
 
         document.addEventListener('keydown', function (e) {
           if (e.key === 'Escape' && !document.getElementById('addNoteCard').classList.contains('hidden')) {
@@ -1382,7 +1815,17 @@
           console.warn('Text layer failed for page ' + pageNum, e);
         }
 
+        // Marker layer for freeform highlighting on this page
+        var markLayerDiv = document.createElement('div');
+        markLayerDiv.className = 'pdf-mark-layer';
+        markLayerDiv.style.width = viewport.width + 'px';
+        markLayerDiv.style.height = viewport.height + 'px';
+        markLayerDiv.setAttribute('data-page-index', String(pageNum - 1));
+        // Pointer events are enabled when marker mode is active (set in JS)
+        setupMarkerLayerEvents(markLayerDiv, pageNum - 1);
+
         wrapper.appendChild(textLayerDiv);
+        wrapper.appendChild(markLayerDiv);
         scaledOuter.appendChild(wrapper);
         pageDiv.appendChild(scaledOuter);
 
