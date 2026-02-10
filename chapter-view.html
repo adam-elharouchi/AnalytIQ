@@ -509,6 +509,131 @@
       text-align: center;
     }
 
+    /* In-page add-note card (no browser prompt) */
+    .add-note-card {
+      position: fixed;
+      z-index: 1001;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 90%;
+      max-width: 420px;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.75rem;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+      padding: 1.25rem;
+      transition: opacity 0.2s, visibility 0.2s;
+    }
+
+    .add-note-card.hidden {
+      display: none !important;
+    }
+
+    .add-note-card:not(.hidden) {
+      display: block;
+    }
+
+    .add-note-label {
+      margin: 0 0 0.75rem 0;
+      font-size: 0.9375rem;
+      font-weight: 600;
+      color: #0f172a;
+    }
+
+    .add-note-card textarea {
+      width: 100%;
+      min-height: 88px;
+      padding: 0.75rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.5rem;
+      font-size: 0.9375rem;
+      font-family: inherit;
+      resize: vertical;
+      margin-bottom: 1rem;
+      box-sizing: border-box;
+    }
+
+    .add-note-card textarea:focus {
+      outline: none;
+      border-color: #2569f4;
+      box-shadow: 0 0 0 3px rgba(37, 105, 244, 0.2);
+    }
+
+    .add-note-actions {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: flex-end;
+    }
+
+    .add-note-actions .btn-cancel-note {
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.5rem;
+      background: white;
+      color: #475569;
+      cursor: pointer;
+    }
+
+    .add-note-actions .btn-cancel-note:hover {
+      background: #f8fafc;
+      color: #0f172a;
+    }
+
+    .add-note-actions .btn-save-note {
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+      border: none;
+      border-radius: 0.5rem;
+      background: #2569f4;
+      color: white;
+      cursor: pointer;
+    }
+
+    .add-note-actions .btn-save-note:hover {
+      background: #1d58d8;
+    }
+
+    /* Toast at bottom of screen (green for success) */
+    .toast-container {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      pointer-events: none;
+    }
+
+    .toast {
+      padding: 0.75rem 1.25rem;
+      border-radius: 0.5rem;
+      font-size: 0.9375rem;
+      font-weight: 500;
+      color: white;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      animation: toast-in 0.3s ease;
+    }
+
+    .toast.success {
+      background: #059669;
+    }
+
+    @keyframes toast-in {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
     .loading-state {
       text-align: center;
       padding: 6rem 2rem;
@@ -557,7 +682,7 @@
         <button type="button" class="highlight-btn pink" data-color="pink" title="Pink" aria-label="Pink"></button>
         <button type="button" class="highlight-btn green" data-color="green" title="Green" aria-label="Green"></button>
         <span class="toolbar-divider"></span>
-        <button type="button" class="btn-bookmark" id="btnBookmark" title="Bookmark current page" aria-label="Bookmark page">🔖</button>
+        <button type="button" class="btn-bookmark" id="btnBookmark" title="Bookmark current page" aria-label="Bookmark page"><span aria-hidden="true">🔖</span></button>
         <button type="button" class="btn-notes-panel" id="btnNotesPanel" title="My study panel" aria-label="Study panel">📋</button>
         <span class="toolbar-divider"></span>
         <button type="button" class="btn-notes-panel" id="btnDownloadPdf" title="Download PDF with my highlights" aria-label="Download annotated PDF">⬇</button>
@@ -597,6 +722,19 @@
       <button type="button" id="btnRemoveHighlightSelection" class="remove-btn" title="Remove highlight from selection">Remove highlight</button>
       <button type="button" id="btnAddNoteSelection">Add note</button>
     </div>
+
+    <!-- In-page add-note card (replaces browser prompt) -->
+    <div class="add-note-card hidden" id="addNoteCard">
+      <p class="add-note-label" id="addNoteLabel">Add a note for this selection:</p>
+      <textarea id="addNoteTextarea" rows="3" placeholder="Type your note..."></textarea>
+      <div class="add-note-actions">
+        <button type="button" class="btn-cancel-note" id="btnCancelNote">Cancel</button>
+        <button type="button" class="btn-save-note" id="btnSaveNote">Save note</button>
+      </div>
+    </div>
+
+    <!-- Toast for bookmark success (bottom of screen, green) -->
+    <div class="toast-container" id="toastContainer" aria-live="polite"></div>
   </main>
 
   <script src="js/api-helper.js"></script>
@@ -821,30 +959,58 @@
       btn.disabled = false;
     }
 
+    function showAddNoteCard() {
+      var text = cachedSelection ? cachedSelection.text : '';
+      var indices = cachedSelection ? cachedSelection.indices : null;
+      const pageIndex = indices ? indices.pageIndex : getCurrentPageIndex();
+      const labelEl = document.getElementById('addNoteLabel');
+      labelEl.textContent = text ? 'Add a note for this selection:' : 'Add a note for this page:';
+      const card = document.getElementById('addNoteCard');
+      const textarea = document.getElementById('addNoteTextarea');
+      textarea.value = '';
+      card.classList.remove('hidden');
+      card.dataset.pendingPageIndex = String(pageIndex);
+      card.dataset.pendingQuoted = text ? text.slice(0, 120) : '';
+      hideSelectionPopup();
+      setTimeout(function () { textarea.focus(); }, 100);
+    }
+
+    function hideAddNoteCard() {
+      document.getElementById('addNoteCard').classList.add('hidden');
+      document.getElementById('addNoteCard').removeAttribute('data-pending-page-index');
+      document.getElementById('addNoteCard').removeAttribute('data-pending-quoted');
+    }
+
+    function saveAddNoteFromCard() {
+      const card = document.getElementById('addNoteCard');
+      const textarea = document.getElementById('addNoteTextarea');
+      const content = textarea.value.trim();
+      if (!content) return;
+      const pageIndex = parseInt(card.dataset.pendingPageIndex || '0', 10);
+      const quoted = card.dataset.pendingQuoted || null;
+      studyData.notes.push({
+        id: 'n_' + Date.now(),
+        pageIndex,
+        content: content,
+        quoted: quoted || null,
+        createdAt: new Date().toISOString()
+      });
+      saveStudyData();
+      if (window.getSelection()) window.getSelection().removeAllRanges();
+      cachedSelection = null;
+      hideAddNoteCard();
+      renderStudyPanel();
+    }
+
     function addNoteFromSelection() {
       const sel = window.getSelection();
       var text = sel.toString().trim();
       var indices = text ? getItemIndicesFromSelection(sel) : null;
-      // Fallback to cached selection
-      if (!text && cachedSelection) {
+      if (!indices && cachedSelection) {
         text = cachedSelection.text;
         indices = cachedSelection.indices;
       }
-      const pageIndex = indices ? indices.pageIndex : getCurrentPageIndex();
-      const content = prompt('Add a note for this ' + (text ? 'selection' : 'page') + ':');
-      if (content == null || content.trim() === '') return;
-      studyData.notes.push({
-        id: 'n_' + Date.now(),
-        pageIndex,
-        content: content.trim(),
-        quoted: text ? text.slice(0, 120) : null,
-        createdAt: new Date().toISOString()
-      });
-      saveStudyData();
-      sel.removeAllRanges();
-      cachedSelection = null;
-      hideSelectionPopup();
-      renderStudyPanel();
+      showAddNoteCard();
     }
 
     function getCurrentPageIndex() {
@@ -864,6 +1030,20 @@
       return best;
     }
 
+    function showToast(message, type) {
+      type = type || 'success';
+      const container = document.getElementById('toastContainer');
+      const el = document.createElement('div');
+      el.className = 'toast ' + type;
+      el.textContent = message;
+      container.appendChild(el);
+      setTimeout(function () {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(10px)';
+        setTimeout(function () { el.remove(); }, 300);
+      }, 2500);
+    }
+
     function addBookmark() {
       const pageIndex = getCurrentPageIndex();
       const existing = studyData.bookmarks.find(b => b.pageIndex === pageIndex);
@@ -878,11 +1058,12 @@
       renderStudyPanel();
       const btn = document.getElementById('btnBookmark');
       btn.classList.add('bookmarked');
-      btn.innerHTML = '<span aria-hidden="true">✓</span> Bookmarked';
-      setTimeout(() => {
+      btn.innerHTML = '<span aria-hidden="true">✓</span>';
+      setTimeout(function () {
         btn.classList.remove('bookmarked');
-        btn.innerHTML = '<span aria-hidden="true">🔖</span> Bookmark page';
+        btn.innerHTML = '<span aria-hidden="true">🔖</span>';
       }, 1500);
+      showToast('Page bookmarked', 'success');
     }
 
     function scrollToPage(pageIndex) {
@@ -949,7 +1130,7 @@
       }
 
       if (!data.notes || data.notes.length === 0) {
-        notesList.innerHTML = '<div class="study-empty">No notes yet. Select text and click "Add note" in the popup.</div>';
+        notesList.innerHTML = '<div class="study-empty">No notes yet. Select text and click Add note, or add a page note from the toolbar.</div>';
       } else {
         notesList.innerHTML = data.notes
           .slice()
@@ -1049,7 +1230,15 @@
         document.getElementById('btnHighlightSelection').addEventListener('click', addHighlightFromSelection);
         document.getElementById('btnRemoveHighlightSelection').addEventListener('click', removeHighlightFromSelection);
         document.getElementById('btnAddNoteSelection').addEventListener('click', addNoteFromSelection);
+        document.getElementById('btnSaveNote').addEventListener('click', saveAddNoteFromCard);
+        document.getElementById('btnCancelNote').addEventListener('click', hideAddNoteCard);
         document.getElementById('btnDownloadPdf').addEventListener('click', downloadAnnotatedPDF);
+
+        document.addEventListener('keydown', function (e) {
+          if (e.key === 'Escape' && !document.getElementById('addNoteCard').classList.contains('hidden')) {
+            hideAddNoteCard();
+          }
+        });
 
         document.addEventListener('selectionchange', function () {
           const sel = window.getSelection();
