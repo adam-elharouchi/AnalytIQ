@@ -177,11 +177,12 @@ class TestErrorPages:
     """Test error handling"""
 
     def test_404_error_handling(self):
-        """Test 404 error page"""
+        """Test 404 for non-existent API path (non-API paths may return 200 for SPA fallback)"""
         from app import app
 
         with app.test_client() as client:
-            response = client.get("/nonexistent-page")
+            # Unknown API path returns 404; frontend catch-all serves index.html (200) for other paths
+            response = client.get("/api/nonexistent-api-path")
             assert response.status_code == 404
 
 

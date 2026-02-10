@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify, g, send_from_directory
+from werkzeug.routing import BaseConverter
 import psycopg2
 from psycopg2 import pool
 from dotenv import load_dotenv
@@ -5224,16 +5225,22 @@ def serve_resource_file(filename):
 _ROOT = os.path.dirname(os.path.abspath(__file__))
 
 
+# Converter so catch-all does not match /api or /api/* (avoids 405 on API paths)
+class NoApiPathConverter(BaseConverter):
+    regex = r"(?!api(?:\/|$)).+"
+
+
+app.url_map.converters["no_api_path"] = NoApiPathConverter
+
+
 @app.route("/", methods=["GET"])
 def serve_index():
     return send_from_directory(_ROOT, "index.html")
 
 
-@app.route("/<path:path>", methods=["GET"])
+@app.route("/<no_api_path:path>", methods=["GET"])
 def serve_frontend(path):
     """Serve frontend static files (HTML, CSS, JS, etc.) for local dev."""
-    if path.startswith("api/") or path == "api":
-        return jsonify({"error": "Not found"}), 404
     safe = os.path.normpath(path)
     if safe.startswith("..") or os.path.isabs(safe):
         return jsonify({"error": "Forbidden"}), 403
