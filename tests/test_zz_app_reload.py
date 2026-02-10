@@ -249,9 +249,15 @@ class TestAppMainBlock:
         with open(source_path) as f:
             all_lines = f.readlines()
 
-        # The `if __name__ == "__main__":` is on line 5296 (1-indexed)
-        # so index 5295 in 0-indexed list
-        main_start = 5295
+        # Find the line containing if __name__ == "__main__": dynamically
+        main_start = None
+        for i, line in enumerate(all_lines):
+            if 'if __name__' in line and '"__main__"' in line and ':' in line:
+                main_start = i
+                break
+        if main_start is None:
+            raise ValueError("Could not find if __name__ == '__main__' block in app.py")
+
         main_block = all_lines[main_start:]
 
         # Pad with empty lines so compile() produces correct line numbers

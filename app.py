@@ -5220,6 +5220,29 @@ def serve_resource_file(filename):
         return jsonify({"error": "File not found"}), 404
 
 
+# Serve frontend (local development: open http://localhost:5001)
+_ROOT = os.path.dirname(os.path.abspath(__file__))
+
+
+@app.route("/", methods=["GET"])
+def serve_index():
+    return send_from_directory(_ROOT, "index.html")
+
+
+@app.route("/<path:path>", methods=["GET"])
+def serve_frontend(path):
+    """Serve frontend static files (HTML, CSS, JS, etc.) for local dev."""
+    if path.startswith("api/") or path == "api":
+        return jsonify({"error": "Not found"}), 404
+    safe = os.path.normpath(path)
+    if safe.startswith("..") or os.path.isabs(safe):
+        return jsonify({"error": "Forbidden"}), 403
+    full = os.path.join(_ROOT, safe)
+    if not os.path.isfile(full):
+        return send_from_directory(_ROOT, "index.html")
+    return send_from_directory(_ROOT, safe)
+
+
 # ============================================================================
 # API VERSIONING SETUP
 # ============================================================================
