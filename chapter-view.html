@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="css/styles.css" />
   <script src="js/api-helper.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
   <style>
     body {
       background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
@@ -15,7 +16,7 @@
     }
 
     .chapter-container {
-      max-width: 1100px;
+      max-width: 1400px;
       margin: 0 auto;
       padding: 2.5rem 1.5rem;
     }
@@ -86,29 +87,426 @@
       padding: 2rem;
       border-radius: 1rem;
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      overflow-x: auto;
+      max-width: 100%;
     }
 
     .pdf-page {
-      margin-bottom: 2rem;
+      margin-bottom: 0.75rem;
       text-align: center;
+      position: relative;
     }
 
     .pdf-page:last-child {
       margin-bottom: 0;
     }
 
-    .pdf-page canvas {
+    .pdf-page-scaled {
+      display: inline-block;
       max-width: 100%;
-      height: auto;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    .pdf-page-wrapper {
+      position: relative;
+      display: inline-block;
+      margin: 0 auto;
+      transform-origin: top left;
+    }
+
+    .pdf-page canvas {
+      display: block;
+      vertical-align: top;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       border-radius: 0.5rem;
     }
 
+    /* Text layer: rendered by pdfjsLib.renderTextLayer for correct positioning */
+    .pdf-text-layer {
+      position: absolute;
+      left: 0;
+      top: 0;
+      overflow: hidden;
+      line-height: 1;
+      pointer-events: auto;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+
+    .pdf-text-layer span {
+      position: absolute;
+      white-space: pre;
+      color: transparent !important;
+      cursor: text;
+      user-select: text;
+      -webkit-user-select: text;
+      transform-origin: 0% 0%;
+    }
+
+    .pdf-text-layer span::selection {
+      background: rgba(37, 105, 244, 0.35);
+    }
+
+    .pdf-text-layer br {
+      display: none;
+    }
+
+    .pdf-highlight {
+      pointer-events: auto;
+      border-radius: 1px;
+      padding: 0.08em 0.06em;
+      line-height: 1.35;
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
+    }
+
+    /* Applied directly to text spans so background is visible */
+    .pdf-highlight-yellow { background: rgba(253, 224, 71, 0.7) !important; }
+    .pdf-highlight-blue  { background: rgba(147, 197, 253, 0.7) !important; }
+    .pdf-highlight-pink  { background: rgba(249, 168, 212, 0.7) !important; }
+    .pdf-highlight-green { background: rgba(134, 239, 172, 0.7) !important; }
+
     .page-number {
-      margin-top: 1rem;
+      margin-top: 0.35rem;
       color: #64748b;
       font-size: 0.875rem;
       font-weight: 600;
+    }
+
+    /* Left sidebar: highlight bar scrolls alongside pages */
+    .study-toolbar-sidebar {
+      position: sticky;
+      top: 1.5rem;
+      align-self: flex-start;
+      width: 80px;
+      flex-shrink: 0;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.75rem;
+      padding: 0.75rem 0.5rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      z-index: 50;
+    }
+
+    .study-toolbar-sidebar .study-toolbar-label {
+      font-size: 0.625rem;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .study-toolbar-sidebar .highlight-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: 2px solid #e2e8f0;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+    .study-toolbar-sidebar .highlight-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+
+    .study-toolbar-sidebar .highlight-btn.active {
+      border-color: #2569f4;
+      box-shadow: 0 0 0 2px rgba(37, 105, 244, 0.3);
+    }
+
+    .study-toolbar-sidebar .highlight-btn.yellow { background: rgba(253, 224, 71, 0.8); }
+    .study-toolbar-sidebar .highlight-btn.blue  { background: rgba(147, 197, 253, 0.8); }
+    .study-toolbar-sidebar .highlight-btn.pink { background: rgba(249, 168, 212, 0.8); }
+    .study-toolbar-sidebar .highlight-btn.green { background: rgba(134, 239, 172, 0.8); }
+
+    .study-toolbar-sidebar .toolbar-divider {
+      width: 32px;
+      height: 1px;
+      background: #e2e8f0;
+    }
+
+    .study-toolbar-sidebar .btn-bookmark,
+    .study-toolbar-sidebar .btn-notes-panel {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      font-size: 1.125rem;
+      border-radius: 0.5rem;
+      border: 1px solid #e2e8f0;
+      background: white;
+      color: #475569;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      flex-shrink: 0;
+    }
+
+    .study-toolbar-sidebar .btn-bookmark:hover,
+    .study-toolbar-sidebar .btn-notes-panel:hover {
+      background: #f1f5f9;
+      color: #2569f4;
+    }
+
+    .study-toolbar-sidebar .btn-bookmark.bookmarked {
+      background: #fef3c7;
+      border-color: #f59e0b;
+      color: #b45309;
+    }
+
+    /* Selection popup for highlight / add note */
+    .selection-popup {
+      position: fixed;
+      z-index: 1000;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.5rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      padding: 0.25rem;
+      display: flex;
+      gap: 0.25rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s;
+    }
+
+    .selection-popup.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .selection-popup button {
+      padding: 0.4rem 0.6rem;
+      font-size: 0.8125rem;
+      border: none;
+      border-radius: 0.375rem;
+      background: #f1f5f9;
+      color: #334155;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .selection-popup button:hover {
+      background: #2569f4;
+      color: white;
+    }
+
+    .selection-popup button.remove-btn:hover {
+      background: #dc2626;
+      color: white;
+    }
+
+    /* Study layout: left sidebar | main content | study panel */
+    .study-layout {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+
+    .study-main {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      gap: 1rem;
+    }
+
+    .study-side-panel {
+      width: 300px;
+      flex-shrink: 0;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.75rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      overflow: hidden;
+      max-height: calc(100vh - 12rem);
+      display: flex;
+      flex-direction: column;
+      position: sticky;
+      top: 1.5rem;
+    }
+
+    .study-side-panel.hidden {
+      display: none;
+    }
+
+    .study-side-panel-header {
+      padding: 1rem;
+      border-bottom: 1px solid #e2e8f0;
+      font-weight: 600;
+      color: #0f172a;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .study-side-panel-header button {
+      background: none;
+      border: none;
+      font-size: 1.25rem;
+      color: #64748b;
+      cursor: pointer;
+      padding: 0 0.25rem;
+      line-height: 1;
+    }
+
+    .study-side-panel-header button:hover {
+      color: #0f172a;
+    }
+
+    .study-side-panel-content {
+      padding: 0.75rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .study-panel-section {
+      margin-bottom: 1.25rem;
+    }
+
+    .study-panel-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .study-panel-section h4 {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #64748b;
+      margin: 0 0 0.5rem 0;
+      padding-bottom: 0.25rem;
+    }
+
+    .bookmark-item,
+    .note-item {
+      padding: 0.5rem 0.75rem;
+      margin-bottom: 0.5rem;
+      background: #f8fafc;
+      border-radius: 0.5rem;
+      border: 1px solid #e2e8f0;
+      cursor: pointer;
+      font-size: 0.875rem;
+      transition: background 0.2s;
+    }
+
+    .bookmark-item:hover,
+    .note-item:hover {
+      background: #eff6ff;
+      border-color: #2569f4;
+    }
+
+    .bookmark-item .page-badge {
+      display: inline-block;
+      background: #2569f4;
+      color: white;
+      padding: 0.15rem 0.5rem;
+      border-radius: 0.25rem;
+      font-size: 0.75rem;
+      margin-right: 0.5rem;
+    }
+
+    .note-item {
+      position: relative;
+      padding-right: 2.5rem;
+    }
+
+    .note-item .note-text {
+      color: #475569;
+      margin-top: 0.25rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .note-item-actions {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      display: flex;
+      gap: 0.25rem;
+    }
+
+    .note-item-actions button {
+      width: 26px;
+      height: 26px;
+      padding: 0;
+      border: none;
+      border-radius: 0.25rem;
+      background: #f1f5f9;
+      color: #64748b;
+      cursor: pointer;
+      font-size: 0.875rem;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .note-item-actions button:hover {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+
+    .note-item-actions button.delete-btn:hover {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+
+    .note-edit-form {
+      padding: 0.5rem 0;
+    }
+
+    .note-edit-form textarea {
+      width: 100%;
+      min-height: 80px;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      font-family: inherit;
+      resize: vertical;
+      margin-bottom: 0.5rem;
+    }
+
+    .note-edit-form .note-edit-actions {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: flex-end;
+    }
+
+    .note-edit-form .note-edit-actions button {
+      padding: 0.35rem 0.75rem;
+      font-size: 0.8125rem;
+      border-radius: 0.375rem;
+      border: 1px solid #e2e8f0;
+      background: white;
+      color: #475569;
+      cursor: pointer;
+    }
+
+    .note-edit-form .note-edit-actions button.save-btn {
+      background: #2569f4;
+      border-color: #2569f4;
+      color: white;
+    }
+
+    .study-empty {
+      color: #94a3b8;
+      font-size: 0.875rem;
+      padding: 0.75rem;
+      text-align: center;
     }
 
     .loading-state {
@@ -150,12 +548,54 @@
       <p class="chapter-description" id="chapterDescription"></p>
     </div>
 
-
-    <div id="contentContainer" class="pdf-pages-container">
-      <div class="loading-state">
-        <div class="loading-spinner"></div>
-        <p>Loading PDF pages...</p>
+    <div class="study-layout">
+      <!-- Left sidebar: highlight bar (scrolls alongside pages) -->
+      <div class="study-toolbar-sidebar" id="studyToolbar" style="display: none;">
+        <span class="study-toolbar-label">Highlight</span>
+        <button type="button" class="highlight-btn yellow active" data-color="yellow" title="Yellow" aria-label="Yellow"></button>
+        <button type="button" class="highlight-btn blue" data-color="blue" title="Blue" aria-label="Blue"></button>
+        <button type="button" class="highlight-btn pink" data-color="pink" title="Pink" aria-label="Pink"></button>
+        <button type="button" class="highlight-btn green" data-color="green" title="Green" aria-label="Green"></button>
+        <span class="toolbar-divider"></span>
+        <button type="button" class="btn-bookmark" id="btnBookmark" title="Bookmark current page" aria-label="Bookmark page">🔖</button>
+        <button type="button" class="btn-notes-panel" id="btnNotesPanel" title="My study panel" aria-label="Study panel">📋</button>
+        <span class="toolbar-divider"></span>
+        <button type="button" class="btn-notes-panel" id="btnDownloadPdf" title="Download PDF with my highlights" aria-label="Download annotated PDF">⬇</button>
       </div>
+
+      <div class="study-main">
+        <div id="contentContainer" class="pdf-pages-container">
+          <div class="loading-state">
+            <div class="loading-spinner"></div>
+            <p>Loading PDF pages...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Side panel: bookmarks and notes -->
+      <aside class="study-side-panel hidden" id="studySidePanel">
+        <div class="study-side-panel-header">
+          <span>My study panel</span>
+          <button type="button" id="closeStudyPanel" aria-label="Close panel">×</button>
+        </div>
+        <div class="study-side-panel-content">
+          <div class="study-panel-section">
+            <h4>Bookmarks</h4>
+            <div id="bookmarksList"></div>
+          </div>
+          <div class="study-panel-section">
+            <h4>Notes</h4>
+            <div id="notesList"></div>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Selection popup (highlight / add note) -->
+    <div class="selection-popup" id="selectionPopup">
+      <button type="button" id="btnHighlightSelection">Highlight</button>
+      <button type="button" id="btnRemoveHighlightSelection" class="remove-btn" title="Remove highlight from selection">Remove highlight</button>
+      <button type="button" id="btnAddNoteSelection">Add note</button>
     </div>
   </main>
 
@@ -165,6 +605,383 @@
   <script>
     let currentChapterId = null;
     let currentClassId = null;
+    let currentUserId = null;
+    let pdfDoc = null;
+    let pdfUrl = null;
+    let numPages = 0;
+    let currentHighlightColor = 'yellow';
+    let studyData = { highlights: [], bookmarks: [], notes: [] };
+    let pageTextItems = [];  // text content items per page for coordinate lookup
+    let cachedSelection = null;  // cache selection info before it's cleared by button click
+
+    const STUDY_STORAGE_KEY = () => `analytiq_study_${currentUserId}_${currentChapterId}`;
+
+    function getStudyData() {
+      try {
+        const raw = localStorage.getItem(STUDY_STORAGE_KEY());
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          studyData = {
+            highlights: parsed.highlights || [],
+            bookmarks: parsed.bookmarks || [],
+            notes: parsed.notes || []
+          };
+        }
+      } catch (e) {
+        studyData = { highlights: [], bookmarks: [], notes: [] };
+      }
+      return studyData;
+    }
+
+    function saveStudyData() {
+      try {
+        localStorage.setItem(STUDY_STORAGE_KEY(), JSON.stringify(studyData));
+      } catch (e) {
+        console.warn('Could not save study data:', e);
+      }
+    }
+
+    function showSelectionPopup(x, y) {
+      const popup = document.getElementById('selectionPopup');
+      popup.classList.add('visible');
+      popup.style.left = `${Math.min(x, window.innerWidth - 220)}px`;
+      popup.style.top = `${y - 48}px`;
+    }
+
+    function hideSelectionPopup() {
+      document.getElementById('selectionPopup').classList.remove('visible');
+    }
+
+    function getPageIndexFromElement(el) {
+      const page = el.closest('.pdf-page');
+      return page ? parseInt(page.getAttribute('data-page-index'), 10) : -1;
+    }
+
+    function getItemIndicesFromSelection(selection) {
+      if (!selection.rangeCount) return null;
+      const range = selection.getRangeAt(0);
+      const pageEl = range.startContainer.nodeType === Node.TEXT_NODE
+        ? range.startContainer.parentElement.closest('.pdf-page')
+        : range.startContainer.closest('.pdf-page');
+      if (!pageEl) return null;
+      if (pageEl !== (range.endContainer.nodeType === Node.TEXT_NODE ? range.endContainer.parentElement : range.endContainer).closest('.pdf-page')) return null;
+      const allSpans = Array.from(pageEl.querySelectorAll('.pdf-text-layer span[data-item-index]'));
+      let minIdx = Infinity, maxIdx = -Infinity;
+      allSpans.forEach(function (span) {
+        if (!range.intersectsNode(span)) return;
+        const idx = parseInt(span.getAttribute('data-item-index'), 10);
+        if (idx < minIdx) minIdx = idx;
+        if (idx > maxIdx) maxIdx = idx;
+      });
+      if (minIdx === Infinity || maxIdx === -Infinity) return null;
+      return { pageIndex: parseInt(pageEl.getAttribute('data-page-index'), 10), startIdx: minIdx, endIdx: maxIdx };
+    }
+
+    function applyHighlightToRange(pageIndex, startIdx, endIdx, color) {
+      const pageEl = document.querySelector('.pdf-page[data-page-index="' + pageIndex + '"]');
+      if (!pageEl) return;
+      const layer = pageEl.querySelector('.pdf-text-layer');
+      if (!layer) return;
+      const allSpans = Array.from(layer.querySelectorAll('span[data-item-index]'));
+      var startSpan = null, endSpan = null;
+      for (var s = 0; s < allSpans.length; s++) {
+        var idx = parseInt(allSpans[s].getAttribute('data-item-index'), 10);
+        if (idx === startIdx) startSpan = allSpans[s];
+        if (idx === endIdx) endSpan = allSpans[s];
+      }
+      if (!startSpan || !endSpan) return;
+      var startIdxInList = allSpans.indexOf(startSpan);
+      var endIdxInList = allSpans.indexOf(endSpan);
+      if (startIdxInList === -1 || endIdxInList === -1) return;
+      var toWrap = allSpans.slice(Math.min(startIdxInList, endIdxInList), Math.max(startIdxInList, endIdxInList) + 1);
+      toWrap.forEach(function (span) {
+        span.classList.add('pdf-highlight', 'pdf-highlight-' + color);
+        span.setAttribute('data-highlight-color', color);
+      });
+    }
+
+    function applySavedHighlights() {
+      const data = getStudyData();
+      (data.highlights || []).forEach(h => {
+        applyHighlightToRange(h.pageIndex, h.startIdx, h.endIdx, h.color);
+      });
+    }
+
+    function addHighlightFromSelection() {
+      const sel = window.getSelection();
+      var text = sel.toString().trim();
+      var indices = text ? getItemIndicesFromSelection(sel) : null;
+      // Fallback to cached selection if live selection was cleared by button click
+      if (!indices && cachedSelection) {
+        indices = cachedSelection.indices;
+        text = cachedSelection.text;
+      }
+      if (!indices || !text) return;
+      const pageIndex = indices.pageIndex, startIdx = indices.startIdx, endIdx = indices.endIdx;
+      studyData.highlights.push({ pageIndex, startIdx, endIdx, color: currentHighlightColor, text: text.slice(0, 200) });
+      saveStudyData();
+      applyHighlightToRange(pageIndex, startIdx, endIdx, currentHighlightColor);
+      sel.removeAllRanges();
+      cachedSelection = null;
+      hideSelectionPopup();
+    }
+
+    function removeHighlightFromSelection() {
+      const sel = window.getSelection();
+      var indices = getItemIndicesFromSelection(sel);
+      // Fallback to cached selection
+      if (!indices && cachedSelection) {
+        indices = cachedSelection.indices;
+      }
+      if (!indices) return;
+      var pageIndex = indices.pageIndex, startIdx = indices.startIdx, endIdx = indices.endIdx;
+      var pageEl = document.querySelector('.pdf-page[data-page-index="' + pageIndex + '"]');
+      if (!pageEl) return;
+      var layer = pageEl.querySelector('.pdf-text-layer');
+      if (!layer) return;
+      var allSpans = Array.from(layer.querySelectorAll('span[data-item-index]'));
+      allSpans.forEach(function (span) {
+        var idx = parseInt(span.getAttribute('data-item-index'), 10);
+        if (idx >= startIdx && idx <= endIdx && span.classList.contains('pdf-highlight')) {
+          span.classList.remove('pdf-highlight', 'pdf-highlight-yellow', 'pdf-highlight-blue', 'pdf-highlight-pink', 'pdf-highlight-green');
+          span.removeAttribute('data-highlight-color');
+        }
+      });
+      studyData.highlights = studyData.highlights.filter(function (h) {
+        if (h.pageIndex !== pageIndex) return true;
+        var overlap = !(endIdx < h.startIdx || startIdx > h.endIdx);
+        return !overlap;
+      });
+      saveStudyData();
+      sel.removeAllRanges();
+      cachedSelection = null;
+      hideSelectionPopup();
+    }
+
+    async function downloadAnnotatedPDF() {
+      if (!pdfUrl || !studyData.highlights || studyData.highlights.length === 0) {
+        alert('No highlights to include. Highlight some text first, then download.');
+        return;
+      }
+      var btn = document.getElementById('btnDownloadPdf');
+      var origText = btn.textContent;
+      btn.textContent = '...';
+      btn.disabled = true;
+      try {
+        var resp = await fetch(pdfUrl);
+        var pdfBytes = await resp.arrayBuffer();
+        var pdfLibDoc = await PDFLib.PDFDocument.load(pdfBytes);
+        var pages = pdfLibDoc.getPages();
+        var colorMap = {
+          yellow: PDFLib.rgb(253/255, 224/255, 71/255),
+          blue:   PDFLib.rgb(147/255, 197/255, 253/255),
+          pink:   PDFLib.rgb(249/255, 168/255, 212/255),
+          green:  PDFLib.rgb(134/255, 239/255, 172/255)
+        };
+        for (var hi = 0; hi < studyData.highlights.length; hi++) {
+          var h = studyData.highlights[hi];
+          if (h.pageIndex >= pages.length) continue;
+          var pg = pages[h.pageIndex];
+          var pgH = pg.getHeight();
+          var items = pageTextItems[h.pageIndex] || [];
+          for (var ii = h.startIdx; ii <= h.endIdx && ii < items.length; ii++) {
+            var item = items[ii];
+            if (!item || !item.str || !item.transform) continue;
+            var tx = item.transform;
+            var x = tx[4] || 0;
+            var y = tx[5] || 0;
+            var fontH = Math.sqrt((tx[0]*tx[0]) + (tx[3]*tx[3])) || 12;
+            var w = item.width || (item.str.length * fontH * 0.6);
+            pg.drawRectangle({
+              x: x,
+              y: y - 2,
+              width: w,
+              height: fontH + 4,
+              color: colorMap[h.color] || colorMap.yellow,
+              opacity: 0.45
+            });
+          }
+        }
+        var annotatedBytes = await pdfLibDoc.save();
+        var blob = new Blob([annotatedBytes], { type: 'application/pdf' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        var title = document.getElementById('chapterTitle').textContent || 'chapter';
+        a.download = title.replace(/[^a-zA-Z0-9 _-]/g, '') + ' (annotated).pdf';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (e) {
+        console.error('Download failed:', e);
+        alert('Failed to generate annotated PDF: ' + e.message);
+      }
+      btn.textContent = origText;
+      btn.disabled = false;
+    }
+
+    function addNoteFromSelection() {
+      const sel = window.getSelection();
+      var text = sel.toString().trim();
+      var indices = text ? getItemIndicesFromSelection(sel) : null;
+      // Fallback to cached selection
+      if (!text && cachedSelection) {
+        text = cachedSelection.text;
+        indices = cachedSelection.indices;
+      }
+      const pageIndex = indices ? indices.pageIndex : getCurrentPageIndex();
+      const content = prompt('Add a note for this ' + (text ? 'selection' : 'page') + ':');
+      if (content == null || content.trim() === '') return;
+      studyData.notes.push({
+        id: 'n_' + Date.now(),
+        pageIndex,
+        content: content.trim(),
+        quoted: text ? text.slice(0, 120) : null,
+        createdAt: new Date().toISOString()
+      });
+      saveStudyData();
+      sel.removeAllRanges();
+      cachedSelection = null;
+      hideSelectionPopup();
+      renderStudyPanel();
+    }
+
+    function getCurrentPageIndex() {
+      const pages = document.querySelectorAll('.pdf-page');
+      const viewportMid = window.scrollY + window.innerHeight / 2;
+      let best = 0;
+      let bestDist = Infinity;
+      pages.forEach((p, i) => {
+        const rect = p.getBoundingClientRect();
+        const mid = rect.top + rect.height / 2 + window.scrollY;
+        const dist = Math.abs(mid - viewportMid);
+        if (dist < bestDist) {
+          bestDist = dist;
+          best = i;
+        }
+      });
+      return best;
+    }
+
+    function addBookmark() {
+      const pageIndex = getCurrentPageIndex();
+      const existing = studyData.bookmarks.find(b => b.pageIndex === pageIndex);
+      if (existing) return;
+      studyData.bookmarks.push({
+        id: 'b_' + Date.now(),
+        pageIndex,
+        label: `Page ${pageIndex + 1}`,
+        createdAt: new Date().toISOString()
+      });
+      saveStudyData();
+      renderStudyPanel();
+      const btn = document.getElementById('btnBookmark');
+      btn.classList.add('bookmarked');
+      btn.innerHTML = '<span aria-hidden="true">✓</span> Bookmarked';
+      setTimeout(() => {
+        btn.classList.remove('bookmarked');
+        btn.innerHTML = '<span aria-hidden="true">🔖</span> Bookmark page';
+      }, 1500);
+    }
+
+    function scrollToPage(pageIndex) {
+      const el = document.querySelector(`.pdf-page[data-page-index="${pageIndex}"]`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function deleteNote(noteId, e) {
+      if (e) e.stopPropagation();
+      studyData.notes = studyData.notes.filter(function (n) { return n.id !== noteId; });
+      saveStudyData();
+      renderStudyPanel();
+    }
+
+    function startEditNote(noteId, e) {
+      if (e) e.stopPropagation();
+      const note = studyData.notes.find(function (n) { return n.id === noteId; });
+      if (!note) return;
+      const notesList = document.getElementById('notesList');
+      const itemEl = notesList.querySelector('[data-note-id="' + escapeHtml(noteId) + '"]');
+      if (!itemEl) return;
+      const contentEl = itemEl.querySelector('.note-text');
+      const formHtml = '<div class="note-edit-form" data-note-id="' + escapeHtml(noteId) + '">' +
+        '<textarea class="note-edit-textarea" rows="3">' + escapeHtml(note.content) + '</textarea>' +
+        '<div class="note-edit-actions"><button type="button" class="cancel-btn">Cancel</button><button type="button" class="save-btn">Save</button></div></div>';
+      const wrap = document.createElement('div');
+      wrap.className = 'note-item-editing';
+      wrap.innerHTML = formHtml;
+      itemEl.replaceWith(wrap);
+      const form = wrap.querySelector('.note-edit-form');
+      const ta = wrap.querySelector('.note-edit-textarea');
+      ta.focus();
+      wrap.querySelector('.cancel-btn').addEventListener('click', function (ev) {
+        ev.stopPropagation();
+        renderStudyPanel();
+      });
+      wrap.querySelector('.save-btn').addEventListener('click', function (ev) {
+        ev.stopPropagation();
+        note.content = ta.value.trim();
+        saveStudyData();
+        renderStudyPanel();
+      });
+    }
+
+    function renderStudyPanel() {
+      const data = getStudyData();
+      const bookmarksList = document.getElementById('bookmarksList');
+      const notesList = document.getElementById('notesList');
+
+      if (!data.bookmarks || data.bookmarks.length === 0) {
+        bookmarksList.innerHTML = '<div class="study-empty">No bookmarks yet. Use the 🔖 button on a page to add one.</div>';
+      } else {
+        bookmarksList.innerHTML = data.bookmarks
+          .sort(function (a, b) { return a.pageIndex - b.pageIndex; })
+          .map(function (b) {
+            return '<div class="bookmark-item" data-page="' + b.pageIndex + '" role="button" tabindex="0"><span class="page-badge">Page ' + (b.pageIndex + 1) + '</span>' + (b.label || 'Page ' + (b.pageIndex + 1)) + '</div>';
+          })
+          .join('');
+        bookmarksList.querySelectorAll('.bookmark-item').forEach(function (el) {
+          el.addEventListener('click', function () {
+            scrollToPage(parseInt(el.getAttribute('data-page'), 10));
+          });
+        });
+      }
+
+      if (!data.notes || data.notes.length === 0) {
+        notesList.innerHTML = '<div class="study-empty">No notes yet. Select text and click "Add note" in the popup.</div>';
+      } else {
+        notesList.innerHTML = data.notes
+          .slice()
+          .reverse()
+          .map(function (n) {
+            return '<div class="note-item" data-note-id="' + escapeHtml(n.id) + '" data-page="' + n.pageIndex + '" role="button" tabindex="0">' +
+              '<div class="note-item-actions"><button type="button" class="edit-btn" title="Edit note" aria-label="Edit">✎</button><button type="button" class="delete-btn" title="Delete note" aria-label="Delete">×</button></div>' +
+              '<span class="page-badge">Page ' + (n.pageIndex + 1) + '</span>' +
+              (n.quoted ? '<em>' + escapeHtml(n.quoted) + '</em>' : '') +
+              '<div class="note-text">' + escapeHtml(n.content) + '</div></div>';
+          })
+          .join('');
+        notesList.querySelectorAll('.note-item').forEach(function (el) {
+          var page = parseInt(el.getAttribute('data-page'), 10);
+          var noteId = el.getAttribute('data-note-id');
+          el.addEventListener('click', function (e) {
+            if (e.target.closest('.note-item-actions')) return;
+            scrollToPage(page);
+          });
+          var editBtn = el.querySelector('.edit-btn');
+          var delBtn = el.querySelector('.delete-btn');
+          if (editBtn) editBtn.addEventListener('click', function (e) { startEditNote(noteId, e); });
+          if (delBtn) delBtn.addEventListener('click', function (e) { deleteNote(noteId, e); });
+        });
+      }
+    }
+
+    function escapeHtml(s) {
+      const div = document.createElement('div');
+      div.textContent = s;
+      return div.innerHTML;
+    }
 
     document.addEventListener('DOMContentLoaded', function () {
       const authManager = new AuthManager();
@@ -173,6 +990,8 @@
       const urlParams = new URLSearchParams(window.location.search);
       currentChapterId = urlParams.get('chapter_id');
       currentClassId = urlParams.get('class_id');
+      const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+      currentUserId = currentUser.user_id || 'anon';
 
       if (!currentChapterId) {
         document.getElementById('contentContainer').innerHTML = '<div class="loading-state"><p>Error: Chapter ID missing</p></div>';
@@ -186,42 +1005,82 @@
       const container = document.getElementById('contentContainer');
 
       try {
-        // Get chapter info from classes endpoint
         const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-        if (!currentUser.user_id) {
-          throw new Error('User not logged in');
-        }
+        if (!currentUser.user_id) throw new Error('User not logged in');
+        currentUserId = currentUser.user_id;
 
         const apiUrl = window.API_BASE_URL || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
           ? 'http://localhost:5001/api'
           : 'https://analytiq-qbfr.onrender.com/api');
 
-        // Get all chapters for the class
         const chapterResponse = await authFetch(`${apiUrl}/classes/${encodeURIComponent(currentClassId)}/chapters`);
         const chaptersData = await chapterResponse.json();
+        if (!chapterResponse.ok) throw new Error(chaptersData.error || 'Failed to load chapters');
 
-        if (!chapterResponse.ok) {
-          throw new Error(chaptersData.error || 'Failed to load chapters');
-        }
-
-        // Find the specific chapter
         const chapter = chaptersData.chapters.find(c => c.chapter_id === currentChapterId);
+        if (!chapter) throw new Error('Chapter not found');
 
-        if (!chapter) {
-          throw new Error('Chapter not found');
-        }
-
-        // Set chapter title and description
         document.getElementById('chapterTitle').textContent = chapter.title || 'Untitled Chapter';
         document.getElementById('chapterDescription').textContent = chapter.description || '';
 
-        if (!chapter.chapter_id) {
-          throw new Error('Chapter ID not found');
-        }
+        pdfUrl = `${apiUrl}/chapters/${encodeURIComponent(chapter.chapter_id)}/pdf`;
+        await renderPDFPages(pdfUrl, container);
 
-        // Construct PDF path using API endpoint that serves from database
-        const pdfPath = `${apiUrl}/chapters/${encodeURIComponent(chapter.chapter_id)}/pdf`;
-        await renderPDFPages(pdfPath, container);
+        getStudyData();
+        applySavedHighlights();
+        renderStudyPanel();
+
+        document.getElementById('studyToolbar').style.display = 'flex';
+
+        document.querySelectorAll('.study-toolbar-sidebar .highlight-btn').forEach(btn => {
+          btn.addEventListener('click', function () {
+            currentHighlightColor = this.getAttribute('data-color');
+            document.querySelectorAll('.highlight-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+          });
+        });
+        document.getElementById('btnBookmark').addEventListener('click', addBookmark);
+        document.getElementById('btnNotesPanel').addEventListener('click', function () {
+          document.getElementById('studySidePanel').classList.remove('hidden');
+        });
+        document.getElementById('closeStudyPanel').addEventListener('click', function () {
+          document.getElementById('studySidePanel').classList.add('hidden');
+        });
+        document.getElementById('btnHighlightSelection').addEventListener('click', addHighlightFromSelection);
+        document.getElementById('btnRemoveHighlightSelection').addEventListener('click', removeHighlightFromSelection);
+        document.getElementById('btnAddNoteSelection').addEventListener('click', addNoteFromSelection);
+        document.getElementById('btnDownloadPdf').addEventListener('click', downloadAnnotatedPDF);
+
+        document.addEventListener('selectionchange', function () {
+          const sel = window.getSelection();
+          const text = sel.toString().trim();
+          if (!text) {
+            // Don't hide popup if we have a cached selection (user clicking popup button)
+            if (!cachedSelection) hideSelectionPopup();
+            return;
+          }
+          // Cache the selection info so it survives button clicks
+          const indices = getItemIndicesFromSelection(sel);
+          if (indices) {
+            cachedSelection = { text: text, indices: indices };
+          }
+          const range = sel.rangeCount ? sel.getRangeAt(0) : null;
+          if (!range) return;
+          const rect = range.getBoundingClientRect();
+          if (rect.width > 0 && rect.height > 0) {
+            showSelectionPopup(rect.left + rect.width / 2, rect.top);
+          }
+        });
+        // Prevent mousedown on popup from clearing the selection
+        document.getElementById('selectionPopup').addEventListener('mousedown', function (e) {
+          e.preventDefault();
+        });
+        document.addEventListener('mousedown', function (e) {
+          if (!document.getElementById('selectionPopup').contains(e.target)) {
+            cachedSelection = null;
+            hideSelectionPopup();
+          }
+        });
 
       } catch (error) {
         console.error('Error:', error);
@@ -236,51 +1095,116 @@
 
       pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-      try {
-        // Load PDF document
-        const loadingTask = pdfjsLib.getDocument(pdfPath);
-        const pdf = await loadingTask.promise;
+      const loadingTask = pdfjsLib.getDocument(pdfPath);
+      pdfDoc = await loadingTask.promise;
+      numPages = pdfDoc.numPages;
+      container.innerHTML = '';
 
-        container.innerHTML = '';
+      var renderScale = 2.5;
+      var scaleFactor = 1;
 
-        // Render each page
-        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-          const page = await pdf.getPage(pageNum);
-
-          // Use scale 2.5 for better quality
-          const scale = 2.5;
-          const viewport = page.getViewport({ scale });
-
-          const pageDiv = document.createElement('div');
-          pageDiv.className = 'pdf-page';
-
-          const canvas = document.createElement('canvas');
-          const context = canvas.getContext('2d');
-          canvas.height = viewport.height;
-          canvas.width = viewport.width;
-
-          // Render page to canvas
-          await page.render({
-            canvasContext: context,
-            viewport: viewport
-          }).promise;
-
-          pageDiv.appendChild(canvas);
-
-          // Add page number label
-          const pageLabel = document.createElement('div');
-          pageLabel.className = 'page-number';
-          pageLabel.textContent = `Page ${pageNum} of ${pdf.numPages}`;
-          pageDiv.appendChild(pageLabel);
-
-          container.appendChild(pageDiv);
+      for (var pageNum = 1; pageNum <= numPages; pageNum++) {
+        var page = await pdfDoc.getPage(pageNum);
+        var viewport = page.getViewport({ scale: renderScale });
+        if (pageNum === 1) {
+          var maxW = 900;
+          var parent = container.parentElement;
+          if (typeof window !== 'undefined' && window.innerWidth > 0)
+            maxW = window.innerWidth - 280;
+          if (parent && parent.clientWidth > 200)
+            maxW = Math.min(maxW, parent.clientWidth - 80);
+          scaleFactor = maxW / viewport.width;
+          scaleFactor = Math.max(0.5, Math.min(1, scaleFactor));
         }
-      } catch (error) {
-        console.error('PDF rendering error:', error);
-        throw new Error(`Failed to load PDF: ${error.message}`);
+
+        var pageDiv = document.createElement('div');
+        pageDiv.className = 'pdf-page';
+        pageDiv.setAttribute('data-page-index', String(pageNum - 1));
+
+        var scaledOuter = document.createElement('div');
+        scaledOuter.className = 'pdf-page-scaled';
+        scaledOuter.style.width = (viewport.width * scaleFactor) + 'px';
+        scaledOuter.style.height = (viewport.height * scaleFactor) + 'px';
+
+        var wrapper = document.createElement('div');
+        wrapper.className = 'pdf-page-wrapper';
+        wrapper.style.width = viewport.width + 'px';
+        wrapper.style.height = viewport.height + 'px';
+        wrapper.style.transform = 'scale(' + scaleFactor + ')';
+
+        var canvas = document.createElement('canvas');
+        var context = canvas.getContext('2d');
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+        await page.render({
+          canvasContext: context,
+          viewport: viewport
+        }).promise;
+        wrapper.appendChild(canvas);
+
+        var textLayerDiv = document.createElement('div');
+        textLayerDiv.className = 'pdf-text-layer';
+        textLayerDiv.style.width = viewport.width + 'px';
+        textLayerDiv.style.height = viewport.height + 'px';
+        textLayerDiv.style.setProperty('--scale-factor', String(renderScale));
+
+        try {
+          var textContent = await page.getTextContent();
+          var allItems = textContent.items || [];
+          pageTextItems[pageNum - 1] = allItems.filter(function(it) { return it.str && it.str.length > 0; });
+          var usedBuiltIn = false;
+          if (typeof pdfjsLib.renderTextLayer === 'function') {
+            try {
+              var textLayerTask = pdfjsLib.renderTextLayer({
+                textContentSource: textContent,
+                container: textLayerDiv,
+                viewport: viewport
+              });
+              await textLayerTask.promise;
+              usedBuiltIn = true;
+            } catch (e2) {
+              console.warn('renderTextLayer failed, using fallback', e2);
+              textLayerDiv.innerHTML = '';
+            }
+          }
+          if (!usedBuiltIn) {
+            var fitems = pageTextItems[pageNum - 1];
+            for (var fi = 0; fi < fitems.length; fi++) {
+              var fItem = fitems[fi];
+              var fTx = fItem.transform || [];
+              var fSpan = document.createElement('span');
+              fSpan.setAttribute('data-item-index', String(fi));
+              fSpan.textContent = fItem.str;
+              var fx = (fTx[4] || 0) * renderScale;
+              var fy = (fTx[5] || 0) * renderScale;
+              var fH = (Math.sqrt((fTx[0]*fTx[0]) + (fTx[3]*fTx[3])) || 12) * renderScale;
+              fSpan.style.left = fx + 'px';
+              fSpan.style.top = (viewport.height - fy - fH) + 'px';
+              fSpan.style.fontSize = fH + 'px';
+              fSpan.style.fontFamily = 'sans-serif';
+              textLayerDiv.appendChild(fSpan);
+            }
+          }
+          var renderedSpans = textLayerDiv.querySelectorAll('span');
+          for (var si = 0; si < renderedSpans.length; si++) {
+            renderedSpans[si].setAttribute('data-item-index', String(si));
+          }
+        } catch (e) {
+          console.warn('Text layer failed for page ' + pageNum, e);
+        }
+
+        wrapper.appendChild(textLayerDiv);
+        scaledOuter.appendChild(wrapper);
+        pageDiv.appendChild(scaledOuter);
+
+        var pageLabel = document.createElement('div');
+        pageLabel.className = 'page-number';
+        pageLabel.textContent = 'Page ' + pageNum + ' of ' + numPages;
+        pageDiv.appendChild(pageLabel);
+
+        container.appendChild(pageDiv);
       }
     }
-
   </script>
 </body>
 

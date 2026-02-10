@@ -61,9 +61,14 @@ SUSPICIOUS_PDF_PATTERNS = [
 # RATE LIMITING
 # ============================================================================
 
-# Default Rate Limits
-RATE_LIMIT_DEFAULT_PER_DAY = int(os.getenv("RATE_LIMIT_DAY", 200))
-RATE_LIMIT_DEFAULT_PER_HOUR = int(os.getenv("RATE_LIMIT_HOUR", 50))
+# Default Rate Limits (much higher in development so localhost doesn't hit 429)
+_default_day = 200
+_default_hour = 50
+if ENV == "development" or DEBUG:
+    _default_day = 50000
+    _default_hour = 2000
+RATE_LIMIT_DEFAULT_PER_DAY = int(os.getenv("RATE_LIMIT_DAY", _default_day))
+RATE_LIMIT_DEFAULT_PER_HOUR = int(os.getenv("RATE_LIMIT_HOUR", _default_hour))
 
 # Endpoint-Specific Limits
 RATE_LIMIT_SIGNUP_PER_HOUR = int(os.getenv("RATE_LIMIT_SIGNUP", 5))
