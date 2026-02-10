@@ -2965,6 +2965,7 @@ def get_exercise_details(exercise_id):
 
 
 @app.route("/api/exercises/<exercise_id>", methods=["PUT"])
+@csrf_exempt
 @require_auth
 def update_exercise(exercise_id):
     """Update an existing exercise"""
@@ -3160,6 +3161,7 @@ def validate_pdf_file(file):
 
 
 @app.route("/api/classes/<class_id>/chapters", methods=["POST", "OPTIONS"])
+@csrf_exempt
 @require_auth
 def upload_chapter(class_id):
     """Upload PDF and create chapter for a class (professor only)"""
@@ -3446,6 +3448,7 @@ def get_class_chapters(class_id):
 
 
 @app.route("/api/chapters/<chapter_id>", methods=["PUT"])
+@csrf_exempt
 @require_auth
 def update_chapter(chapter_id):
     """Update a chapter"""
@@ -3497,6 +3500,7 @@ def update_chapter(chapter_id):
 
 
 @app.route("/api/chapters/<chapter_id>", methods=["DELETE", "OPTIONS"])
+@csrf_exempt
 @require_auth
 def delete_chapter(chapter_id):
     """Delete a chapter and all its exercises (professor only)"""
@@ -3554,6 +3558,7 @@ def delete_chapter(chapter_id):
 
 
 @app.route("/api/chapters/<chapter_id>/generate-exercises", methods=["POST"])
+@csrf_exempt
 @require_auth
 def generate_exercises_for_chapter(chapter_id):
     """Generate exercises from an existing chapter's PDF data"""
@@ -4743,6 +4748,7 @@ import uuid
 
 
 @app.route("/api/classes/<class_id>/chapters/<chapter_id>/exercises", methods=["POST"])
+@csrf_exempt
 @require_auth
 def create_exercise(class_id, chapter_id):
     """Manually create a new exercise"""
@@ -4825,6 +4831,7 @@ def create_exercise(class_id, chapter_id):
 
 
 @app.route("/api/classes/<class_id>/resources", methods=["POST", "OPTIONS"])
+@csrf_exempt
 @require_auth
 def add_class_resource(class_id):
     """Add a new resource (link) to the class"""
@@ -4941,6 +4948,7 @@ def serve_chapter_pdf(chapter_id):
 
 
 @app.route("/api/exercises/<exercise_id>", methods=["DELETE", "OPTIONS"])
+@csrf_exempt
 @require_auth
 def delete_exercise(exercise_id):
     """Delete a specific exercise"""
@@ -5044,6 +5052,7 @@ def ensure_resources_table():
 
 
 @app.route("/api/classes/<class_id>/resources/upload", methods=["POST", "OPTIONS"])
+@csrf_exempt
 @require_auth
 def upload_class_resource(class_id):
     """Upload a file as a resource"""
@@ -5178,6 +5187,7 @@ def serve_resource_download(resource_id):
 
 
 @app.route("/api/classes/<class_id>/resources/<resource_id>", methods=["PUT", "DELETE", "OPTIONS"])
+@csrf_exempt
 def manage_resource(class_id, resource_id):
     """Update or Delete a resource"""
     try:
