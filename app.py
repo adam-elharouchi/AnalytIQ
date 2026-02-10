@@ -120,6 +120,16 @@ except ImportError:
     generate_csrf = None
 
 
+def csrf_exempt(view_func):
+    """
+    Wrapper decorator so we can safely exempt JSON API endpoints from CSRF
+    checks even when CSRF is disabled or Flask-WTF is not installed.
+    """
+    if csrf:
+        return csrf.exempt(view_func)
+    return view_func
+
+
 # Structured Logging Configuration
 import logging
 from pythonjsonlogger import jsonlogger
@@ -702,6 +712,7 @@ def ensure_password_resets_table():
 
 
 @app.route("/api/users/signup", methods=["OPTIONS"])
+@csrf_exempt
 def signup_options():
     """Handle OPTIONS preflight for signup"""
     response = app.response_class()
@@ -716,6 +727,7 @@ def signup_options():
 
 
 @app.route("/api/users/signup", methods=["POST"])
+@csrf_exempt
 @limiter.limit("5 per hour")  # Prevent account creation spam
 def signup():
     """Sign up a new user"""
@@ -821,6 +833,7 @@ def signup():
 
 
 @app.route("/api/users/signin", methods=["POST", "OPTIONS"])
+@csrf_exempt
 @limiter.limit("10 per minute")  # Prevent brute-force login attacks
 def signin():
     """Sign in a user"""
@@ -903,6 +916,7 @@ def signin():
 
 
 @app.route("/api/users/forgot-password", methods=["POST", "OPTIONS"])
+@csrf_exempt
 @limiter.limit("3 per hour")  # Prevent password reset abuse
 def forgot_password():
     """Handle forgot password request"""
@@ -993,6 +1007,7 @@ def forgot_password():
 
 
 @app.route("/api/users/reset-password", methods=["POST", "OPTIONS"])
+@csrf_exempt
 @limiter.limit("5 per hour")  # Prevent password reset token abuse
 def reset_password():
     """Reset password using token from email link."""
