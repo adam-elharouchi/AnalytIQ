@@ -405,8 +405,7 @@ async function renderChapters(chapters) {
           </div>
           ${chapter.description ? `<p style="color: #64748b; margin-bottom: 0.5rem;">${escapeHtml(chapter.description)}</p>` : ''}
           <div style="font-size: 0.875rem; color: #64748b;">
-            <span>📄 ${escapeHtml(chapter.pdf_filename || 'PDF file')}</span>
-            ${chapter.created_at ? `<span style="margin-left: 1rem;">Uploaded: ${new Date(chapter.created_at).toLocaleDateString()}</span>` : ''}
+            ${chapter.created_at ? `<span>Uploaded: ${new Date(chapter.created_at).toLocaleDateString()}</span>` : ''}
           </div>
         </div>
         <div style="display: flex; gap: 0.5rem;">
