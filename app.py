@@ -4908,13 +4908,18 @@ def serve_chapter_pdf(chapter_id):
         pdf_filename = result[1] or "chapter.pdf"
         pdf_url = result[2]
 
-        # NEW: If pdf_url exists (Supabase), redirect to it
+        # If pdf_url points to our own endpoint, avoid redirect loop: serve from pdf_data
+        self_ref = f"/api/chapters/{chapter_id}/pdf"
+        if pdf_url and pdf_url.rstrip("/") == self_ref.rstrip("/"):
+            pdf_url = None
+
+        # If pdf_url exists (e.g. Supabase external URL), redirect to it
         if pdf_url:
             from flask import redirect
 
             return redirect(pdf_url)
 
-        # NEW: If pdf_data exists in database, serve from database
+        # Serve from database binary
         if pdf_data:
             pdf_bytes = bytes(pdf_data)
             from flask import Response
