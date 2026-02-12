@@ -91,8 +91,10 @@ async function loadConversationHistory() {
     if (typeof conversationAPI !== 'undefined') {
       const active = await conversationAPI.getAll(false);
       const archived = await conversationAPI.getAll(true);
+      const activeArr = Array.isArray(active) ? active : [];
+      const archivedArr = Array.isArray(archived) ? archived : [];
 
-      conversationHistoryList = [...active, ...archived].map(conv => ({
+      conversationHistoryList = [...activeArr, ...archivedArr].map(conv => ({
         id: conv.id,
         title: conv.title,
         date: conv.date,

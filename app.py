@@ -1335,6 +1335,7 @@ def delete_user():
 
 
 @app.route("/api/users/conversations", methods=["GET"])
+@csrf_exempt
 @require_auth
 def get_conversations():
     """Get all conversations for a user"""
@@ -1396,6 +1397,7 @@ def get_conversations():
 
 
 @app.route("/api/users/conversations", methods=["POST"])
+@csrf_exempt
 @require_auth
 def create_conversation():
     """Create a new conversation"""
@@ -1432,6 +1434,7 @@ def create_conversation():
 
 
 @app.route("/api/users/conversations/<conversation_id>", methods=["GET"])
+@csrf_exempt
 @require_auth
 def get_conversation(conversation_id):
     """Get a specific conversation with messages"""
@@ -1493,6 +1496,7 @@ def get_conversation(conversation_id):
 
 
 @app.route("/api/users/conversations/<conversation_id>", methods=["PUT"])
+@csrf_exempt
 @require_auth
 def update_conversation(conversation_id):
     """Update conversation (title, archive status, etc)"""
@@ -1559,6 +1563,7 @@ def update_conversation(conversation_id):
 
 
 @app.route("/api/users/conversations/<conversation_id>", methods=["DELETE"])
+@csrf_exempt
 @require_auth
 def delete_conversation(conversation_id):
     """Delete (soft delete) a conversation"""

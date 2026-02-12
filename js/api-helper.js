@@ -144,7 +144,8 @@ if (typeof window.conversationAPI === 'undefined') {
                 const url = `${window.API_BASE_URL}/users/conversations?archived=${archived}`;
                 const response = await fetchWithCache(url);
                 if (response.ok) {
-                    return await response.json();
+                    const data = await response.json();
+                    return Array.isArray(data) ? data : (data.conversations || []);
                 }
             } catch (error) {
                 console.error('Error fetching conversations:', error);
