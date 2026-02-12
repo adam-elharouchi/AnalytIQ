@@ -1777,6 +1777,7 @@ def update_ai_memory():
 
 
 @app.route("/api/users/preferences", methods=["GET"])
+@csrf_exempt
 @require_auth
 def get_preferences():
     """Get user preferences"""
@@ -1827,6 +1828,7 @@ def get_preferences():
 
 
 @app.route("/api/users/preferences", methods=["PUT"])
+@csrf_exempt
 @require_auth
 def update_preferences():
     """Update user preferences"""
@@ -3827,6 +3829,7 @@ def get_chapter_exercises(chapter_id):
 
 
 @app.route("/api/ai/chat", methods=["POST", "OPTIONS"])
+@csrf_exempt
 @require_auth
 def proxy_ai_chat():
     """Secure proxy for Gemini Chat API"""
