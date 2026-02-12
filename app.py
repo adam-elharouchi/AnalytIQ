@@ -1124,6 +1124,7 @@ def get_profile():
 
 
 @app.route("/api/users/profile", methods=["PUT"])
+@csrf_exempt
 @require_auth
 def update_profile():
     """Update user profile"""
@@ -1214,6 +1215,7 @@ def get_settings():
 
 
 @app.route("/api/users/settings", methods=["PUT"])
+@csrf_exempt
 @require_auth
 def update_settings():
     """Update user settings"""
@@ -1257,6 +1259,7 @@ def update_settings():
 
 
 @app.route("/api/users/password", methods=["PUT"])
+@csrf_exempt
 @require_auth
 def update_password():
     """Update user password"""
@@ -1312,6 +1315,7 @@ def update_password():
 
 
 @app.route("/api/users/delete", methods=["DELETE"])
+@csrf_exempt
 @require_auth
 def delete_user():
     """Delete user account"""
@@ -1658,6 +1662,7 @@ def get_ai_digest():
 
 
 @app.route("/api/users/ai-digest", methods=["PUT"])
+@csrf_exempt
 @require_auth
 def update_ai_digest():
     """Update AI agent digest"""
@@ -1746,6 +1751,7 @@ def get_ai_memory():
 
 
 @app.route("/api/users/ai-memory", methods=["PUT"])
+@csrf_exempt
 @require_auth
 def update_ai_memory():
     """Update AI agent memory (replaces all)"""
@@ -1977,6 +1983,7 @@ def get_practice_progress():
 
 
 @app.route("/api/users/practice-progress", methods=["PUT"])
+@csrf_exempt
 @require_auth
 def update_practice_progress():
     """Update practice progress"""
@@ -2440,6 +2447,7 @@ def get_task_status(task_id):
 
 
 @app.route("/api/contact", methods=["POST", "OPTIONS"])
+@csrf_exempt
 def submit_contact():
     """Submit a contact form message"""
     if request.method == "OPTIONS":
@@ -2503,6 +2511,7 @@ def generate_class_code():
 
 
 @app.route("/api/classes", methods=["POST", "OPTIONS"])
+@csrf_exempt
 @require_auth
 def create_class():
     """Create a new class (professor only)"""
@@ -3026,6 +3035,7 @@ def update_exercise(exercise_id):
 
 
 @app.route("/api/classes/<class_id>", methods=["PUT"])
+@csrf_exempt
 @require_auth
 def update_class(class_id):
     """Update class (professor only, must be owner)"""
@@ -3695,6 +3705,7 @@ def generate_exercises_for_chapter(chapter_id):
 
 
 @app.route("/api/classes/<class_id>", methods=["DELETE"])
+@csrf_exempt
 @require_auth
 def delete_class(class_id):
     """Delete class (professor only, must be owner)"""
@@ -3896,6 +3907,7 @@ def proxy_ai_chat():
 
 
 @app.route("/api/classes/enroll", methods=["POST", "OPTIONS"])
+@csrf_exempt
 @require_auth
 def enroll_in_class():
     """Enroll student in a class using class_id (class code)"""
