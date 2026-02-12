@@ -2586,6 +2586,8 @@ def create_class():
         cursor.close()
         close_conn_safely(conn)
 
+        cache.invalidate_cache(f"classes:user:{user_id}:*")
+
         return (
             jsonify(
                 {
@@ -3095,6 +3097,8 @@ def update_class(class_id):
         conn.commit()
         cursor.close()
         close_conn_safely(conn)
+
+        cache.invalidate_cache(f"classes:user:{user_id}:*")
 
         return jsonify({"success": True}), 200
 
@@ -3741,6 +3745,8 @@ def delete_class(class_id):
         conn.commit()
         cursor.close()
         close_conn_safely(conn)
+
+        cache.invalidate_cache(f"classes:user:{user_id}:*")
 
         return jsonify({"success": True}), 200
 
