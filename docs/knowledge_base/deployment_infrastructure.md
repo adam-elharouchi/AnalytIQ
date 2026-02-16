@@ -1,0 +1,92 @@
+# Deployment & Infrastructure
+
+Overview of the hosting environment, database connections, and external services used by AnalytIQ.
+
+## 🏗️ Architecture Stack
+
+*   **Web Server**: Gunicorn (Production WSGI server).
+*   **Framework**: Flask (Python).
+*   **Database**: PostgreSQL (Hosted on Supabase).
+*   **Caching & Queue**: Redis (Hosted on Render).
+*   **Storage**: Supabase Storage (S3-compatible).
+*   **Hosting Platform**: Render.com.
+
+---
+
+## 🚀 Deployment Workflow
+
+AnalytIQ is deployed on **Render** using a Git-based workflow.
+
+### Triggering a Deploy
+Pushing to the `main` branch automatically triggers a new build and deployment on Render.
+
+```bash
+git add .
+git commit -m "feat: description of changes"
+git push origin main
+```
+
+### Verification Script
+A script is available to verify the deployment status and environment configuration:
+```bash
+python scripts/verify_deployment.py
+```
+This checks:
+*   Environment variable presence.
+*   Database connectivity.
+*   Redis connectivity.
+*   Supabase bucket access.
+
+---
+
+## 🗄️ Database (PostgreSQL on Supabase)
+
+### Connection Pooling
+The application uses `psycopg2.pool.ThreadedConnectionPool` to manage database connections efficiently.
+*   **Min Connections**: 1
+*   **Max Connections**: 10
+*   **Timeout**: 10 seconds (connection), 30 seconds (statement).
+
+### Connection String
+The `DATABASE_URL` environment variable must be set in Render. It supports both direct connections and Supabase Transaction Pooler (recommended for serverless/high-concurrency).
+
+---
+
+## 📦 External Services
+
+### Google Gemini AI
+*   **Purpose**: Generates coding exercises and AI hints.
+*   **Config**: `GEMINI_API_KEY`.
+*   **Module**: `python/exercise_generator.py`.
+
+### Supabase Storage
+*   **Purpose**: Stores uploaded PDFs for processing.
+*   **Bucket**: `pdfs` (default).
+*   **Config**: `SUPABASE_URL`, `SUPABASE_KEY`.
+
+### Sentry
+*   **Purpose**: Real-time error monitoring and performance tracing.
+*   **Config**: `SENTRY_DSN`.
+
+---
+
+## 🔧 Environment Variables
+
+### Core
+| Variable | Description |
+| :--- | :--- |
+| `FLASK_ENV` | `production` or `development`. |
+| `DATABASE_URL` | PostgreSQL connection string. |
+| `REDIS_URL` | Redis connection string. |
+
+### Feature Flags
+| Variable | Default | Description |
+| :--- | :--- | :--- |
+| `FEATURE_CACHING` | `True` | Enable Redis caching. |
+| `FEATURE_ASYNC_TASKS` | `True` | Enable Celery background tasks. |
+| `FEATURE_CSRF` | `False` | Enable CSRF protection for forms. |
+
+### Third-Party Keys
+*   `GEMINI_API_KEY`
+*   `SUPABASE_URL` / `SUPABASE_KEY`
+*   `MAIL_SERVER` / `MAIL_USERNAME` / `MAIL_PASSWORD` (for emails)

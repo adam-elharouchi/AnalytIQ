@@ -1,0 +1,27 @@
+# Professor Portal
+
+The **Professor Portal** is the command center for faculty members to manage classes, track student progress, and analyze performance.
+
+## 🔑 Access & Authentication
+*   **Role Requirement**: Users must have a `professor` role.
+*   **Email Domain**: Must end with `@hult.edu` or `@faculty.hult.edu`.
+*   **Entry Point**: `professor-dashboard.html`.
+
+## 🛠️ Key Features
+
+### 1. Class Management
+*   **Create Class**: Professors can create new classes with a unique **Class Code**.
+*   **Class Code**: This code (e.g., `BA101`) is shared with students to allow them to enroll.
+*   **Dashboard**: Displays a grid of all active classes managed by the professor.
+
+### 2. Student Tracking
+*   **Enrollment List**: View all students enrolled in a specific class.
+*   **Progress Monitoring**: Track student performance across chapters and exercises.
+
+### 3. Analytics (Planned)
+*   Future updates will include detailed analytics on student engagement and success rates.
+
+## 💻 Technical Implementation
+*   **Frontend**: `professor-dashboard.html`, `professor-class.html`.
+*   **API**: `js/professor-dashboard.js`.
+*   **Auth Check**: `AuthManager.requireAuth()` ensures only authorized professors can access these pages.
