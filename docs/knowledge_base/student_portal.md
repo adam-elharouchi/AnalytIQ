@@ -1,0 +1,30 @@
+# Student Portal
+
+The **Student Portal** is the main interface for students to access course materials, complete exercises, and track their learning journey.
+
+## 🔑 Access
+*   **Role**: Available to all users with `student` role.
+*   **Entry Point**: `student-classes.html`.
+
+## 📚 Course Interface (`student-class.html`)
+The class view is organized into four main tabs:
+
+### 1. 📄 Chapters
+*   Lists all modules and chapters available in the course.
+*   Serves as the primary navigation for course content.
+
+### 2. 💪 Exercises
+*   Access to coding exercises and practice problems.
+*   Links directly to the **Practice Playground**.
+
+### 3. 📖 Resources
+*   Supplementary materials (PDFs, links, videos).
+*   External links open in new tabs for seamless navigation.
+
+### 4. 🏆 Leaderboards
+*   **Average Score**: Ranks students based on their overall performance.
+*   **By Exercise**: View top performers for specific challenges.
+*   **Privacy**: Students see their own rank relative to peers.
+
+## 🔗 Enrollment
+Students enroll in classes using the **Class Code** provided by their professor.

@@ -1,0 +1,39 @@
+# Project History & Decisions
+
+A chronological summary of major development sprints and architectural decisions defined in recent work.
+
+## 📅 Recent Timeline
+
+### February 2026
+
+*   **Professor Portal Authentication**: Fixed authentication issues in the professor portal, updating `professor-class.html` and `professor-dashboard.html` to use secure `authFetch` helpers.
+*   **Security Audit & Hardening**: comprehensive security audit (`SECURITY_AUDIT_COMPLETE.md`). Implemented JWT authentication, strict CORS policies, and Sentry PII filtering. Verified all environment variables.
+*   **Testing & Coverage**: Intensive push to increase test coverage to 70%+. added numerous test files targeting edge cases and specific modules.
+*   **Playground Improvements**: Fixed UX issues in the coding playground (Enter key behavior) and removed legacy practice pages.
+*   **Documentation Consolidation**: decision to centralize all project documentation into a single `docs/` directory (this knowledge base).
+
+### January 2026
+
+*   **Deployment Fixes**: Resolved deployment issues on Render, specifically `IndentationError` and duplicate function definitions in `app.py`.
+*   **Gemini Model Updates**: Updated the AI code assistant to use the latest Gemini models.
+*   **Frontend Refinements**: Refined the "Middle Eastern" design aesthetic, adjusting layouts, patterns, and responsiveness.
+
+---
+
+## 🏗️ Key Architectural Decisions
+
+### 1. Authentication Strategy (JWT)
+*   **Decision**: Move from server-side sessions to stateless JWT authentication.
+*   **Reasoning**: Better scalability, easier integration with client-side interactions, and standard practice for modern single-page-like applications.
+
+### 2. Database & Storage (Supabase)
+*   **Decision**: Use Supabase for both PostgreSQL database and Object Storage (PDFs).
+*   **Reasoning**: Unified platform, easy-to-use API, and built-in connection pooling support.
+
+### 3. Asynchronous Processing (Celery + Redis)
+*   **Decision**: Offload heavy tasks (PDF processing, AI generation) to Celery workers backed by Redis.
+*   **Reasoning**: Prevents request timeouts and improves user experience during long-running operations.
+
+### 4. Local-First Development
+*   **Decision**: Strictly separate `localhost` development from production deployment.
+*   **Reasoning**: Prevents accidental breakage of the live site. Changes are verified locally before pushing to `main` which triggers auto-deployment.
