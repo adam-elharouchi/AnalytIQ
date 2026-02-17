@@ -1,7 +1,7 @@
 # AnalytIQ — Master Task List
 
 > Generated: 2026-02-17 | Last updated: 2026-02-17
-> Total: 73 tasks (17 completed, 56 pending)
+> Total: 73 tasks (21 completed, 52 pending)
 
 ---
 
@@ -21,6 +21,10 @@
 | 63 | Created `.pre-commit-config.yaml` (black + flake8 + detect-secrets) |
 | 64 | Created `render.yaml` with `healthCheckPath: /api/health` for zero-downtime deploys |
 | EX-1 | Rewrote `python/exercise_generator.py` prompt — one concept per exercise, 5–10 lines max, every line commented, no chained ops, no list comprehensions, good/bad examples in prompt |
+| 8 | Created `response_helpers.py` with `api_success()`, `api_error()`, `api_list()` — used in global error handler and new routes |
+| 9 | Replaced all 60 `str(e)` → `logger.error(..., exc_info=True)` + generic client message; added `@app.errorhandler(Exception)` catch-all (HTTPExceptions pass through unchanged) |
+| 10 | Replaced timestamp-based `user_id = str(int(datetime.now().timestamp() * 1000))` with `uuid.uuid4()` |
+| 39 | Applied `validate_fields()` to 7 write endpoints: class create, profile update, password change, chapter update, exercise create/update, contact form |
 
 ---
 
