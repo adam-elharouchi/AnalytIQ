@@ -211,7 +211,7 @@ class TestExerciseGeneration:
                     "Chapter 1",
                     api_key="test_key"
                 )
-            assert "Failed to parse JSON" in str(exc_info.value)
+            assert "Failed to parse the exercise response from AI" in str(exc_info.value)
 
     def test_generate_exercises_non_array_response(self):
         """Test handling when API returns object instead of array"""
