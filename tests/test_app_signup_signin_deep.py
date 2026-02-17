@@ -250,8 +250,8 @@ class TestUpdatePassword:
 
         response = client.put("/api/users/password", json={
             "user_id": "nonexistent",
-            "currentPassword": "pass",
-            "newPassword": "newpass",
+            "currentPassword": "oldpassword",
+            "newPassword": "newpassword123",
         })
         assert response.status_code in [401, 404, 500]
 
