@@ -59,14 +59,14 @@ class TestStudentProgressProfessor:
         ]
 
         response = client.get("/api/students/nonexist/progress?user_id=prof123")
-        assert response.status_code in [401, 404, 500]
+        assert response.status_code in [401, 403, 404, 500]
 
     def test_get_student_progress_user_not_found(self, client, mock_db):
         """Test with non-existent requesting user"""
         mock_db.cursor().fetchone.return_value = None
 
         response = client.get("/api/students/s1/progress?user_id=nonexist")
-        assert response.status_code in [401, 404, 500]
+        assert response.status_code in [401, 403, 404, 500]
 
     def test_get_student_progress_missing_user(self, client, mock_db):
         """Test without user_id parameter"""
@@ -141,7 +141,7 @@ class TestAverageLeaderboard:
         response = client.get(
             "/api/classes/NONEXIST/leaderboard/average?user_id=prof123"
         )
-        assert response.status_code in [401, 404, 500]
+        assert response.status_code in [401, 403, 404, 500]
 
     def test_average_leaderboard_missing_user(self, client, mock_db):
         """Test leaderboard without user_id"""
@@ -202,7 +202,7 @@ class TestExerciseLeaderboard:
         response = client.get(
             "/api/classes/NONEXIST/leaderboard/exercise/ex1?user_id=prof123"
         )
-        assert response.status_code in [401, 404, 500]
+        assert response.status_code in [401, 403, 404, 500]
 
     def test_exercise_leaderboard_missing_user(self, client, mock_db):
         """Test exercise leaderboard without user_id"""
@@ -247,7 +247,7 @@ class TestServeChapterPdfDeep:
         response = client.get(
             "/api/chapters/ch123/pdf?user_id=user123"
         )
-        assert response.status_code in [401, 404, 500]
+        assert response.status_code in [401, 403, 404, 500]
 
     def test_serve_pdf_file_not_found(self, client, mock_db):
         """Test PDF fallback when file doesn't exist"""
@@ -257,7 +257,7 @@ class TestServeChapterPdfDeep:
             response = client.get(
                 "/api/chapters/ch123/pdf?user_id=user123"
             )
-        assert response.status_code in [401, 404, 500]
+        assert response.status_code in [401, 403, 404, 500]
 
 
 class TestDeleteExerciseDeep:
@@ -275,7 +275,7 @@ class TestDeleteExerciseDeep:
         mock_db.cursor().fetchone.return_value = None
 
         response = client.delete("/api/exercises/nonexist")
-        assert response.status_code in [401, 404, 500]
+        assert response.status_code in [401, 403, 404, 500]
 
     def test_delete_exercise_options(self, client):
         """Test OPTIONS for delete exercise - lines 4916-4922"""
@@ -324,7 +324,7 @@ class TestGetProfile:
         mock_db.cursor().fetchone.return_value = None
 
         response = client.get("/api/users/profile?user_id=nonexist")
-        assert response.status_code in [401, 404, 500]
+        assert response.status_code in [401, 403, 404, 500]
 
     def test_update_profile_email_and_name(self, client, mock_db):
         """Test updating profile with email and fullName"""

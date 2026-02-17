@@ -13,7 +13,7 @@ from werkzeug.utils import secure_filename
 import cache
 import config
 import utils
-from auth_helpers import require_auth, validate_fields
+from auth_helpers import require_auth, require_role, validate_fields
 from db import close_conn_safely, get_db_connection
 from extensions import csrf_exempt
 
@@ -33,6 +33,7 @@ def generate_class_code():
 @bp.route("/api/classes", methods=["POST"])
 @csrf_exempt
 @require_auth
+@require_role("professor")
 def create_class():
     """Create a new class (professor only)"""
     try:
@@ -65,14 +66,6 @@ def create_class():
 
         conn = get_db_connection()
         cursor = conn.cursor()
-
-        # Verify user is a professor
-        cursor.execute("SELECT role FROM users WHERE user_id = %s", (user_id,))
-        user = cursor.fetchone()
-        if not user or user[0] != "professor":
-            cursor.close()
-            close_conn_safely(conn)
-            return jsonify({"error": "Only professors can create classes"}), 403
 
         # Check if class code already exists
         cursor.execute("SELECT class_id FROM classes WHERE class_id = %s", (class_code,))
@@ -139,15 +132,8 @@ def get_classes():
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        # Check user role
-        cursor.execute("SELECT role FROM users WHERE user_id = %s", (user_id,))
-        user = cursor.fetchone()
-        if not user:
-            cursor.close()
-            close_conn_safely(conn)
-            return jsonify({"error": "User not found"}), 404
-
-        role = user[0] or "student"
+        # Use role from JWT token (set by @require_auth)
+        role = getattr(g, "user_role", None) or "student"
 
         if role == "professor":
             # Get total count for professors
@@ -264,14 +250,7 @@ def get_class(class_id):
             return jsonify({"error": "Class not found"}), 404
 
         # Check if user has access (professor who created it, or enrolled student)
-        cursor.execute("SELECT role FROM users WHERE user_id = %s", (user_id,))
-        user = cursor.fetchone()
-        if not user:
-            cursor.close()
-            close_conn_safely(conn)
-            return jsonify({"error": "User not found"}), 404
-
-        role = user[0] or "student"
+        role = getattr(g, "user_role", None) or "student"
         is_professor = role == "professor"
         is_owner = class_data[3] == user_id
 
@@ -589,22 +568,12 @@ def enroll_in_class():
         if not class_id:
             return jsonify({"error": "Missing required field (class_id)"}), 400
 
+        # Verify user is a student (using JWT role set by @require_auth)
+        if getattr(g, "user_role", None) == "professor":
+            return jsonify({"error": "Professors cannot enroll in classes"}), 403
+
         conn = get_db_connection()
         cursor = conn.cursor()
-
-        # Verify user is a student
-        cursor.execute("SELECT role FROM users WHERE user_id = %s", (user_id,))
-        user = cursor.fetchone()
-        if not user:
-            cursor.close()
-            close_conn_safely(conn)
-            return jsonify({"error": "User not found"}), 404
-
-        role = user[0] or "student"
-        if role == "professor":
-            cursor.close()
-            close_conn_safely(conn)
-            return jsonify({"error": "Professors cannot enroll in classes"}), 403
 
         # Verify class exists
         cursor.execute(
@@ -682,14 +651,6 @@ def get_enrolled_classes():
 
         conn = get_db_connection()
         cursor = conn.cursor()
-
-        # Verify user exists
-        cursor.execute("SELECT role FROM users WHERE user_id = %s", (user_id,))
-        user = cursor.fetchone()
-        if not user:
-            cursor.close()
-            close_conn_safely(conn)
-            return jsonify({"error": "User not found"}), 404
 
         # Get total count of enrolled classes
         cursor.execute(
@@ -1070,16 +1031,8 @@ def get_student_progress(student_id):
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        # Verify user is a professor
-        cursor.execute("SELECT role FROM users WHERE user_id = %s", (user_id,))
-        user = cursor.fetchone()
-        if not user:
-            cursor.close()
-            close_conn_safely(conn)
-            return jsonify({"error": "User not found"}), 404
-
-        role = user[0] or "student"
-        if role != "professor":
+        # Verify user is a professor (role set by @require_auth from JWT)
+        if getattr(g, "user_role", None) != "professor":
             cursor.close()
             close_conn_safely(conn)
             return jsonify({"error": "Only professors can view student progress"}), 403

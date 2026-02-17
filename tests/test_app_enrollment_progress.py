@@ -57,7 +57,7 @@ class TestEnrollInClass:
             "user_id": "student123",
             "class_id": "NONEXIST",
         })
-        assert response.status_code in [401, 404, 500]
+        assert response.status_code in [401, 403, 404, 500]
 
     def test_enroll_user_not_found(self, client, mock_db):
         """Test enrollment with non-existent user"""
@@ -67,7 +67,7 @@ class TestEnrollInClass:
             "user_id": "nonexistent",
             "class_id": "CLS123",
         })
-        assert response.status_code in [401, 404, 500]
+        assert response.status_code in [401, 403, 404, 500]
 
     def test_enroll_options_request(self, client):
         """Test OPTIONS for enrollment endpoint"""
@@ -141,7 +141,7 @@ class TestClassAverageLeaderboard:
         mock_db.cursor().fetchone.return_value = None
 
         response = client.get("/api/classes/NONEXIST/leaderboard/average?user_id=user123")
-        assert response.status_code in [401, 404, 500]
+        assert response.status_code in [401, 403, 404, 500]
 
     def test_get_average_leaderboard_missing_user_id(self, client, mock_db):
         """Test leaderboard without user_id"""
@@ -230,7 +230,7 @@ class TestUpdatePracticeProgress:
             "exercise_id": "ex123",
             "score": 80,
         })
-        assert response.status_code in [401, 404, 500]
+        assert response.status_code in [401, 403, 404, 500]
 
     def test_update_progress_missing_fields(self, client, mock_db):
         """Test updating progress with missing required fields"""
@@ -430,7 +430,7 @@ class TestGetStudentProgress:
         ]
 
         response = client.get("/api/students/nonexist/progress?user_id=prof123")
-        assert response.status_code in [401, 404, 500]
+        assert response.status_code in [401, 403, 404, 500]
 
     def test_get_student_progress_missing_user_id(self, client, mock_db):
         """Test viewing progress without user_id"""

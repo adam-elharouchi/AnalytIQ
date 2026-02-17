@@ -175,7 +175,7 @@ class TestGetClassChapters:
         ]
 
         response = client.get("/api/classes/CLS123/chapters?user_id=nonexistent")
-        assert response.status_code in [401, 404, 500]
+        assert response.status_code in [401, 403, 404, 500]
 
     def test_get_chapters_missing_user_id(self, client, mock_db):
         """Test getting chapters without user_id"""
@@ -392,12 +392,11 @@ class TestGetChapterExercises:
         mock_cursor = mock_db.cursor()
         mock_cursor.fetchone.side_effect = [
             ("CLS123", "prof123"),
-            ("student",),
-            None,  # Not enrolled
+            None,  # Not enrolled (role comes from g.user_role, not DB)
         ]
 
         response = client.get("/api/chapters/ch123/exercises?user_id=random_student")
-        assert response.status_code in [403, 500]
+        assert response.status_code in [401, 403, 500]
 
     def test_get_exercises_chapter_not_found(self, client, mock_db):
         """Test getting exercises for non-existent chapter"""
@@ -415,4 +414,4 @@ class TestGetChapterExercises:
         ]
 
         response = client.get("/api/chapters/ch123/exercises?user_id=nonexistent")
-        assert response.status_code in [401, 404, 500]
+        assert response.status_code in [401, 403, 404, 500]

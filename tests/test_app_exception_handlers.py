@@ -150,7 +150,7 @@ class TestExceptionHandlers:
     def test_create_class_db_error(self, client, mock_db):
         """Cover create_class exception"""
         mock_db.cursor().execute.side_effect = Exception("DB error")
-        response = client.post("/api/classes", json={
+        response = client.post("/api/classes", headers={"X-Test-User-Role": "professor"}, json={
             "user_id": "prof123", "name": "Class", "class_code": "CLS123",
         })
         assert response.status_code in [401, 500]
@@ -255,7 +255,7 @@ class TestExceptionHandlers:
         """Cover get_student_progress exception - lines 4463-4467"""
         mock_db.cursor().execute.side_effect = Exception("DB error")
         response = client.get("/api/students/s1/progress?user_id=prof123")
-        assert response.status_code in [401, 500]
+        assert response.status_code in [401, 403, 500]
 
     def test_avg_leaderboard_db_error(self, client, mock_db):
         """Cover average leaderboard exception - lines 4564-4569"""

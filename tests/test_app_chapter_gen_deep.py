@@ -108,12 +108,11 @@ class TestGetClassChaptersAccess:
         mock_cursor = mock_db.cursor()
         mock_cursor.fetchone.side_effect = [
             ("prof123",),  # Class professor
-            ("student",),  # User role
-            None,  # Not enrolled
+            None,  # Not enrolled (role comes from g.user_role, not DB)
         ]
 
         response = client.get("/api/classes/CLS123/chapters?user_id=random")
-        assert response.status_code in [403, 500]
+        assert response.status_code in [401, 403, 500]
 
 
 class TestServePdfDeep:

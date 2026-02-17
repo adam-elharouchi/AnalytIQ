@@ -301,14 +301,7 @@ def get_class_chapters(class_id):
             close_conn_safely(conn)
             return jsonify({"error": "Class not found"}), 404
 
-        cursor.execute("SELECT role FROM users WHERE user_id = %s", (user_id,))
-        user = cursor.fetchone()
-        if not user:
-            cursor.close()
-            close_conn_safely(conn)
-            return jsonify({"error": "User not found"}), 404
-
-        role = user[0] or "student"
+        role = getattr(g, "user_role", None) or "student"
         is_professor = role == "professor"
         is_owner = class_data[0] == user_id
 
@@ -627,14 +620,7 @@ def get_chapter_exercises(chapter_id):
         class_id_result = chapter_data[0]
         professor_id = chapter_data[1]
 
-        cursor.execute("SELECT role FROM users WHERE user_id = %s", (user_id,))
-        user = cursor.fetchone()
-        if not user:
-            cursor.close()
-            close_conn_safely(conn)
-            return jsonify({"error": "User not found"}), 404
-
-        role = user[0] or "student"
+        role = getattr(g, "user_role", None) or "student"
         is_professor = role == "professor"
         is_owner = professor_id == user_id
 
