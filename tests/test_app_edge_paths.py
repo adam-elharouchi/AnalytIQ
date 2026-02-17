@@ -12,71 +12,66 @@ import json
 
 
 class TestGetDbParams:
-    """Test get_db_params function - lines 241-276"""
+    """Test get_db_params function (now in db.py)"""
 
     def test_get_db_params_no_url(self):
         """Test when DATABASE_URL is not set"""
-        with patch("app.DATABASE_URL", None):
-            from app import get_db_params
+        from db import get_db_params
+        import os
+        env_without_db_url = {k: v for k, v in os.environ.items() if k != "DATABASE_URL"}
+        with patch.dict(os.environ, env_without_db_url, clear=True):
             with pytest.raises(Exception, match="DATABASE_URL"):
-                get_db_params()
+                get_db_params(database_url=None)
 
     def test_get_db_params_valid_url(self):
         """Test with valid PostgreSQL URL"""
-        with patch("app.DATABASE_URL", "postgresql://user:pass@localhost:5432/testdb"):
-            from app import get_db_params
-            result = get_db_params()
-            assert result is not None
-            assert result["host"] == "localhost"
-            assert result["port"] == 5432
-            assert result["database"] == "testdb"
-            assert result["user"] == "user"
-            assert result["password"] == "pass"
+        from db import get_db_params
+        result = get_db_params("postgresql://user:pass@localhost:5432/testdb")
+        assert result is not None
+        assert result["host"] == "localhost"
+        assert result["port"] == 5432
+        assert result["database"] == "testdb"
+        assert result["user"] == "user"
+        assert result["password"] == "pass"
 
     def test_get_db_params_postgres_scheme(self):
         """Test with postgres:// scheme"""
-        with patch("app.DATABASE_URL", "postgres://user:pass@localhost:5432/db"):
-            from app import get_db_params
-            result = get_db_params()
-            assert result is not None
+        from db import get_db_params
+        result = get_db_params("postgres://user:pass@localhost:5432/db")
+        assert result is not None
 
     def test_get_db_params_no_scheme(self):
-        """Test with URL missing scheme - line 252"""
-        with patch("app.DATABASE_URL", "user:pass@localhost:5432/db"):
-            from app import get_db_params
-            result = get_db_params()
-            assert result is not None
+        """Test with URL missing scheme"""
+        from db import get_db_params
+        result = get_db_params("user:pass@localhost:5432/db")
+        assert result is not None
 
     def test_get_db_params_unsupported_scheme(self):
-        """Test with unsupported scheme - line 254"""
-        with patch("app.DATABASE_URL", "mysql://user:pass@localhost/db"):
-            from app import get_db_params
-            result = get_db_params()
-            assert result is None  # Returns None on error
+        """Test with unsupported scheme"""
+        from db import get_db_params
+        result = get_db_params("mysql://user:pass@localhost/db")
+        assert result is None  # Returns None on error
 
     def test_get_db_params_no_hostname(self):
-        """Test with missing hostname - line 261"""
-        with patch("app.DATABASE_URL", "postgresql:///db"):
-            from app import get_db_params
-            result = get_db_params()
-            # Should return None due to missing hostname
-            assert result is None or isinstance(result, dict)
+        """Test with missing hostname"""
+        from db import get_db_params
+        result = get_db_params("postgresql:///db")
+        # Should return None due to missing hostname
+        assert result is None or isinstance(result, dict)
 
     def test_get_db_params_with_query_string(self):
         """Test URL with query parameters"""
-        with patch("app.DATABASE_URL", "postgresql://user:pass@host:5432/db?sslmode=require"):
-            from app import get_db_params
-            result = get_db_params()
-            assert result is not None
+        from db import get_db_params
+        result = get_db_params("postgresql://user:pass@host:5432/db?sslmode=require")
+        assert result is not None
 
     def test_get_db_params_defaults(self):
         """Test URL with missing optional parts"""
-        with patch("app.DATABASE_URL", "postgresql://localhost"):
-            from app import get_db_params
-            result = get_db_params()
-            if result:
-                assert result["user"] == "postgres"  # default
-                assert result["port"] == 5432  # default
+        from db import get_db_params
+        result = get_db_params("postgresql://localhost")
+        if result:
+            assert result["user"] == "postgres"  # default
+            assert result["port"] == 5432  # default
 
 
 class TestVerifyPasswordEdgeCases:

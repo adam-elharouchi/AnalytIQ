@@ -1,26 +1,26 @@
 from flask import Flask, request, jsonify, g, send_from_directory
 from werkzeug.routing import BaseConverter
 from werkzeug.exceptions import HTTPException
+from extensions import limiter, csrf_exempt
+from db import get_db_connection, close_conn_safely, close_db_connection
+from auth_helpers import (
+    require_auth, create_jwt_token, decode_jwt_token,
+    hash_password, hash_password_legacy, verify_password,
+    detect_role_from_email, validate_fields
+)
 import psycopg2
-from psycopg2 import pool
 from dotenv import load_dotenv
 import os
-import socket
-from urllib.parse import urlparse
 import json
 from datetime import datetime
 from werkzeug.utils import secure_filename
 import sys
-import time
 import config
 import utils
 import cache
 from cache import cache_health_check
 from supabase_storage import storage_health_check
 
-
-# Global database pool
-db_pool = None
 
 # Add python directory to path for PDF processor and exercise generator
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "python"))
@@ -57,80 +57,6 @@ app.config["SEND_FILE_MAX_AGE_DEFAULT"] = config.SEND_FILE_MAX_AGE_DEFAULT
 app.config["MAX_CONTENT_LENGTH"] = config.MAX_CONTENT_LENGTH
 app.config["UPLOAD_FOLDER"] = config.UPLOAD_FOLDER
 
-# Email configuration (Flask-Mail)
-try:
-    from flask_mail import Mail, Message
-
-    app.config["MAIL_SERVER"] = config.MAIL_SERVER
-    app.config["MAIL_PORT"] = config.MAIL_PORT
-    app.config["MAIL_USE_TLS"] = config.MAIL_USE_TLS
-    app.config["MAIL_USERNAME"] = config.MAIL_USERNAME
-    app.config["MAIL_PASSWORD"] = config.MAIL_PASSWORD
-    app.config["MAIL_DEFAULT_SENDER"] = config.MAIL_DEFAULT_SENDER
-    mail = Mail(app)
-except ImportError:
-    print("Warning: Flask-Mail not installed. Email features will not work.")
-    mail = None
-
-# Rate Limiting Configuration
-try:
-    from flask_limiter import Limiter
-    from flask_limiter.util import get_remote_address
-
-    # Use Redis for rate limiting in production (shared across workers),
-    # fall back to in-memory for development
-    _rate_limit_storage = config.REDIS_URL if not config.DEBUG else "memory://"
-    limiter = Limiter(
-        app=app,
-        key_func=get_remote_address,
-        default_limits=[
-            f"{config.RATE_LIMIT_DEFAULT_PER_DAY} per day",
-            f"{config.RATE_LIMIT_DEFAULT_PER_HOUR} per hour",
-        ],
-        storage_uri=_rate_limit_storage,
-        strategy="fixed-window",
-    )
-    print(f"✅ Rate limiting enabled (storage: {'redis' if 'redis' in _rate_limit_storage else 'memory'})")
-except ImportError:
-    print("Warning: Flask-Limiter not installed. Rate limiting will not work.")
-    limiter = None
-
-# CSRF Protection Configuration
-try:
-    from flask_wtf.csrf import CSRFProtect, generate_csrf
-
-    # Initialize CSRF protection
-    csrf = CSRFProtect()
-
-    # Configure CSRF from config
-    app.config["WTF_CSRF_ENABLED"] = config.WTF_CSRF_ENABLED
-    app.config["WTF_CSRF_TIME_LIMIT"] = config.WTF_CSRF_TIME_LIMIT
-    app.config["WTF_CSRF_SSL_STRICT"] = config.WTF_CSRF_SSL_STRICT
-    app.config["WTF_CSRF_CHECK_DEFAULT"] = config.WTF_CSRF_CHECK_DEFAULT
-
-    # Only initialize if feature is enabled
-    if config.FEATURE_CSRF_PROTECTION:
-        csrf.init_app(app)
-        print("✅ CSRF protection enabled")
-    else:
-        print("⚠️  CSRF protection disabled (feature flag off)")
-        csrf = None
-except ImportError:
-    print("Warning: Flask-WTF not installed. CSRF protection will not work.")
-    csrf = None
-    generate_csrf = None
-
-
-def csrf_exempt(view_func):
-    """
-    Wrapper decorator so we can safely exempt JSON API endpoints from CSRF
-    checks even when CSRF is disabled or Flask-WTF is not installed.
-    """
-    if csrf:
-        return csrf.exempt(view_func)
-    return view_func
-
-
 # Structured Logging Configuration
 import logging
 from pythonjsonlogger import jsonlogger
@@ -156,6 +82,56 @@ logger.info(
         "port": os.getenv("PORT", "5001"),
     },
 )
+
+# Email configuration (Flask-Mail)
+try:
+    from flask_mail import Mail, Message
+
+    app.config["MAIL_SERVER"] = config.MAIL_SERVER
+    app.config["MAIL_PORT"] = config.MAIL_PORT
+    app.config["MAIL_USE_TLS"] = config.MAIL_USE_TLS
+    app.config["MAIL_USERNAME"] = config.MAIL_USERNAME
+    app.config["MAIL_PASSWORD"] = config.MAIL_PASSWORD
+    app.config["MAIL_DEFAULT_SENDER"] = config.MAIL_DEFAULT_SENDER
+    mail = Mail(app)
+except ImportError:
+    print("Warning: Flask-Mail not installed. Email features will not work.")
+    mail = None
+
+# Rate limiting — configured via extensions.py
+try:
+    _rate_limit_storage = config.REDIS_URL if not config.DEBUG else "memory://"
+    app.config["RATELIMIT_DEFAULT"] = (
+        f"{config.RATE_LIMIT_DEFAULT_PER_DAY} per day;"
+        f"{config.RATE_LIMIT_DEFAULT_PER_HOUR} per hour"
+    )
+    app.config["RATELIMIT_STORAGE_URL"] = _rate_limit_storage
+    app.config["RATELIMIT_STRATEGY"] = "fixed-window"
+    limiter.init_app(app)
+    logger.info("Rate limiting enabled (storage: %s)", "redis" if "redis" in _rate_limit_storage else "memory")
+except Exception:
+    logger.warning("Rate limiting could not be configured")
+
+# CSRF Protection
+csrf = None
+try:
+    from flask_wtf.csrf import CSRFProtect, generate_csrf
+    csrf_instance = CSRFProtect()
+    app.config["WTF_CSRF_ENABLED"] = config.WTF_CSRF_ENABLED
+    app.config["WTF_CSRF_TIME_LIMIT"] = config.WTF_CSRF_TIME_LIMIT
+    app.config["WTF_CSRF_SSL_STRICT"] = config.WTF_CSRF_SSL_STRICT
+    app.config["WTF_CSRF_CHECK_DEFAULT"] = config.WTF_CSRF_CHECK_DEFAULT
+    if config.FEATURE_CSRF_PROTECTION:
+        csrf_instance.init_app(app)
+        csrf = csrf_instance
+        import extensions
+        extensions.csrf = csrf_instance
+        logger.info("CSRF protection enabled")
+    else:
+        logger.info("CSRF protection disabled (feature flag off)")
+except ImportError:
+    logger.warning("Flask-WTF not installed. CSRF protection will not work.")
+    generate_csrf = None
 
 # ============================================================================
 # API DOCUMENTATION (Swagger UI)
@@ -302,435 +278,8 @@ def handle_unexpected_error(e):
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-
-def validate_fields(data, rules):
-    """
-    Validate a dict of fields against length and presence rules.
-
-    rules is a list of tuples:
-        (field_name, required, max_length)
-
-    Returns a list of error strings. Empty list means all OK.
-
-    Example:
-        errors = validate_fields(
-            {"name": "Alice", "email": "a@b.com"},
-            [("name", True, config.MAX_NAME_LENGTH),
-             ("email", True, config.MAX_EMAIL_LENGTH)],
-        )
-        if errors:
-            return jsonify({"error": errors[0]}), 400
-    """
-    errors = []
-    for field, required, max_length in rules:
-        value = data.get(field)
-        if required and not value:
-            errors.append(f"{field} is required")
-        elif value and max_length and len(str(value)) > max_length:
-            errors.append(f"{field} must be {max_length} characters or fewer")
-    return errors
-
-
-def detect_role_from_email(email):
-    """Detect user role from email domain"""
-    if not email:
-        return "student"
-    email_lower = email.lower()
-    if email_lower.endswith("@hult.edu") or email_lower.endswith("@faculty.hult.edu"):
-        return "professor"
-    elif email_lower.endswith("@student.hult.edu"):
-        return "student"
-    return "student"  # Default to student
-
-
-def get_db_params():
-    """Parse DATABASE_URL and return connection parameters dictionary"""
-    if not DATABASE_URL:
-        raise Exception("DATABASE_URL environment variable is not set")
-
-    # Clean up the database URL - remove invalid query parameters like pgbouncer
-    clean_url = DATABASE_URL.split("?")[0]
-
-    try:
-        # Handle both postgresql:// and postgres:// schemes
-        url = clean_url
-        if not url.startswith(("postgresql://", "postgres://")):
-            if "://" not in url:
-                url = "postgresql://" + url
-            else:
-                raise ValueError(f"Unsupported connection string scheme: {url.split('://')[0]}")
-
-        from urllib.parse import unquote
-
-        parsed = urlparse(url)
-
-        if not parsed.hostname:
-            raise ValueError("Hostname is missing from connection string")
-
-        username = unquote(parsed.username) if parsed.username else "postgres"
-        password = unquote(parsed.password) if parsed.password else ""
-        database = parsed.path[1:] if parsed.path and len(parsed.path) > 1 else "postgres"
-
-        return {
-            "host": parsed.hostname,
-            "port": parsed.port or 5432,
-            "database": database,
-            "user": username,
-            "password": password,
-        }
-    except Exception as e:
-        print(f"Error parsing connection string: {e}")
-        return None
-
-
-def init_db_pool():
-    """Initialize the database connection pool with timeout settings"""
-    global db_pool
-    if db_pool is not None:
-        return
-
-    try:
-        # Try to use simple direct connection string first (works with Supabase Pooler)
-        # Ensure sslmode and timeout settings are configured
-        clean_url = DATABASE_URL
-
-        # Add connection parameters if not present
-        from urllib.parse import quote
-
-        params_to_add = []
-        if "sslmode" not in clean_url:
-            params_to_add.append("sslmode=require")
-        if "connect_timeout" not in clean_url:
-            params_to_add.append("connect_timeout=10")  # 10 second connection timeout
-        if "options" not in clean_url:
-            # URL-encode the options parameter value
-            params_to_add.append(
-                f'options={quote("-c statement_timeout=30000")}'
-            )  # 30 second query timeout
-
-        if params_to_add:
-            separator = "&" if "?" in clean_url else "?"
-            clean_url = clean_url + separator + "&".join(params_to_add)
-
-        logger.info(
-            "Initializing connection pool",
-            extra={
-                "connection_timeout": f"{config.DB_CONNECTION_TIMEOUT}s",
-                "statement_timeout": f"{config.DB_STATEMENT_TIMEOUT}s",
-                "min_connections": config.DB_POOL_MIN_CONNECTIONS,
-                "max_connections": config.DB_POOL_MAX_CONNECTIONS,
-            },
-        )
-
-        # Initialize connection pool with configuration
-        db_pool = pool.ThreadedConnectionPool(
-            minconn=config.DB_POOL_MIN_CONNECTIONS,
-            maxconn=config.DB_POOL_MAX_CONNECTIONS,
-            dsn=clean_url,
-        )
-
-        # Test the connection pool with a simple query
-        try:
-            test_conn = db_pool.getconn()
-            test_cursor = test_conn.cursor()
-            test_cursor.execute("SELECT 1")
-            test_cursor.close()
-            db_pool.putconn(test_conn)
-            print("✅ Database connection pool initialized and tested successfully")
-        except Exception as test_error:
-            print(f"⚠️  Pool created but test query failed: {test_error}")
-            # Don't raise - pool might still work for actual queries
-
-    except psycopg2.OperationalError as e:
-        print(f"Pool initialization failed with direct URL: {e}")
-        # Fallback to resolved params if needed (usually direct URL works for pools)
-        try:
-            params = get_db_params()
-            if params:
-                # Resolve IPv4 if needed
-                hostname = params["host"]
-                try:
-                    addrinfo = socket.getaddrinfo(
-                        hostname, None, socket.AF_INET, socket.SOCK_STREAM
-                    )
-                    if addrinfo:
-                        params["host"] = addrinfo[0][4][0]
-                except:
-                    pass
-
-                print("Retrying with explicit connection parameters...")
-                db_pool = pool.ThreadedConnectionPool(
-                    minconn=1,
-                    maxconn=10,
-                    user=params["user"],
-                    password=params["password"],
-                    host=params["host"],
-                    port=params["port"],
-                    database=params["database"],
-                    sslmode="require",
-                    connect_timeout=10,
-                    options="-c statement_timeout=30000",
-                )
-                print("✅ Database connection pool initialized with explicit params")
-        except Exception as e2:
-            print(f"❌ Critical error initializing pool: {e2}")
-            print(f"   Please check DATABASE_URL environment variable")
-            raise
-
-
-def get_db_connection():
-    """Get a connection from the global pool with retry logic"""
-    global db_pool
-
-    # Store connection in Flask g object for request duration
-    if "db_conn" not in g:
-        if db_pool is None:
-            init_db_pool()
-
-        # Retry logic for getting connection
-        max_retries = 3
-        retry_delay = 1  # seconds
-
-        for attempt in range(max_retries):
-            try:
-                g.db_conn = db_pool.getconn()
-                # Test the connection with a simple query
-                try:
-                    cursor = g.db_conn.cursor()
-                    cursor.execute("SELECT 1")
-                    cursor.close()
-                except Exception as test_error:
-                    # Connection is stale, close it and retry
-                    print(f"Connection test failed on attempt {attempt + 1}: {test_error}")
-                    try:
-                        db_pool.putconn(g.db_conn, close=True)
-                    except:
-                        pass
-                    if attempt < max_retries - 1:
-                        time.sleep(retry_delay)
-                        continue
-                    raise
-                break  # Success!
-
-            except Exception as e:
-                print(
-                    f"Error getting connection from pool (attempt {attempt + 1}/{max_retries}): {e}"
-                )
-                if attempt < max_retries - 1:
-                    # Wait before retrying
-                    time.sleep(retry_delay)
-                    # Try to reinitialize pool on last retry
-                    if attempt == max_retries - 2:
-                        print("Reinitializing connection pool...")
-                        db_pool = None
-                        init_db_pool()
-                else:
-                    # All retries failed
-                    raise Exception(
-                        f"Failed to get database connection after {max_retries} attempts: {str(e)}"
-                    )
-
-    return g.db_conn
-
-
-@app.teardown_appcontext
-def close_db_connection(exception):
-    """Return connection to pool at the end of request"""
-    db_conn = g.pop("db_conn", None)
-    if db_conn is not None and db_pool is not None:
-        try:
-            db_pool.putconn(db_conn)
-        except Exception as e:
-            print(f"Error returning connection to pool: {e}")
-
-
-# Helper to safeguard against code that tries to close pooled connections manually
-def close_conn_safely(conn):
-    """No-op: Connection closing is handled by teardown_appcontext"""
-    pass
-
-
-# ============================================================================
-# JWT AUTHENTICATION
-# ============================================================================
-
-import jwt
-import functools
-from datetime import timedelta
-
-
-def create_jwt_token(user_id, role="student", name=None, email=None):
-    """
-    Create a JWT token for an authenticated user.
-
-    Args:
-        user_id: The user's ID
-        role: The user's role (student/professor)
-        name: The user's name (optional, included in token for convenience)
-        email: The user's email (optional, included in token for convenience)
-
-    Returns:
-        str: Encoded JWT token
-    """
-    payload = {
-        "user_id": user_id,
-        "role": role,
-        "iat": datetime.utcnow(),
-        "exp": datetime.utcnow()
-        + timedelta(hours=config.JWT_ACCESS_TOKEN_EXPIRES_HOURS),
-    }
-    if name:
-        payload["name"] = name
-    if email:
-        payload["email"] = email
-
-    return jwt.encode(payload, config.JWT_SECRET_KEY, algorithm=config.JWT_ALGORITHM)
-
-
-def decode_jwt_token(token):
-    """
-    Decode and verify a JWT token.
-
-    Args:
-        token: The JWT token string
-
-    Returns:
-        dict: Decoded token payload
-
-    Raises:
-        jwt.ExpiredSignatureError: If token has expired
-        jwt.InvalidTokenError: If token is invalid
-    """
-    return jwt.decode(token, config.JWT_SECRET_KEY, algorithms=[config.JWT_ALGORITHM])
-
-
-def require_auth(f):
-    """
-    Decorator that requires a valid JWT token in the Authorization header.
-    Sets g.user_id and g.user_role for the decorated function.
-
-    Usage:
-        @app.route('/api/some-endpoint')
-        @require_auth
-        def some_endpoint():
-            user_id = g.user_id
-            role = g.user_role
-    
-    In test mode, auth is bypassed if user_id is provided in request or headers.
-    OPTIONS requests always bypass auth.
-    """
-
-    @functools.wraps(f)
-    def decorated(*args, **kwargs):
-        # Always allow OPTIONS requests through without auth
-        if request.method == 'OPTIONS':
-            return f(*args, **kwargs)
-        
-        # Bypass auth in test mode only — never in production
-        if app.config.get('TESTING') and config.ENV != 'production':
-            # Check for explicit test user ID or user_id in request
-            test_user_id = request.headers.get('X-Test-User-ID')
-            if not test_user_id:
-                # Try to get from query params or JSON body
-                test_user_id = request.args.get('user_id')
-                if not test_user_id:
-                    json_data = request.get_json(silent=True)
-                    if json_data:
-                        test_user_id = json_data.get('user_id')
-                # Also check form data for multipart requests
-                if not test_user_id and request.form:
-                    test_user_id = request.form.get('user_id')
-            
-            if test_user_id:
-                g.user_id = str(test_user_id)
-                g.user_role = request.headers.get('X-Test-User-Role', 'student')
-                return f(*args, **kwargs)
-            # If no user_id found, fall through to normal auth (will return 401)
-        
-        token = None
-
-        # Extract token from Authorization: Bearer <token>
-        auth_header = request.headers.get("Authorization")
-        if auth_header and auth_header.startswith("Bearer "):
-            token = auth_header.split(" ", 1)[1]
-
-        if not token:
-            return jsonify({"error": "Authentication required"}), 401
-
-        try:
-            payload = decode_jwt_token(token)
-            g.user_id = str(payload["user_id"])
-            g.user_role = payload.get("role", "student")
-        except jwt.ExpiredSignatureError:
-            return jsonify({"error": "Token expired. Please sign in again."}), 401
-        except jwt.InvalidTokenError:
-            return jsonify({"error": "Invalid token. Please sign in again."}), 401
-
-        return f(*args, **kwargs)
-
-    return decorated
-
-
-def hash_password_legacy(password):
-    """
-    DEPRECATED: Legacy hash function for backward compatibility only.
-    This function is insecure and should not be used for new passwords.
-    Kept only to verify old passwords during migration period.
-    """
-    hash_val = 0
-    for char in password:
-        hash_val = ((hash_val << 5) - hash_val) + ord(char)
-        hash_val = hash_val & hash_val  # Convert to 32bit integer
-    return str(hash_val)
-
-
-def hash_password(password):
-    """
-    Hash password using bcrypt with automatic salt generation.
-
-    Args:
-        password (str): Plain text password
-
-    Returns:
-        str: Bcrypt hashed password (UTF-8 decoded)
-    """
-    import bcrypt
-
-    # Generate salt and hash password
-    salt = bcrypt.gensalt(rounds=12)  # 12 rounds = good balance of security and performance
-    hashed = bcrypt.hashpw(password.encode("utf-8"), salt)
-    return hashed.decode("utf-8")
-
-
-def verify_password(password, hashed_password):
-    """
-    Verify password against bcrypt hash.
-    Falls back to legacy hash for backward compatibility during migration.
-
-    Args:
-        password (str): Plain text password to verify
-        hashed_password (str): Stored hash (bcrypt or legacy)
-
-    Returns:
-        tuple: (is_valid, needs_rehash)
-            - is_valid: True if password matches
-            - needs_rehash: True if using legacy hash (should update to bcrypt)
-    """
-    import bcrypt
-
-    # Check if it's a bcrypt hash (starts with $2b$ or $2a$)
-    if hashed_password.startswith("$2"):
-        try:
-            is_valid = bcrypt.checkpw(password.encode("utf-8"), hashed_password.encode("utf-8"))
-            return (is_valid, False)  # Valid bcrypt hash, no rehash needed
-        except Exception as e:
-            print(f"Bcrypt verification error: {e}")
-            return (False, False)
-    else:
-        # Legacy hash - verify and flag for rehashing
-        legacy_hash = hash_password_legacy(password)
-        is_valid = legacy_hash == hashed_password
-        return (is_valid, is_valid)  # If valid, needs rehash
+# Register DB teardown handler (pool is managed in db.py)
+app.teardown_appcontext(close_db_connection)
 
 
 def ensure_password_resets_table():
@@ -760,21 +309,6 @@ def ensure_password_resets_table():
         close_conn_safely(conn)
     except Exception as e:
         print(f"ensure_password_resets_table: {e}")
-
-
-@app.route("/api/users/signup", methods=["OPTIONS"])
-@csrf_exempt
-def signup_options():
-    """Handle OPTIONS preflight for signup"""
-    response = app.response_class()
-    cors_origin = _get_cors_origin()
-    if cors_origin:
-        response.headers["Access-Control-Allow-Origin"] = cors_origin
-    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
-    response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
-    response.headers["Access-Control-Max-Age"] = str(config.CORS_MAX_AGE)
-    response.status_code = 200
-    return response
 
 
 @app.route("/api/users/signup", methods=["POST"])
@@ -884,7 +418,7 @@ def signup():
         return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
-@app.route("/api/users/signin", methods=["POST", "OPTIONS"])
+@app.route("/api/users/signin", methods=["POST"])
 @csrf_exempt
 @limiter.limit("10 per minute")  # Prevent brute-force login attacks
 def signin():
@@ -968,21 +502,11 @@ def signin():
         return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
-@app.route("/api/users/forgot-password", methods=["POST", "OPTIONS"])
+@app.route("/api/users/forgot-password", methods=["POST"])
 @csrf_exempt
 @limiter.limit("3 per hour")  # Prevent password reset abuse
 def forgot_password():
     """Handle forgot password request"""
-    if request.method == "OPTIONS":
-        response = app.response_class()
-        cors_origin = _get_cors_origin()
-        if cors_origin:
-            response.headers["Access-Control-Allow-Origin"] = cors_origin
-        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
-        response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
-        response.headers["Access-Control-Max-Age"] = "3600"
-        return response
-
     try:
         data = request.json or {}
         email = data.get("email")
@@ -1060,21 +584,11 @@ def forgot_password():
         return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
-@app.route("/api/users/reset-password", methods=["POST", "OPTIONS"])
+@app.route("/api/users/reset-password", methods=["POST"])
 @csrf_exempt
 @limiter.limit("5 per hour")  # Prevent password reset token abuse
 def reset_password():
     """Reset password using token from email link."""
-    if request.method == "OPTIONS":
-        response = app.response_class()
-        cors_origin = _get_cors_origin()
-        if cors_origin:
-            response.headers["Access-Control-Allow-Origin"] = cors_origin
-        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
-        response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
-        response.headers["Access-Control-Max-Age"] = "3600"
-        return response
-
     conn = None
     try:
         data = request.json or {}
@@ -2535,13 +2049,10 @@ def get_task_status(task_id):
 # ============================================
 
 
-@app.route("/api/contact", methods=["POST", "OPTIONS"])
+@app.route("/api/contact", methods=["POST"])
 @csrf_exempt
 def submit_contact():
     """Submit a contact form message"""
-    if request.method == "OPTIONS":
-        return "", 200
-
     try:
         data = request.json or {}
         name = data.get("name")
@@ -2606,22 +2117,12 @@ def generate_class_code():
     return letters + numbers
 
 
-@app.route("/api/classes", methods=["POST", "OPTIONS"])
+@app.route("/api/classes", methods=["POST"])
 @csrf_exempt
 @require_auth
 def create_class():
     """Create a new class (professor only)"""
     try:
-        if request.method == "OPTIONS":
-            response = app.response_class()
-            cors_origin = _get_cors_origin()
-            if cors_origin:
-                response.headers["Access-Control-Allow-Origin"] = cors_origin
-            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
-            response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
-            response.status_code = 200
-            return response
-
         data = request.json or {}
         user_id = g.user_id
         name = data.get("name")
@@ -3296,22 +2797,12 @@ def validate_pdf_file(file):
     return True, None
 
 
-@app.route("/api/classes/<class_id>/chapters", methods=["POST", "OPTIONS"])
+@app.route("/api/classes/<class_id>/chapters", methods=["POST"])
 @csrf_exempt
 @require_auth
 def upload_chapter(class_id):
     """Upload PDF and create chapter for a class (professor only)"""
     try:
-        if request.method == "OPTIONS":
-            response = app.response_class()
-            cors_origin = _get_cors_origin()
-            if cors_origin:
-                response.headers["Access-Control-Allow-Origin"] = cors_origin
-            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
-            response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
-            response.status_code = 200
-            return response
-
         # Get user_id from JWT token
         user_id = g.user_id
         if not user_id:
@@ -3645,7 +3136,7 @@ def update_chapter(chapter_id):
         return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
-@app.route("/api/chapters/<chapter_id>", methods=["DELETE", "OPTIONS"])
+@app.route("/api/chapters/<chapter_id>", methods=["DELETE"])
 @csrf_exempt
 @require_auth
 def delete_chapter(chapter_id):
@@ -3981,20 +3472,11 @@ def get_chapter_exercises(chapter_id):
         return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
-@app.route("/api/ai/chat", methods=["POST", "OPTIONS"])
+@app.route("/api/ai/chat", methods=["POST"])
 @csrf_exempt
 @require_auth
 def proxy_ai_chat():
     """Secure proxy for Gemini Chat API"""
-    if request.method == "OPTIONS":
-        response = app.response_class()
-        cors_origin = _get_cors_origin()
-        if cors_origin:
-            response.headers["Access-Control-Allow-Origin"] = cors_origin
-        response.headers["Access-Control-Allow-Headers"] = "Content-Type"
-        response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
-        return response
-
     try:
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
@@ -4044,22 +3526,12 @@ def proxy_ai_chat():
 # ============================================================================
 
 
-@app.route("/api/classes/enroll", methods=["POST", "OPTIONS"])
+@app.route("/api/classes/enroll", methods=["POST"])
 @csrf_exempt
 @require_auth
 def enroll_in_class():
     """Enroll student in a class using class_id (class code)"""
     try:
-        if request.method == "OPTIONS":
-            response = app.response_class()
-            cors_origin = _get_cors_origin()
-            if cors_origin:
-                response.headers["Access-Control-Allow-Origin"] = cors_origin
-            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
-            response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
-            response.status_code = 200
-            return response
-
         data = request.json
         user_id = g.user_id
         class_id = data.get("class_id")
@@ -5005,7 +4477,7 @@ def create_exercise(class_id, chapter_id):
         return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
-@app.route("/api/classes/<class_id>/resources", methods=["POST", "OPTIONS"])
+@app.route("/api/classes/<class_id>/resources", methods=["POST"])
 @csrf_exempt
 @require_auth
 def add_class_resource(class_id):
@@ -5129,7 +4601,7 @@ def serve_chapter_pdf(chapter_id):
         return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
-@app.route("/api/exercises/<exercise_id>", methods=["DELETE", "OPTIONS"])
+@app.route("/api/exercises/<exercise_id>", methods=["DELETE"])
 @csrf_exempt
 @require_auth
 def delete_exercise(exercise_id):
@@ -5234,21 +4706,11 @@ def ensure_resources_table():
         print(f"Error checking resources table: {e}")
 
 
-@app.route("/api/classes/<class_id>/resources/upload", methods=["POST", "OPTIONS"])
+@app.route("/api/classes/<class_id>/resources/upload", methods=["POST"])
 @csrf_exempt
 @require_auth
 def upload_class_resource(class_id):
     """Upload a file as a resource"""
-    # Handle CORS preflight explicitly
-    if request.method == "OPTIONS":
-        response = app.response_class()
-        cors_origin = _get_cors_origin()
-        if cors_origin:
-            response.headers["Access-Control-Allow-Origin"] = cors_origin
-        response.headers["Access-Control-Allow-Headers"] = "Content-Type"
-        response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
-        return response
-
     try:
         ensure_resources_table()
 
@@ -5371,21 +4833,11 @@ def serve_resource_download(resource_id):
         return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
-@app.route("/api/classes/<class_id>/resources/<resource_id>", methods=["PUT", "DELETE", "OPTIONS"])
+@app.route("/api/classes/<class_id>/resources/<resource_id>", methods=["PUT", "DELETE"])
 @csrf_exempt
 def manage_resource(class_id, resource_id):
     """Update or Delete a resource"""
     try:
-        if request.method == "OPTIONS":
-            response = app.response_class()
-            cors_origin = _get_cors_origin()
-            if cors_origin:
-                response.headers["Access-Control-Allow-Origin"] = cors_origin
-            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
-            response.headers["Access-Control-Allow-Methods"] = "PUT, DELETE, OPTIONS"
-            response.status_code = 200
-            return response
-
         ensure_resources_table()
         conn = get_db_connection()
         cursor = conn.cursor()
