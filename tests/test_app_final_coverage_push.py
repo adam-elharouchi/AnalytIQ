@@ -197,7 +197,7 @@ class TestEnsureExercisesTableDeep:
 
         mock_cursor.execute = execute_tracking
 
-        from app import ensure_exercises_table
+        from blueprints.exercises import ensure_exercises_table
         ensure_exercises_table()  # Should not raise
 
 
@@ -222,7 +222,7 @@ class TestEnsureResourcesTableDeep:
 
         mock_cursor.execute = execute_tracking
 
-        from app import ensure_resources_table
+        from blueprints.classes import ensure_resources_table
         ensure_resources_table()  # Should not raise
 
 

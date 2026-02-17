@@ -302,12 +302,12 @@ class TestEnsureTablesFunctions:
 
     def test_ensure_exercises_table(self, client, mock_db):
         """Test ensure_exercises_table migration helper"""
-        from app import ensure_exercises_table
+        from blueprints.exercises import ensure_exercises_table
         ensure_exercises_table()
         # Should not raise
 
     def test_ensure_resources_table(self, client, mock_db):
         """Test ensure_resources_table migration helper"""
-        from app import ensure_resources_table
+        from blueprints.classes import ensure_resources_table
         ensure_resources_table()
         # Should not raise
