@@ -17,8 +17,8 @@ class TestSignupEndpoint:
         from app import app
 
         with app.test_client() as client:
-            with patch("app.get_db_connection", return_value=mock_db_connection):
-                with patch("app.hash_password", return_value="hashed_password"):
+            with patch("blueprints.auth.get_db_connection", return_value=mock_db_connection):
+                with patch("blueprints.auth.hash_password", return_value="hashed_password"):
                     # Mock: user doesn't exist
                     mock_db_cursor.fetchone.side_effect = [
                         None,  # User doesn't exist
@@ -46,7 +46,7 @@ class TestSignupEndpoint:
         from app import app
 
         with app.test_client() as client:
-            with patch("app.get_db_connection", return_value=mock_db_connection):
+            with patch("blueprints.auth.get_db_connection", return_value=mock_db_connection):
                 # Mock: user already exists
                 mock_db_cursor.fetchone.return_value = ("existing_user",)
 
@@ -69,9 +69,9 @@ class TestSignupEndpoint:
         from app import app
 
         with app.test_client() as client:
-            with patch("app.get_db_connection", return_value=mock_db_connection):
-                with patch("app.hash_password", return_value="hashed"):
-                    with patch("app.detect_role_from_email", return_value="professor"):
+            with patch("blueprints.auth.get_db_connection", return_value=mock_db_connection):
+                with patch("blueprints.auth.hash_password", return_value="hashed"):
+                    with patch("blueprints.auth.detect_role_from_email", return_value="professor"):
                         mock_db_cursor.fetchone.side_effect = [
                             None,  # User doesn't exist
                             ("prof123", "Dr. Smith", "smith@prof.edu", "professor"),

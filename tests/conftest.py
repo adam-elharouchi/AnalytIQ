@@ -86,13 +86,26 @@ def mock_db_connection(mock_db_cursor):
 
 @pytest.fixture
 def mock_db(mock_db_connection, monkeypatch):
-    """Mock database for testing - patches get_db_connection"""
+    """Mock database for testing - patches get_db_connection in all modules."""
     def mock_get_db():
         return mock_db_connection
-    
-    # Patch the get_db_connection function in app module
+
+    # Patch in the canonical location (db module) so all blueprints get the mock
+    monkeypatch.setattr('db.get_db_connection', mock_get_db)
+    # Keep app module patch for tests that reference app.get_db_connection directly
     monkeypatch.setattr('app.get_db_connection', mock_get_db)
-    
+    # Patch blueprint modules so their imported reference is also mocked
+    for module in [
+        'blueprints.auth',
+        'blueprints.users',
+        'blueprints.health',
+        'blueprints.ai',
+    ]:
+        try:
+            monkeypatch.setattr(f'{module}.get_db_connection', mock_get_db)
+        except AttributeError:
+            pass  # module doesn't use get_db_connection
+
     return mock_db_connection
 
 

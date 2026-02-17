@@ -129,7 +129,7 @@ class TestAuthenticationEdgeCases:
             "user123", "Test User", "test@example.com", "$2b$12$invalidhash", "student"
         )
 
-        with patch("app.verify_password", return_value=(False, False)):
+        with patch("blueprints.auth.verify_password", return_value=(False, False)):
             response = client.post(
                 "/api/users/signin",
                 json={"email": "test@example.com", "password": "wrongpass"},
@@ -174,7 +174,7 @@ class TestPasswordSecurity:
             "$2b$12$LJ3m4ys3Lk8C4VHfZ.g7duSIGcFtxH2FQpcJQkXE6/", "student"
         )
 
-        with patch("app.verify_password", return_value=(False, False)):
+        with patch("blueprints.auth.verify_password", return_value=(False, False)):
             response = client.post(
                 "/api/users/signin",
                 json={"email": "test@example.com", "password": "testpass123"},

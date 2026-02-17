@@ -254,7 +254,7 @@ class TestVerifyPasswordEdge:
             "user123", "Test", "test@test.com", "$2b$12$invalidhash", "student",
         )
 
-        with patch("app.verify_password", return_value=(False, False)):
+        with patch("blueprints.auth.verify_password", return_value=(False, False)):
             response = client.post("/api/users/signin", json={
                 "email": "test@test.com",
                 "password": "pass",
