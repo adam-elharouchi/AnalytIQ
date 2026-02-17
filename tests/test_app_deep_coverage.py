@@ -28,24 +28,24 @@ import time
 # ========================================================================
 
 class TestInitDbPool:
-    """Test init_db_pool paths - lines 279-371"""
+    """Test init_db_pool paths"""
 
     def test_pool_already_initialized(self):
-        """Test early return when pool exists - line 283"""
-        import app as app_module
-        original = app_module.db_pool
+        """Test early return when pool exists"""
+        import db as db_module
+        original = db_module.db_pool
         try:
-            app_module.db_pool = MagicMock()  # non-None
-            app_module.init_db_pool()
+            db_module.db_pool = MagicMock()  # non-None
+            db_module.init_db_pool()
             # Should return immediately without modifying
         finally:
-            app_module.db_pool = original
+            db_module.db_pool = original
 
-    @patch("app.pool.ThreadedConnectionPool")
+    @patch("db.pool.ThreadedConnectionPool")
     def test_pool_init_success_test_query_fails(self, mock_pool_cls):
-        """Test pool created but test query fails - lines 333-335"""
-        import app as app_module
-        original = app_module.db_pool
+        """Test pool created but test query fails"""
+        import db as db_module
+        original = db_module.db_pool
 
         mock_pool = MagicMock()
         mock_pool_cls.return_value = mock_pool
@@ -54,20 +54,20 @@ class TestInitDbPool:
         mock_conn.cursor().execute.side_effect = Exception("Test query failed")
 
         try:
-            app_module.db_pool = None
-            app_module.init_db_pool()
+            db_module.db_pool = None
+            db_module.init_db_pool()
             # Should NOT raise, pool is still set
-            assert app_module.db_pool is not None
+            assert db_module.db_pool is not None
         finally:
-            app_module.db_pool = original
+            db_module.db_pool = original
 
-    @patch("app.get_db_params")
-    @patch("app.pool.ThreadedConnectionPool")
+    @patch("db.get_db_params")
+    @patch("db.pool.ThreadedConnectionPool")
     def test_pool_init_operational_error_fallback(self, mock_pool_cls, mock_params):
-        """Test fallback when pool init raises OperationalError - lines 337-371"""
-        import app as app_module
+        """Test fallback when pool init raises OperationalError"""
+        import db as db_module
         import psycopg2
-        original = app_module.db_pool
+        original = db_module.db_pool
 
         # First call raises OperationalError, second succeeds
         mock_pool = MagicMock()
@@ -84,19 +84,19 @@ class TestInitDbPool:
         }
 
         try:
-            app_module.db_pool = None
-            app_module.init_db_pool()
-            assert app_module.db_pool is not None
+            db_module.db_pool = None
+            db_module.init_db_pool()
+            assert db_module.db_pool is not None
         finally:
-            app_module.db_pool = original
+            db_module.db_pool = original
 
-    @patch("app.get_db_params")
-    @patch("app.pool.ThreadedConnectionPool")
+    @patch("db.get_db_params")
+    @patch("db.pool.ThreadedConnectionPool")
     def test_pool_init_operational_error_fallback_also_fails(self, mock_pool_cls, mock_params):
-        """Test when both pool init attempts fail - lines 368-371"""
-        import app as app_module
+        """Test when both pool init attempts fail"""
+        import db as db_module
         import psycopg2
-        original = app_module.db_pool
+        original = db_module.db_pool
 
         mock_pool_cls.side_effect = [
             psycopg2.OperationalError("Connection refused"),
@@ -111,20 +111,20 @@ class TestInitDbPool:
         }
 
         try:
-            app_module.db_pool = None
+            db_module.db_pool = None
             with pytest.raises(Exception):
-                app_module.init_db_pool()
+                db_module.init_db_pool()
         finally:
-            app_module.db_pool = original
+            db_module.db_pool = original
 
 
 class TestGetDbConnectionRetry:
-    """Test get_db_connection retry logic - lines 395-422"""
+    """Test get_db_connection retry logic"""
 
     def test_connection_stale_retry_succeeds(self, app):
-        """Test stale connection retry - lines 395-405"""
-        import app as app_module
-        original_pool = app_module.db_pool
+        """Test stale connection retry"""
+        import db as db_module
+        original_pool = db_module.db_pool
 
         mock_pool = MagicMock()
         mock_conn1 = MagicMock()
@@ -142,36 +142,36 @@ class TestGetDbConnectionRetry:
         mock_pool.getconn.side_effect = [mock_conn1, mock_conn2]
 
         try:
-            app_module.db_pool = mock_pool
+            db_module.db_pool = mock_pool
             with app.test_request_context():
-                with patch("app.time.sleep"):  # Skip actual sleep
-                    conn = app_module.get_db_connection()
+                with patch("db.time.sleep"):  # Skip actual sleep
+                    conn = db_module.get_db_connection()
                     assert conn == mock_conn2
         finally:
-            app_module.db_pool = original_pool
+            db_module.db_pool = original_pool
 
     def test_all_retries_fail(self, app):
-        """Test when all retry attempts fail - lines 408-424"""
-        import app as app_module
-        original_pool = app_module.db_pool
+        """Test when all retry attempts fail"""
+        import db as db_module
+        original_pool = db_module.db_pool
 
         mock_pool = MagicMock()
         mock_pool.getconn.side_effect = Exception("Pool exhausted")
 
         try:
-            app_module.db_pool = mock_pool
+            db_module.db_pool = mock_pool
             with app.test_request_context():
-                with patch("app.time.sleep"):  # Skip actual sleep
-                    with patch.object(app_module, "init_db_pool"):  # Prevent real init
+                with patch("db.time.sleep"):  # Skip actual sleep
+                    with patch.object(db_module, "init_db_pool"):  # Prevent real init
                         with pytest.raises(Exception, match="Failed to get database"):
-                            app_module.get_db_connection()
+                            db_module.get_db_connection()
         finally:
-            app_module.db_pool = original_pool
+            db_module.db_pool = original_pool
 
     def test_retry_reinitializes_pool(self, app):
-        """Test pool reinitialization on second retry - lines 416-419"""
-        import app as app_module
-        original_pool = app_module.db_pool
+        """Test pool reinitialization on second retry"""
+        import db as db_module
+        original_pool = db_module.db_pool
 
         mock_pool = MagicMock()
         mock_good_conn = MagicMock()
@@ -186,40 +186,40 @@ class TestGetDbConnectionRetry:
 
         # Mock init_db_pool to re-set mock_pool (simulating reinitialization)
         def mock_init():
-            app_module.db_pool = mock_pool
+            db_module.db_pool = mock_pool
 
         try:
-            app_module.db_pool = mock_pool
+            db_module.db_pool = mock_pool
             with app.test_request_context():
-                with patch("app.time.sleep"):
-                    with patch.object(app_module, "init_db_pool", side_effect=mock_init):
-                        conn = app_module.get_db_connection()
+                with patch("db.time.sleep"):
+                    with patch.object(db_module, "init_db_pool", side_effect=mock_init):
+                        conn = db_module.get_db_connection()
                         assert conn == mock_good_conn
         finally:
-            app_module.db_pool = original_pool
+            db_module.db_pool = original_pool
 
 
 class TestCloseDbConnectionTeardown:
-    """Test teardown error handling - lines 436-437"""
+    """Test teardown error handling"""
 
     def test_teardown_putconn_error(self, app):
         """Test error during connection return to pool"""
-        import app as app_module
-        original_pool = app_module.db_pool
+        import db as db_module
+        original_pool = db_module.db_pool
 
         mock_pool = MagicMock()
         mock_pool.putconn.side_effect = Exception("Pool closed")
 
         try:
-            app_module.db_pool = mock_pool
+            db_module.db_pool = mock_pool
             with app.test_request_context():
                 from flask import g
                 g.db_conn = MagicMock()
                 # Manually trigger teardown
-                app_module.close_db_connection(None)
+                db_module.close_db_connection(None)
                 # Should not raise, just print error
         finally:
-            app_module.db_pool = original_pool
+            db_module.db_pool = original_pool
 
 
 # ========================================================================

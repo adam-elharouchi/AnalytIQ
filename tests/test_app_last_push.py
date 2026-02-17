@@ -337,14 +337,14 @@ class TestEnsureResourcesColumn:
 class TestInitDbPoolDnsException:
     """Cover bare except in socket.getaddrinfo - lines 351-352"""
 
-    @patch("app.pool.ThreadedConnectionPool")
-    @patch("app.get_db_params")
-    @patch("app.socket.getaddrinfo")
+    @patch("db.pool.ThreadedConnectionPool")
+    @patch("db.get_db_params")
+    @patch("db.socket.getaddrinfo")
     def test_dns_resolution_fails(self, mock_getaddrinfo, mock_params, mock_pool_cls):
-        """Lines 351-352: socket.getaddrinfo raises"""
-        import app as app_module
+        """socket.getaddrinfo raises during pool init fallback"""
+        import db as db_module
         import psycopg2
-        original = app_module.db_pool
+        original = db_module.db_pool
 
         mock_pool = MagicMock()
         mock_pool_cls.side_effect = [
@@ -361,9 +361,9 @@ class TestInitDbPoolDnsException:
         mock_getaddrinfo.side_effect = Exception("DNS resolution failed")
 
         try:
-            app_module.db_pool = None
-            app_module.init_db_pool()
+            db_module.db_pool = None
+            db_module.init_db_pool()
             # Should still succeed (DNS failure is caught by bare except)
-            assert app_module.db_pool is not None
+            assert db_module.db_pool is not None
         finally:
-            app_module.db_pool = original
+            db_module.db_pool = original

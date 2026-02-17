@@ -3,15 +3,11 @@ Celery Application Configuration for AnalytIQ
 Handles async task processing for PDF operations and email sending
 """
 
-import os
 from celery import Celery
-from dotenv import load_dotenv
-
-# Load environment variables
-load_dotenv()
+import config
 
 # Redis URL for broker and result backend
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+REDIS_URL = config.REDIS_URL
 
 # Initialize Celery
 celery_app = Celery(

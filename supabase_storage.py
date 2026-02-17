@@ -3,16 +3,12 @@ Supabase Storage Client for AnalytIQ
 Handles PDF file uploads, downloads, and migrations to Supabase Storage
 """
 
-import os
-from dotenv import load_dotenv
-
-# Load environment variables
-load_dotenv()
+import config
 
 # Supabase configuration
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-SUPABASE_BUCKET = os.getenv("SUPABASE_BUCKET", "pdfs")
+SUPABASE_URL = config.SUPABASE_URL
+SUPABASE_KEY = config.SUPABASE_KEY
+SUPABASE_BUCKET = config.SUPABASE_BUCKET
 
 # Initialize Supabase client
 try:

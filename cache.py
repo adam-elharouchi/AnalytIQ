@@ -3,17 +3,13 @@ Redis Cache Utilities for AnalytIQ
 Provides caching functionality for frequently accessed endpoints
 """
 
-import os
 import json
 import functools
-from dotenv import load_dotenv
+import config
 
-# Load environment variables
-load_dotenv()
-
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-CACHE_DEFAULT_TTL = int(os.getenv("CACHE_TTL", 300))  # 5 minutes
-FEATURE_CACHING = os.getenv("FEATURE_CACHING", "False").lower() == "true"
+REDIS_URL = config.REDIS_URL
+CACHE_DEFAULT_TTL = config.CACHE_DEFAULT_TTL
+FEATURE_CACHING = config.FEATURE_CACHING
 
 # Initialize Redis client
 try:

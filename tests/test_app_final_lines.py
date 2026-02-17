@@ -235,9 +235,9 @@ class TestDbConnectionStaleRetryEdge:
     """Cover DB connection stale retry edge cases - lines 400-401, 405"""
 
     def test_stale_conn_putconn_fails(self, app):
-        """Lines 400-401: putconn raises when returning stale connection"""
-        import app as app_module
-        original_pool = app_module.db_pool
+        """putconn raises when returning stale connection"""
+        import db as db_module
+        original_pool = db_module.db_pool
 
         mock_pool = MagicMock()
         mock_conn1 = MagicMock()
@@ -265,18 +265,18 @@ class TestDbConnectionStaleRetryEdge:
         mock_pool.getconn.side_effect = [mock_conn1, mock_conn2]
 
         try:
-            app_module.db_pool = mock_pool
+            db_module.db_pool = mock_pool
             with app.test_request_context():
-                with patch("app.time.sleep"):
-                    conn = app_module.get_db_connection()
+                with patch("db.time.sleep"):
+                    conn = db_module.get_db_connection()
                     assert conn == mock_conn2
         finally:
-            app_module.db_pool = original_pool
+            db_module.db_pool = original_pool
 
     def test_stale_conn_all_retries_fail(self, app):
-        """Line 405: raise after all stale connection retries"""
-        import app as app_module
-        original_pool = app_module.db_pool
+        """Raise after all stale connection retries"""
+        import db as db_module
+        original_pool = db_module.db_pool
 
         mock_pool = MagicMock()
 
@@ -295,13 +295,13 @@ class TestDbConnectionStaleRetryEdge:
         ]
 
         try:
-            app_module.db_pool = mock_pool
+            db_module.db_pool = mock_pool
             with app.test_request_context():
-                with patch("app.time.sleep"):
+                with patch("db.time.sleep"):
                     with pytest.raises(Exception):
-                        app_module.get_db_connection()
+                        db_module.get_db_connection()
         finally:
-            app_module.db_pool = original_pool
+            db_module.db_pool = original_pool
 
 
 class TestForgotPasswordRenderHost:

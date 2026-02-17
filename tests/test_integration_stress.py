@@ -159,29 +159,29 @@ class TestDatabaseConnectionPool:
 
     def test_connection_pool_handles_concurrent_requests(self):
         """Verify connection pool doesn't exhaust under load"""
-        with patch('app.db_pool') as mock_pool:
+        with patch('db.db_pool') as mock_pool:
             mock_conn = MagicMock()
             mock_pool.getconn.return_value = mock_conn
-            
+
             # Simulate 10 concurrent connections
             connections = []
             for i in range(10):
                 conn = mock_pool.getconn()
                 connections.append(conn)
-            
+
             # All connections should be acquired
             assert len(connections) == 10
             assert mock_pool.getconn.call_count == 10
 
     def test_connection_pool_releases_properly(self):
         """Ensure connections are returned to pool after use"""
-        with patch('app.db_pool') as mock_pool:
+        with patch('db.db_pool') as mock_pool:
             mock_conn = MagicMock()
             mock_pool.getconn.return_value = mock_conn
-            
+
             # Get and release connection
             conn = mock_pool.getconn()
             mock_pool.putconn(conn)
-            
+
             # Verify release was called
             mock_pool.putconn.assert_called_once_with(conn)

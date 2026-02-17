@@ -190,21 +190,20 @@ class TestDatabaseHelpers:
     """Test database helper functions"""
 
     def test_close_conn_safely_with_valid_conn(self):
-        """Test closing a valid connection"""
-        from app import close_conn_safely
+        """Test closing a valid connection (no-op function)"""
+        from db import close_conn_safely
 
-        with patch("app.db_pool") as mock_pool:
-            mock_conn = MagicMock()
-            mock_conn.closed = False
+        mock_conn = MagicMock()
+        mock_conn.closed = False
 
-            # Should not raise exception
-            try:
-                close_conn_safely(mock_conn)
-                success = True
-            except Exception:
-                success = False
+        # Should not raise exception (close_conn_safely is a no-op)
+        try:
+            close_conn_safely(mock_conn)
+            success = True
+        except Exception:
+            success = False
 
-            assert success
+        assert success
 
 
 
