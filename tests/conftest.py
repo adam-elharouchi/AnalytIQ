@@ -100,6 +100,8 @@ def mock_db(mock_db_connection, monkeypatch):
         'blueprints.users',
         'blueprints.health',
         'blueprints.ai',
+        'blueprints.chapters',
+        'blueprints.exercises',
     ]:
         try:
             monkeypatch.setattr(f'{module}.get_db_connection', mock_get_db)
