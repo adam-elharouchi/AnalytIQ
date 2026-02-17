@@ -48,11 +48,18 @@ The frontend is built using standard web technologies, ensuring compatibility an
 - **`docs/`**: Project documentation files.
 
 ### HTML Templates (Root)
-- `index.html`: Landing page.
-- `login.html` / `signup.html`: Authentication pages.
-- `student-dashboard.html`: Main dashboard for students.
-- `professor-dashboard.html`: Main dashboard for professors.
-- `practice-playground.html`: Interactive coding environment with AI support.
+- `index.html`: Landing page and marketing site.
+- `login.html`: Login page; `reset-password.html`: Password reset flow.
+- `student-classes.html`: Student class list; `student-class.html`: Individual class view with chapters and exercises.
+- `professor-dashboard.html`: Professor overview and class management; `professor-class.html`: Per-class management, analytics, and leaderboard.
+- `practice-playground.html`: Interactive coding exercise environment with AI hint assistant.
+- `code-assistant.html`: Free-form AI coding assistant with conversation history.
+- `upload-assistant.html`: PDF chapter upload flow for professors.
+- `chapter-view.html`: In-browser PDF viewer for students.
+- `modules.html`: Course module browser.
+- `profile.html`: User profile and preferences.
+- `resources.html`: Supplementary resources page.
+- `contact.html`: Contact form.
 
 ## 🌐 Website Features
 
