@@ -117,7 +117,7 @@ class TestExceptionHandlers:
         """Cover lines 1115-1118"""
         mock_db.cursor().execute.side_effect = Exception("DB error")
         response = client.put("/api/users/password", json={
-            "user_id": "user123", "currentPassword": "old", "newPassword": "new123",
+            "user_id": "user123", "currentPassword": "oldpassword", "newPassword": "newpassword123",
         })
         assert response.status_code in [401, 500]
 

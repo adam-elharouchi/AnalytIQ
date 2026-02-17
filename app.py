@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, g, send_from_directory
 from werkzeug.routing import BaseConverter
+from werkzeug.exceptions import HTTPException
 import psycopg2
 from psycopg2 import pool
 from dotenv import load_dotenv
@@ -288,6 +289,15 @@ def after_request(response):
         "frame-ancestors 'none'"
     )
     return response
+
+
+@app.errorhandler(Exception)
+def handle_unexpected_error(e):
+    """Catch-all for unhandled exceptions — log details, return generic message."""
+    if isinstance(e, HTTPException):
+        return e  # Let Flask handle 404, 405, etc. normally
+    logger.error("Unhandled exception: %s", e, exc_info=True)
+    return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -792,7 +802,7 @@ def signup():
             return jsonify({"error": "Email already registered"}), 400
 
         # Create user
-        user_id = str(int(datetime.now().timestamp() * 1000))
+        user_id = str(uuid.uuid4())
         password_hash = hash_password(password)
         role = detect_role_from_email(email)  # Detect role from email domain
 
@@ -870,7 +880,8 @@ def signup():
         )
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/users/signin", methods=["POST", "OPTIONS"])
@@ -953,7 +964,8 @@ def signin():
     except Exception as e:
         if conn:
             conn.rollback()
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/users/forgot-password", methods=["POST", "OPTIONS"])
@@ -1044,7 +1056,8 @@ def forgot_password():
         return response, 200
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/users/reset-password", methods=["POST", "OPTIONS"])
@@ -1115,7 +1128,8 @@ def reset_password():
     except Exception as e:
         if conn:
             conn.rollback()
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/users/profile", methods=["GET"])
@@ -1161,7 +1175,8 @@ def get_profile():
         )
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/users/profile", methods=["PUT"])
@@ -1170,15 +1185,20 @@ def get_profile():
 def update_profile():
     """Update user profile"""
     try:
-        data = request.json
+        data = request.json or {}
         user_id = g.user_id
         full_name = data.get("fullName")
         email = data.get("email")
         bio = data.get("bio")
         profile_picture = data.get("profilePicture")
 
-        if not user_id:
-            return jsonify({"error": "Missing user_id"}), 400
+        errors = validate_fields(data, [
+            ("fullName", False, config.MAX_NAME_LENGTH),
+            ("email", False, config.MAX_EMAIL_LENGTH),
+            ("bio", False, config.MAX_GENERIC_TEXT_LENGTH),
+        ])
+        if errors:
+            return jsonify({"error": errors[0]}), 400
 
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -1218,7 +1238,8 @@ def update_profile():
         return jsonify({"success": True}), 200
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/users/settings", methods=["GET"])
@@ -1252,7 +1273,8 @@ def get_settings():
         )
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/users/settings", methods=["PUT"])
@@ -1296,7 +1318,8 @@ def update_settings():
         import traceback
 
         traceback.print_exc()
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/users/password", methods=["PUT"])
@@ -1306,13 +1329,20 @@ def update_password():
     """Update user password"""
     conn = None
     try:
-        data = request.json
+        data = request.json or {}
         user_id = g.user_id
         current_password = data.get("currentPassword")
         new_password = data.get("newPassword")
 
-        if not current_password or not new_password:
-            return jsonify({"error": "Missing required fields"}), 400
+        errors = validate_fields(data, [
+            ("currentPassword", True, config.MAX_PASSWORD_LENGTH),
+            ("newPassword", True, config.MAX_PASSWORD_LENGTH),
+        ])
+        if errors:
+            return jsonify({"error": errors[0]}), 400
+
+        if new_password and len(new_password) < config.MIN_PASSWORD_LENGTH:
+            return jsonify({"error": f"New password must be at least {config.MIN_PASSWORD_LENGTH} characters"}), 400
 
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -1352,7 +1382,8 @@ def update_password():
     except Exception as e:
         if conn:
             conn.rollback()
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/users/delete", methods=["DELETE"])
@@ -1376,7 +1407,8 @@ def delete_user():
         return jsonify({"success": True}), 200
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/users/conversations", methods=["GET"])
@@ -1438,7 +1470,8 @@ def get_conversations():
         return jsonify(response), 200
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/users/conversations", methods=["POST"])
@@ -1475,7 +1508,8 @@ def create_conversation():
         return jsonify({"conversation_id": conv_id}), 201
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/users/conversations/<conversation_id>", methods=["GET"])
@@ -1537,7 +1571,8 @@ def get_conversation(conversation_id):
         )
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/users/conversations/<conversation_id>", methods=["PUT"])
@@ -1604,7 +1639,8 @@ def update_conversation(conversation_id):
     except Exception as e:
         if conn:
             conn.rollback()
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/users/conversations/<conversation_id>", methods=["DELETE"])
@@ -1634,7 +1670,8 @@ def delete_conversation(conversation_id):
         return jsonify({"success": True}), 200
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/users/ai-digest", methods=["GET"])
@@ -1699,7 +1736,8 @@ def get_ai_digest():
         )
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/users/ai-digest", methods=["PUT"])
@@ -1758,7 +1796,8 @@ def update_ai_digest():
         return jsonify({"success": True}), 200
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/users/ai-memory", methods=["GET"])
@@ -1788,7 +1827,8 @@ def get_ai_memory():
         return jsonify({"memory": memory}), 200
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/users/ai-memory", methods=["PUT"])
@@ -1825,7 +1865,8 @@ def update_ai_memory():
         return jsonify({"success": True}), 200
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/users/preferences", methods=["GET"])
@@ -1876,7 +1917,8 @@ def get_preferences():
         )
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/users/preferences", methods=["PUT"])
@@ -1945,7 +1987,8 @@ def update_preferences():
     except Exception as e:
         if conn:
             conn.rollback()
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/users/practice-progress", methods=["GET"])
@@ -2020,7 +2063,8 @@ def get_practice_progress():
             return jsonify(progress), 200
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/users/practice-progress", methods=["PUT"])
@@ -2151,7 +2195,8 @@ def update_practice_progress():
         )
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/exercises/progress", methods=["GET"])
@@ -2196,7 +2241,8 @@ def get_all_progress():
         return jsonify({"progress": progress}), 200
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/exercises/<exercise_id>/leaderboard", methods=["GET"])
@@ -2244,7 +2290,8 @@ def get_exercise_leaderboard(exercise_id):
         return jsonify({"leaderboard": leaderboard}), 200
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/leaderboard/grand", methods=["GET"])
@@ -2297,7 +2344,8 @@ def get_grand_leaderboard():
         return jsonify({"leaderboard": leaderboard}), 200
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/health", methods=["GET"])
@@ -2475,7 +2523,7 @@ def get_task_status(task_id):
 
     except Exception as e:
         logger.error("Failed to get task status", extra={"error": str(e), "task_id": task_id})
-        return jsonify({"error": str(e), "task_id": task_id}), 500
+        return jsonify({"error": "Failed to retrieve task status. Please try again.", "task_id": task_id}), 500
 
 
 # ============================================================================
@@ -2495,11 +2543,20 @@ def submit_contact():
         return "", 200
 
     try:
-        data = request.json
+        data = request.json or {}
         name = data.get("name")
         email = data.get("email")
         subject = data.get("subject")
         message = data.get("message")
+
+        errors = validate_fields(data, [
+            ("name", True, config.MAX_NAME_LENGTH),
+            ("email", True, config.MAX_EMAIL_LENGTH),
+            ("subject", True, 200),
+            ("message", True, config.MAX_GENERIC_TEXT_LENGTH),
+        ])
+        if errors:
+            return jsonify({"error": errors[0]}), 400
 
         # Optional: extract user_id from JWT if present
         user_id = None
@@ -2510,9 +2567,6 @@ def submit_contact():
                 user_id = str(payload["user_id"])
             except Exception:
                 pass  # Contact form works without auth
-
-        if not all([name, email, subject, message]):
-            return jsonify({"error": "Missing required fields"}), 400
 
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -2533,7 +2587,8 @@ def submit_contact():
 
     except Exception as e:
         print(f"Error submitting contact form: {str(e)}")
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 # ============================================
@@ -2567,14 +2622,18 @@ def create_class():
             response.status_code = 200
             return response
 
-        data = request.json
+        data = request.json or {}
         user_id = g.user_id
         name = data.get("name")
         description = data.get("description", "")
         class_code = data.get("class_code", "").strip().upper()  # Custom code from professor
 
-        if not name:
-            return jsonify({"error": "Missing required field (name)"}), 400
+        errors = validate_fields(data, [
+            ("name", True, config.MAX_CLASS_NAME_LENGTH),
+            ("description", False, config.MAX_CLASS_DESCRIPTION_LENGTH),
+        ])
+        if errors:
+            return jsonify({"error": errors[0]}), 400
 
         if not class_code:
             return (
@@ -2643,7 +2702,8 @@ def create_class():
         )
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/classes", methods=["GET"])
@@ -2757,7 +2817,8 @@ def get_classes():
         return jsonify(response), 200
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/classes/<class_id>", methods=["GET"])
@@ -2864,7 +2925,8 @@ def get_class(class_id):
         )
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 # ... (Previous code) ...
@@ -2971,7 +3033,8 @@ def get_class_resources(class_id):
 
     except Exception as e:
         print(f"Error in get_class_resources: {e}")
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/exercises/<exercise_id>", methods=["GET"])
@@ -3020,7 +3083,8 @@ def get_exercise_details(exercise_id):
         )
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/exercises/<exercise_id>", methods=["PUT"])
@@ -3030,8 +3094,16 @@ def update_exercise(exercise_id):
     """Update an existing exercise"""
     try:
         ensure_exercises_table()
-        data = request.json
+        data = request.json or {}
         user_id = g.user_id
+
+        errors = validate_fields(data, [
+            ("title", False, config.MAX_EXERCISE_TITLE_LENGTH),
+            ("description", False, config.MAX_EXERCISE_DESCRIPTION_LENGTH),
+            ("solution_code", False, config.MAX_SOLUTION_CODE_LENGTH),
+        ])
+        if errors:
+            return jsonify({"error": errors[0]}), 400
 
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -3074,7 +3146,8 @@ def update_exercise(exercise_id):
 
         return jsonify({"success": True}), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/classes/<class_id>", methods=["PUT"])
@@ -3146,7 +3219,8 @@ def update_class(class_id):
     except Exception as e:
         if conn:
             conn.rollback()
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 def allowed_file(filename):
@@ -3426,7 +3500,8 @@ def upload_chapter(class_id):
         import traceback
 
         traceback.print_exc()
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/classes/<class_id>/chapters", methods=["GET"])
@@ -3506,7 +3581,8 @@ def get_class_chapters(class_id):
         return jsonify({"chapters": chapters}), 200
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/chapters/<chapter_id>", methods=["PUT"])
@@ -3515,8 +3591,15 @@ def get_class_chapters(class_id):
 def update_chapter(chapter_id):
     """Update a chapter"""
     try:
-        data = request.json
+        data = request.json or {}
         user_id = g.user_id
+
+        errors = validate_fields(data, [
+            ("title", False, config.MAX_CHAPTER_TITLE_LENGTH),
+            ("description", False, config.MAX_CLASS_DESCRIPTION_LENGTH),
+        ])
+        if errors:
+            return jsonify({"error": errors[0]}), 400
 
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -3558,7 +3641,8 @@ def update_chapter(chapter_id):
 
         return jsonify({"success": True}), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/chapters/<chapter_id>", methods=["DELETE", "OPTIONS"])
@@ -3616,7 +3700,8 @@ def delete_chapter(chapter_id):
         import traceback
 
         traceback.print_exc()
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/chapters/<chapter_id>/generate-exercises", methods=["POST"])
@@ -3672,7 +3757,8 @@ def generate_exercises_for_chapter(chapter_id):
         except Exception as e:
             cursor.close()
             close_conn_safely(conn)
-            return jsonify({"error": f"Failed to extract text from PDF: {str(e)}"}), 500
+            logger.error("Failed to extract text from PDF: %s", e, exc_info=True)
+            return jsonify({"error": "Failed to extract text from the PDF. Please check the file and try again."}), 500
 
         if not pdf_text:
             cursor.close()
@@ -3698,7 +3784,8 @@ def generate_exercises_for_chapter(chapter_id):
         except Exception as e:
             cursor.close()
             close_conn_safely(conn)
-            return jsonify({"error": f"Failed to generate exercises: {str(e)}"}), 500
+            logger.error("Failed to generate exercises: %s", e, exc_info=True)
+            return jsonify({"error": "Failed to generate exercises. Please try again."}), 500
 
         if not exercises:
             cursor.close()
@@ -3746,7 +3833,8 @@ def generate_exercises_for_chapter(chapter_id):
         import traceback
 
         traceback.print_exc()
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/classes/<class_id>", methods=["DELETE"])
@@ -3792,7 +3880,8 @@ def delete_class(class_id):
         return jsonify({"success": True}), 200
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 # ============================================================================
@@ -3888,7 +3977,8 @@ def get_chapter_exercises(chapter_id):
         return jsonify({"exercises": exercises}), 200
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/ai/chat", methods=["POST", "OPTIONS"])
@@ -3945,7 +4035,8 @@ def proxy_ai_chat():
 
     except Exception as e:
         print(f"AI Proxy Error: {str(e)}")
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 # ============================================================================
@@ -4051,7 +4142,8 @@ def enroll_in_class():
         import traceback
 
         traceback.print_exc()
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/classes/enrolled", methods=["GET"])
@@ -4135,7 +4227,8 @@ def get_enrolled_classes():
         return jsonify(response), 200
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/classes/<class_id>/students", methods=["GET"])
@@ -4196,7 +4289,8 @@ def get_class_students(class_id):
         return jsonify({"students": students}), 200
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 # ============================================================================
@@ -4345,7 +4439,8 @@ def get_class_progress(class_id):
         traceback.print_exc()
         if conn:
             conn.rollback()
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/progress", methods=["GET"])
@@ -4435,7 +4530,8 @@ def get_progress():
         return jsonify({"progress": progress}), 200
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/students/<student_id>/progress", methods=["GET"])
@@ -4577,7 +4673,8 @@ def get_student_progress(student_id):
         import traceback
 
         traceback.print_exc()
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 # Update existing progress endpoint to support class_id and class_exercise_id
@@ -4680,7 +4777,8 @@ def get_class_average_leaderboard(class_id):
         import traceback
 
         traceback.print_exc()
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/classes/<class_id>/leaderboard/exercise/<exercise_id>", methods=["GET"])
@@ -4765,7 +4863,8 @@ def get_exercise_leaderboard_for_class(class_id, exercise_id):
         import traceback
 
         traceback.print_exc()
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 def ensure_exercises_table():
@@ -4829,6 +4928,14 @@ def create_exercise(class_id, chapter_id):
             data = request.json or {}
 
         user_id = g.user_id
+
+        errors = validate_fields(data, [
+            ("title", False, config.MAX_EXERCISE_TITLE_LENGTH),
+            ("description", False, config.MAX_EXERCISE_DESCRIPTION_LENGTH),
+            ("solution_code", False, config.MAX_SOLUTION_CODE_LENGTH),
+        ])
+        if errors:
+            return jsonify({"error": errors[0]}), 400
 
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -4894,7 +5001,8 @@ def create_exercise(class_id, chapter_id):
         return jsonify({"success": True, "exercise_id": exercise_id}), 201
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/classes/<class_id>/resources", methods=["POST", "OPTIONS"])
@@ -4937,7 +5045,8 @@ def add_class_resource(class_id):
         return jsonify({"success": True, "resource_id": resource_id}), 201
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 
@@ -5016,7 +5125,8 @@ def serve_chapter_pdf(chapter_id):
         import traceback
 
         traceback.print_exc()
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/exercises/<exercise_id>", methods=["DELETE", "OPTIONS"])
@@ -5052,7 +5162,8 @@ def delete_exercise(exercise_id):
         return jsonify({"success": True}), 200
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 # ============================================================================
@@ -5195,7 +5306,8 @@ def upload_class_resource(class_id):
         import traceback
 
         traceback.print_exc()
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/resources/<resource_id>/download", methods=["GET"])
@@ -5255,7 +5367,8 @@ def serve_resource_download(resource_id):
 
     except Exception as e:
         print(f"Error serving resource: {e}")
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/classes/<class_id>/resources/<resource_id>", methods=["PUT", "DELETE", "OPTIONS"])
@@ -5306,7 +5419,8 @@ def manage_resource(class_id, resource_id):
             return jsonify({"success": True}), 200
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @app.route("/api/resources/files/<filename>", methods=["GET"])
