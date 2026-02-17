@@ -168,7 +168,7 @@ class TestPdfValidationError:
 
     def test_validation_exception(self):
         """Call validate_pdf_file directly with something that causes an exception"""
-        import app as app_module
+        import blueprints.chapters as chapters_module
 
         # Create a mock file object that raises on seek
         mock_file = MagicMock()
@@ -176,20 +176,20 @@ class TestPdfValidationError:
         mock_file.seek.return_value = 0
         mock_file.tell.return_value = 0
 
-        is_valid, error = app_module.validate_pdf_file(mock_file)
+        is_valid, error = chapters_module.validate_pdf_file(mock_file)
         # Either returns (False, error) or (True, None)
         assert isinstance(is_valid, bool)
 
     def test_validation_zero_size(self):
         """Call with empty file"""
-        import app as app_module
+        import blueprints.chapters as chapters_module
 
         mock_file = MagicMock()
         mock_file.read.return_value = b""
         mock_file.seek.return_value = 0
         mock_file.tell.side_effect = [0, 0]  # Start and end at 0
 
-        is_valid, error = app_module.validate_pdf_file(mock_file)
+        is_valid, error = chapters_module.validate_pdf_file(mock_file)
         assert isinstance(is_valid, bool)
 
 
@@ -326,7 +326,7 @@ class TestUploadChapterPrecise:
         mock_db.cursor().fetchone.return_value = ("prof1",)
 
         pdf_content = b"%PDF-1.4\ntest content"
-        with patch("app.validate_pdf_file", return_value=(False, "Malicious content")):
+        with patch("blueprints.chapters.validate_pdf_file", return_value=(False, "Malicious content")):
             response = client.post(
                 "/api/classes/CLS1/chapters",
                 data={

@@ -21,7 +21,7 @@ class TestUploadChapterPdfRejectionPrecise:
         # Professor check: return matching professor_id
         mock_cursor.fetchone.return_value = ("prof1",)
 
-        with patch("app.validate_pdf_file", return_value=(False, "PDF contains unsafe content")):
+        with patch("blueprints.chapters.validate_pdf_file", return_value=(False, "PDF contains unsafe content")):
             response = client.post(
                 "/api/classes/CLS1/chapters",
                 data={
@@ -119,7 +119,7 @@ class TestPdfValidationErrorPath:
         mock_cursor = mock_db.cursor()
         mock_cursor.fetchone.return_value = ("prof1",)
 
-        with patch("app.validate_pdf_file", side_effect=Exception("Validation crash")):
+        with patch("blueprints.chapters.validate_pdf_file", side_effect=Exception("Validation crash")):
             valid_pdf = b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\ndata"
             response = client.post(
                 "/api/classes/CLS1/chapters",

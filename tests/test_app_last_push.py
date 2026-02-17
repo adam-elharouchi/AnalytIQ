@@ -78,7 +78,7 @@ class TestPdfValidationDirect:
 
     def test_validate_pdf_exception_during_read(self):
         """Lines 2986-2988: exception in validate_pdf_file try block"""
-        import app as app_module
+        import blueprints.chapters as chapters_module
 
         class FailsOnRead:
             """File that reports valid size but fails on read"""
@@ -98,19 +98,19 @@ class TestPdfValidationDirect:
             def read(self, size=-1):
                 raise IOError("Disk read error during validation")
 
-        result = app_module.validate_pdf_file(FailsOnRead())
+        result = chapters_module.validate_pdf_file(FailsOnRead())
         assert isinstance(result, tuple)
         assert result[0] == False
         assert "validation error" in result[1].lower() or "read error" in result[1].lower()
 
     def test_validate_pdf_invalid_header(self):
         """Test with file that has no PDF header"""
-        import app as app_module
+        import blueprints.chapters as chapters_module
         from io import BytesIO
 
         # Valid size but not a PDF
         fake_file = BytesIO(b"This is not a PDF file at all, just random text content")
-        result = app_module.validate_pdf_file(fake_file)
+        result = chapters_module.validate_pdf_file(fake_file)
         assert isinstance(result, tuple)
         assert result[0] == False
 
@@ -130,7 +130,7 @@ class TestUploadChapterRejection:
         pdf_bytes = b"%PDF-1.4\nmalicious content here"
 
         # Note: must mock logger to avoid 'filename' conflict in LogRecord extra dict
-        with patch("app.validate_pdf_file", return_value=(False, "Suspicious content detected")):
+        with patch("blueprints.chapters.validate_pdf_file", return_value=(False, "Suspicious content detected")):
             with patch("app.logger") as mock_logger:
                 response = client.post(
                     "/api/classes/CLS1/chapters",
@@ -153,7 +153,7 @@ class TestUploadAutoGenPrecise:
 
     @patch("app.generate_exercises_from_pdf_content")
     @patch("app.extract_text_from_pdf_bytes")
-    @patch("app.validate_pdf_file", return_value=(True, None))
+    @patch("blueprints.chapters.validate_pdf_file", return_value=(True, None))
     def test_auto_gen_no_api_key(self, mock_validate, mock_extract, mock_gen, client, mock_db):
         """Line 3133: GEMINI_API_KEY not set during auto gen"""
         mock_cursor = mock_db.cursor()
@@ -188,7 +188,7 @@ class TestUploadAutoGenPrecise:
 
     @patch("app.generate_exercises_from_pdf_content")
     @patch("app.extract_text_from_pdf_bytes")
-    @patch("app.validate_pdf_file", return_value=(True, None))
+    @patch("blueprints.chapters.validate_pdf_file", return_value=(True, None))
     def test_auto_gen_raises(self, mock_validate, mock_extract, mock_gen, client, mock_db):
         """Lines 3162-3165: generate raises during upload"""
         mock_cursor = mock_db.cursor()

@@ -344,20 +344,20 @@ class TestAllowedFile:
 
     def test_allowed_pdf(self):
         """Test PDF is allowed"""
-        from app import allowed_file
+        from blueprints.chapters import allowed_file
         assert allowed_file("test.pdf") is True
 
     def test_allowed_csv(self):
         """Test CSV is allowed"""
-        from app import allowed_file
+        from blueprints.chapters import allowed_file
         assert allowed_file("data.csv") is True
 
     def test_disallowed_exe(self):
         """Test EXE is not allowed"""
-        from app import allowed_file
+        from blueprints.chapters import allowed_file
         assert allowed_file("virus.exe") is False
 
     def test_no_extension(self):
         """Test file without extension"""
-        from app import allowed_file
+        from blueprints.chapters import allowed_file
         assert allowed_file("noextension") is False

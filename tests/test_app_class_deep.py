@@ -328,7 +328,7 @@ class TestValidatePdfFile:
 
     def test_validate_valid_pdf(self):
         """Test validation of a valid PDF"""
-        from app import validate_pdf_file
+        from blueprints.chapters import validate_pdf_file
         pdf_content = b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\nSome PDF content here\n%%EOF"
         file = BytesIO(pdf_content)
         is_valid, error = validate_pdf_file(file)
@@ -337,7 +337,7 @@ class TestValidatePdfFile:
 
     def test_validate_empty_pdf(self):
         """Test validation of empty file"""
-        from app import validate_pdf_file
+        from blueprints.chapters import validate_pdf_file
         file = BytesIO(b"")
         is_valid, error = validate_pdf_file(file)
         assert is_valid is False
@@ -345,7 +345,7 @@ class TestValidatePdfFile:
 
     def test_validate_non_pdf_file(self):
         """Test validation of non-PDF file"""
-        from app import validate_pdf_file
+        from blueprints.chapters import validate_pdf_file
         file = BytesIO(b"This is not a PDF file")
         is_valid, error = validate_pdf_file(file)
         assert is_valid is False
@@ -353,7 +353,7 @@ class TestValidatePdfFile:
 
     def test_validate_pdf_too_large(self):
         """Test validation of oversized PDF"""
-        from app import validate_pdf_file
+        from blueprints.chapters import validate_pdf_file
         # Create file larger than 50MB
         large_content = b"%PDF-1.4\n" + b"x" * (51 * 1024 * 1024)
         file = BytesIO(large_content)
@@ -363,7 +363,7 @@ class TestValidatePdfFile:
 
     def test_validate_pdf_with_javascript(self):
         """Test validation of PDF with JavaScript (suspicious)"""
-        from app import validate_pdf_file
+        from blueprints.chapters import validate_pdf_file
         pdf_content = b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n/JavaScript alert('xss')\n%%EOF"
         file = BytesIO(pdf_content)
         is_valid, error = validate_pdf_file(file)
@@ -372,7 +372,7 @@ class TestValidatePdfFile:
 
     def test_validate_pdf_unsupported_version(self):
         """Test validation of unsupported PDF version"""
-        from app import validate_pdf_file
+        from blueprints.chapters import validate_pdf_file
         pdf_content = b"%PDF-3.0\nContent\n%%EOF"
         file = BytesIO(pdf_content)
         is_valid, error = validate_pdf_file(file)
@@ -385,13 +385,13 @@ class TestAllowedFile:
 
     def test_allowed_extensions(self):
         """Test all allowed file extensions"""
-        from app import allowed_file
+        from blueprints.chapters import allowed_file
         for ext in ["pdf", "csv", "xlsx", "xls", "json", "txt", "ipynb"]:
             assert allowed_file(f"test.{ext}") is True
 
     def test_disallowed_extensions(self):
         """Test disallowed file extensions"""
-        from app import allowed_file
+        from blueprints.chapters import allowed_file
         for ext in ["exe", "bat", "sh", "py", "js", "php"]:
             assert allowed_file(f"test.{ext}") is False
 

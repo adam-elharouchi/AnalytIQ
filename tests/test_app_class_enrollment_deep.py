@@ -265,7 +265,7 @@ class TestClassCodeGeneration:
 
     def test_generate_class_code(self):
         """Test class code generation format"""
-        from app import generate_class_code
+        from blueprints.classes import generate_class_code
         code = generate_class_code()
         assert len(code) == 10
         assert code[:5].isalpha() and code[:5].isupper()
@@ -273,7 +273,7 @@ class TestClassCodeGeneration:
 
     def test_generate_class_code_unique(self):
         """Test class codes are unique"""
-        from app import generate_class_code
+        from blueprints.classes import generate_class_code
         codes = {generate_class_code() for _ in range(20)}
         assert len(codes) > 1  # Extremely unlikely to get duplicates
 

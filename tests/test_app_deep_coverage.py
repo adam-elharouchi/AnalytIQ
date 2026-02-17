@@ -353,7 +353,7 @@ class TestUploadChapterPdfRejection:
         # Create a "large" PDF (we mock the size check)
         big_pdf = b"%PDF-1.4\n" + b"x" * 100
 
-        with patch("app.validate_pdf_file", return_value=(False, "File too large")):
+        with patch("blueprints.chapters.validate_pdf_file", return_value=(False, "File too large")):
             response = client.post(
                 "/api/classes/CLS123/chapters",
                 data={
