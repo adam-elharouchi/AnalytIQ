@@ -5,6 +5,18 @@ and later configured via init_app() in app.py.
 """
 
 # ---------------------------------------------------------------------------
+# Email (Flask-Mail)
+# ---------------------------------------------------------------------------
+
+try:
+    from flask_mail import Mail, Message  # noqa: F401 (Message re-exported for routes)
+
+    mail = Mail()
+except ImportError:
+    mail = None
+    Message = None
+
+# ---------------------------------------------------------------------------
 # Rate Limiting
 # ---------------------------------------------------------------------------
 
