@@ -18,3 +18,11 @@ __pycache__/
 
 # Node (if applicable)
 node_modules/
+
+# Coverage artifacts
+.coverage
+coverage.xml
+htmlcov/
+
+# Sensitive documents (credentials removed from history)
+docs/SECURITY_AUDIT_COMPLETE.md
