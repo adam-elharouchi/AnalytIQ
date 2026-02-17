@@ -1,7 +1,7 @@
 # AnalytIQ — Master Task List
 
-> Generated: 2026-02-17
-> Total: 73 tasks (1 completed, 72 pending)
+> Generated: 2026-02-17 | Last updated: 2026-02-17
+> Total: 73 tasks (17 completed, 56 pending)
 
 ---
 
@@ -10,6 +10,17 @@
 | # | Task |
 |---|------|
 | 17 | Remove `SECURITY_AUDIT_COMPLETE.md` credentials from git history, gitignore it, force-push |
+| 18 | Add `FLASK_ENV` check guard in `require_auth` — `X-Test-User-ID` bypass now blocked when `config.ENV == 'production'` |
+| 21 | Added `Content-Security-Policy-Report-Only` header on all responses; removed deprecated `X-XSS-Protection` header |
+| 22 | Verified: role assignment is backend-only (`detect_role_from_email()`); frontend only reads role from JWT response |
+| 23 | Added 12 input field limit constants to `config.py`; added `validate_fields()` helper to `app.py` |
+| 46 | `git rm --cached .coverage coverage.xml` — coverage artifacts removed from git tracking |
+| 54 | Updated `docs/PROJECT_OVERVIEW.md` with all 15 actual HTML filenames |
+| 61 | Created `.env.example` with all 40+ env vars from `config.py`, grouped and annotated |
+| 62 | Added JS load order comments to all 14 HTML files |
+| 63 | Created `.pre-commit-config.yaml` (black + flake8 + detect-secrets) |
+| 64 | Created `render.yaml` with `healthCheckPath: /api/health` for zero-downtime deploys |
+| EX-1 | Rewrote `python/exercise_generator.py` prompt — one concept per exercise, 5–10 lines max, every line commented, no chained ops, no list comprehensions, good/bad examples in prompt |
 
 ---
 
@@ -212,7 +223,7 @@
 ## Recommended Implementation Order
 
 1. **Quick wins** — no behaviour change, low risk:
-   Tasks 46, 54, 56, 57, 61, 62, 63, 64
+   Tasks 46, 54, 56, 57, 61, 62, 63, 64,
 
 2. **Security fixes** — highest urgency:
    Tasks 17, 18, 19, 20, 21, 22, 23

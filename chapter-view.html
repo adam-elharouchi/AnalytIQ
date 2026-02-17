@@ -892,6 +892,7 @@
   </main>
 
   <script src="js/api-helper.js"></script>
+  <!-- JS load order: api-helper.js (head, provides authFetch) → auth.js → navigation.js -->
   <script src="js/auth.js"></script>
   <script src="js/navigation.js"></script>
   <script>

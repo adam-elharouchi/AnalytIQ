@@ -1,0 +1,21 @@
+services:
+  # Web service
+  - type: web
+    name: analytiq
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn -c gunicorn.conf.py app:app
+    healthCheckPath: /api/health
+    envVars:
+      - key: FLASK_ENV
+        value: production
+
+  # Celery worker
+  - type: worker
+    name: analytiq-worker
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: celery -A celery_app.celery_app worker --loglevel=info --concurrency=2
+    envVars:
+      - key: FLASK_ENV
+        value: production

@@ -3,8 +3,11 @@ Exercise Generation Service
 Uses Google Gemini API to generate coding exercises from PDF content
 """
 
+import logging
 import os
 import json
+
+logger = logging.getLogger(__name__)
 
 
 def generate_exercises_from_pdf_content(pdf_text, chapter_title, api_key=None):
@@ -23,7 +26,7 @@ def generate_exercises_from_pdf_content(pdf_text, chapter_title, api_key=None):
         api_key = os.getenv("GEMINI_API_KEY")
 
     if not api_key:
-        print("Error: GEMINI_API_KEY not found in environment variables.")
+        logger.error("GEMINI_API_KEY not found in environment variables")
         raise Exception(
             "Configuration Error: GEMINI_API_KEY is missing. Please set this environment variable in Render."
         )
@@ -32,39 +35,99 @@ def generate_exercises_from_pdf_content(pdf_text, chapter_title, api_key=None):
     truncated_text = pdf_text[:10000] if len(pdf_text) > 10000 else pdf_text
 
     # Build prompt
-    prompt = f"""Analyze the following chapter content and create 3-5 beginner-friendly coding practice exercises.
-    
+    prompt = f"""You are a coding tutor creating beginner-friendly Python exercises for a university data science course.
+
+Analyze the chapter below and generate 5 to 8 short, focused coding exercises.
+
 Chapter Title: {chapter_title}
-Chapter Content: {truncated_text}
+Chapter Content:
+{truncated_text}
 
-The user wants exercises that feel like a "Jupyter Notebook" tutorial (step-by-step, clear, using standard libraries like pandas/matplotlib).
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STRICT RULES — follow every one of these exactly:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-For each exercise:
-1. **Title**: Simple and descriptive (e.g., "Load the dataset", "Visualize the distribution").
-2. **Description**: Clear instructions on what to do. Mention specific library functions if helpful (e.g., "Use pd.read_csv()").
-3. **Difficulty**: Default to "easy" or "medium". Avoid "hard" unless necessary.
-4. **Solution Code**: Provide complete, runnable Python code that could be pasted into a notebook cell. 
-   - Use standard imports (import pandas as pd, import matplotlib.pyplot as plt).
-   - Add comments explaining each step.
-   - Keep it simple and procedural (avoid complex classes or advanced functional patterns).
+ONE CONCEPT PER EXERCISE
+  • Each exercise teaches exactly one thing (e.g. "compute the mean", NOT "compute the mean, std, and percentage above average").
+  • If a topic naturally has three sub-steps, make three separate exercises.
 
-Focus on practical tasks:
-- Loading data (CSV, standard datasets).
-- basic DataFrame operations (head(), describe(), selecting columns).
-- Simple visualizations (histograms, scatter plots).
-- Basic modeling (LinearRegression) if the text covers it.
+SOLUTION CODE SIZE
+  • 5 to 10 lines of actual code (import lines do not count toward the limit).
+  • If you need more lines, the exercise covers too much — split it.
 
-Return your response as a JSON array with this structure:
+COMMENT EVERY LINE
+  • Every single line of code must have an inline comment explaining what it does.
+  • Example: `mean_age = df["age"].mean()  # compute the average age`
+
+PRINT THE RESULT
+  • The last line of every exercise must print the result with a label.
+  • Example: `print("Mean age:", mean_age)`
+
+NO COMPLEX PYTHON
+  • No list comprehensions — use a plain for loop instead.
+  • No nested conditionals (if inside if) — use guard clauses or separate exercises.
+  • No method chaining longer than one dot — store each intermediate result in a named variable.
+  • No lambda functions.
+  • No classes or object-oriented patterns.
+
+NAMED INTERMEDIATE VARIABLES
+  • Never compute and use a value in the same expression.
+  • Bad:  `print(df["age"].mean())`
+  • Good: `mean_age = df["age"].mean()` then `print("Mean age:", mean_age)`
+
+IMPORTS
+  • Include only the imports actually used in that exercise.
+  • Always use standard aliases: `import pandas as pd`, `import matplotlib.pyplot as plt`, `import numpy as np`.
+
+DATA
+  • Use synthetic/sample data defined inside the exercise (e.g. a small list or dict), OR reference a standard public dataset (e.g. seaborn's "tips", "iris", sklearn's "load_iris()").
+  • Do NOT reference files that may not exist on the student's machine.
+  • If loading from seaborn: `import seaborn as sns` then `df = sns.load_dataset("tips")  # load the tips dataset`.
+
+DIFFICULTY
+  • First 2–3 exercises: "easy" (single operation, one library call).
+  • Remaining exercises: "medium" (combine two concepts, still one idea per exercise).
+  • Never use "hard".
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+GOOD EXAMPLE (follow this style exactly):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Title: Compute the mean of a column
+Description: Use the .mean() method to find the average value of the "total_bill" column in the tips dataset.
+Difficulty: easy
+Solution code:
+import pandas as pd        # import pandas for data manipulation
+import seaborn as sns      # import seaborn to load sample datasets
+
+df = sns.load_dataset("tips")           # load the tips dataset into a DataFrame
+total_bill_mean = df["total_bill"].mean()  # compute the average of the total_bill column
+print("Mean total bill:", total_bill_mean) # print the result with a clear label
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BAD EXAMPLE (never do this):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Title: Analyze tips data
+Solution code:
+import pandas as pd
+import seaborn as sns
+df = sns.load_dataset("tips")
+stats = df.groupby("sex")["total_bill"].agg(["mean","std","count"]).reset_index()
+above_avg = df[df["total_bill"] > df["total_bill"].mean()]
+pct = len(above_avg) / len(df) * 100
+print(stats, pct)
+# BAD: multiple concepts, no comments, chaining, no named variables
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Return your response as a JSON array with ONLY this structure — no markdown, no code fences, no extra text:
 [
   {{
-    "title": "Exercise Title",
-    "description": "Exercise description",
+    "title": "Exercise title",
+    "description": "One or two sentences telling the student exactly what to do, naming the function/method to use.",
     "difficulty": "easy|medium",
-    "solution_code": "Python code here"
+    "solution_code": "Python code — every line commented, print at end, 5-10 lines max"
   }}
-]
-
-Return ONLY valid JSON, no additional text before or after."""
+]"""
 
     try:
         import requests
@@ -144,9 +207,9 @@ Return ONLY valid JSON, no additional text before or after."""
         return validated_exercises
 
     except json.JSONDecodeError as e:
-        # Include snippet of content in error for debugging
         snippet = content[:500] + "..." if len(content) > 500 else content
-        print(f"FAILED CONTENT: {content}")  # Print to server logs
-        raise Exception(f"Failed to parse JSON response: {str(e)}. Raw content snippet: {snippet}")
+        logger.error("Failed to parse Gemini JSON response: %s. Content snippet: %s", e, snippet)
+        raise Exception("Failed to parse the exercise response from AI. Please try again.")
     except Exception as e:
-        raise Exception(f"Error generating exercises: {str(e)}")
+        logger.error("Error generating exercises: %s", e)
+        raise

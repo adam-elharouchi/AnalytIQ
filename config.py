@@ -188,6 +188,34 @@ FEATURE_CACHING = os.getenv("FEATURE_CACHING", "False").lower() == "true"
 
 
 # ============================================================================
+# INPUT FIELD LIMITS
+# ============================================================================
+
+# User fields
+MAX_EMAIL_LENGTH = 254          # RFC 5321
+MAX_NAME_LENGTH = 100
+MIN_PASSWORD_LENGTH = 8
+MAX_PASSWORD_LENGTH = 72        # bcrypt hard limit
+
+# Class / chapter fields
+MAX_CLASS_NAME_LENGTH = 200
+MAX_CLASS_DESCRIPTION_LENGTH = 2000
+MAX_CHAPTER_TITLE_LENGTH = 300
+
+# Exercise fields
+MAX_EXERCISE_TITLE_LENGTH = 300
+MAX_EXERCISE_DESCRIPTION_LENGTH = 5000
+MAX_SOLUTION_CODE_LENGTH = 20000
+
+# AI chat
+MAX_AI_MESSAGE_LENGTH = 50_000  # ~50KB per message
+MAX_AI_CONVERSATION_MESSAGES = 100
+
+# Generic text
+MAX_GENERIC_TEXT_LENGTH = 10_000
+
+
+# ============================================================================
 # VALIDATION
 # ============================================================================
 

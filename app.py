@@ -268,16 +268,57 @@ def after_request(response):
         # Security headers
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
-        response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         if not config.DEBUG:
             response.headers["Strict-Transport-Security"] = (
                 "max-age=31536000; includeSubDomains"
             )
+
+    # Content-Security-Policy in report-only mode on all responses.
+    # Violations are logged in the browser console without blocking anything.
+    # Switch to Content-Security-Policy (enforcement) once violations are reviewed.
+    response.headers["Content-Security-Policy-Report-Only"] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' "
+        "https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; "
+        "style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data:; "
+        "connect-src 'self'; "
+        "font-src 'self'; "
+        "frame-ancestors 'none'"
+    )
     return response
 
 
 DATABASE_URL = os.getenv("DATABASE_URL")
+
+
+def validate_fields(data, rules):
+    """
+    Validate a dict of fields against length and presence rules.
+
+    rules is a list of tuples:
+        (field_name, required, max_length)
+
+    Returns a list of error strings. Empty list means all OK.
+
+    Example:
+        errors = validate_fields(
+            {"name": "Alice", "email": "a@b.com"},
+            [("name", True, config.MAX_NAME_LENGTH),
+             ("email", True, config.MAX_EMAIL_LENGTH)],
+        )
+        if errors:
+            return jsonify({"error": errors[0]}), 400
+    """
+    errors = []
+    for field, required, max_length in rules:
+        value = data.get(field)
+        if required and not value:
+            errors.append(f"{field} is required")
+        elif value and max_length and len(str(value)) > max_length:
+            errors.append(f"{field} must be {max_length} characters or fewer")
+    return errors
 
 
 def detect_role_from_email(email):
@@ -575,8 +616,8 @@ def require_auth(f):
         if request.method == 'OPTIONS':
             return f(*args, **kwargs)
         
-        # Bypass auth in test mode if user_id is explicitly provided
-        if app.config.get('TESTING'):
+        # Bypass auth in test mode only — never in production
+        if app.config.get('TESTING') and config.ENV != 'production':
             # Check for explicit test user ID or user_id in request
             test_user_id = request.headers.get('X-Test-User-ID')
             if not test_user_id:
