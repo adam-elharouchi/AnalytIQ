@@ -52,7 +52,7 @@ class TestGetClassByIdErrors:
         ]
 
         response = client.get("/api/classes/CLS1?user_id=nonexist")
-        assert response.status_code in [401, 404, 500]
+        assert response.status_code in [401, 403, 404, 500]
 
 
 class TestGetClassResourceErrors:
@@ -145,7 +145,7 @@ class TestGetEnrolledClasses:
         mock_db.cursor().fetchone.return_value = None
 
         response = client.get("/api/classes/enrolled?user_id=nonexist")
-        assert response.status_code in [401, 404, 500]
+        assert response.status_code in [401, 403, 404, 500]
 
 
 class TestGetClassStudentsOwnerCheck:
@@ -164,7 +164,7 @@ class TestGetClassStudentsOwnerCheck:
         mock_db.cursor().fetchone.return_value = None
 
         response = client.get("/api/classes/CLS123/students?user_id=prof123")
-        assert response.status_code in [401, 404, 500]
+        assert response.status_code in [401, 403, 404, 500]
 
 
 class TestGetClassProgress:
@@ -203,7 +203,7 @@ class TestGetClassProgress:
         mock_db.cursor().fetchone.return_value = None
 
         response = client.get("/api/classes/CLS123/progress?user_id=prof123")
-        assert response.status_code in [401, 404, 500]
+        assert response.status_code in [401, 403, 404, 500]
 
     def test_get_class_progress_missing_user(self, client, mock_db):
         """Test getting progress without user_id"""

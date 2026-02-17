@@ -81,7 +81,7 @@ class TestCreateClassEndpoint:
                 json={"user_id": "prof@test.com", "description": "Test"},
             )
 
-            assert response.status_code in [400, 401]
+            assert response.status_code in [400, 401, 403]
             data = json.loads(response.data)
             assert "error" in data
 

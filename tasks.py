@@ -3,11 +3,14 @@ Celery Tasks for AnalytIQ
 Async tasks for PDF processing, exercise generation, and email sending
 """
 
+import logging
 import os
 import sys
 from celery import Task
 from celery_app import celery_app
 from dotenv import load_dotenv
+
+logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()
@@ -61,6 +64,19 @@ class DatabaseTask(Task):
         if self._db_conn:
             self._db_pool.putconn(self._db_conn)
             self._db_conn = None
+
+    def on_failure(self, exc, task_id, args, kwargs, einfo):
+        """Log task failures with structured context."""
+        logger.error(
+            "Celery task failed",
+            exc_info=True,
+            extra={
+                "task_id": task_id,
+                "task_name": self.name,
+                "exception": str(exc),
+            },
+        )
+        super().on_failure(exc, task_id, args, kwargs, einfo)
 
 
 @celery_app.task(bind=True, base=DatabaseTask, name="tasks.process_pdf_and_extract_text")

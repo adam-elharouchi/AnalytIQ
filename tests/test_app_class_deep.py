@@ -181,7 +181,7 @@ class TestCreateClassDeep:
             ("existing_class_id",),  # Code already exists
         ]
 
-        response = client.post("/api/classes", json={
+        response = client.post("/api/classes", headers={"X-Test-User-Role": "professor"}, json={
             "user_id": "prof123",
             "name": "Analytics 102",
             "class_code": "ANA101",
