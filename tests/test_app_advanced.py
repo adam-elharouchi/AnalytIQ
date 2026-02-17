@@ -15,9 +15,9 @@ class TestAuthenticationFlows:
         from app import app
 
         with app.test_client() as client:
-            with patch("app.get_db_connection", return_value=mock_db_connection):
-                with patch("app.hash_password", return_value="hashed"):
-                    with patch("app.detect_role_from_email", return_value="student"):
+            with patch("blueprints.auth.get_db_connection", return_value=mock_db_connection):
+                with patch("blueprints.auth.hash_password", return_value="hashed"):
+                    with patch("blueprints.auth.detect_role_from_email", return_value="student"):
                         # Mock responses for all queries
                         mock_db_cursor.fetchone.side_effect = [
                             None,  # User doesn't exist
@@ -42,8 +42,8 @@ class TestAuthenticationFlows:
         from app import app
 
         with app.test_client() as client:
-            with patch("app.get_db_connection", return_value=mock_db_connection):
-                with patch("app.hash_password", return_value="hashed"):
+            with patch("blueprints.auth.get_db_connection", return_value=mock_db_connection):
+                with patch("blueprints.auth.hash_password", return_value="hashed"):
                     # Make profile creation fail
                     def execute_side_effect(*args, **kwargs):
                         if "user_profiles" in str(args[0]):

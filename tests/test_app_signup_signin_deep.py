@@ -102,7 +102,7 @@ class TestSigninDeepPaths:
             "$2b$12$validhash", "student",
         )
 
-        with patch("app.verify_password", return_value=(True, False)):
+        with patch("blueprints.auth.verify_password", return_value=(True, False)):
             response = client.post("/api/users/signin", json={
                 "email": "test@example.com",
                 "password": "correctpass",
@@ -120,8 +120,8 @@ class TestSigninDeepPaths:
             "12345678", "student",  # Legacy hash
         )
 
-        with patch("app.verify_password", return_value=(True, True)):
-            with patch("app.hash_password", return_value="$2b$12$newhash"):
+        with patch("blueprints.auth.verify_password", return_value=(True, True)):
+            with patch("blueprints.auth.hash_password", return_value="$2b$12$newhash"):
                 response = client.post("/api/users/signin", json={
                     "email": "test@example.com",
                     "password": "testpass",
@@ -134,7 +134,7 @@ class TestSigninDeepPaths:
             "user123", "Test", "test@test.com", "$2b$12$hash", "student",
         )
 
-        with patch("app.verify_password", return_value=(False, False)):
+        with patch("blueprints.auth.verify_password", return_value=(False, False)):
             response = client.post("/api/users/signin", json={
                 "email": "test@test.com",
                 "password": "wrongpass",
@@ -223,8 +223,8 @@ class TestUpdatePassword:
         """Test successful password update"""
         mock_db.cursor().fetchone.return_value = ("$2b$12$currenthash",)
 
-        with patch("app.verify_password", return_value=(True, False)):
-            with patch("app.hash_password", return_value="$2b$12$newhash"):
+        with patch("blueprints.users.verify_password", return_value=(True, False)):
+            with patch("blueprints.users.hash_password", return_value="$2b$12$newhash"):
                 response = client.put("/api/users/password", json={
                     "user_id": "user123",
                     "currentPassword": "oldpass",
@@ -236,7 +236,7 @@ class TestUpdatePassword:
         """Test password update with wrong current password"""
         mock_db.cursor().fetchone.return_value = ("$2b$12$hash",)
 
-        with patch("app.verify_password", return_value=(False, False)):
+        with patch("blueprints.users.verify_password", return_value=(False, False)):
             response = client.put("/api/users/password", json={
                 "user_id": "user123",
                 "currentPassword": "wrongpass",

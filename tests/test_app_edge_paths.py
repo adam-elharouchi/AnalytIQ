@@ -84,7 +84,7 @@ class TestVerifyPasswordEdgeCases:
         )
 
         # Mock bcrypt to raise an exception
-        with patch("app.verify_password", return_value=(False, False)):
+        with patch("blueprints.auth.verify_password", return_value=(False, False)):
             response = client.post("/api/users/signin", json={
                 "email": "test@test.com",
                 "password": "testpass123",

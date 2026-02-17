@@ -384,8 +384,8 @@ class TestSigninExceptionHandlers:
             "user123", "Test", "test@test.com", "12345", "student",
         )
 
-        with patch("app.verify_password", return_value=(True, True)):
-            with patch("app.hash_password", side_effect=Exception("Hash error")):
+        with patch("blueprints.auth.verify_password", return_value=(True, True)):
+            with patch("blueprints.auth.hash_password", side_effect=Exception("Hash error")):
                 response = client.post("/api/users/signin", json={
                     "email": "test@test.com",
                     "password": "pass",
