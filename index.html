@@ -152,26 +152,26 @@
 
       if (footerLeftLinks && footerRightLinks) {
         if (isProfessor) {
-          // Professor portal: Home, Dashboard (left), Code, Contact (right) - 2 left, 2 right
+          // Professor portal: Home, Dashboard, Code (left), Contact, Terms, Privacy (right)
           footerLeftLinks.innerHTML = `
             <a href="index.html">Home</a>
             <a href="professor-dashboard.html">Dashboard</a>
+            <a href="code-assistant.html">Code</a>
           `;
           footerRightLinks.innerHTML = `
-            <a href="code-assistant.html">Code</a>
             <a href="contact.html">Contact</a>
             <a href="terms.html">Terms</a>
             <a href="privacy.html">Privacy</a>
           `;
         } else {
-          // Student portal: My Classes, Profile (left), Contact, Code (right) - 2 left, 2 right, no Home
+          // Student portal: My Classes, Profile, Code (left), Contact, Terms, Privacy (right)
           footerLeftLinks.innerHTML = `
             <a href="student-classes.html">My Classes</a>
             <a href="profile.html">Profile</a>
+            <a href="code-assistant.html">Code</a>
           `;
           footerRightLinks.innerHTML = `
             <a href="contact.html">Contact</a>
-            <a href="code-assistant.html">Code</a>
             <a href="terms.html">Terms</a>
             <a href="privacy.html">Privacy</a>
           `;
