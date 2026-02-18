@@ -81,7 +81,7 @@ class TestExceptionHandlers:
         """Cover lines 645-646 (signup exception)"""
         mock_db.cursor().execute.side_effect = Exception("DB error")
         response = client.post("/api/users/signup", json={
-            "name": "Test", "email": "test@test.com", "password": "pass123",
+            "name": "Test", "email": "test@test.com", "password": "password123",
         })
         assert response.status_code in [500, 429]
 
