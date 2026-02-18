@@ -81,11 +81,7 @@
 
 ## Security
 
-**Task 19 in progress.** `scripts/check_legacy_hashes.py` created — run against production DB to count non-bcrypt users. If output shows 0, delete `hash_password_legacy()` from `auth_helpers.py`. Remaining:
-
-| # | Task |
-|---|------|
-| 20 | Add `audit_log` table + `audit()` helper called on all data mutations (FERPA compliance) |
+**Tasks 19, 20 complete.** `scripts/check_legacy_hashes.py` created — run against production DB. `audit.py` created with `ensure_audit_log_table()` + `audit()` helper; wired into 12 mutation endpoints across 5 blueprints (CREATE_USER, RESET_PASSWORD, UPDATE_PROFILE, UPDATE_PASSWORD, DELETE_USER, EXERCISE_SUBMISSION, CREATE_CLASS, DELETE_CLASS, ENROLL_CLASS, CREATE_CHAPTER, DELETE_CHAPTER, DELETE_EXERCISE). Table uses lazy creation with thread-safe flag; audit rows commit atomically with the business operation. **Section complete.**
 
 ---
 
@@ -125,11 +121,10 @@
 
 ## Testing
 
-**Tasks 43, 45 and 49 complete.** Remaining:
+**Tasks 43, 44, 45 and 49 complete.** `tests/integration/` created with 31 real-DB tests across 2 files: `test_auth_integration.py` (13 tests — user insert, profile/settings/preferences rows, duplicate-email constraint, password reset token validation) and `test_classes_integration.py` (18 tests — class CRUD, cascade deletes, enrollment uniqueness, chapter/exercise ops, audit_log writes). Tests use savepoint-per-test isolation, skip gracefully when DATABASE_URL is absent, and run automatically in CI alongside unit tests. Remaining:
 
 | # | Task |
 |---|------|
-| 44 | Add `tests/integration/` with real DB integration tests for core flows (CI already spins up Postgres + Redis) |
 | 47 | Add Playwright E2E tests for 4 core flows: signup, upload chapter, generate exercises, AI chat |
 | 48 | Add k6 load tests for 3 scenarios: login burst, exercise list, AI chat concurrent users |
 
@@ -165,11 +160,7 @@
 
 ## Developer Experience
 
-**Task 59 complete.** `continue-on-error` removed from flake8 + black CI steps; both now block on failures. flake8 scope expanded to all production modules (`app.py`, `auth_helpers.py`, `db.py`, `cache.py`, `config.py`, `blueprints/`, `repositories/`) with `--max-line-length=120`. All 19 pre-existing flake8 violations fixed (unused imports, undefined `class_id` NameError bug in `delete_chapter`, unused variables, missing f-string placeholders); black auto-formatted 17 files. Remaining:
-
-| # | Task |
-|---|------|
-| 60 | Add email validation helper + standardize 400 error response shape across all endpoints |
+**Tasks 59, 60 complete.** `continue-on-error` removed from flake8 + black CI steps. `validate_email()` added to `auth_helpers.py` (RFC 5321 regex + max-length check); wired into `signup`, `forgot_password` (auth.py) and `update_profile` (users.py). 400 response shape was already consistent `{"error": "..."}` across all 41 endpoints. **Section complete.**
 
 ---
 
