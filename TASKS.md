@@ -81,9 +81,10 @@
 
 ## Security
 
+**Task 19 in progress.** `scripts/check_legacy_hashes.py` created — run against production DB to count non-bcrypt users. If output shows 0, delete `hash_password_legacy()` from `auth_helpers.py`. Remaining:
+
 | # | Task |
 |---|------|
-| 19 | Query DB for users with legacy password hashes; delete `hash_password_legacy()` and fallback if none exist |
 | 20 | Add `audit_log` table + `audit()` helper called on all data mutations (FERPA compliance) |
 
 ---
@@ -152,10 +153,11 @@
 
 ## Documentation
 
+**Task 56 complete.** `js/exercises-database.js` deleted; `practice-playground.html` updated to remove script tag and replace `ALL_EXERCISES` reference with `[]` (exercises now served from API). Remaining:
+
 | # | Task |
 |---|------|
 | 55 | Replace `SECURITY_AUDIT_COMPLETE.md` with accurate `SECURITY.md` |
-| 56 | Verify `exercises-database.js` is unreferenced anywhere, then delete it |
 | 57 | Add AUTO-GENERATED label to `knowledge_base/` files; write human-maintained `ARCHITECTURE.md` |
 | 58 | Auto-generate OpenAPI 3.0 docs via Flask-Smorest; expose Swagger UI at `/api/docs` |
 
@@ -163,9 +165,10 @@
 
 ## Developer Experience
 
+**Task 59 complete.** `continue-on-error` removed from flake8 + black CI steps; both now block on failures. flake8 scope expanded to all production modules (`app.py`, `auth_helpers.py`, `db.py`, `cache.py`, `config.py`, `blueprints/`, `repositories/`) with `--max-line-length=120`. All 19 pre-existing flake8 violations fixed (unused imports, undefined `class_id` NameError bug in `delete_chapter`, unused variables, missing f-string placeholders); black auto-formatted 17 files. Remaining:
+
 | # | Task |
 |---|------|
-| 59 | Remove `continue-on-error` from flake8 + black CI steps (keep it for mypy and bandit) |
 | 60 | Add email validation helper + standardize 400 error response shape across all endpoints |
 
 ---
