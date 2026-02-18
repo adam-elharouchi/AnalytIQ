@@ -805,6 +805,12 @@
 </head>
 
 <body>
+  <!-- MAINTENANCE BANNER — remove once domain migration is complete -->
+  <div id="maintenance-banner" style="position:fixed;top:0;left:0;right:0;z-index:9999;background:#f59e0b;color:#1a1a1a;padding:0.75rem 1.5rem;text-align:center;font-family:system-ui,-apple-system,sans-serif;font-size:0.875rem;font-weight:500;box-shadow:0 2px 8px rgba(0,0,0,0.15);display:flex;align-items:center;justify-content:center;gap:0.75rem;">
+    <span>&#9888;</span>
+    <span>We are upgrading our servers. Sign-in and some features are temporarily unavailable. We will be back shortly — thank you for your patience.</span>
+    <button onclick="document.getElementById('maintenance-banner').style.display='none'" style="flex-shrink:0;background:rgba(0,0,0,0.12);border:1px solid rgba(0,0,0,0.3);border-radius:4px;padding:0.2rem 0.65rem;cursor:pointer;font-size:0.8rem;color:#1a1a1a;">Dismiss</button>
+  </div>
   <nav class="navbar" id="navbar"></nav>
 
   <main class="chapter-container">
