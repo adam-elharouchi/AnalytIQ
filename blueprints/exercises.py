@@ -54,10 +54,11 @@ def get_all_progress():
 
 
 @bp.route("/api/exercises/<exercise_id>/leaderboard", methods=["GET"])
+@require_auth
 def get_exercise_leaderboard(exercise_id):
     """Get leaderboard for a specific exercise"""
     try:
-        limit = int(request.args.get("limit", 10))
+        limit = min(int(request.args.get("limit", 10)), config.MAX_PAGE_SIZE)
         conn = get_db_connection()
 
         rows = exercise_repo.get_exercise_leaderboard(conn, exercise_id, limit)
@@ -66,7 +67,6 @@ def get_exercise_leaderboard(exercise_id):
             {
                 "rank": rank,
                 "name": row[0],
-                "email": row[1],
                 "best_score": row[2],
                 "best_accuracy": float(row[3]) if row[3] else 0,
                 "best_time": row[4],
@@ -83,10 +83,11 @@ def get_exercise_leaderboard(exercise_id):
 
 
 @bp.route("/api/leaderboard/grand", methods=["GET"])
+@require_auth
 def get_grand_leaderboard():
     """Get grand leaderboard - ranked by average score across all exercises"""
     try:
-        limit = int(request.args.get("limit", 10))
+        limit = min(int(request.args.get("limit", 10)), config.MAX_PAGE_SIZE)
         conn = get_db_connection()
 
         rows = exercise_repo.get_grand_leaderboard(conn, limit)
@@ -96,7 +97,6 @@ def get_grand_leaderboard():
                 "rank": rank,
                 "user_id": row[0],
                 "name": row[1],
-                "email": row[2],
                 "exercises_completed": row[3],
                 "average_score": float(row[4]) if row[4] else 0,
                 "total_score": int(row[5]) if row[5] else 0,
