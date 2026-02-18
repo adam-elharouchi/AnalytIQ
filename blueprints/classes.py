@@ -12,6 +12,7 @@ from werkzeug.utils import secure_filename
 import cache
 import config
 import utils
+from audit import audit
 from auth_helpers import require_auth, require_role, validate_fields
 from db import get_db_connection
 from extensions import csrf_exempt
@@ -95,6 +96,7 @@ def create_class():
             )
 
         new_class = class_repo.insert_class(conn, class_code, user_id, name, description)
+        audit(conn, "CREATE_CLASS", resource_type="class", resource_id=new_class[0], details={"class_code": class_code})
         conn.commit()
 
         cache.invalidate_cache(f"classes:user:{user_id}:*")
@@ -338,6 +340,7 @@ def delete_class(class_id):
             return jsonify({"error": "Only the class owner can delete the class"}), 403
 
         class_repo.delete_class(conn, class_id)
+        audit(conn, "DELETE_CLASS", resource_type="class", resource_id=class_id)
         conn.commit()
 
         cache.invalidate_cache(f"classes:user:{user_id}:*")
@@ -383,6 +386,7 @@ def enroll_in_class():
             return jsonify({"error": "Already enrolled in this class"}), 400
 
         enrolled_at = class_repo.enroll_student(conn, class_id, user_id)
+        audit(conn, "ENROLL_CLASS", resource_type="class", resource_id=class_id, details={"class_name": class_name})
         conn.commit()
 
         cache.invalidate_cache(f"enrolled:{user_id}")

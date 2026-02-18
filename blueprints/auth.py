@@ -16,6 +16,7 @@ from datetime import datetime
 import config
 from flask import Blueprint, jsonify, request
 
+from audit import audit
 from auth_helpers import (
     create_jwt_token,
     detect_role_from_email,
@@ -98,6 +99,7 @@ def signup():
         except Exception as e:
             logger.warning("Failed to create ai_agent_digest", extra={"error": str(e)})
 
+        audit(conn, "CREATE_USER", resource_type="user", resource_id=created_user_id, details={"role": role})
         conn.commit()
 
         user_role = user[3] if len(user) > 3 else role
@@ -304,6 +306,7 @@ def reset_password():
         new_hash = hash_password(new_password)
         auth_repo.reset_password(conn, email, new_hash)
         auth_repo.delete_reset_token(conn, email, token)
+        audit(conn, "RESET_PASSWORD", resource_type="user", resource_id=email)
         conn.commit()
 
         return (
