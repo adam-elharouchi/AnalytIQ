@@ -34,8 +34,8 @@ def worker_exit(server, worker):
         server.log.warning("Worker %s: Could not close DB pool: %s", worker.pid, e)
 
 
-def worker_abort(server, worker):
-    """Close DB connections on worker crash."""
+def worker_abort(worker):
+    """Close DB connections on worker crash (arity=1 — Gunicorn requirement)."""
     try:
         from db import db_pool
         if db_pool is not None:
