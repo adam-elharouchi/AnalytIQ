@@ -279,7 +279,10 @@ def after_request(response):
 def handle_unexpected_error(e):
     """Catch-all for unhandled exceptions — log details, return generic message."""
     if isinstance(e, HTTPException):
-        return e  # Let Flask handle 404, 405, etc. normally
+        # Return JSON for API routes so JS clients always get parseable errors
+        if request.path.startswith("/api"):
+            return jsonify({"error": e.description}), e.code
+        return e  # HTML for non-API paths (404 pages, etc.)
     logger.error("Unhandled exception: %s", e, exc_info=True)
     return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
