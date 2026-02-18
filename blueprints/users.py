@@ -24,7 +24,7 @@ from flask import Blueprint, g, jsonify, request
 import config
 import cache
 import utils
-from auth_helpers import hash_password, require_auth, validate_fields, verify_password
+from auth_helpers import hash_password, require_auth, validate_email, validate_fields, verify_password
 from db import get_db_connection
 from extensions import csrf_exempt
 from repositories import user_repository as user_repo
@@ -88,6 +88,9 @@ def update_profile():
         )
         if errors:
             return jsonify({"error": errors[0]}), 400
+
+        if email and not validate_email(email):
+            return jsonify({"error": "Invalid email address"}), 400
 
         conn = get_db_connection()
 

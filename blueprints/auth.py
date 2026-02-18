@@ -20,6 +20,7 @@ from auth_helpers import (
     create_jwt_token,
     detect_role_from_email,
     hash_password,
+    validate_email,
     verify_password,
 )
 from db import get_db_connection
@@ -43,6 +44,9 @@ def signup():
 
         if not name or not email or not password:
             return jsonify({"error": "Missing required fields"}), 400
+
+        if not validate_email(email):
+            return jsonify({"error": "Invalid email address"}), 400
 
         if len(password) < config.MIN_PASSWORD_LENGTH:
             return (
@@ -192,6 +196,9 @@ def forgot_password():
 
         if not email:
             return jsonify({"error": "Email is required"}), 400
+
+        if not validate_email(email):
+            return jsonify({"error": "Invalid email address"}), 400
 
         conn = get_db_connection()
         user_row = auth_repo.get_user_name_by_email(conn, email)
