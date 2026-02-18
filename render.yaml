@@ -10,6 +10,27 @@ services:
       - key: FLASK_ENV
         value: production
 
+    # Cache-Control headers are set by Flask's after_request hook (app.py):
+    #   /api/*  → Cache-Control: no-store, no-cache  (never cached by proxies)
+    #   other   → Cache-Control: public, max-age=86400 (Cloudflare caches for 1 day)
+    #
+    # Render web services do not support route-level headers in render.yaml
+    # (that feature is for static sites only).  The Flask headers above are
+    # sufficient for Cloudflare to cache /js/*, /css/*, and image paths.
+    #
+    # Cloudflare setup (one-time, via Cloudflare dashboard):
+    #   1. Add analytiq.com (or your domain) to Cloudflare as a proxied zone.
+    #   2. Create a Cache Rule:
+    #        URL pattern : analytiq.com/js/*
+    #                      analytiq.com/css/*
+    #        Action      : Cache eligibility → Eligible for cache
+    #        Edge TTL    : Respect existing headers (honours Cache-Control: public, max-age=86400)
+    #   3. Create a Cache Rule for /api/*:
+    #        URL pattern : analytiq.com/api/*
+    #        Action      : Cache eligibility → Bypass cache
+    #      (Belt-and-suspenders: Flask already sends no-store, but this prevents
+    #       any accidental caching at the Cloudflare layer.)
+
   # Celery worker
   - type: worker
     name: analytiq-worker

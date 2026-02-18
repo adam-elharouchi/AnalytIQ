@@ -1,9 +1,7 @@
 // Authentication System
 // API_BASE_URL should be defined in api-helper.js
-// API Configuration - Use relative URLs for better portability
 if (typeof window.API_BASE_URL === 'undefined') {
-  // Use relative path - works in both development and production
-  window.API_BASE_URL = window.location.origin + '/api';
+  window.API_BASE_URL = '/api';
 }
 
 class AuthManager {

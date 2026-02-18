@@ -1,14 +1,7 @@
 // API Helper Functions
 // Declare API_BASE_URL as a global variable - single source of truth
 if (typeof window.API_BASE_URL === 'undefined') {
-    // Use localhost for local testing, production URL for deployed version
-    // Check for localhost, 127.0.0.1, or file:// protocol (local development)
-    const isLocal = window.location.hostname === 'localhost' ||
-        window.location.hostname === '127.0.0.1' ||
-        window.location.protocol === 'file:';
-    window.API_BASE_URL = isLocal
-        ? 'http://localhost:5001/api'
-        : 'https://analytiq-qbfr.onrender.com/api';
+    window.API_BASE_URL = '/api';
 }
 
 // Simple Cache Implementation

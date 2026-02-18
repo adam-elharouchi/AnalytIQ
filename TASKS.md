@@ -1,7 +1,7 @@
 # AnalytIQ — Master Task List
 
 > Generated: 2026-02-17 | Last updated: 2026-02-17
-> Total: 87 tasks (25 completed, 62 pending)
+> Total: 87 tasks (31 completed, 56 pending)
 
 ---
 
@@ -34,6 +34,12 @@
 | 6 | DB pool `maxconn` set to `(os.cpu_count() or 4) * 2` via `config.DB_POOL_MAX_CONNECTIONS` — overridable via `DB_POOL_MAX` env var |
 | 7 | Added `on_failure` callback to Celery `DatabaseTask` base class with structured error logging |
 | CDN-6 | Verified: `after_request` in `app.py` already sets `connect-src 'self'` in the CSP header. Gemini API is a server-side proxy (`/api/ai/chat`) — no browser requests ever go directly to `generativelanguage.googleapis.com`. No code change needed |
+| CDN-1 | Removed `isLocal` ternary from `js/api-helper.js`; replaced with `window.API_BASE_URL = '/api'` |
+| CDN-2 | Removed all 7 hardcoded URL fallbacks: `student-classes.js`, `profile.js`, `auth.js`; inline fallbacks in `reset-password.html`, `practice-playground.html` (×2), `chapter-view.html` — all replaced with `'/api'` |
+| CDN-3 | Removed 15-line stale comment block in `professor-class.js` referencing `onrender.com`; replaced with one-line explanation of same-origin behaviour. Removed dead `startsWith('http')` guard in `student-class.js`. Server-relative paths pass through correctly with same-origin `API_BASE_URL` |
+| CDN-4 | Added `Cache-Control: public, max-age=86400` for non-API responses in production in `after_request` |
+| CDN-5 | Added `Cache-Control: no-store, no-cache, must-revalidate, max-age=0` + `Pragma: no-cache` for all `/api/*` responses in `after_request` |
+| CDN-7 | Added Cloudflare Cache Rule documentation to `render.yaml` (Render web services don't support route-level headers in YAML — Flask `after_request` headers are the correct mechanism; Cloudflare edge just needs to respect `Cache-Control: public`) |
 
 ---
 
@@ -67,18 +73,7 @@
 
 ## CDN & Same-Origin API
 
-> **Goal:** Make all frontend API calls use a same-origin relative path (`/api`) with zero deployment-specific domain logic anywhere in the frontend. Prepare the app for Cloudflare CDN by making static assets safely cacheable while ensuring all API responses are explicitly prevented from being cached by any intermediary.
->
-> **Dependency order:** CDN-1 → CDN-2 → CDN-3 (verify). CDN-4 and CDN-5 are independent backend changes and can run in parallel with the JS changes. CDN-7 follows CDN-4/5. CDN-6 is already complete.
-
-| # | Task |
-|---|------|
-| CDN-1 | **Remove hardcoded URL from `js/api-helper.js`.** Lines 4–12 have an `isLocal` ternary that sets `API_BASE_URL` to `http://localhost:5001/api` or `https://analytiq-qbfr.onrender.com/api`. Replace the entire block with: `window.API_BASE_URL = '/api';`. This single relative path works in both local dev (Flask serves frontend and API on the same origin) and production (same-origin on Render). No environment detection needed. |
-| CDN-2 | **Remove all remaining hardcoded URL fallbacks — 7 locations across JS and HTML files.** (a) `js/student-classes.js` lines 4–12: same isLocal ternary as CDN-1, replace with `window.API_BASE_URL = '/api'`. (b) `js/profile.js` line 4: directly hardcodes Render URL, replace with `window.API_BASE_URL = '/api'`. (c) `js/auth.js` lines 4–7: uses `window.location.origin + '/api'`, simplify to `window.API_BASE_URL = '/api'` for consistency. (d) `reset-password.html` line 93: inline fallback `window.API_BASE_URL \|\| 'https://analytiq-qbfr.onrender.com/api'` — replace fallback value with `'/api'`. (e) `practice-playground.html` line 898: isLocal ternary — replace with `'/api'`. (f) `practice-playground.html` line 1191: inline fallback — replace with `'/api'`. (g) `chapter-view.html` line 1588: isLocal ternary — replace with `'/api'`. |
-| CDN-3 | **Verify resource URL construction after CDN-1/2.** `js/professor-class.js` (~line 1080) and `js/student-class.js` (line 587) both build absolute resource URLs by extracting `new URL(API_BASE_URL).origin`. Both are guarded by `if (window.API_BASE_URL && window.API_BASE_URL.startsWith('http'))` — so with `API_BASE_URL = '/api'` the guard evaluates false and server-relative URLs (e.g. `/api/resources/files/...`) pass through unchanged, which is correct for same-origin. Action: after CDN-1/2, confirm resource download links still work; remove the stale comment in `professor-class.js` (~line 1070) that references `analytiq-qbfr.onrender.com`. No functional code change expected. |
-| CDN-4 | **Add `Cache-Control` headers for static assets in `after_request`.** Currently `after_request` in `app.py` only sets security and CORS headers for paths starting with `/api`. For non-API responses (HTML, JS, CSS, images), add `Cache-Control: public, max-age=86400` in production (`config.ENV == 'production'`) only — keep `no-cache` behaviour in development so local changes are always fresh. This enables Cloudflare to cache static assets at the edge. |
-| CDN-5 | **Add explicit no-cache headers on all API responses.** In `after_request`, inside the existing `if request.path.startswith("/api"):` block, add: `Cache-Control: no-store, no-cache, must-revalidate, max-age=0` and `Pragma: no-cache`. This prevents Cloudflare (or any proxy/browser cache) from ever storing API responses, which would break auth-gated data and produce stale reads. |
-| CDN-7 | **Update `render.yaml` with a `headers` section** to set long-lived `Cache-Control` on static asset paths (`/js/*`, `/css/*`, image paths). Complements CDN-4 so Cloudflare edge nodes respect caching intent at the infrastructure level. If Render's `headers` support in `render.yaml` is insufficient, document the equivalent Cloudflare Page Rules / Transform Rules as an alternative. |
+**Current state (complete):** All 7 CDN tasks done. `API_BASE_URL` is now `/api` everywhere — zero hardcoded hostnames in JS or HTML. `after_request` sets `Cache-Control: no-store` on all `/api/*` responses and `Cache-Control: public, max-age=86400` on static assets in production. `render.yaml` documents the Cloudflare Cache Rule setup needed to activate edge caching.
 
 ---
 
@@ -223,9 +218,7 @@
 
 1. ~~**Architecture** — Blueprint + repository extraction~~ **DONE** (tasks 1–7)
 
-2. **CDN & same-origin API** — remove hardcoded URLs, add cache headers, prepare for Cloudflare:
-   Tasks CDN-1, CDN-2, CDN-3, CDN-4, CDN-5, CDN-7
-   > Start with CDN-1 then CDN-2 (JS/HTML URL cleanup), then CDN-3 (verify resource links). CDN-4/5 (backend cache headers) can be done in parallel. CDN-7 last. CDN-6 is already done.
+2. ~~**CDN & same-origin API**~~ **DONE** (tasks CDN-1 through CDN-7)
 
 3. **Backend performance** — caching, rate limiting, leaderboard fixes:
    Tasks 28, 29, 30, 31, 32, 33, 34, 35

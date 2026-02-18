@@ -248,6 +248,17 @@ def after_request(response):
                 "max-age=31536000; includeSubDomains"
             )
 
+        # CDN-5: Prevent any proxy or CDN from caching API responses.
+        # Auth-gated data must never be served stale from an edge cache.
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+
+    else:
+        # CDN-4: Allow Cloudflare (and other CDNs) to cache static assets in production.
+        # In development keep the default no-cache so file changes are always visible.
+        if not config.DEBUG:
+            response.headers["Cache-Control"] = "public, max-age=86400"
+
     # Content-Security-Policy in report-only mode on all responses.
     # Violations are logged in the browser console without blocking anything.
     # Switch to Content-Security-Policy (enforcement) once violations are reviewed.

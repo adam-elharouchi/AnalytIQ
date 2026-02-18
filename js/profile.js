@@ -1,7 +1,7 @@
 // Profile Management JavaScript
 // API_BASE_URL should be defined in api-helper.js
 if (typeof window.API_BASE_URL === 'undefined') {
-  window.API_BASE_URL = 'https://analytiq-qbfr.onrender.com/api';
+  window.API_BASE_URL = '/api';
 }
 
 document.addEventListener('DOMContentLoaded', function () {

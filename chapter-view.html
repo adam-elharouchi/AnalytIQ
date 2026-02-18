@@ -1583,9 +1583,7 @@
         if (!currentUser.user_id) throw new Error('User not logged in');
         currentUserId = currentUser.user_id;
 
-        const apiUrl = window.API_BASE_URL || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-          ? 'http://localhost:5001/api'
-          : 'https://analytiq-qbfr.onrender.com/api');
+        const apiUrl = window.API_BASE_URL || '/api';
 
         const chapterResponse = await authFetch(`${apiUrl}/classes/${encodeURIComponent(currentClassId)}/chapters`);
         const chaptersData = await chapterResponse.json();
