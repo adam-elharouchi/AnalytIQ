@@ -68,10 +68,10 @@
 
 ## Code Quality
 
+**Tasks 11 and 12 complete.** `ALLOWED_EXTENSIONS` unified in `config.py` (full set: pdf, csv, xlsx, xls, json, txt, ipynb, docx); shadows removed from `app.py` and `blueprints/chapters.py`. All `print()` calls in production web-server files replaced with structured `logger.*` — messages now appear in Render's JSON log viewer with `request_id` tracing. Remaining:
+
 | # | Task |
 |---|------|
-| 11 | Unify `ALLOWED_EXTENSIONS` in `config.py` with full set: pdf, csv, xlsx, xls, json, txt, ipynb, docx; remove app.py shadow |
-| 12 | Replace all `print()` calls throughout codebase with `logger.*` |
 | 13 | Switch to Jinja2 server-side templates with `templates/base.html` (eliminates boilerplate across 14 HTML files) |
 | 14 | Consolidate three JS fetch wrappers (`fetch`, `authFetch`, `fetchWithCache`) into single `apiClient` module |
 | 15 | Extract all magic numbers/strings to `config.py` (Python) and `js/constants.js` (frontend) |
