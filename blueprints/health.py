@@ -16,7 +16,7 @@ from datetime import datetime
 from flask import Blueprint, g, jsonify, request
 
 import config
-from auth_helpers import decode_jwt_token, validate_fields
+from auth_helpers import decode_jwt_token, require_auth, validate_fields
 from cache import cache_health_check
 from celery_app import celery_app
 from db import close_conn_safely, get_db_connection
@@ -37,25 +37,19 @@ _HEALTH_CACHE_TTL = 30  # seconds
 # ---------------------------------------------------------------------------
 
 
-@bp.route("/api/health", methods=["GET"])
-def health():
-    """Comprehensive health check — 200 healthy, 503 degraded.
-
-    Results are cached for 30 s so rapid polling doesn't hammer the DB.
-    """
+def _run_health_checks():
+    """Run all service health checks; return (status_dict, http_code). Cached 30 s."""
     global _health_cache, _health_cache_time
 
     now = time.monotonic()
     if _health_cache is not None and (now - _health_cache_time) < _HEALTH_CACHE_TTL:
-        cached_status, cached_code = _health_cache
-        return jsonify(cached_status), cached_code
+        return _health_cache
 
     health_status = {
         "status": "healthy",
         "timestamp": datetime.utcnow().isoformat(),
         "services": {},
     }
-
     all_healthy = True
 
     # 1. Database (CRITICAL)
@@ -147,7 +141,30 @@ def health():
 
     _health_cache = (health_status, status_code)
     _health_cache_time = time.monotonic()
+    return _health_cache
 
+
+@bp.route("/api/health", methods=["GET"])
+def health():
+    """Minimal public health probe — 200 healthy, 503 degraded.
+
+    Returns only {"status": "healthy|degraded"} so internal service details
+    are not exposed publicly.  Used by Render's healthCheckPath.
+    """
+    _, status_code = _run_health_checks()
+    status = "healthy" if status_code == 200 else "degraded"
+    return jsonify({"status": status}), status_code
+
+
+@bp.route("/api/health/detail", methods=["GET"])
+@require_auth
+def health_detail():
+    """Authenticated detailed health check — full service diagnostics.
+
+    Requires a valid Bearer token.  Returns the complete health_status dict
+    with per-service breakdowns (database, gemini_api, email, cache, storage).
+    """
+    health_status, status_code = _run_health_checks()
     return jsonify(health_status), status_code
 
 
