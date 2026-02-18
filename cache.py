@@ -127,6 +127,7 @@ def cache_response(ttl=None, key_prefix=""):
                 return func(*args, **kwargs)
             try:
                 from flask import current_app
+
                 if current_app.testing:
                     return func(*args, **kwargs)
             except RuntimeError:
@@ -135,6 +136,7 @@ def cache_response(ttl=None, key_prefix=""):
             # Include g.user_id to scope cache per authenticated user
             try:
                 from flask import g as flask_g
+
                 user_id = getattr(flask_g, "user_id", None)
             except RuntimeError:
                 user_id = None
@@ -151,6 +153,7 @@ def cache_response(ttl=None, key_prefix=""):
             cached_value = get_cached(cache_key)
             if cached_value is not None:
                 from flask import jsonify
+
                 return jsonify(cached_value), 200
 
             result = func(*args, **kwargs)

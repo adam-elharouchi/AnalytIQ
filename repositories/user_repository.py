@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 # Profile
 # ---------------------------------------------------------------------------
 
+
 def get_profile(conn, user_id):
     """Return (user_id, name, email, full_name, bio, profile_picture) or None."""
     cur = conn.cursor()
@@ -73,6 +74,7 @@ def upsert_profile(conn, user_id, full_name, bio, profile_picture):
 # Settings
 # ---------------------------------------------------------------------------
 
+
 def get_settings(conn, user_id):
     """Return (email_notifications,) or None."""
     cur = conn.cursor()
@@ -105,6 +107,7 @@ def upsert_settings(conn, user_id, email_notifications):
 # Password
 # ---------------------------------------------------------------------------
 
+
 def get_password_hash(conn, user_id):
     """Return password_hash string or None."""
     cur = conn.cursor()
@@ -127,6 +130,7 @@ def update_password_hash(conn, user_id, new_hash):
 # Delete user
 # ---------------------------------------------------------------------------
 
+
 def delete_user(conn, user_id):
     cur = conn.cursor()
     cur.execute("DELETE FROM users WHERE user_id = %s", (user_id,))
@@ -136,6 +140,7 @@ def delete_user(conn, user_id):
 # ---------------------------------------------------------------------------
 # Conversations
 # ---------------------------------------------------------------------------
+
 
 def count_conversations(conn, user_id, archived):
     cur = conn.cursor()
@@ -283,6 +288,7 @@ def soft_delete_conversation(conn, conversation_id, user_id):
 # AI digest
 # ---------------------------------------------------------------------------
 
+
 def get_ai_digest(conn, user_id):
     """Return (goal, constraints, decisions, current_state, open_questions) or None."""
     cur = conn.cursor()
@@ -323,6 +329,7 @@ def upsert_ai_digest(conn, user_id, goal, constraints, decisions, current_state,
 # AI memory
 # ---------------------------------------------------------------------------
 
+
 def get_ai_memory(conn, user_id):
     """Return list of memory_item strings."""
     cur = conn.cursor()
@@ -357,6 +364,7 @@ def replace_ai_memory(conn, user_id, memory_items):
 # Preferences
 # ---------------------------------------------------------------------------
 
+
 def get_preferences(conn, user_id):
     """Return (current_language, gemini_model, ai_provider) or None."""
     cur = conn.cursor()
@@ -369,7 +377,9 @@ def get_preferences(conn, user_id):
     return row
 
 
-def upsert_preferences(conn, user_id, insert_fields, insert_placeholders, params_insert, update_fields, params_update):
+def upsert_preferences(
+    conn, user_id, insert_fields, insert_placeholders, params_insert, update_fields, params_update
+):
     """Dynamic upsert for preferences with whitelisted fields."""
     cur = conn.cursor()
     query = f"""
@@ -386,6 +396,7 @@ def upsert_preferences(conn, user_id, insert_fields, insert_placeholders, params
 # ---------------------------------------------------------------------------
 # Practice progress
 # ---------------------------------------------------------------------------
+
 
 def get_practice_progress_single(conn, user_id, exercise_id):
     """Return single exercise progress row or None."""
@@ -445,10 +456,20 @@ def get_current_progress(conn, user_id, exercise_id):
     return row
 
 
-def upsert_practice_progress(conn, user_id, exercise_id, exercise_title,
-                             new_best_score, accuracy, time_spent_seconds,
-                             total_attempts, score, is_new_best,
-                             class_id, class_exercise_id):
+def upsert_practice_progress(
+    conn,
+    user_id,
+    exercise_id,
+    exercise_title,
+    new_best_score,
+    accuracy,
+    time_spent_seconds,
+    total_attempts,
+    score,
+    is_new_best,
+    class_id,
+    class_exercise_id,
+):
     """Insert or update practice_progress row."""
     cur = conn.cursor()
     cur.execute(
@@ -484,19 +505,28 @@ def upsert_practice_progress(conn, user_id, exercise_id, exercise_title,
             updated_at = CURRENT_TIMESTAMP
         """,
         (
-            user_id, exercise_id, exercise_title,
+            user_id,
+            exercise_id,
+            exercise_title,
             new_best_score,
             accuracy if is_new_best else None,
             time_spent_seconds if is_new_best else None,
-            total_attempts, score, accuracy, time_spent_seconds,
-            score >= 50, score,
-            class_id, class_exercise_id,
+            total_attempts,
+            score,
+            accuracy,
+            time_spent_seconds,
+            score >= 50,
+            score,
+            class_id,
+            class_exercise_id,
         ),
     )
     cur.close()
 
 
-def insert_exercise_attempt(conn, user_id, exercise_id, score, accuracy, time_spent, attempt_number):
+def insert_exercise_attempt(
+    conn, user_id, exercise_id, score, accuracy, time_spent, attempt_number
+):
     cur = conn.cursor()
     cur.execute(
         """

@@ -46,14 +46,19 @@ def get_profile():
         if not result:
             return jsonify({"error": "User not found"}), 404
 
-        return jsonify({
-            "id": result[0],
-            "name": result[1],
-            "email": result[2],
-            "fullName": result[3],
-            "bio": result[4],
-            "profilePicture": result[5],
-        }), 200
+        return (
+            jsonify(
+                {
+                    "id": result[0],
+                    "name": result[1],
+                    "email": result[2],
+                    "fullName": result[3],
+                    "bio": result[4],
+                    "profilePicture": result[5],
+                }
+            ),
+            200,
+        )
 
     except Exception as e:
         logger.error("Unexpected error: %s", e, exc_info=True)
@@ -73,11 +78,14 @@ def update_profile():
         bio = data.get("bio")
         profile_picture = data.get("profilePicture")
 
-        errors = validate_fields(data, [
-            ("fullName", False, config.MAX_NAME_LENGTH),
-            ("email", False, config.MAX_EMAIL_LENGTH),
-            ("bio", False, config.MAX_GENERIC_TEXT_LENGTH),
-        ])
+        errors = validate_fields(
+            data,
+            [
+                ("fullName", False, config.MAX_NAME_LENGTH),
+                ("email", False, config.MAX_EMAIL_LENGTH),
+                ("bio", False, config.MAX_GENERIC_TEXT_LENGTH),
+            ],
+        )
         if errors:
             return jsonify({"error": errors[0]}), 400
 
@@ -154,15 +162,25 @@ def update_password():
         current_password = data.get("currentPassword")
         new_password = data.get("newPassword")
 
-        errors = validate_fields(data, [
-            ("currentPassword", True, config.MAX_PASSWORD_LENGTH),
-            ("newPassword", True, config.MAX_PASSWORD_LENGTH),
-        ])
+        errors = validate_fields(
+            data,
+            [
+                ("currentPassword", True, config.MAX_PASSWORD_LENGTH),
+                ("newPassword", True, config.MAX_PASSWORD_LENGTH),
+            ],
+        )
         if errors:
             return jsonify({"error": errors[0]}), 400
 
         if new_password and len(new_password) < config.MIN_PASSWORD_LENGTH:
-            return jsonify({"error": f"New password must be at least {config.MIN_PASSWORD_LENGTH} characters"}), 400
+            return (
+                jsonify(
+                    {
+                        "error": f"New password must be at least {config.MIN_PASSWORD_LENGTH} characters"
+                    }
+                ),
+                400,
+            )
 
         conn = get_db_connection()
 
@@ -279,13 +297,18 @@ def get_conversation(conversation_id):
         msg_rows = user_repo.get_conversation_messages(conn, conversation_id)
         messages = [{"role": row[0], "content": row[1], "order": row[2]} for row in msg_rows]
 
-        return jsonify({
-            "id": conv[0],
-            "title": conv[1],
-            "archived": conv[2],
-            "date": conv[4].isoformat() if conv[4] else conv[3].isoformat(),
-            "messages": messages,
-        }), 200
+        return (
+            jsonify(
+                {
+                    "id": conv[0],
+                    "title": conv[1],
+                    "archived": conv[2],
+                    "date": conv[4].isoformat() if conv[4] else conv[3].isoformat(),
+                    "messages": messages,
+                }
+            ),
+            200,
+        )
 
     except Exception as e:
         logger.error("Unexpected error: %s", e, exc_info=True)
@@ -317,7 +340,9 @@ def update_conversation(conversation_id):
             params.append(archived)
 
         if update_fields:
-            user_repo.update_conversation_fields(conn, conversation_id, user_id, update_fields, params)
+            user_repo.update_conversation_fields(
+                conn, conversation_id, user_id, update_fields, params
+            )
 
         if messages:
             user_repo.replace_conversation_messages(conn, conversation_id, messages)
@@ -398,13 +423,18 @@ def get_ai_digest():
 
         result = user_repo.get_ai_digest(conn, user_id)
         if not result:
-            return jsonify({
-                "goal": "",
-                "constraints": [],
-                "decisions": [],
-                "current_state": [],
-                "open_questions": [],
-            }), 200
+            return (
+                jsonify(
+                    {
+                        "goal": "",
+                        "constraints": [],
+                        "decisions": [],
+                        "current_state": [],
+                        "open_questions": [],
+                    }
+                ),
+                200,
+            )
 
         def parse_array(value):
             if not value:
@@ -415,13 +445,18 @@ def get_ai_digest():
             except (json.JSONDecodeError, TypeError):
                 return [value] if value else []
 
-        return jsonify({
-            "goal": result[0] or "",
-            "constraints": parse_array(result[1]),
-            "decisions": parse_array(result[2]),
-            "current_state": parse_array(result[3]),
-            "open_questions": parse_array(result[4]),
-        }), 200
+        return (
+            jsonify(
+                {
+                    "goal": result[0] or "",
+                    "constraints": parse_array(result[1]),
+                    "decisions": parse_array(result[2]),
+                    "current_state": parse_array(result[3]),
+                    "open_questions": parse_array(result[4]),
+                }
+            ),
+            200,
+        )
 
     except Exception as e:
         logger.error("Unexpected error: %s", e, exc_info=True)
@@ -451,7 +486,8 @@ def update_ai_digest():
 
         conn = get_db_connection()
         user_repo.upsert_ai_digest(
-            conn, user_id,
+            conn,
+            user_id,
             digest.get("goal", ""),
             serialize_array(digest.get("constraints", [])),
             serialize_array(digest.get("decisions", [])),
@@ -515,17 +551,27 @@ def get_preferences():
 
         result = user_repo.get_preferences(conn, user_id)
         if not result:
-            return jsonify({
-                "currentLanguage": "python",
-                "geminiModel": "gemini-2.5-flash",
-                "aiProvider": "gemini",
-            }), 200
+            return (
+                jsonify(
+                    {
+                        "currentLanguage": "python",
+                        "geminiModel": "gemini-2.5-flash",
+                        "aiProvider": "gemini",
+                    }
+                ),
+                200,
+            )
 
-        return jsonify({
-            "currentLanguage": result[0] or "python",
-            "geminiModel": result[1] or "gemini-2.5-flash",
-            "aiProvider": result[2] or "gemini",
-        }), 200
+        return (
+            jsonify(
+                {
+                    "currentLanguage": result[0] or "python",
+                    "geminiModel": result[1] or "gemini-2.5-flash",
+                    "aiProvider": result[2] or "gemini",
+                }
+            ),
+            200,
+        )
 
     except Exception as e:
         logger.error("Unexpected error: %s", e, exc_info=True)
@@ -576,9 +622,13 @@ def update_preferences():
 
         if update_fields:
             user_repo.upsert_preferences(
-                conn, user_id,
-                insert_fields, insert_placeholders, params_insert,
-                update_fields, params_update,
+                conn,
+                user_id,
+                insert_fields,
+                insert_placeholders,
+                params_insert,
+                update_fields,
+                params_update,
             )
 
         conn.commit()
@@ -604,17 +654,22 @@ def get_practice_progress():
         if exercise_id:
             result = user_repo.get_practice_progress_single(conn, user_id, exercise_id)
             if result:
-                return jsonify({
-                    "exercise_id": result[0],
-                    "exercise_title": result[1],
-                    "best_score": result[2] or 0,
-                    "best_accuracy": float(result[3]) if result[3] else 0,
-                    "best_time": result[4],
-                    "total_attempts": result[5] or 0,
-                    "last_attempt_score": result[6] or 0,
-                    "completed": result[7] or False,
-                    "last_completed_at": result[8].isoformat() if result[8] else None,
-                }), 200
+                return (
+                    jsonify(
+                        {
+                            "exercise_id": result[0],
+                            "exercise_title": result[1],
+                            "best_score": result[2] or 0,
+                            "best_accuracy": float(result[3]) if result[3] else 0,
+                            "best_time": result[4],
+                            "total_attempts": result[5] or 0,
+                            "last_attempt_score": result[6] or 0,
+                            "completed": result[7] or False,
+                            "last_completed_at": result[8].isoformat() if result[8] else None,
+                        }
+                    ),
+                    200,
+                )
             else:
                 return jsonify({}), 200
         else:
@@ -679,20 +734,36 @@ def update_practice_progress():
         class_exercise_id = data.get("class_exercise_id") or exercise_id
 
         user_repo.upsert_practice_progress(
-            conn, user_id, exercise_id,
+            conn,
+            user_id,
+            exercise_id,
             progress_data.get("exercise_title", exercise_id) if progress_data else exercise_id,
-            new_best_score, accuracy, time_spent_seconds,
-            current_attempts + 1, score, is_new_best,
-            class_id, class_exercise_id,
+            new_best_score,
+            accuracy,
+            time_spent_seconds,
+            current_attempts + 1,
+            score,
+            is_new_best,
+            class_id,
+            class_exercise_id,
         )
 
         user_repo.insert_exercise_attempt(
-            conn, user_id, exercise_id, score, accuracy, time_spent_seconds, current_attempts + 1,
+            conn,
+            user_id,
+            exercise_id,
+            score,
+            accuracy,
+            time_spent_seconds,
+            current_attempts + 1,
         )
 
         conn.commit()
 
-        return jsonify({"success": True, "is_new_best": is_new_best, "best_score": new_best_score}), 200
+        return (
+            jsonify({"success": True, "is_new_best": is_new_best, "best_score": new_best_score}),
+            200,
+        )
 
     except Exception as e:
         logger.error("Unexpected error: %s", e, exc_info=True)

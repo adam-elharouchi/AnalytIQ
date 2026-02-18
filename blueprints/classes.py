@@ -59,15 +59,25 @@ def create_class():
         description = data.get("description", "")
         class_code = data.get("class_code", "").strip().upper()
 
-        errors = validate_fields(data, [
-            ("name", True, config.MAX_CLASS_NAME_LENGTH),
-            ("description", False, config.MAX_CLASS_DESCRIPTION_LENGTH),
-        ])
+        errors = validate_fields(
+            data,
+            [
+                ("name", True, config.MAX_CLASS_NAME_LENGTH),
+                ("description", False, config.MAX_CLASS_DESCRIPTION_LENGTH),
+            ],
+        )
         if errors:
             return jsonify({"error": errors[0]}), 400
 
         if not class_code:
-            return jsonify({"error": "Class code is required. Please enter a code that matches your school system."}), 400
+            return (
+                jsonify(
+                    {
+                        "error": "Class code is required. Please enter a code that matches your school system."
+                    }
+                ),
+                400,
+            )
 
         if not class_code.isalnum() or len(class_code) < 3 or len(class_code) > 20:
             return jsonify({"error": "Class code must be 3-20 alphanumeric characters"}), 400
@@ -75,20 +85,32 @@ def create_class():
         conn = get_db_connection()
 
         if class_repo.class_code_exists(conn, class_code):
-            return jsonify({"error": f'Class code "{class_code}" is already in use. Please choose a different code.'}), 409
+            return (
+                jsonify(
+                    {
+                        "error": f'Class code "{class_code}" is already in use. Please choose a different code.'
+                    }
+                ),
+                409,
+            )
 
         new_class = class_repo.insert_class(conn, class_code, user_id, name, description)
         conn.commit()
 
         cache.invalidate_cache(f"classes:user:{user_id}:*")
 
-        return jsonify({
-            "class_id": new_class[0],
-            "name": new_class[1],
-            "description": new_class[2],
-            "created_at": new_class[3].isoformat() if new_class[3] else None,
-            "success": True,
-        }), 201
+        return (
+            jsonify(
+                {
+                    "class_id": new_class[0],
+                    "name": new_class[1],
+                    "description": new_class[2],
+                    "created_at": new_class[3].isoformat() if new_class[3] else None,
+                    "success": True,
+                }
+            ),
+            201,
+        )
 
     except Exception as e:
         logger.error("Unexpected error: %s", e, exc_info=True)
@@ -165,19 +187,24 @@ def get_class(class_id):
         chapter_count = class_repo.count_class_chapters(conn, class_id)
         exercise_count = class_repo.count_class_exercises(conn, class_id)
 
-        return jsonify({
-            "class_id": class_data[0],
-            "name": class_data[1],
-            "description": class_data[2],
-            "professor_id": class_data[3],
-            "created_at": class_data[4].isoformat() if class_data[4] else None,
-            "professor_name": class_data[5],
-            "professor_email": class_data[6] if len(class_data) > 6 else None,
-            "student_count": student_count,
-            "chapter_count": chapter_count,
-            "exercise_count": exercise_count,
-            "is_owner": is_owner,
-        }), 200
+        return (
+            jsonify(
+                {
+                    "class_id": class_data[0],
+                    "name": class_data[1],
+                    "description": class_data[2],
+                    "professor_id": class_data[3],
+                    "created_at": class_data[4].isoformat() if class_data[4] else None,
+                    "professor_name": class_data[5],
+                    "professor_email": class_data[6] if len(class_data) > 6 else None,
+                    "student_count": student_count,
+                    "chapter_count": chapter_count,
+                    "exercise_count": exercise_count,
+                    "is_owner": is_owner,
+                }
+            ),
+            200,
+        )
 
     except Exception as e:
         logger.error("Unexpected error: %s", e, exc_info=True)
@@ -205,16 +232,18 @@ def get_class_resources(class_id):
         for ch in chapters:
             chapter_id = ch[0]
             pdf_url = f"/api/chapters/{chapter_id}/pdf"
-            resources.append({
-                "resource_id": chapter_id,
-                "title": ch[1],
-                "description": ch[2],
-                "resource_type": "pdf",
-                "is_chapter": True,
-                "chapter_id": chapter_id,
-                "resource_url": pdf_url,
-                "created_at": ch[4].isoformat() if ch[4] else None,
-            })
+            resources.append(
+                {
+                    "resource_id": chapter_id,
+                    "title": ch[1],
+                    "description": ch[2],
+                    "resource_type": "pdf",
+                    "is_chapter": True,
+                    "chapter_id": chapter_id,
+                    "resource_url": pdf_url,
+                    "created_at": ch[4].isoformat() if ch[4] else None,
+                }
+            )
 
         try:
             class_repo.ensure_resources_table(conn)
@@ -223,15 +252,17 @@ def get_class_resources(class_id):
                 resource_url = res[4]
                 if not resource_url and res[0]:
                     resource_url = f"/api/resources/{res[0]}/download"
-                resources.append({
-                    "resource_id": res[0],
-                    "title": res[1],
-                    "description": res[2],
-                    "resource_type": res[3],
-                    "url": resource_url,
-                    "created_at": res[5].isoformat() if res[5] else None,
-                    "is_custom": True,
-                })
+                resources.append(
+                    {
+                        "resource_id": res[0],
+                        "title": res[1],
+                        "description": res[2],
+                        "resource_type": res[3],
+                        "url": resource_url,
+                        "created_at": res[5].isoformat() if res[5] else None,
+                        "is_custom": True,
+                    }
+                )
         except Exception as table_err:
             logger.warning("Error fetching class_resources: %s", table_err)
 
@@ -357,12 +388,17 @@ def enroll_in_class():
         cache.invalidate_cache(f"enrolled:{user_id}")
         cache.invalidate_cache(f"classes:user:{user_id}:*")
 
-        return jsonify({
-            "class_id": class_id,
-            "class_name": class_name,
-            "enrolled_at": enrolled_at.isoformat() if enrolled_at else None,
-            "success": True,
-        }), 201
+        return (
+            jsonify(
+                {
+                    "class_id": class_id,
+                    "class_name": class_name,
+                    "enrolled_at": enrolled_at.isoformat() if enrolled_at else None,
+                    "success": True,
+                }
+            ),
+            201,
+        )
 
     except Exception as e:
         logger.error("Unexpected error: %s", e, exc_info=True)
@@ -505,14 +541,19 @@ def get_class_progress(class_id):
 
         progress_list = list(progress_data.values())
 
-        return jsonify({
-            "class_id": class_id,
-            "exercises": [
-                {"exercise_id": ex[0], "title": ex[1], "difficulty": ex[2]}
-                for ex in exercises
-            ],
-            "students_progress": progress_list,
-        }), 200
+        return (
+            jsonify(
+                {
+                    "class_id": class_id,
+                    "exercises": [
+                        {"exercise_id": ex[0], "title": ex[1], "difficulty": ex[2]}
+                        for ex in exercises
+                    ],
+                    "students_progress": progress_list,
+                }
+            ),
+            200,
+        )
 
     except Exception as e:
         if conn:
@@ -628,12 +669,17 @@ def get_student_progress(student_id):
                 for row in rows
             ]
 
-        return jsonify({
-            "student_id": student_id,
-            "student_name": student[1],
-            "student_email": student[2],
-            "progress": progress,
-        }), 200
+        return (
+            jsonify(
+                {
+                    "student_id": student_id,
+                    "student_name": student[1],
+                    "student_email": student[2],
+                    "progress": progress,
+                }
+            ),
+            200,
+        )
 
     except Exception as e:
         logger.error("Unexpected error: %s", e, exc_info=True)
@@ -750,9 +796,14 @@ def add_class_resource(class_id):
         resource_id = f"res_{str(uuid.uuid4())}"
 
         class_repo.insert_resource_link(
-            conn, resource_id, class_id, user_id,
-            data.get("title"), data.get("description", ""),
-            data.get("resource_type", "link"), data.get("resource_url"),
+            conn,
+            resource_id,
+            class_id,
+            user_id,
+            data.get("title"),
+            data.get("description", ""),
+            data.get("resource_type", "link"),
+            data.get("resource_url"),
         )
         conn.commit()
 
@@ -787,14 +838,23 @@ def upload_class_resource(class_id):
         resource_url = f"/api/resources/{resource_id}/download"
 
         class_repo.insert_resource_file(
-            conn, resource_id, class_id, user_id,
-            request.form.get("title"), request.form.get("description", ""),
-            request.form.get("resource_type", "file"), resource_url,
-            file_data, filename,
+            conn,
+            resource_id,
+            class_id,
+            user_id,
+            request.form.get("title"),
+            request.form.get("description", ""),
+            request.form.get("resource_type", "file"),
+            resource_url,
+            file_data,
+            filename,
         )
         conn.commit()
 
-        return jsonify({"success": True, "resource_id": resource_id, "resource_url": resource_url}), 201
+        return (
+            jsonify({"success": True, "resource_id": resource_id, "resource_url": resource_url}),
+            201,
+        )
 
     except Exception as e:
         logger.error("Unexpected error: %s", e, exc_info=True)
@@ -862,9 +922,12 @@ def manage_resource(class_id, resource_id):
         elif request.method == "PUT":
             data = request.json
             class_repo.update_resource(
-                conn, resource_id,
-                data.get("title"), data.get("description"),
-                data.get("resource_type"), data.get("resource_url"),
+                conn,
+                resource_id,
+                data.get("title"),
+                data.get("description"),
+                data.get("resource_type"),
+                data.get("resource_url"),
             )
             conn.commit()
             return jsonify({"success": True}), 200

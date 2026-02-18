@@ -128,17 +128,22 @@ def get_exercise_details(exercise_id):
         if not row:
             return jsonify({"error": "Exercise not found"}), 404
 
-        return jsonify({
-            "exercise": {
-                "exercise_id": row[0],
-                "chapter_id": row[1],
-                "class_id": row[2],
-                "title": row[3],
-                "description": row[4],
-                "difficulty": row[5],
-                "solution_code": row[6],
-            }
-        }), 200
+        return (
+            jsonify(
+                {
+                    "exercise": {
+                        "exercise_id": row[0],
+                        "chapter_id": row[1],
+                        "class_id": row[2],
+                        "title": row[3],
+                        "description": row[4],
+                        "difficulty": row[5],
+                        "solution_code": row[6],
+                    }
+                }
+            ),
+            200,
+        )
 
     except Exception as e:
         logger.error("Unexpected error: %s", e, exc_info=True)
@@ -157,11 +162,14 @@ def update_exercise(exercise_id):
         data = request.json or {}
         user_id = g.user_id
 
-        errors = validate_fields(data, [
-            ("title", False, config.MAX_EXERCISE_TITLE_LENGTH),
-            ("description", False, config.MAX_EXERCISE_DESCRIPTION_LENGTH),
-            ("solution_code", False, config.MAX_SOLUTION_CODE_LENGTH),
-        ])
+        errors = validate_fields(
+            data,
+            [
+                ("title", False, config.MAX_EXERCISE_TITLE_LENGTH),
+                ("description", False, config.MAX_EXERCISE_DESCRIPTION_LENGTH),
+                ("solution_code", False, config.MAX_SOLUTION_CODE_LENGTH),
+            ],
+        )
         if errors:
             return jsonify({"error": errors[0]}), 400
 
@@ -170,9 +178,12 @@ def update_exercise(exercise_id):
             return jsonify({"error": "Not authorized"}), 403
 
         exercise_repo.update_exercise(
-            conn, exercise_id,
-            data.get("title"), data.get("description"),
-            data.get("difficulty"), data.get("solution_code"),
+            conn,
+            exercise_id,
+            data.get("title"),
+            data.get("description"),
+            data.get("difficulty"),
+            data.get("solution_code"),
         )
         conn.commit()
 

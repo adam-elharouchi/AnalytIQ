@@ -192,10 +192,10 @@ FEATURE_CACHING = os.getenv("FEATURE_CACHING", "False").lower() == "true"
 # ============================================================================
 
 # User fields
-MAX_EMAIL_LENGTH = 254          # RFC 5321
+MAX_EMAIL_LENGTH = 254  # RFC 5321
 MAX_NAME_LENGTH = 100
 MIN_PASSWORD_LENGTH = 8
-MAX_PASSWORD_LENGTH = 72        # bcrypt hard limit
+MAX_PASSWORD_LENGTH = 72  # bcrypt hard limit
 
 # Class / chapter fields
 MAX_CLASS_NAME_LENGTH = 200

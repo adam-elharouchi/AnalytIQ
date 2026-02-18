@@ -14,13 +14,17 @@ logger = logging.getLogger(__name__)
 # Schema migration (lazy)
 # ---------------------------------------------------------------------------
 
+
 def ensure_exercises_table(conn):
     """Add any missing columns to class_exercises (lazy migration)."""
     cur = conn.cursor()
 
     for col, ddl in [
         ("solution_code", "ALTER TABLE class_exercises ADD COLUMN solution_code TEXT"),
-        ("exercise_number", "ALTER TABLE class_exercises ADD COLUMN exercise_number INTEGER DEFAULT 1"),
+        (
+            "exercise_number",
+            "ALTER TABLE class_exercises ADD COLUMN exercise_number INTEGER DEFAULT 1",
+        ),
         ("created_by", "ALTER TABLE class_exercises ADD COLUMN created_by VARCHAR(255)"),
     ]:
         try:
@@ -37,6 +41,7 @@ def ensure_exercises_table(conn):
 # ---------------------------------------------------------------------------
 # Exercise CRUD
 # ---------------------------------------------------------------------------
+
 
 def get_exercise_detail(conn, exercise_id):
     """Return single exercise row or None."""
@@ -106,6 +111,7 @@ def delete_exercise(conn, exercise_id):
 # Progress
 # ---------------------------------------------------------------------------
 
+
 def get_all_user_progress(conn, user_id):
     cur = conn.cursor()
     cur.execute(
@@ -126,6 +132,7 @@ def get_all_user_progress(conn, user_id):
 # ---------------------------------------------------------------------------
 # Leaderboards
 # ---------------------------------------------------------------------------
+
 
 def get_exercise_leaderboard(conn, exercise_id, limit):
     cur = conn.cursor()

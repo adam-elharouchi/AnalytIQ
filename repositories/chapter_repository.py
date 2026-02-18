@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 # Chapter CRUD
 # ---------------------------------------------------------------------------
 
+
 def get_next_chapter_number(conn, class_id):
     """Return the next chapter_number for a class."""
     cur = conn.cursor()
@@ -28,7 +29,17 @@ def get_next_chapter_number(conn, class_id):
     return num
 
 
-def insert_chapter(conn, chapter_id, class_id, title, description, chapter_number, pdf_url, pdf_filename, file_bytes):
+def insert_chapter(
+    conn,
+    chapter_id,
+    class_id,
+    title,
+    description,
+    chapter_number,
+    pdf_url,
+    pdf_filename,
+    file_bytes,
+):
     """Insert a new chapter with binary PDF data.  Returns the RETURNING tuple."""
     cur = conn.cursor()
     cur.execute(
@@ -39,8 +50,13 @@ def insert_chapter(conn, chapter_id, class_id, title, description, chapter_numbe
         RETURNING chapter_id, title, description, chapter_number, created_at
         """,
         (
-            chapter_id, class_id, title, description,
-            chapter_number, pdf_url, pdf_filename,
+            chapter_id,
+            class_id,
+            title,
+            description,
+            chapter_number,
+            pdf_url,
+            pdf_filename,
             psycopg2.Binary(file_bytes),
         ),
     )
@@ -49,7 +65,17 @@ def insert_chapter(conn, chapter_id, class_id, title, description, chapter_numbe
     return row
 
 
-def insert_exercise(conn, exercise_id, chapter_id, class_id, title, description, difficulty, solution_code, exercise_number):
+def insert_exercise(
+    conn,
+    exercise_id,
+    chapter_id,
+    class_id,
+    title,
+    description,
+    difficulty,
+    solution_code,
+    exercise_number,
+):
     """Insert a single exercise row (used during auto-generation from PDF)."""
     cur = conn.cursor()
     cur.execute(
@@ -58,7 +84,16 @@ def insert_exercise(conn, exercise_id, chapter_id, class_id, title, description,
             (exercise_id, chapter_id, class_id, title, description, difficulty, solution_code, exercise_number)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
         """,
-        (exercise_id, chapter_id, class_id, title, description, difficulty, solution_code, exercise_number),
+        (
+            exercise_id,
+            chapter_id,
+            class_id,
+            title,
+            description,
+            difficulty,
+            solution_code,
+            exercise_number,
+        ),
     )
     cur.close()
 
@@ -139,6 +174,7 @@ def delete_chapter_and_exercises(conn, chapter_id):
 # Exercise generation from existing chapter
 # ---------------------------------------------------------------------------
 
+
 def get_chapter_pdf_data(conn, chapter_id):
     """Return (pdf_data, title, class_id, professor_id) or None."""
     cur = conn.cursor()
@@ -159,6 +195,7 @@ def get_chapter_pdf_data(conn, chapter_id):
 # ---------------------------------------------------------------------------
 # Chapter exercises listing
 # ---------------------------------------------------------------------------
+
 
 def get_chapter_class_info(conn, chapter_id):
     """Return (class_id, professor_id) for the chapter, or None."""
@@ -205,7 +242,17 @@ def chapter_belongs_to_class(conn, chapter_id, class_id):
     return exists
 
 
-def insert_manual_exercise(conn, exercise_id, class_id, chapter_id, title, description, difficulty, solution_code, created_by):
+def insert_manual_exercise(
+    conn,
+    exercise_id,
+    class_id,
+    chapter_id,
+    title,
+    description,
+    difficulty,
+    solution_code,
+    created_by,
+):
     cur = conn.cursor()
     cur.execute(
         """
@@ -213,7 +260,16 @@ def insert_manual_exercise(conn, exercise_id, class_id, chapter_id, title, descr
             (exercise_id, class_id, chapter_id, title, description, difficulty, solution_code, created_by)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
         """,
-        (exercise_id, class_id, chapter_id, title, description, difficulty, solution_code, created_by),
+        (
+            exercise_id,
+            class_id,
+            chapter_id,
+            title,
+            description,
+            difficulty,
+            solution_code,
+            created_by,
+        ),
     )
     cur.close()
 
@@ -221,6 +277,7 @@ def insert_manual_exercise(conn, exercise_id, class_id, chapter_id, title, descr
 # ---------------------------------------------------------------------------
 # PDF serving
 # ---------------------------------------------------------------------------
+
 
 def get_chapter_pdf(conn, chapter_id):
     """Return (pdf_data, pdf_filename, pdf_url) or None."""

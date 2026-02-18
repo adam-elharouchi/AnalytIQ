@@ -1,28 +1,18 @@
-from flask import Flask, request, jsonify, g, send_from_directory
-from werkzeug.routing import BaseConverter
+import logging
+import os
+import sys
+import uuid
+
+from dotenv import load_dotenv
+from flask import Flask, g, jsonify, request, send_from_directory
+from pythonjsonlogger import jsonlogger
 from werkzeug.exceptions import HTTPException
 from werkzeug.middleware.proxy_fix import ProxyFix
-from extensions import limiter, csrf_exempt, mail, Message
-from db import get_db_connection, close_conn_safely, close_db_connection
-from auth_helpers import (
-    require_auth, create_jwt_token, decode_jwt_token,
-    hash_password, hash_password_legacy, verify_password,
-    detect_role_from_email, validate_fields
-)
-import logging
-import psycopg2
-from dotenv import load_dotenv
-import os
-import json
-import uuid
-from datetime import datetime
-from werkzeug.utils import secure_filename
-import sys
+from werkzeug.routing import BaseConverter
+
 import config
-import utils
-import cache
-from cache import cache_health_check
-from supabase_storage import storage_health_check
+from db import close_db_connection  # teardown handler registered below
+from extensions import limiter, mail
 
 
 # Early logger — handlers are added below after JSON formatter is configured.
@@ -53,6 +43,7 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 # Initialize Sentry with proper configuration (PII filtering, etc.)
 try:
     from sentry_config import init_sentry
+
     init_sentry(app)
 except ImportError:
     logger.warning("sentry_config not available. Sentry will not be active.")
@@ -66,8 +57,6 @@ app.config["MAX_CONTENT_LENGTH"] = config.MAX_CONTENT_LENGTH
 app.config["UPLOAD_FOLDER"] = config.UPLOAD_FOLDER
 
 # Structured Logging Configuration — add JSON handler + request-ID filter
-from pythonjsonlogger import jsonlogger
-
 # logger was created early (top of file); now configure its handler
 logger.setLevel(logging.INFO)
 
@@ -87,6 +76,7 @@ class _RequestIdFilter(logging.Filter):
     def filter(self, record):
         try:
             from flask import g as _g
+
             record.request_id = getattr(_g, "request_id", "-")
         except RuntimeError:
             record.request_id = "-"
@@ -129,7 +119,10 @@ try:
     app.config["RATELIMIT_STORAGE_URL"] = _rate_limit_storage
     app.config["RATELIMIT_STRATEGY"] = "fixed-window"
     limiter.init_app(app)
-    logger.info("Rate limiting enabled (storage: %s)", "redis" if "redis" in _rate_limit_storage else "memory")
+    logger.info(
+        "Rate limiting enabled (storage: %s)",
+        "redis" if "redis" in _rate_limit_storage else "memory",
+    )
 except Exception:
     logger.warning("Rate limiting could not be configured")
 
@@ -137,6 +130,7 @@ except Exception:
 csrf = None
 try:
     from flask_wtf.csrf import CSRFProtect, generate_csrf
+
     csrf_instance = CSRFProtect()
     app.config["WTF_CSRF_ENABLED"] = config.WTF_CSRF_ENABLED
     app.config["WTF_CSRF_TIME_LIMIT"] = config.WTF_CSRF_TIME_LIMIT
@@ -146,6 +140,7 @@ try:
         csrf_instance.init_app(app)
         csrf = csrf_instance
         import extensions
+
         extensions.csrf = csrf_instance
         logger.info("CSRF protection enabled")
     else:
@@ -212,6 +207,7 @@ except ImportError:
 # Ensure upload folder exists
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
+
 # CORS handling - uses configured origins (set CORS_ORIGINS env var in production)
 def _get_cors_origin():
     """Return the allowed origin for the current request, or None."""
@@ -239,6 +235,7 @@ def assign_request_id():
     g.request_id = str(uuid.uuid4())
     try:
         import sentry_sdk
+
         sentry_sdk.set_tag("request_id", g.request_id)
     except Exception:
         pass
@@ -274,9 +271,7 @@ def after_request(response):
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         if not config.DEBUG:
-            response.headers["Strict-Transport-Security"] = (
-                "max-age=31536000; includeSubDomains"
-            )
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
 
         # CDN-5: Prevent any proxy or CDN from caching API responses.
         # Auth-gated data must never be served stale from an edge cache.
@@ -326,13 +321,13 @@ app.teardown_appcontext(close_db_connection)
 # ---------------------------------------------------------------------------
 # Blueprint registrations
 # ---------------------------------------------------------------------------
-from blueprints.health import bp as health_bp        # noqa: E402
-from blueprints.ai import bp as ai_bp                # noqa: E402
-from blueprints.auth import bp as auth_bp            # noqa: E402
-from blueprints.users import bp as users_bp          # noqa: E402
-from blueprints.chapters import bp as chapters_bp    # noqa: E402
+from blueprints.health import bp as health_bp  # noqa: E402
+from blueprints.ai import bp as ai_bp  # noqa: E402
+from blueprints.auth import bp as auth_bp  # noqa: E402
+from blueprints.users import bp as users_bp  # noqa: E402
+from blueprints.chapters import bp as chapters_bp  # noqa: E402
 from blueprints.exercises import bp as exercises_bp  # noqa: E402
-from blueprints.classes import bp as classes_bp      # noqa: E402
+from blueprints.classes import bp as classes_bp  # noqa: E402
 
 app.register_blueprint(health_bp)
 app.register_blueprint(ai_bp)
@@ -402,21 +397,13 @@ def register_api_v1_aliases(app):
         if valid_methods:
             try:
                 app.add_url_rule(rule, endpoint, view_func, methods=valid_methods)
-                # Assuming 'logger' is defined elsewhere, if not, this line might cause an error.
-                # For this task, I'll keep it as is, assuming 'logger' exists.
-                # If 'logger' is not defined, it would need to be imported or defined.
-                # For now, I'll comment it out to prevent potential errors if it's not defined.
-                # logger.debug(f"Created v1 alias: {rule} -> {endpoint}")
-                pass  # Placeholder if logger is not available
+                logger.debug("Created v1 alias: %s -> %s", rule, endpoint)
             except AssertionError:
-                # Ignore if rule already exists (rare case)
-                pass
-            except Exception as e:
-                # logger.warning(f"Failed to alias {rule}: {e}")
-                pass  # Placeholder if logger is not available
+                pass  # Rule already exists (rare)
+            except Exception:
+                pass  # Non-critical; skip broken alias silently
 
-    # logger.info(f"✅ Registered {len(routes_to_alias)} API v1 aliases")
-    pass  # Placeholder if logger is not available
+    logger.info("Registered %d API v1 aliases", len(routes_to_alias))
 
 
 # Register v1 aliases
@@ -425,8 +412,8 @@ with app.app_context():
 
 
 if __name__ == "__main__":
-    import sys
-    import os
+    import os  # noqa: F811 — re-imported so exec'd test namespaces have it
+    import sys  # noqa: F811
 
     port = int(os.getenv("PORT", 5001))  # Changed from 5000 to avoid macOS AirPlay conflict
     if len(sys.argv) > 1:
@@ -451,7 +438,7 @@ if __name__ == "__main__":
     except OSError as e:
         if "Address already in use" in str(e):
             print(f"\n❌ Error: Port {port} is already in use!")
-            print(f"   Either stop the other process or use a different port:")
-            print(f"   python3 app.py 5002")
+            print("   Either stop the other process or use a different port:")
+            print("   python3 app.py 5002")
         else:
             raise

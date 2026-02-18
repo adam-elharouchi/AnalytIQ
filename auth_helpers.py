@@ -4,7 +4,6 @@ JWT authentication, password hashing, field validation, and role detection.
 Extracted from app.py as Phase 1 of Blueprint extraction.
 """
 
-import hashlib
 import logging
 import functools
 from datetime import datetime, timedelta
@@ -89,8 +88,7 @@ def create_jwt_token(user_id, role="student", name=None, email=None):
         "user_id": user_id,
         "role": role,
         "iat": datetime.utcnow(),
-        "exp": datetime.utcnow()
-        + timedelta(hours=config.JWT_ACCESS_TOKEN_EXPIRES_HOURS),
+        "exp": datetime.utcnow() + timedelta(hours=config.JWT_ACCESS_TOKEN_EXPIRES_HOURS),
     }
     if name:
         payload["name"] = name
@@ -204,27 +202,27 @@ def require_auth(f):
     @functools.wraps(f)
     def decorated(*args, **kwargs):
         # Always allow OPTIONS requests through without auth
-        if request.method == 'OPTIONS':
+        if request.method == "OPTIONS":
             return f(*args, **kwargs)
 
         # Bypass auth in test mode only — never in production
-        if current_app.config.get('TESTING') and config.ENV != 'production':
+        if current_app.config.get("TESTING") and config.ENV != "production":
             # Check for explicit test user ID or user_id in request
-            test_user_id = request.headers.get('X-Test-User-ID')
+            test_user_id = request.headers.get("X-Test-User-ID")
             if not test_user_id:
                 # Try to get from query params or JSON body
-                test_user_id = request.args.get('user_id')
+                test_user_id = request.args.get("user_id")
                 if not test_user_id:
                     json_data = request.get_json(silent=True)
                     if json_data:
-                        test_user_id = json_data.get('user_id')
+                        test_user_id = json_data.get("user_id")
                 # Also check form data for multipart requests
                 if not test_user_id and request.form:
-                    test_user_id = request.form.get('user_id')
+                    test_user_id = request.form.get("user_id")
 
             if test_user_id:
                 g.user_id = str(test_user_id)
-                g.user_role = request.headers.get('X-Test-User-Role', 'student')
+                g.user_role = request.headers.get("X-Test-User-Role", "student")
                 return f(*args, **kwargs)
             # If no user_id found, fall through to normal auth (will return 401)
 
@@ -264,12 +262,15 @@ def require_role(*roles):
         def professor_only():
             ...
     """
+
     def decorator(f):
         @functools.wraps(f)
         def decorated(*args, **kwargs):
-            user_role = getattr(g, 'user_role', None)
+            user_role = getattr(g, "user_role", None)
             if user_role not in roles:
                 return jsonify({"error": "Forbidden: insufficient role"}), 403
             return f(*args, **kwargs)
+
         return decorated
+
     return decorator
