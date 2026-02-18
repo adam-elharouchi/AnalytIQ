@@ -22,6 +22,7 @@ from datetime import datetime
 from flask import Blueprint, g, jsonify, request
 
 import config
+import cache
 import utils
 from auth_helpers import hash_password, require_auth, validate_fields, verify_password
 from db import get_db_connection
@@ -34,6 +35,7 @@ bp = Blueprint("users", __name__)
 
 @bp.route("/api/users/profile", methods=["GET"])
 @require_auth
+@cache.cache_response(ttl=60, key_prefix="profile")
 def get_profile():
     """Get user profile"""
     try:
@@ -89,6 +91,7 @@ def update_profile():
         user_repo.upsert_profile(conn, user_id, full_name, bio, profile_picture)
         conn.commit()
 
+        cache.invalidate_cache(f"profile:{user_id}")
         return jsonify({"success": True}), 200
 
     except Exception as e:

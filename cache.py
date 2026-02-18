@@ -101,49 +101,66 @@ def invalidate_cache(pattern):
 
 def cache_response(ttl=None, key_prefix=""):
     """
-    Decorator to cache Flask endpoint responses
+    Decorator to cache Flask endpoint responses.
+
+    The cache key always includes g.user_id when available to prevent
+    cross-user data leakage for auth-gated endpoints. Key format:
+        {key_prefix}:{user_id}:{route_args...}
+
+    Invalidation patterns for writes:
+        cache.invalidate_cache(f"{prefix}:*:{route_arg}")  — all users
+        cache.invalidate_cache(f"{prefix}:{user_id}")      — specific user
 
     Args:
-        ttl: Cache TTL in seconds
-        key_prefix: Prefix for cache key
-
-    Usage:
-        @app.route('/api/classes/<class_id>')
-        @cache_response(ttl=300, key_prefix='class')
-        def get_class(class_id):
-            # ... endpoint logic
+        ttl: Cache TTL in seconds (default: CACHE_DEFAULT_TTL)
+        key_prefix: Prefix used in the cache key (default: function name)
     """
 
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            # Skip caching if disabled
+            # Skip caching if disabled or Redis not available
             if not FEATURE_CACHING or not redis_client:
                 return func(*args, **kwargs)
 
-            # Generate cache key from function name and arguments
-            cache_key = f"{key_prefix}:{func.__name__}:{':'.join(map(str, args))}"
-            if kwargs:
-                cache_key += f":{':'.join(f'{k}={v}' for k, v in sorted(kwargs.items()))}"
+            # Include g.user_id to scope cache per authenticated user
+            try:
+                from flask import g as flask_g
+                user_id = getattr(flask_g, "user_id", None)
+            except RuntimeError:
+                user_id = None
 
-            # Try to get from cache
+            prefix = key_prefix or func.__name__
+            parts = [prefix]
+            if user_id:
+                parts.append(str(user_id))
+            parts.extend(str(a) for a in args)
+            if kwargs:
+                parts.extend(f"{k}={v}" for k, v in sorted(kwargs.items()))
+            cache_key = ":".join(parts)
+
             cached_value = get_cached(cache_key)
             if cached_value is not None:
-                # Return cached response
                 from flask import jsonify
-
                 return jsonify(cached_value), 200
 
-            # Call function and cache result
-            response = func(*args, **kwargs)
+            result = func(*args, **kwargs)
 
-            # Extract JSON data from response
-            if hasattr(response, "get_json"):
-                data = response.get_json()
-                if data:
+            # Handle tuple (response, status_code) returns from Flask views
+            if isinstance(result, tuple):
+                response_obj = result[0]
+                status_code = result[1] if len(result) > 1 else 200
+            else:
+                response_obj = result
+                status_code = 200
+
+            # Only cache successful 200 responses
+            if status_code == 200 and hasattr(response_obj, "get_json"):
+                data = response_obj.get_json()
+                if data is not None:
                     set_cached(cache_key, data, ttl)
 
-            return response
+            return result
 
         return wrapper
 

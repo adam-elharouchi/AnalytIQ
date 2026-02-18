@@ -1,7 +1,7 @@
 # AnalytIQ — Master Task List
 
 > Generated: 2026-02-17 | Last updated: 2026-02-17
-> Total: 87 tasks (36 completed, 51 pending)
+> Total: 87 tasks (37 completed, 50 pending)
 
 ---
 
@@ -45,6 +45,7 @@
 | 30 | Made Supabase Storage non-critical in health check (failure logs warning, does not set `all_healthy = False`); added 30s in-process result cache on `/api/health` |
 | 31 | Added per-user rate limits on `/api/ai/chat` — 20 req/min + 100 req/hr keyed by `g.user_id` via `_apply_ai_rate_limits` conditional-wrapper decorator |
 | 33 | Replaced O(n²) `for ex in exercises` scan inside `get_class_progress` with an `exercise_lookup` dict built once in O(n); inner lookup is now O(1) |
+| 32 | Updated `cache_response` in `cache.py` to include `g.user_id` in key (prevents cross-user leakage) and handle tuple returns. Applied to 8 endpoints: `get_class`, `get_class_chapters`, `get_chapter_exercises`, `get_exercise_details`, `get_profile`, `get_enrolled_classes`, `get_class_average_leaderboard` (classes already cached manually). Added write-side `invalidate_cache` calls on all corresponding create/update/delete routes |
 
 ---
 
@@ -95,11 +96,10 @@
 
 ## Performance — Backend
 
-**Tasks 28–31 and 33 complete.** Remaining:
+**Tasks 28–33 complete.** Remaining (large structural changes, deferred):
 
 | # | Task |
 |---|------|
-| 32 | Apply `@cache_response` to the 8 most-read endpoints + add cache invalidation on writes |
 | 34 | Supabase presigned upload URLs — frontend uploads PDFs directly to Supabase, bypassing the Flask server |
 | 35 | Append-only conversation messages — frontend sends delta only, backend inserts single row (no full-replace) |
 

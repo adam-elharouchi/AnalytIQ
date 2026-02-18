@@ -142,6 +142,7 @@ def get_classes():
 
 @bp.route("/api/classes/<class_id>", methods=["GET"])
 @require_auth
+@cache.cache_response(ttl=60, key_prefix="class")
 def get_class(class_id):
     """Get class details"""
     try:
@@ -277,6 +278,7 @@ def update_class(class_id):
         conn.commit()
 
         cache.invalidate_cache(f"classes:user:{user_id}:*")
+        cache.invalidate_cache(f"class:*:{class_id}")
         return jsonify({"success": True}), 200
 
     except Exception as e:
@@ -308,6 +310,8 @@ def delete_class(class_id):
         conn.commit()
 
         cache.invalidate_cache(f"classes:user:{user_id}:*")
+        cache.invalidate_cache(f"class:*:{class_id}")
+        cache.invalidate_cache(f"chapters:*:{class_id}")
         return jsonify({"success": True}), 200
 
     except Exception as e:
@@ -350,6 +354,9 @@ def enroll_in_class():
         enrolled_at = class_repo.enroll_student(conn, class_id, user_id)
         conn.commit()
 
+        cache.invalidate_cache(f"enrolled:{user_id}")
+        cache.invalidate_cache(f"classes:user:{user_id}:*")
+
         return jsonify({
             "class_id": class_id,
             "class_name": class_name,
@@ -364,6 +371,7 @@ def enroll_in_class():
 
 @bp.route("/api/classes/enrolled", methods=["GET"])
 @require_auth
+@cache.cache_response(ttl=60, key_prefix="enrolled")
 def get_enrolled_classes():
     """Get all classes a student is enrolled in"""
     try:
@@ -639,6 +647,7 @@ def get_student_progress(student_id):
 
 @bp.route("/api/classes/<class_id>/leaderboard/average", methods=["GET"])
 @require_auth
+@cache.cache_response(ttl=60, key_prefix="leaderboard")
 def get_class_average_leaderboard(class_id):
     """Get average leaderboard for a class (all students ranked by average score)"""
     try:
