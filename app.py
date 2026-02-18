@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, g, send_from_directory
 from werkzeug.routing import BaseConverter
 from werkzeug.exceptions import HTTPException
+from werkzeug.middleware.proxy_fix import ProxyFix
 from extensions import limiter, csrf_exempt, mail, Message
 from db import get_db_connection, close_conn_safely, close_db_connection
 from auth_helpers import (
@@ -41,6 +42,7 @@ load_dotenv()
 
 # Initialize Flask app
 app = Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
 # Initialize Sentry with proper configuration (PII filtering, etc.)
 try:

@@ -7,6 +7,8 @@ Routes:
 
 import logging
 import os
+import threading
+import time
 
 import requests
 from flask import Blueprint, g, jsonify, request
@@ -16,6 +18,43 @@ from auth_helpers import require_auth
 from extensions import csrf_exempt, limiter
 
 logger = logging.getLogger(__name__)
+
+
+class _CircuitBreaker:
+    """Open after THRESHOLD consecutive Gemini failures; auto-reset after RECOVERY_SECS."""
+    _THRESHOLD = 5
+    _RECOVERY_SECS = 60
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._failures = 0
+        self._opened_at = 0.0
+        self._open = False
+
+    def is_open(self):
+        with self._lock:
+            if self._open:
+                if time.monotonic() - self._opened_at >= self._RECOVERY_SECS:
+                    self._open = False  # half-open: allow one probe
+                    return False
+                return True
+            return False
+
+    def record_success(self):
+        with self._lock:
+            self._failures = 0
+            self._open = False
+
+    def record_failure(self):
+        with self._lock:
+            self._failures += 1
+            if self._failures >= self._THRESHOLD:
+                self._open = True
+                self._opened_at = time.monotonic()
+
+
+_gemini_breaker = _CircuitBreaker()
+
 bp = Blueprint("ai", __name__)
 
 
@@ -59,6 +98,11 @@ def proxy_ai_chat():
         if not api_key:
             return jsonify({"error": "Server configuration error: AI API Key missing"}), 500
 
+        if _gemini_breaker.is_open():
+            return jsonify({
+                "error": "AI service is temporarily unavailable. Please try again in a minute."
+            }), 503
+
         model = data.get("model", "gemini-2.5-flash")
         allowed_models = [
             "gemini-3-pro-preview",
@@ -89,10 +133,20 @@ def proxy_ai_chat():
         )
 
         if not response.ok:
+            _gemini_breaker.record_failure()
             return jsonify(response.json()), response.status_code
 
+        _gemini_breaker.record_success()
         return jsonify(response.json())
 
+    except requests.exceptions.Timeout:
+        _gemini_breaker.record_failure()
+        logger.error("Gemini request timed out")
+        return jsonify({"error": "AI service timed out. Please try again."}), 504
+    except requests.exceptions.RequestException as e:
+        _gemini_breaker.record_failure()
+        logger.error("Gemini request failed: %s", e, exc_info=True)
+        return jsonify({"error": "AI service is temporarily unavailable. Please try again."}), 503
     except Exception as e:
-        logger.error("Unexpected error: %s", e, exc_info=True)
+        logger.error("Unexpected error in AI chat: %s", e, exc_info=True)
         return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
