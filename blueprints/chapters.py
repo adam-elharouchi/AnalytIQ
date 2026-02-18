@@ -10,6 +10,7 @@ from datetime import datetime
 from flask import Blueprint, Response, g, jsonify, redirect, request, send_from_directory
 from werkzeug.utils import secure_filename
 
+import cache
 import config
 from auth_helpers import require_auth, validate_fields
 from db import get_db_connection
@@ -204,6 +205,8 @@ def upload_chapter(class_id):
 
         conn.commit()
 
+        cache.invalidate_cache(f"chapters:*:{class_id}")
+
         return jsonify({
             "chapter_id": chapter_id_result,
             "title": chapter_title_result,
@@ -224,6 +227,7 @@ def upload_chapter(class_id):
 
 @bp.route("/api/classes/<class_id>/chapters", methods=["GET"])
 @require_auth
+@cache.cache_response(ttl=60, key_prefix="chapters")
 def get_class_chapters(class_id):
     """Get all chapters for a class"""
     try:
@@ -285,15 +289,17 @@ def update_chapter(chapter_id):
 
         conn = get_db_connection()
 
-        owner = chapter_repo.get_chapter_owner(conn, chapter_id)
-        if owner is None:
+        chapter_data = chapter_repo.get_chapter_for_delete(conn, chapter_id)
+        if chapter_data is None:
             return jsonify({"error": "Chapter not found"}), 404
-        if owner != user_id:
+        class_id, _, professor_id = chapter_data
+        if professor_id != user_id:
             return jsonify({"error": "Unauthorized"}), 403
 
         chapter_repo.update_chapter(conn, chapter_id, data.get("title"), data.get("description"))
         conn.commit()
 
+        cache.invalidate_cache(f"chapters:*:{class_id}")
         return jsonify({"success": True}), 200
     except Exception as e:
         logger.error("Unexpected error: %s", e, exc_info=True)
@@ -323,6 +329,8 @@ def delete_chapter(chapter_id):
         chapter_repo.delete_chapter_and_exercises(conn, chapter_id)
         conn.commit()
 
+        cache.invalidate_cache(f"chapters:*:{class_id}")
+        cache.invalidate_cache(f"chap_exercises:*:{chapter_id}")
         return jsonify({"success": True, "message": "Chapter deleted successfully"}), 200
 
     except Exception as e:
@@ -390,6 +398,8 @@ def generate_exercises_for_chapter(chapter_id):
 
         conn.commit()
 
+        cache.invalidate_cache(f"chap_exercises:*:{chapter_id}")
+
         return jsonify({
             "success": True,
             "exercises_generated": exercises_generated,
@@ -403,6 +413,7 @@ def generate_exercises_for_chapter(chapter_id):
 
 @bp.route("/api/chapters/<chapter_id>/exercises", methods=["GET"])
 @require_auth
+@cache.cache_response(ttl=60, key_prefix="chap_exercises")
 def get_chapter_exercises(chapter_id):
     """Get all exercises for a chapter"""
     try:
@@ -492,6 +503,7 @@ def create_exercise(class_id, chapter_id):
         )
         conn.commit()
 
+        cache.invalidate_cache(f"chap_exercises:*:{chapter_id}")
         return jsonify({"success": True, "exercise_id": exercise_id}), 201
 
     except Exception as e:

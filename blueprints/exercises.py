@@ -3,6 +3,7 @@ Exercises Blueprint — /api/exercises/* and /api/leaderboard/grand
 """
 import logging
 from flask import Blueprint, g, jsonify, request
+import cache
 import config
 from auth_helpers import require_auth, validate_fields
 from db import get_db_connection
@@ -113,6 +114,7 @@ def get_grand_leaderboard():
 
 @bp.route("/api/exercises/<exercise_id>", methods=["GET"])
 @require_auth
+@cache.cache_response(ttl=120, key_prefix="exercise")
 def get_exercise_details(exercise_id):
     """Get details of a single exercise"""
     try:
@@ -174,6 +176,7 @@ def update_exercise(exercise_id):
         )
         conn.commit()
 
+        cache.invalidate_cache(f"exercise:*:{exercise_id}")
         return jsonify({"success": True}), 200
     except Exception as e:
         logger.error("Unexpected error: %s", e, exc_info=True)
@@ -192,9 +195,12 @@ def delete_exercise(exercise_id):
         if not location:
             return jsonify({"error": "Exercise not found"}), 404
 
+        chapter_id = location[0]
         exercise_repo.delete_exercise(conn, exercise_id)
         conn.commit()
 
+        cache.invalidate_cache(f"exercise:*:{exercise_id}")
+        cache.invalidate_cache(f"chap_exercises:*:{chapter_id}")
         return jsonify({"success": True}), 200
 
     except Exception as e:
