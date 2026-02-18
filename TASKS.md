@@ -1,7 +1,7 @@
 # AnalytIQ — Master Task List
 
 > Generated: 2026-02-17 | Last updated: 2026-02-18
-> Total: 87 tasks (47 completed, 40 pending)
+> Total: 87 tasks (48 completed, 39 pending)
 
 ---
 
@@ -56,6 +56,7 @@
 | 27 | 401 interceptor added to `apiClient` in `js/api-client.js` → clears `authToken` + `currentUser` from localStorage, redirects to `auth.html?reason=session_expired&redirect=<current-page>` |
 | 45 | Password min 8 / max 72 validation added to `POST /api/users/signup` and `POST /api/users/reset-password` using `config.MIN_PASSWORD_LENGTH` / `config.MAX_PASSWORD_LENGTH`; 4 existing tests updated from short test passwords |
 | 49 | Created `tests/test_security.py` — 51 tests, one per authenticated endpoint, all asserting 401 when no Bearer token is provided. Covers users (20), classes (16), chapters (8), exercises (6), AI (1). Acts as auth-regression guard in CI. |
+| 43 | Deleted 38 `test_app_*.py` coverage-farming files; replaced with 6 domain-organized behavioral test files: `test_auth.py` (18), `test_classes_routes.py` (27), `test_chapters_routes.py` (23), `test_exercises_routes.py` (18), `test_users_routes.py` (38), `test_ai_routes.py` (8). Tests verify response shape and business rules, not just status code ranges. |
 
 ---
 
@@ -131,11 +132,10 @@
 
 ## Testing
 
-**Tasks 45 and 49 complete.** Remaining:
+**Tasks 43, 45 and 49 complete.** Remaining:
 
 | # | Task |
 |---|------|
-| 43 | Consolidate 38 coverage-farming `test_app_*.py` files into 6 domain-organized behavioral test files |
 | 44 | Add `tests/integration/` with real DB integration tests for core flows (CI already spins up Postgres + Redis) |
 | 47 | Add Playwright E2E tests for 4 core flows: signup, upload chapter, generate exercises, AI chat |
 | 48 | Add k6 load tests for 3 scenarios: login burst, exercise list, AI chat concurrent users |
@@ -230,7 +230,7 @@
    Remaining: Task 13 (Jinja2 templates), Task 26 (Cloudflare CDN — infrastructure)
 
 5. **Testing** — consolidate + add integration + security tests:
-   ~~Tasks 45, 49 done~~ — Remaining: Tasks 43, 44, 47, 48
+   ~~Tasks 43, 45, 49 done~~ — Remaining: Tasks 44, 47, 48
 
 6. **Security (remaining)** — legacy hashes, audit log:
    Tasks 19, 20
