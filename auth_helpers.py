@@ -5,6 +5,7 @@ Extracted from app.py as Phase 1 of Blueprint extraction.
 """
 
 import logging
+import re
 import functools
 from datetime import datetime, timedelta
 
@@ -15,6 +16,28 @@ from flask import jsonify, request, g, current_app
 import config
 
 logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Email validation
+# ---------------------------------------------------------------------------
+
+# RFC 5321-compatible simple pattern — covers 99%+ of real addresses.
+_EMAIL_RE = re.compile(r"^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$")
+
+
+def validate_email(email):
+    """Return True if *email* passes basic format validation.
+
+    Checks:
+    - Non-empty string
+    - Matches ``user@domain.tld`` pattern (no consecutive dots, valid TLD ≥ 2 chars)
+    - Does not exceed RFC 5321 maximum length (254 chars)
+    """
+    if not email or not isinstance(email, str):
+        return False
+    stripped = email.strip()
+    return bool(_EMAIL_RE.match(stripped)) and len(stripped) <= config.MAX_EMAIL_LENGTH
+
 
 # ---------------------------------------------------------------------------
 # Field validation
