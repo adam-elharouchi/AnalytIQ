@@ -28,16 +28,16 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "python"))
 try:
     from pdf_processor import extract_text_from_pdf_bytes
 except ImportError:
-    print("Warning: PDF processor not available. PDF uploads will not work.")
+    logger.warning("PDF processor not available. PDF uploads will not work.")
     extract_text_from_pdf_bytes = None
 
 try:
     from exercise_generator import generate_exercises_from_pdf_content
 except ImportError:
-    print("Warning: Exercise generator not available. Exercise generation will not work.")
+    logger.warning("Exercise generator not available. Exercise generation will not work.")
     generate_exercises_from_pdf_content = None
 
-ALLOWED_EXTENSIONS = {"pdf", "csv", "xlsx", "xls", "json", "txt", "ipynb"}
+ALLOWED_EXTENSIONS = config.ALLOWED_EXTENSIONS
 
 
 def allowed_file(filename):

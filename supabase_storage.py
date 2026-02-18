@@ -3,7 +3,10 @@ Supabase Storage Client for AnalytIQ
 Handles PDF file uploads, downloads, and migrations to Supabase Storage
 """
 
+import logging
 import config
+
+logger = logging.getLogger(__name__)
 
 # Supabase configuration
 SUPABASE_URL = config.SUPABASE_URL
@@ -16,13 +19,13 @@ try:
 
     if SUPABASE_URL and SUPABASE_KEY:
         supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-        print(f"✅ Supabase client initialized (bucket: {SUPABASE_BUCKET})")
+        logger.info("Supabase client initialized (bucket: %s)", SUPABASE_BUCKET)
     else:
         supabase = None
-        print("⚠️  Supabase credentials not configured")
+        logger.warning("Supabase credentials not configured")
 except ImportError:
     supabase = None
-    print("⚠️  Supabase library not installed")
+    logger.warning("Supabase library not installed")
 
 
 def upload_pdf(file_bytes, filename):
@@ -51,7 +54,7 @@ def upload_pdf(file_bytes, filename):
         return public_url
 
     except Exception as e:
-        print(f"Error uploading PDF: {e}")
+        logger.error("Error uploading PDF: %s", e)
         return None
 
 
@@ -78,7 +81,7 @@ def get_pdf_url(filename, expires_in=3600):
         return signed_url["signedURL"] if signed_url else None
 
     except Exception as e:
-        print(f"Error getting PDF URL: {e}")
+        logger.error("Error getting PDF URL: %s", e)
         return None
 
 
@@ -100,7 +103,7 @@ def delete_pdf(filename):
         return True
 
     except Exception as e:
-        print(f"Error deleting PDF: {e}")
+        logger.error("Error deleting PDF: %s", e)
         return False
 
 
@@ -120,7 +123,7 @@ def get_presigned_upload_url(storage_path):
         response = supabase.storage.from_(SUPABASE_BUCKET).create_signed_upload_url(storage_path)
         return response
     except Exception as e:
-        print(f"Error creating presigned upload URL: {e}")
+        logger.error("Error creating presigned upload URL: %s", e)
         return None
 
 

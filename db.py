@@ -66,7 +66,7 @@ def get_db_params(database_url=None):
             "password": password,
         }
     except Exception as e:
-        print(f"Error parsing connection string: {e}")
+        logger.error("Error parsing connection string: %s", e)
         return None
 
 
@@ -130,13 +130,13 @@ def init_db_pool():
             test_cursor.execute("SELECT 1")
             test_cursor.close()
             db_pool.putconn(test_conn)
-            print("Database connection pool initialized and tested successfully")
+            logger.info("Database connection pool initialized and tested successfully")
         except Exception as test_error:
-            print(f"Pool created but test query failed: {test_error}")
+            logger.warning("Pool created but test query failed: %s", test_error)
             # Don't raise - pool might still work for actual queries
 
     except psycopg2.OperationalError as e:
-        print(f"Pool initialization failed with direct URL: {e}")
+        logger.error("Pool initialization failed with direct URL: %s", e)
         # Fallback to resolved params if needed (usually direct URL works for pools)
         try:
             params = get_db_params(database_url)
@@ -152,7 +152,7 @@ def init_db_pool():
                 except Exception:
                     pass
 
-                print("Retrying with explicit connection parameters...")
+                logger.info("Retrying with explicit connection parameters...")
                 db_pool = pool.ThreadedConnectionPool(
                     minconn=1,
                     maxconn=10,
@@ -165,10 +165,10 @@ def init_db_pool():
                     connect_timeout=10,
                     options="-c statement_timeout=30000",
                 )
-                print("Database connection pool initialized with explicit params")
+                logger.info("Database connection pool initialized with explicit params")
         except Exception as e2:
-            print(f"Critical error initializing pool: {e2}")
-            print("   Please check DATABASE_URL environment variable")
+            logger.critical("Critical error initializing pool: %s", e2)
+            logger.critical("Please check DATABASE_URL environment variable")
             raise
 
 
@@ -200,7 +200,7 @@ def get_db_connection():
                     cursor.close()
                 except Exception as test_error:
                     # Connection is stale, close it and retry
-                    print(f"Connection test failed on attempt {attempt + 1}: {test_error}")
+                    logger.warning("Connection test failed on attempt %d: %s", attempt + 1, test_error)
                     try:
                         db_pool.putconn(g.db_conn, close=True)
                     except Exception:
@@ -212,15 +212,15 @@ def get_db_connection():
                 break  # Success!
 
             except Exception as e:
-                print(
-                    f"Error getting connection from pool (attempt {attempt + 1}/{max_retries}): {e}"
+                logger.warning(
+                    "Error getting connection from pool (attempt %d/%d): %s", attempt + 1, max_retries, e
                 )
                 if attempt < max_retries - 1:
                     # Wait before retrying
                     time.sleep(retry_delay)
                     # Try to reinitialize pool on last retry
                     if attempt == max_retries - 2:
-                        print("Reinitializing connection pool...")
+                        logger.info("Reinitializing connection pool...")
                         db_pool = None
                         init_db_pool()
                 else:
@@ -244,4 +244,4 @@ def close_db_connection(exception=None):
         try:
             db_pool.putconn(db_conn)
         except Exception as e:
-            print(f"Error returning connection to pool: {e}")
+            logger.error("Error returning connection to pool: %s", e)

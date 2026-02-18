@@ -9,6 +9,7 @@ from auth_helpers import (
     hash_password, hash_password_legacy, verify_password,
     detect_role_from_email, validate_fields
 )
+import logging
 import psycopg2
 from dotenv import load_dotenv
 import os
@@ -24,18 +25,22 @@ from cache import cache_health_check
 from supabase_storage import storage_health_check
 
 
+# Early logger — handlers are added below after JSON formatter is configured.
+# These early startup warnings use Python's default stderr handler.
+logger = logging.getLogger("analytiq")
+
 # Add python directory to path for PDF processor and exercise generator
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "python"))
 try:
     from pdf_processor import extract_text_from_pdf_bytes
 except ImportError:
-    print("Warning: PDF processor not available. PDF uploads will not work.")
+    logger.warning("PDF processor not available. PDF uploads will not work.")
     extract_text_from_pdf_bytes = None
 
 try:
     from exercise_generator import generate_exercises_from_pdf_content
 except ImportError:
-    print("Warning: Exercise generator not available. Exercise generation will not work.")
+    logger.warning("Exercise generator not available. Exercise generation will not work.")
     generate_exercises_from_pdf_content = None
 
 # Load environment variables
@@ -50,9 +55,9 @@ try:
     from sentry_config import init_sentry
     init_sentry(app)
 except ImportError:
-    print("Warning: sentry_config not available. Sentry will not be active.")
+    logger.warning("sentry_config not available. Sentry will not be active.")
 except Exception as e:
-    print(f"Warning: Failed to initialize Sentry: {e}")
+    logger.warning("Failed to initialize Sentry: %s", e)
 app.config["SECRET_KEY"] = config.SECRET_KEY
 
 # Disable automatic OPTIONS handling so we can handle CORS manually
@@ -60,12 +65,10 @@ app.config["SEND_FILE_MAX_AGE_DEFAULT"] = config.SEND_FILE_MAX_AGE_DEFAULT
 app.config["MAX_CONTENT_LENGTH"] = config.MAX_CONTENT_LENGTH
 app.config["UPLOAD_FOLDER"] = config.UPLOAD_FOLDER
 
-# Structured Logging Configuration
-import logging
+# Structured Logging Configuration — add JSON handler + request-ID filter
 from pythonjsonlogger import jsonlogger
 
-# Create logger
-logger = logging.getLogger("analytiq")
+# logger was created early (top of file); now configure its handler
 logger.setLevel(logging.INFO)
 
 # Create console handler with JSON formatter
@@ -114,7 +117,7 @@ if mail is not None:
     app.config["MAIL_DEFAULT_SENDER"] = config.MAIL_DEFAULT_SENDER
     mail.init_app(app)
 else:
-    print("Warning: Flask-Mail not installed. Email features will not work.")
+    logger.warning("Flask-Mail not installed. Email features will not work.")
 
 # Rate limiting — configured via extensions.py
 try:
@@ -182,9 +185,9 @@ try:
         """Serve the OpenAPI specification JSON"""
         return jsonify(api_docs.get_openapi_spec_dict())
 
-    print("✅ API documentation available at /api/docs")
+    logger.info("API documentation available at /api/docs")
 except ImportError:
-    print("Warning: Swagger UI not installed. API documentation will not be available.")
+    logger.warning("Swagger UI not installed. API documentation will not be available.")
 
 # ============================================================================
 # CELERY INTEGRATION (Async Task Processing)
@@ -197,22 +200,17 @@ try:
     FEATURE_ASYNC_TASKS = os.getenv("FEATURE_ASYNC_TASKS", "False").lower() == "true"
 
     if FEATURE_ASYNC_TASKS:
-        print("✅ Celery async tasks enabled")
+        logger.info("Celery async tasks enabled")
     else:
-        print("⚠️  Celery async tasks disabled (feature flag off)")
-        # Use a marker or just note it's disabled
-        pass
+        logger.info("Celery async tasks disabled (feature flag off)")
 except ImportError:
-    print("Warning: Celery not installed. Async task processing will not be available.")
+    logger.warning("Celery not installed. Async task processing will not be available.")
     celery_app = None
     FEATURE_ASYNC_TASKS = False
 
 
 # Ensure upload folder exists
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
-
-ALLOWED_EXTENSIONS = {"pdf", "csv", "xlsx", "xls", "json", "txt", "ipynb"}
-
 
 # CORS handling - uses configured origins (set CORS_ORIGINS env var in production)
 def _get_cors_origin():
