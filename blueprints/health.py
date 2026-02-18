@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 bp = Blueprint("health", __name__)
 
 # 30-second in-process cache for /api/health results
-_health_cache = None  # type: tuple | None  (health_status dict, status_code int)
+_health_cache = None  # type: ignore[var-annotated]  (tuple of health_status dict + status_code int)
 _health_cache_time = 0.0
 _HEALTH_CACHE_TTL = 30  # seconds
 
