@@ -1,7 +1,7 @@
 # AnalytIQ — Master Task List
 
 > Generated: 2026-02-17 | Last updated: 2026-02-18
-> Total: 87 tasks (45 completed, 42 pending)
+> Total: 87 tasks (47 completed, 40 pending)
 
 ---
 
@@ -54,6 +54,8 @@
 | 24 | Created `js/ui-states.js` — `uiStates.showLoading()` (CSS skeleton shimmer cards), `showEmpty()` (empty state + CTA), `showError()` (retry button), `showContent()`; CSS injected once on first call |
 | 25 | `apiClient` returns structured `{ok, data, error}` result objects — pages can now render error state with retry button |
 | 27 | 401 interceptor added to `apiClient` in `js/api-client.js` → clears `authToken` + `currentUser` from localStorage, redirects to `auth.html?reason=session_expired&redirect=<current-page>` |
+| 45 | Password min 8 / max 72 validation added to `POST /api/users/signup` and `POST /api/users/reset-password` using `config.MIN_PASSWORD_LENGTH` / `config.MAX_PASSWORD_LENGTH`; 4 existing tests updated from short test passwords |
+| 49 | Created `tests/test_security.py` — 51 tests, one per authenticated endpoint, all asserting 401 when no Bearer token is provided. Covers users (20), classes (16), chapters (8), exercises (6), AI (1). Acts as auth-regression guard in CI. |
 
 ---
 
@@ -129,14 +131,14 @@
 
 ## Testing
 
+**Tasks 45 and 49 complete.** Remaining:
+
 | # | Task |
 |---|------|
-| 43 | Consolidate 56 coverage-farming test files into feature-organized behavioral tests |
+| 43 | Consolidate 38 coverage-farming `test_app_*.py` files into 6 domain-organized behavioral test files |
 | 44 | Add `tests/integration/` with real DB integration tests for core flows (CI already spins up Postgres + Redis) |
-| 45 | Add password validation to signup (min 8, max 72 chars), align reset-password endpoint, add tests |
 | 47 | Add Playwright E2E tests for 4 core flows: signup, upload chapter, generate exercises, AI chat |
 | 48 | Add k6 load tests for 3 scenarios: login burst, exercise list, AI chat concurrent users |
-| 49 | Add `tests/test_security.py` with 401/403 assertions for all authenticated endpoints |
 
 ---
 
@@ -228,7 +230,7 @@
    Remaining: Task 13 (Jinja2 templates), Task 26 (Cloudflare CDN — infrastructure)
 
 5. **Testing** — consolidate + add integration + security tests:
-   Tasks 43, 44, 45, 47, 48, 49
+   ~~Tasks 45, 49 done~~ — Remaining: Tasks 43, 44, 47, 48
 
 6. **Security (remaining)** — legacy hashes, audit log:
    Tasks 19, 20
