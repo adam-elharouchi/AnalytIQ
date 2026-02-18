@@ -13,6 +13,7 @@ import psycopg2
 from dotenv import load_dotenv
 import os
 import json
+import uuid
 from datetime import datetime
 from werkzeug.utils import secure_filename
 import sys
@@ -70,11 +71,29 @@ logger.setLevel(logging.INFO)
 # Create console handler with JSON formatter
 log_handler = logging.StreamHandler()
 formatter = jsonlogger.JsonFormatter(
-    "%(asctime)s %(name)s %(levelname)s %(message)s",
+    "%(asctime)s %(name)s %(levelname)s %(request_id)s %(message)s",
     rename_fields={"asctime": "timestamp", "levelname": "level", "name": "service"},
 )
 log_handler.setFormatter(formatter)
 logger.addHandler(log_handler)
+
+
+class _RequestIdFilter(logging.Filter):
+    """Inject g.request_id into every log record for structured tracing."""
+
+    def filter(self, record):
+        try:
+            from flask import g as _g
+            record.request_id = getattr(_g, "request_id", "-")
+        except RuntimeError:
+            record.request_id = "-"
+        return True
+
+
+_rid_filter = _RequestIdFilter()
+log_handler.addFilter(_rid_filter)
+# Apply to root logger so blueprint loggers (which propagate to root) also get it
+logging.root.addFilter(_rid_filter)
 
 # Log startup
 logger.info(
@@ -217,6 +236,17 @@ def _get_cors_origin():
 
 
 @app.before_request
+def assign_request_id():
+    """Assign a UUID per request for log tracing and the X-Request-ID response header."""
+    g.request_id = str(uuid.uuid4())
+    try:
+        import sentry_sdk
+        sentry_sdk.set_tag("request_id", g.request_id)
+    except Exception:
+        pass
+
+
+@app.before_request
 def handle_options():
     if request.method == "OPTIONS":
         response = app.response_class()
@@ -274,6 +304,7 @@ def after_request(response):
         "font-src 'self'; "
         "frame-ancestors 'none'"
     )
+    response.headers["X-Request-ID"] = getattr(g, "request_id", "")
     return response
 
 
