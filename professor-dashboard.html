@@ -30,7 +30,7 @@
     <!-- Empty State -->
     <div id="emptyState" style="display: none; text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem;">
       <div style="font-size: 3rem; margin-bottom: 1rem;">📚</div>
-      <h2 style="color: #222c3e; margin-bottom: 0.5rem;">No Classes Yet</h2>
+      <h2 style="color: var(--color-dark); margin-bottom: 0.5rem;">No Classes Yet</h2>
       <p style="color: #64748b; margin-bottom: 1.5rem;">Create your first class to get started</p>
       <button class="btn btn-primary" onclick="showCreateClassModal()">Create Your First Class</button>
     </div>
@@ -44,13 +44,13 @@
     <div id="createClassModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center;">
       <div style="background: white; border-radius: 0.5rem; padding: 2rem; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-          <h2 style="margin: 0; color: #222c3e;">Create New Class</h2>
+          <h2 style="margin: 0; color: var(--color-dark);">Create New Class</h2>
           <button onclick="hideCreateClassModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b;">&times;</button>
         </div>
         
         <form id="createClassForm" onsubmit="handleCreateClass(event)">
           <div style="margin-bottom: 1.5rem;">
-            <label for="className" style="display: block; margin-bottom: 0.5rem; color: #222c3e; font-weight: 500;">Class Name *</label>
+            <label for="className" style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Class Name *</label>
             <input 
               type="text" 
               id="className" 
@@ -61,7 +61,7 @@
           </div>
           
           <div style="margin-bottom: 1.5rem;">
-            <label for="classCode" style="display: block; margin-bottom: 0.5rem; color: #222c3e; font-weight: 500;">Class Code/ID *</label>
+            <label for="classCode" style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Class Code/ID *</label>
             <input 
               type="text" 
               id="classCode" 
@@ -75,7 +75,7 @@
           </div>
           
           <div style="margin-bottom: 1.5rem;">
-            <label for="classDescription" style="display: block; margin-bottom: 0.5rem; color: #222c3e; font-weight: 500;">Description</label>
+            <label for="classDescription" style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Description</label>
             <textarea 
               id="classDescription" 
               rows="4"

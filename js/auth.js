@@ -99,7 +99,24 @@ class AuthManager {
         })
       });
 
-      const data = await response.json();
+      const contentType = response.headers.get('Content-Type') || '';
+      let data = {};
+      if (contentType.includes('application/json')) {
+        try {
+          data = await response.json();
+        } catch (_) {
+          data = { error: 'Invalid response from server.' };
+        }
+      } else {
+        const text = await response.text();
+        if (response.status === 405) {
+          throw new Error('Sign-in request was rejected (Method Not Allowed). The server may not be configured to handle login. Try again or contact support.');
+        }
+        if (!response.ok) {
+          throw new Error(text && text.length < 200 ? text : `Sign in failed (${response.status}). Please try again or contact support.`);
+        }
+        throw new Error('Unexpected response from server. Please try again.');
+      }
 
       if (!response.ok) {
         throw new Error(data.error || 'Sign in failed');

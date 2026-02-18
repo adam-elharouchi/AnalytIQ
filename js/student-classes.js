@@ -55,7 +55,7 @@ async function loadEnrolledClasses() {
     emptyState.style.display = 'block';
     emptyState.innerHTML = `
       <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
-      <h2 style="color: #222c3e; margin-bottom: 0.5rem;">Error Loading Classes</h2>
+      <h2 style="color: var(--color-dark); margin-bottom: 0.5rem;">Error Loading Classes</h2>
       <p style="color: #64748b; margin-bottom: 1.5rem;">${error.message}</p>
       <button class="btn btn-primary" onclick="loadEnrolledClasses()">Retry</button>
     `;
@@ -66,10 +66,10 @@ async function loadEnrolledClasses() {
 function renderClasses(classes) {
   const classesGrid = document.getElementById('classesGrid');
   classesGrid.innerHTML = classes.map(classItem => `
-    <div class="class-card" style="background: white; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 1.5rem; transition: box-shadow 0.2s;">
+    <div class="class-card" style="background: white; border: 1px solid var(--border-color); border-radius: 0.5rem; padding: 1.5rem; transition: box-shadow 0.2s;">
       <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
         <div style="flex: 1;">
-          <h3 style="margin: 0; color: #222c3e; font-size: 1.25rem;">${escapeHtml(classItem.name)}</h3>
+          <h3 style="margin: 0; color: var(--color-dark); font-size: 1.25rem;">${escapeHtml(classItem.name)}</h3>
           <p style="color: #64748b; font-size: 0.875rem; margin-top: 0.25rem;">${escapeHtml(classItem.professor_name || '')}</p>
         </div>
       </div>
@@ -78,11 +78,11 @@ function renderClasses(classes) {
       
       <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1.5rem; padding: 1rem; background: #f8fafc; border-radius: 0.375rem;">
         <div>
-          <div style="font-size: 1.5rem; font-weight: 600; color: #2569f4;">${classItem.chapter_count || 0}</div>
+          <div style="font-size: 1.5rem; font-weight: 600; color: var(--color-primary);">${classItem.chapter_count || 0}</div>
           <div style="font-size: 0.875rem; color: #64748b;">Chapters</div>
         </div>
         <div>
-          <div style="font-size: 1.5rem; font-weight: 600; color: #2569f4;">${classItem.student_count || 0}</div>
+          <div style="font-size: 1.5rem; font-weight: 600; color: var(--color-primary);">${classItem.student_count || 0}</div>
           <div style="font-size: 0.875rem; color: #64748b;">Students</div>
         </div>
       </div>
