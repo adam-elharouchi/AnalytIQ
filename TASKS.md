@@ -114,11 +114,11 @@
 
 ## Observability
 
+**Tasks 40 and 42 complete.** `assign_request_id()` before_request generates `g.request_id = uuid4()` on every request; `_RequestIdFilter` injects it into all JSON log records; `X-Request-ID` response header emitted; Sentry tagged. Public `/api/health` returns `{"status":"healthy|degraded"}` only; `/api/health/detail` (`@require_auth`) returns full per-service diagnostics. Remaining:
+
 | # | Task |
 |---|------|
-| 40 | Generate UUID `request_id` in `before_request`; add to all logger calls, Sentry scope, and `X-Request-ID` response header |
-| 41 | Add PostHog free tier for business metrics (review FERPA before including student identifiers) |
-| 42 | Split health check: public `/api/health` returns status only; `/api/health/detail` requires `@require_auth` |
+| 41 | Add PostHog free tier for business metrics — **deferred pending FERPA review** (student identifiers must not be sent without legal sign-off) |
 
 ---
 
