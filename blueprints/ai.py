@@ -40,23 +40,24 @@ def _apply_ai_rate_limits(f):
 def proxy_ai_chat():
     """Secure proxy for Gemini Chat API."""
     try:
-        api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key:
-            return jsonify({"error": "Server configuration error: AI API Key missing"}), 500
-
         data = request.json or {}
 
-        # Task 28: payload cap — reject oversized requests before forwarding to Gemini
-        contents = data.get("contents", [])
-        if len(contents) > config.MAX_AI_CONVERSATION_MESSAGES:
-            return jsonify({
-                "error": f"Conversation too long. Maximum {config.MAX_AI_CONVERSATION_MESSAGES} messages allowed."
-            }), 400
+        # Input validation first (before API key check — no external dependency needed)
         payload_bytes = request.content_length or 0
         if payload_bytes > config.MAX_AI_MESSAGE_LENGTH:
             return jsonify({
                 "error": f"Request payload too large. Maximum {config.MAX_AI_MESSAGE_LENGTH // 1024}KB allowed."
             }), 413
+
+        contents = data.get("contents", [])
+        if len(contents) > config.MAX_AI_CONVERSATION_MESSAGES:
+            return jsonify({
+                "error": f"Conversation too long. Maximum {config.MAX_AI_CONVERSATION_MESSAGES} messages allowed."
+            }), 400
+
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            return jsonify({"error": "Server configuration error: AI API Key missing"}), 500
 
         model = data.get("model", "gemini-2.5-flash")
         allowed_models = [
