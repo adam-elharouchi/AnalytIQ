@@ -7,16 +7,16 @@ import sys
 import uuid
 from datetime import datetime
 
-import psycopg2
 from flask import Blueprint, Response, g, jsonify, redirect, request, send_from_directory
 from werkzeug.utils import secure_filename
 
-import cache
 import config
 from auth_helpers import require_auth, validate_fields
-from blueprints.exercises import ensure_exercises_table
-from db import close_conn_safely, get_db_connection
+from db import get_db_connection
 from extensions import csrf_exempt
+from repositories import chapter_repository as chapter_repo
+from repositories import class_repository as class_repo
+from repositories.exercise_repository import ensure_exercises_table
 
 logger = logging.getLogger(__name__)
 bp = Blueprint("chapters", __name__)
@@ -116,40 +116,25 @@ def upload_chapter(class_id):
             return jsonify({"error": "Missing user_id"}), 400
 
         conn = get_db_connection()
-        cursor = conn.cursor()
 
-        cursor.execute("SELECT professor_id FROM classes WHERE class_id = %s", (class_id,))
-        class_data = cursor.fetchone()
-        if not class_data:
-            cursor.close()
-            close_conn_safely(conn)
+        owner = class_repo.get_class_owner(conn, class_id)
+        if owner is None:
             return jsonify({"error": "Class not found"}), 404
-
-        if class_data[0] != user_id:
-            cursor.close()
-            close_conn_safely(conn)
+        if owner != user_id:
             return jsonify({"error": "Only the class owner can upload chapters"}), 403
 
         if "pdf_file" not in request.files:
-            cursor.close()
-            close_conn_safely(conn)
             return jsonify({"error": "No PDF file provided"}), 400
 
         file = request.files["pdf_file"]
         if file.filename == "":
-            cursor.close()
-            close_conn_safely(conn)
             return jsonify({"error": "No file selected"}), 400
 
         if not allowed_file(file.filename):
-            cursor.close()
-            close_conn_safely(conn)
             return jsonify({"error": "Invalid file type. Only PDF files are allowed."}), 400
 
         is_valid, error_message = validate_pdf_file(file)
         if not is_valid:
-            cursor.close()
-            close_conn_safely(conn)
             logger.warning(
                 "PDF upload rejected",
                 extra={
@@ -166,8 +151,6 @@ def upload_chapter(class_id):
         exercise_mode = request.form.get("exercise_mode", "auto")
 
         if not title:
-            cursor.close()
-            close_conn_safely(conn)
             return jsonify({"error": "Chapter title is required"}), 400
 
         file_bytes = file.read()
@@ -181,38 +164,15 @@ def upload_chapter(class_id):
             try:
                 pdf_text = extract_text_from_pdf_bytes(file_bytes)
             except Exception as e:
-                print(f"Warning: Could not extract text from PDF: {e}")
+                logger.warning("Could not extract text from PDF: %s", e)
                 pdf_text = None
 
-        cursor.execute(
-            """
-            SELECT COALESCE(MAX(chapter_number), 0) + 1
-            FROM class_chapters
-            WHERE class_id = %s
-        """,
-            (class_id,),
-        )
-        chapter_number = cursor.fetchone()[0] or 1
-
-        cursor.execute(
-            """
-            INSERT INTO class_chapters (chapter_id, class_id, title, description, chapter_number, pdf_url, pdf_filename, pdf_data)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            RETURNING chapter_id, title, description, chapter_number, created_at
-        """,
-            (
-                chapter_id,
-                class_id,
-                title,
-                description,
-                chapter_number,
-                pdf_url,
-                pdf_filename,
-                psycopg2.Binary(file_bytes),
-            ),
+        chapter_number = chapter_repo.get_next_chapter_number(conn, class_id)
+        chapter_data = chapter_repo.insert_chapter(
+            conn, chapter_id, class_id, title, description,
+            chapter_number, pdf_url, pdf_filename, file_bytes,
         )
 
-        chapter_data = cursor.fetchone()
         chapter_id_result = chapter_data[0]
         chapter_title_result = chapter_data[1]
 
@@ -231,53 +191,33 @@ def upload_chapter(class_id):
                         exercise_id = (
                             f"{chapter_id_result}_ex_{idx}_{int(datetime.now().timestamp() * 1000)}"
                         )
-                        cursor.execute(
-                            """
-                            INSERT INTO class_exercises (exercise_id, chapter_id, class_id, title, description, difficulty, solution_code, exercise_number)
-                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-                        """,
-                            (
-                                exercise_id,
-                                chapter_id_result,
-                                class_id,
-                                exercise["title"],
-                                exercise["description"],
-                                exercise["difficulty"],
-                                exercise["solution_code"],
-                                idx,
-                            ),
+                        chapter_repo.insert_exercise(
+                            conn, exercise_id, chapter_id_result, class_id,
+                            exercise["title"], exercise["description"],
+                            exercise["difficulty"], exercise["solution_code"], idx,
                         )
                     exercises_generated = len(exercises)
                     conn.commit()
             except Exception as e:
-                print(f"Warning: Could not generate exercises: {e}")
+                logger.warning("Could not generate exercises: %s", e)
                 exercises_generated = 0
 
         conn.commit()
-        cursor.close()
-        close_conn_safely(conn)
 
-        return (
-            jsonify(
-                {
-                    "chapter_id": chapter_id_result,
-                    "title": chapter_title_result,
-                    "description": chapter_data[2],
-                    "chapter_number": chapter_data[3],
-                    "created_at": chapter_data[4].isoformat() if chapter_data[4] else None,
-                    "pdf_url": pdf_url,
-                    "pdf_text_extracted": pdf_text is not None,
-                    "exercise_mode": exercise_mode,
-                    "exercises_generated": exercises_generated,
-                    "success": True,
-                }
-            ),
-            201,
-        )
+        return jsonify({
+            "chapter_id": chapter_id_result,
+            "title": chapter_title_result,
+            "description": chapter_data[2],
+            "chapter_number": chapter_data[3],
+            "created_at": chapter_data[4].isoformat() if chapter_data[4] else None,
+            "pdf_url": pdf_url,
+            "pdf_text_extracted": pdf_text is not None,
+            "exercise_mode": exercise_mode,
+            "exercises_generated": exercises_generated,
+            "success": True,
+        }), 201
 
     except Exception as e:
-        import traceback
-        traceback.print_exc()
         logger.error("Unexpected error: %s", e, exc_info=True)
         return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
@@ -292,58 +232,33 @@ def get_class_chapters(class_id):
             return jsonify({"error": "Missing user_id"}), 400
 
         conn = get_db_connection()
-        cursor = conn.cursor()
 
-        cursor.execute("SELECT professor_id FROM classes WHERE class_id = %s", (class_id,))
-        class_data = cursor.fetchone()
-        if not class_data:
-            cursor.close()
-            close_conn_safely(conn)
+        owner = class_repo.get_class_owner(conn, class_id)
+        if owner is None:
             return jsonify({"error": "Class not found"}), 404
 
         role = getattr(g, "user_role", None) or "student"
         is_professor = role == "professor"
-        is_owner = class_data[0] == user_id
+        is_owner = owner == user_id
 
         if not is_owner and not is_professor:
-            cursor.execute(
-                """
-                SELECT 1 FROM class_enrollments
-                WHERE class_id = %s AND student_id = %s
-            """,
-                (class_id, user_id),
-            )
-            if not cursor.fetchone():
-                cursor.close()
-                close_conn_safely(conn)
+            if not class_repo.check_enrollment(conn, class_id, user_id):
                 return jsonify({"error": "Access denied"}), 403
 
-        cursor.execute(
-            """
-            SELECT chapter_id, title, description, chapter_number, pdf_url, pdf_filename, created_at
-            FROM class_chapters
-            WHERE class_id = %s
-            ORDER BY chapter_number ASC
-        """,
-            (class_id,),
-        )
+        rows = chapter_repo.get_class_chapters(conn, class_id)
 
-        chapters = []
-        for row in cursor.fetchall():
-            chapters.append(
-                {
-                    "chapter_id": row[0],
-                    "title": row[1],
-                    "description": row[2],
-                    "chapter_number": row[3],
-                    "pdf_url": row[4],
-                    "pdf_filename": row[5],
-                    "created_at": row[6].isoformat() if row[6] else None,
-                }
-            )
-
-        cursor.close()
-        close_conn_safely(conn)
+        chapters = [
+            {
+                "chapter_id": row[0],
+                "title": row[1],
+                "description": row[2],
+                "chapter_number": row[3],
+                "pdf_url": row[4],
+                "pdf_filename": row[5],
+                "created_at": row[6].isoformat() if row[6] else None,
+            }
+            for row in rows
+        ]
 
         return jsonify({"chapters": chapters}), 200
 
@@ -369,41 +284,15 @@ def update_chapter(chapter_id):
             return jsonify({"error": errors[0]}), 400
 
         conn = get_db_connection()
-        cursor = conn.cursor()
 
-        cursor.execute(
-            """
-            SELECT c.professor_id
-            FROM class_chapters ch
-            JOIN classes c ON ch.class_id = c.class_id
-            WHERE ch.chapter_id = %s
-        """,
-            (chapter_id,),
-        )
-
-        result = cursor.fetchone()
-        if not result:
-            cursor.close()
-            close_conn_safely(conn)
+        owner = chapter_repo.get_chapter_owner(conn, chapter_id)
+        if owner is None:
             return jsonify({"error": "Chapter not found"}), 404
-
-        if result[0] != user_id:
-            cursor.close()
-            close_conn_safely(conn)
+        if owner != user_id:
             return jsonify({"error": "Unauthorized"}), 403
 
-        cursor.execute(
-            """
-            UPDATE class_chapters
-            SET title = %s, description = %s, updated_at = CURRENT_TIMESTAMP
-            WHERE chapter_id = %s
-        """,
-            (data.get("title"), data.get("description"), chapter_id),
-        )
-
+        chapter_repo.update_chapter(conn, chapter_id, data.get("title"), data.get("description"))
         conn.commit()
-        cursor.close()
-        close_conn_safely(conn)
 
         return jsonify({"success": True}), 200
     except Exception as e:
@@ -422,43 +311,21 @@ def delete_chapter(chapter_id):
             return jsonify({"error": "Missing user_id"}), 400
 
         conn = get_db_connection()
-        cursor = conn.cursor()
 
-        cursor.execute(
-            """
-            SELECT cc.class_id, cc.pdf_filename, c.professor_id
-            FROM class_chapters cc
-            JOIN classes c ON cc.class_id = c.class_id
-            WHERE cc.chapter_id = %s
-        """,
-            (chapter_id,),
-        )
-        chapter_data = cursor.fetchone()
-
+        chapter_data = chapter_repo.get_chapter_for_delete(conn, chapter_id)
         if not chapter_data:
-            cursor.close()
-            close_conn_safely(conn)
             return jsonify({"error": "Chapter not found"}), 404
 
         professor_id = chapter_data[2]
-
         if professor_id != user_id:
-            cursor.close()
-            close_conn_safely(conn)
             return jsonify({"error": "Only the class owner can delete chapters"}), 403
 
-        cursor.execute("DELETE FROM class_exercises WHERE chapter_id = %s", (chapter_id,))
-        cursor.execute("DELETE FROM class_chapters WHERE chapter_id = %s", (chapter_id,))
-
+        chapter_repo.delete_chapter_and_exercises(conn, chapter_id)
         conn.commit()
-        cursor.close()
-        close_conn_safely(conn)
 
         return jsonify({"success": True, "message": "Chapter deleted successfully"}), 200
 
     except Exception as e:
-        import traceback
-        traceback.print_exc()
         logger.error("Unexpected error: %s", e, exc_info=True)
         return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
@@ -469,66 +336,34 @@ def delete_chapter(chapter_id):
 def generate_exercises_for_chapter(chapter_id):
     """Generate exercises from an existing chapter's PDF data"""
     try:
-        data = request.get_json() or {}
         user_id = g.user_id
-
         conn = get_db_connection()
-        cursor = conn.cursor()
 
-        cursor.execute(
-            """
-            SELECT cc.pdf_data, cc.title, cc.class_id, c.professor_id
-            FROM class_chapters cc
-            JOIN classes c ON cc.class_id = c.class_id
-            WHERE cc.chapter_id = %s
-        """,
-            (chapter_id,),
-        )
-
-        result = cursor.fetchone()
+        result = chapter_repo.get_chapter_pdf_data(conn, chapter_id)
         if not result:
-            cursor.close()
-            close_conn_safely(conn)
             return jsonify({"error": "Chapter not found"}), 404
 
         pdf_data, chapter_title, class_id, professor_id = result
 
         if professor_id != user_id:
-            cursor.close()
-            close_conn_safely(conn)
             return jsonify({"error": "Only the class professor can generate exercises"}), 403
 
         if not pdf_data:
-            cursor.close()
-            close_conn_safely(conn)
             return jsonify({"error": "PDF data not found for this chapter"}), 404
 
         if not extract_text_from_pdf_bytes:
-            cursor.close()
-            close_conn_safely(conn)
             return jsonify({"error": "PDF processor not available"}), 500
 
         try:
             pdf_text = extract_text_from_pdf_bytes(bytes(pdf_data))
         except Exception as e:
-            cursor.close()
-            close_conn_safely(conn)
             logger.error("Failed to extract text from PDF: %s", e, exc_info=True)
             return jsonify({"error": "Failed to extract text from the PDF. Please check the file and try again."}), 500
 
         if not pdf_text:
-            cursor.close()
-            close_conn_safely(conn)
-            return (
-                jsonify(
-                    {"error": "Could not extract text from PDF. PDF may be empty or image-based."}
-                ),
-                400,
-            )
+            return jsonify({"error": "Could not extract text from PDF. PDF may be empty or image-based."}), 400
 
         if not generate_exercises_from_pdf_content:
-            cursor.close()
-            close_conn_safely(conn)
             return jsonify({"error": "Exercise generator not available"}), 500
 
         try:
@@ -537,55 +372,31 @@ def generate_exercises_for_chapter(chapter_id):
                 raise ValueError("GEMINI_API_KEY not set")
             exercises = generate_exercises_from_pdf_content(pdf_text, chapter_title, api_key)
         except Exception as e:
-            cursor.close()
-            close_conn_safely(conn)
             logger.error("Failed to generate exercises: %s", e, exc_info=True)
             return jsonify({"error": "Failed to generate exercises. Please try again."}), 500
 
         if not exercises:
-            cursor.close()
-            close_conn_safely(conn)
             return jsonify({"error": "No exercises were generated"}), 400
 
         exercises_generated = 0
         for idx, exercise in enumerate(exercises, 1):
             exercise_id = f"{chapter_id}_ex_{idx}_{int(datetime.now().timestamp() * 1000)}"
-            cursor.execute(
-                """
-                INSERT INTO class_exercises (exercise_id, chapter_id, class_id, title, description, difficulty, solution_code, exercise_number)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            """,
-                (
-                    exercise_id,
-                    chapter_id,
-                    class_id,
-                    exercise["title"],
-                    exercise["description"],
-                    exercise["difficulty"],
-                    exercise["solution_code"],
-                    idx,
-                ),
+            chapter_repo.insert_exercise(
+                conn, exercise_id, chapter_id, class_id,
+                exercise["title"], exercise["description"],
+                exercise["difficulty"], exercise["solution_code"], idx,
             )
             exercises_generated += 1
 
         conn.commit()
-        cursor.close()
-        close_conn_safely(conn)
 
-        return (
-            jsonify(
-                {
-                    "success": True,
-                    "exercises_generated": exercises_generated,
-                    "chapter_id": chapter_id,
-                }
-            ),
-            201,
-        )
+        return jsonify({
+            "success": True,
+            "exercises_generated": exercises_generated,
+            "chapter_id": chapter_id,
+        }), 201
 
     except Exception as e:
-        import traceback
-        traceback.print_exc()
         logger.error("Unexpected error: %s", e, exc_info=True)
         return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
@@ -600,69 +411,36 @@ def get_chapter_exercises(chapter_id):
             return jsonify({"error": "Missing user_id"}), 400
 
         conn = get_db_connection()
-        cursor = conn.cursor()
 
-        cursor.execute(
-            """
-            SELECT cc.class_id, c.professor_id
-            FROM class_chapters cc
-            JOIN classes c ON cc.class_id = c.class_id
-            WHERE cc.chapter_id = %s
-        """,
-            (chapter_id,),
-        )
-        chapter_data = cursor.fetchone()
-        if not chapter_data:
-            cursor.close()
-            close_conn_safely(conn)
+        chapter_info = chapter_repo.get_chapter_class_info(conn, chapter_id)
+        if not chapter_info:
             return jsonify({"error": "Chapter not found"}), 404
 
-        class_id_result = chapter_data[0]
-        professor_id = chapter_data[1]
+        class_id_result = chapter_info[0]
+        professor_id = chapter_info[1]
 
         role = getattr(g, "user_role", None) or "student"
         is_professor = role == "professor"
         is_owner = professor_id == user_id
 
         if not is_owner and not is_professor:
-            cursor.execute(
-                """
-                SELECT 1 FROM class_enrollments
-                WHERE class_id = %s AND student_id = %s
-            """,
-                (class_id_result, user_id),
-            )
-            if not cursor.fetchone():
-                cursor.close()
-                close_conn_safely(conn)
+            if not class_repo.check_enrollment(conn, class_id_result, user_id):
                 return jsonify({"error": "Access denied"}), 403
 
-        cursor.execute(
-            """
-            SELECT exercise_id, title, description, difficulty, exercise_number, created_at, solution_code
-            FROM class_exercises
-            WHERE chapter_id = %s
-            ORDER BY exercise_number ASC
-        """,
-            (chapter_id,),
-        )
+        rows = chapter_repo.get_chapter_exercises(conn, chapter_id)
 
-        exercises = []
-        for row in cursor.fetchall():
-            exercises.append(
-                {
-                    "exercise_id": row[0],
-                    "title": row[1],
-                    "description": row[2],
-                    "difficulty": row[3],
-                    "exercise_number": row[4],
-                    "created_at": row[5].isoformat() if row[5] else None,
-                    "solution_code": row[6] or "",
-                }
-            )
-
-        cursor.close()
-        close_conn_safely(conn)
+        exercises = [
+            {
+                "exercise_id": row[0],
+                "title": row[1],
+                "description": row[2],
+                "difficulty": row[3],
+                "exercise_number": row[4],
+                "created_at": row[5].isoformat() if row[5] else None,
+                "solution_code": row[6] or "",
+            }
+            for row in rows
+        ]
 
         return jsonify({"exercises": exercises}), 200
 
@@ -677,7 +455,8 @@ def get_chapter_exercises(chapter_id):
 def create_exercise(class_id, chapter_id):
     """Manually create a new exercise"""
     try:
-        ensure_exercises_table()
+        conn = get_db_connection()
+        ensure_exercises_table(conn)
 
         if request.content_type and "multipart/form-data" in request.content_type:
             data = request.form
@@ -694,64 +473,24 @@ def create_exercise(class_id, chapter_id):
         if errors:
             return jsonify({"error": errors[0]}), 400
 
-        conn = get_db_connection()
-        cursor = conn.cursor()
-
-        cursor.execute(
-            """
-            SELECT c.professor_id
-            FROM classes c
-            WHERE c.class_id = %s
-        """,
-            (class_id,),
-        )
-
-        result = cursor.fetchone()
-        if not result:
-            cursor.close()
-            close_conn_safely(conn)
+        owner = class_repo.get_class_owner(conn, class_id)
+        if owner is None:
             return jsonify({"error": "Class not found"}), 404
-
-        professor_id = result[0]
-
-        if professor_id != user_id:
-            cursor.close()
-            close_conn_safely(conn)
+        if owner != user_id:
             return jsonify({"error": "Unauthorized"}), 403
 
-        cursor.execute(
-            "SELECT 1 FROM class_chapters WHERE chapter_id = %s AND class_id = %s",
-            (chapter_id, class_id),
-        )
-        if not cursor.fetchone():
-            cursor.close()
-            close_conn_safely(conn)
+        if not chapter_repo.chapter_belongs_to_class(conn, chapter_id, class_id):
             return jsonify({"error": "Chapter not found in this class"}), 404
 
         exercise_id = f"ex_{str(uuid.uuid4())[:8]}"
 
-        cursor.execute(
-            """
-            INSERT INTO class_exercises (
-                exercise_id, class_id, chapter_id, title, description,
-                difficulty, solution_code, created_by
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-        """,
-            (
-                exercise_id,
-                class_id,
-                chapter_id,
-                data.get("title"),
-                data.get("description"),
-                data.get("difficulty", "medium"),
-                data.get("solution_code", ""),
-                user_id,
-            ),
+        chapter_repo.insert_manual_exercise(
+            conn, exercise_id, class_id, chapter_id,
+            data.get("title"), data.get("description"),
+            data.get("difficulty", "medium"), data.get("solution_code", ""),
+            user_id,
         )
-
         conn.commit()
-        cursor.close()
-        close_conn_safely(conn)
 
         return jsonify({"success": True, "exercise_id": exercise_id}), 201
 
@@ -765,20 +504,7 @@ def serve_chapter_pdf(chapter_id):
     """Serve PDF file from database binary storage or filesystem (backward compatibility)"""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor()
-
-        cursor.execute(
-            """
-            SELECT pdf_data, pdf_filename, pdf_url
-            FROM class_chapters
-            WHERE chapter_id = %s
-        """,
-            (chapter_id,),
-        )
-
-        result = cursor.fetchone()
-        cursor.close()
-        close_conn_safely(conn)
+        result = chapter_repo.get_chapter_pdf(conn, chapter_id)
 
         if not result:
             return jsonify({"error": "Chapter not found"}), 404
@@ -796,7 +522,6 @@ def serve_chapter_pdf(chapter_id):
 
         if pdf_data:
             pdf_bytes = bytes(pdf_data)
-            from flask import current_app
             origin = request.headers.get("Origin", "")
             allowed = config.CORS_ORIGINS
             cors_origin = "*" if "*" in allowed else (origin if origin in allowed else None)
@@ -825,7 +550,5 @@ def serve_chapter_pdf(chapter_id):
                 return jsonify({"error": f"PDF file not found: {pdf_filename}"}), 404
 
     except Exception as e:
-        import traceback
-        traceback.print_exc()
         logger.error("Unexpected error: %s", e, exc_info=True)
         return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
