@@ -96,11 +96,7 @@
 
 ## Performance — Frontend
 
-**Tasks 14, 15, 24, 25, 27 complete.** `js/api-client.js`, `js/ui-states.js`, `js/constants.js` created; all 17 HTML files updated with new script tags. Remaining:
-
-| # | Task |
-|---|------|
-| 26 | Add Cloudflare CDN in front of Render for static asset caching (infrastructure / DNS config, not code) |
+**Tasks 14, 15, 24, 25, 26, 27 complete.** `js/api-client.js`, `js/ui-states.js`, `js/constants.js` created; `ProxyFix` added to `app.py` for Cloudflare; all 17 HTML files updated with new script tags. **Section complete.**
 
 ---
 
@@ -112,11 +108,7 @@
 
 ## Reliability
 
-| # | Task |
-|---|------|
-| 36 | Add structured `AI_UNAVAILABLE` error response + circuit breaker for Gemini API failures |
-| 37 | Create `offline-detector.js` with connection banner + write queue for critical operations |
-| 38 | Add Gunicorn `post_fork` + `worker_exit` hooks in `gunicorn.conf.py` for DB pool lifecycle management |
+**Tasks 36, 37, 38 complete.** `_CircuitBreaker` trips after 5 Gemini failures (auto-resets 60s); `js/offline-detector.js` shows red banner on `window.offline`; Gunicorn `post_fork`/`worker_exit`/`worker_abort` hooks reset the psycopg2 pool after fork. **Section complete.**
 
 ---
 
