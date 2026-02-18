@@ -332,6 +332,43 @@ def update_conversation(conversation_id):
         return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
+@bp.route("/api/users/conversations/<conversation_id>/messages", methods=["POST"])
+@csrf_exempt
+@require_auth
+def append_conversation_message(conversation_id):
+    """Append a single message to a conversation (append-only, no full replace)."""
+    conn = None
+    try:
+        data = request.json or {}
+        user_id = g.user_id
+        role = data.get("role")
+        content = data.get("content")
+
+        if role not in ("user", "model"):
+            return jsonify({"error": "role must be 'user' or 'model'"}), 400
+        if not content or not isinstance(content, str):
+            return jsonify({"error": "content is required"}), 400
+        if len(content) > 50000:
+            return jsonify({"error": "Message content too large"}), 413
+
+        conn = get_db_connection()
+
+        conv = user_repo.get_conversation(conn, conversation_id, user_id)
+        if not conv:
+            return jsonify({"error": "Conversation not found"}), 404
+
+        user_repo.append_conversation_message(conn, conversation_id, role, content)
+        conn.commit()
+
+        return jsonify({"success": True}), 201
+
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
+
+
 @bp.route("/api/users/conversations/<conversation_id>", methods=["DELETE"])
 @csrf_exempt
 @require_auth

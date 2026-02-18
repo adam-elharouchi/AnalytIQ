@@ -1,7 +1,7 @@
 # AnalytIQ — Master Task List
 
-> Generated: 2026-02-17 | Last updated: 2026-02-17
-> Total: 87 tasks (38 completed, 49 pending)
+> Generated: 2026-02-17 | Last updated: 2026-02-18
+> Total: 87 tasks (45 completed, 42 pending)
 
 ---
 
@@ -47,6 +47,13 @@
 | 31 | Added per-user rate limits on `/api/ai/chat` — 20 req/min + 100 req/hr keyed by `g.user_id` via `_apply_ai_rate_limits` conditional-wrapper decorator |
 | 33 | Replaced O(n²) `for ex in exercises` scan inside `get_class_progress` with an `exercise_lookup` dict built once in O(n); inner lookup is now O(1) |
 | 32 | Updated `cache_response` in `cache.py` to include `g.user_id` in key (prevents cross-user leakage) and handle tuple returns. Applied to 8 endpoints: `get_class`, `get_class_chapters`, `get_chapter_exercises`, `get_exercise_details`, `get_profile`, `get_enrolled_classes`, `get_class_average_leaderboard` (classes already cached manually). Added write-side `invalidate_cache` calls on all corresponding create/update/delete routes |
+| 34 | Added `GET /api/chapters/upload-url` endpoint in `blueprints/chapters.py` — returns `{upload_url, storage_path}` Supabase presigned URL via `supabase_storage.get_presigned_upload_url()`. Added `getPresignedUploadUrl(filename)` to `js/api-helper.js` for frontend use |
+| 35 | Added `POST /api/users/conversations/<id>/messages` append-only endpoint in `blueprints/users.py`. Added `append_conversation_message()` to `repositories/user_repository.py` using `COALESCE(MAX(message_order), -1) + 1` INSERT. Added `conversationAPI.appendMessage()` to `js/api-helper.js` |
+| 14 | Created `js/api-client.js` — unified `window.apiClient` with `get`, `post`, `put`, `del`, `upload` methods returning `{ok, data, error}` structured results; 401 interceptor clears tokens and redirects to `auth.html?reason=session_expired` |
+| 15 | Created `js/constants.js` — `window.APP_CONSTANTS` centralising auth localStorage keys, pagination defaults, UI timing, difficulty colors, file upload limits |
+| 24 | Created `js/ui-states.js` — `uiStates.showLoading()` (CSS skeleton shimmer cards), `showEmpty()` (empty state + CTA), `showError()` (retry button), `showContent()`; CSS injected once on first call |
+| 25 | `apiClient` returns structured `{ok, data, error}` result objects — pages can now render error state with retry button |
+| 27 | 401 interceptor added to `apiClient` in `js/api-client.js` → clears `authToken` + `currentUser` from localStorage, redirects to `auth.html?reason=session_expired&redirect=<current-page>` |
 
 ---
 
@@ -86,23 +93,17 @@
 
 ## Performance — Frontend
 
+**Tasks 14, 15, 24, 25, 27 complete.** `js/api-client.js`, `js/ui-states.js`, `js/constants.js` created; all 17 HTML files updated with new script tags. Remaining:
+
 | # | Task |
 |---|------|
-| 24 | Create `ui-states.js` with `showLoading()`, `showEmpty()`, `showContent()` + CSS skeleton loaders |
-| 25 | `apiClient` returns structured result objects (`{ok, data, error}`); pages render error state with retry button |
-| 26 | Add Cloudflare CDN in front of Render for static asset caching (depends on CDN-1 through CDN-5, CDN-7) |
-| 27 | Add global 401 interceptor in `apiClient` → redirect to login with session-expired message |
+| 26 | Add Cloudflare CDN in front of Render for static asset caching (infrastructure / DNS config, not code) |
 
 ---
 
 ## Performance — Backend
 
-**Tasks 28–33 complete.** Remaining (large structural changes, deferred):
-
-| # | Task |
-|---|------|
-| 34 | Supabase presigned upload URLs — frontend uploads PDFs directly to Supabase, bypassing the Flask server |
-| 35 | Append-only conversation messages — frontend sends delta only, backend inserts single row (no full-replace) |
+**Tasks 28–35 complete.** All backend performance tasks done.
 
 ---
 
@@ -221,11 +222,10 @@
 
 2. ~~**CDN & same-origin API**~~ **DONE** (tasks CDN-1 through CDN-7)
 
-3. ~~**Backend performance** — caching, rate limiting, leaderboard fixes (28–31, 33 done)~~:
-   Remaining: Tasks 32, 34, 35
+3. ~~**Backend performance** — caching, rate limiting, leaderboard fixes, presigned URLs, append-only messages (28–35 done)~~
 
-4. **Frontend** — apiClient, ui-states, design tokens:
-   Tasks 13, 14, 15, 24, 25, 26, 27, ~~53~~
+4. ~~**Frontend** — apiClient, ui-states, design tokens (14, 15, 24, 25, 27, 53 done)~~:
+   Remaining: Task 13 (Jinja2 templates), Task 26 (Cloudflare CDN — infrastructure)
 
 5. **Testing** — consolidate + add integration + security tests:
    Tasks 43, 44, 45, 47, 48, 49
