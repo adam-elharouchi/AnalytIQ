@@ -61,17 +61,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
   if (isAuthenticated) {
     if (isProfessor) {
-      // Professors: Dashboard, Code, Contact (Resources embedded in course)
+      // Professors: Dashboard, Code
       roleLinks = `<li><a href="professor-dashboard.html" ${currentPage === 'professor-dashboard.html' || currentPage === 'professor-class.html' ? 'class="active"' : ''}>Dashboard</a></li>`;
       commonLinks = `
         <li><a href="code-assistant.html" ${currentPage === 'code-assistant.html' ? 'class="active"' : ''}>Code</a></li>
-        <li><a href="contact.html" ${currentPage === 'contact.html' ? 'class="active"' : ''}>Contact</a></li>
       `;
     } else {
-      // Students: My Classes, Resources, Contact, Code
+      // Students: My Classes, Code
       roleLinks = `<li><a href="student-classes.html" ${currentPage === 'student-classes.html' || currentPage === 'student-class.html' ? 'class="active"' : ''}>My Classes</a></li>`;
       commonLinks = `
-        <li><a href="contact.html" ${currentPage === 'contact.html' ? 'class="active"' : ''}>Contact</a></li>
         <li><a href="code-assistant.html" ${currentPage === 'code-assistant.html' ? 'class="active"' : ''}>Code</a></li>
       `;
     }
