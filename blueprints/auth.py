@@ -13,6 +13,7 @@ import os
 import uuid
 from datetime import datetime
 
+import config
 from flask import Blueprint, jsonify, request
 
 from auth_helpers import (
@@ -42,6 +43,11 @@ def signup():
 
         if not name or not email or not password:
             return jsonify({"error": "Missing required fields"}), 400
+
+        if len(password) < config.MIN_PASSWORD_LENGTH:
+            return jsonify({"error": f"Password must be at least {config.MIN_PASSWORD_LENGTH} characters"}), 400
+        if len(password) > config.MAX_PASSWORD_LENGTH:
+            return jsonify({"error": f"Password must be at most {config.MAX_PASSWORD_LENGTH} characters"}), 400
 
         conn = get_db_connection()
 
@@ -240,8 +246,10 @@ def reset_password():
         if not token or not email or not new_password:
             return jsonify({"error": "Token, email, and new password are required"}), 400
 
-        if len(new_password) < 6:
-            return jsonify({"error": "Password must be at least 6 characters"}), 400
+        if len(new_password) < config.MIN_PASSWORD_LENGTH:
+            return jsonify({"error": f"Password must be at least {config.MIN_PASSWORD_LENGTH} characters"}), 400
+        if len(new_password) > config.MAX_PASSWORD_LENGTH:
+            return jsonify({"error": f"Password must be at most {config.MAX_PASSWORD_LENGTH} characters"}), 400
 
         conn = get_db_connection()
 

@@ -240,7 +240,7 @@ class TestSignupProfileTableFailures:
         response = client.post("/api/users/signup", json={
             "name": "Test",
             "email": "test@test.com",
-            "password": "pass123",
+            "password": "password123",
         })
         assert response.status_code in [201, 429, 500]
 

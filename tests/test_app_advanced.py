@@ -57,7 +57,7 @@ class TestAuthenticationFlows:
 
                     response = client.post(
                         "/api/users/signup",
-                        json={"name": "John", "email": "john@test.com", "password": "pass"},
+                        json={"name": "John", "email": "john@test.com", "password": "password123"},
                     )
 
                     # Should still succeed
