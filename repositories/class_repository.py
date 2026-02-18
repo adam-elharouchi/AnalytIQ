@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 # Classes CRUD
 # ---------------------------------------------------------------------------
 
+
 def class_code_exists(conn, class_code):
     """Return True if a class with the given code already exists."""
     cur = conn.cursor()
@@ -178,6 +179,7 @@ def delete_class(conn, class_id):
 # Enrollments
 # ---------------------------------------------------------------------------
 
+
 def check_enrollment(conn, class_id, student_id):
     """Return True if *student_id* is enrolled in *class_id*."""
     cur = conn.cursor()
@@ -264,6 +266,7 @@ def get_class_students_list(conn, class_id):
 # ---------------------------------------------------------------------------
 # Progress
 # ---------------------------------------------------------------------------
+
 
 def get_class_exercises_for_progress(conn, class_id):
     """Return exercises for progress tracking."""
@@ -437,6 +440,7 @@ def get_student_progress_for_professor(conn, student_id, professor_id):
 # Leaderboards
 # ---------------------------------------------------------------------------
 
+
 def get_class_average_leaderboard(conn, class_id):
     cur = conn.cursor()
     cur.execute(
@@ -484,6 +488,7 @@ def get_exercise_leaderboard_for_class(conn, class_id, exercise_id):
 # ---------------------------------------------------------------------------
 # Resources
 # ---------------------------------------------------------------------------
+
 
 def ensure_resources_table(conn):
     """Create class_resources table if missing and migrate legacy columns."""
@@ -569,7 +574,9 @@ def get_class_other_resources(conn, class_id):
     return rows
 
 
-def insert_resource_link(conn, resource_id, class_id, user_id, title, description, resource_type, resource_url):
+def insert_resource_link(
+    conn, resource_id, class_id, user_id, title, description, resource_type, resource_url
+):
     cur = conn.cursor()
     cur.execute(
         """
@@ -581,7 +588,18 @@ def insert_resource_link(conn, resource_id, class_id, user_id, title, descriptio
     cur.close()
 
 
-def insert_resource_file(conn, resource_id, class_id, user_id, title, description, resource_type, resource_url, file_data, filename):
+def insert_resource_file(
+    conn,
+    resource_id,
+    class_id,
+    user_id,
+    title,
+    description,
+    resource_type,
+    resource_url,
+    file_data,
+    filename,
+):
     from psycopg2.extensions import Binary
 
     cur = conn.cursor()
@@ -591,7 +609,17 @@ def insert_resource_file(conn, resource_id, class_id, user_id, title, descriptio
             (resource_id, class_id, user_id, title, description, resource_type, resource_url, file_data, filename)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         """,
-        (resource_id, class_id, user_id, title, description, resource_type, resource_url, Binary(file_data), filename),
+        (
+            resource_id,
+            class_id,
+            user_id,
+            title,
+            description,
+            resource_type,
+            resource_url,
+            Binary(file_data),
+            filename,
+        ),
     )
     cur.close()
 

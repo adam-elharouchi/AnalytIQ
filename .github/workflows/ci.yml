@@ -57,17 +57,15 @@ jobs:
     
     - name: Run linting (flake8)
       run: |
-        python -m flake8 app.py utils.py cache.py supabase_storage.py tasks.py --count --show-source --statistics
-      continue-on-error: true
-    
+        python -m flake8 app.py utils.py cache.py supabase_storage.py auth_helpers.py db.py config.py blueprints/ repositories/ --max-line-length=120 --count --show-source --statistics
+
     - name: Check code formatting (black)
       run: |
-        python -m black --check .
-      continue-on-error: true
-    
+        python -m black --check app.py utils.py cache.py supabase_storage.py auth_helpers.py db.py config.py blueprints/ repositories/
+
     - name: Run type checking (mypy)
       run: |
-        python -m mypy utils.py cache.py supabase_storage.py tasks.py --ignore-missing-imports
+        python -m mypy utils.py cache.py supabase_storage.py --ignore-missing-imports
       continue-on-error: true
     
     - name: Run tests with coverage

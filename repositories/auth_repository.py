@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 # Schema migration (lazy)
 # ---------------------------------------------------------------------------
 
+
 def ensure_password_resets_table(conn):
     """Create password_resets table and indexes if missing."""
     cur = conn.cursor()
@@ -28,12 +29,8 @@ def ensure_password_resets_table(conn):
         );
         """
     )
-    cur.execute(
-        "CREATE INDEX IF NOT EXISTS idx_password_resets_token ON password_resets(token);"
-    )
-    cur.execute(
-        "CREATE INDEX IF NOT EXISTS idx_password_resets_email ON password_resets(email);"
-    )
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_password_resets_token ON password_resets(token);")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_password_resets_email ON password_resets(email);")
     conn.commit()
     cur.close()
 
@@ -41,6 +38,7 @@ def ensure_password_resets_table(conn):
 # ---------------------------------------------------------------------------
 # Signup
 # ---------------------------------------------------------------------------
+
 
 def email_exists(conn, email):
     """Return True if an account with this email already exists."""
@@ -105,6 +103,7 @@ def create_default_ai_digest(conn, user_id):
 # Signin
 # ---------------------------------------------------------------------------
 
+
 def get_user_by_email(conn, email):
     """Return (user_id, name, email, password_hash, role) or None."""
     cur = conn.cursor()
@@ -129,6 +128,7 @@ def update_password_hash(conn, user_id, new_hash):
 # ---------------------------------------------------------------------------
 # Password reset
 # ---------------------------------------------------------------------------
+
 
 def get_user_name_by_email(conn, email):
     """Return (user_id, name) or None."""

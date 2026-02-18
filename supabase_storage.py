@@ -44,7 +44,7 @@ def upload_pdf(file_bytes, filename):
 
     try:
         # Upload file to storage
-        response = supabase.storage.from_(SUPABASE_BUCKET).upload(
+        supabase.storage.from_(SUPABASE_BUCKET).upload(
             path=filename, file=file_bytes, file_options={"content-type": "application/pdf"}
         )
 
@@ -99,7 +99,7 @@ def delete_pdf(filename):
         raise ValueError("Supabase client not initialized")
 
     try:
-        response = supabase.storage.from_(SUPABASE_BUCKET).remove([filename])
+        supabase.storage.from_(SUPABASE_BUCKET).remove([filename])
         return True
 
     except Exception as e:
@@ -172,8 +172,7 @@ def storage_health_check():
 
     try:
         # Try to list files (no limit parameter in newer API)
-        response = supabase.storage.from_(SUPABASE_BUCKET).list()
-
+        supabase.storage.from_(SUPABASE_BUCKET).list()
         return {"healthy": True, "message": "Supabase Storage accessible"}
 
     except Exception as e:

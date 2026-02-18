@@ -45,9 +45,19 @@ def signup():
             return jsonify({"error": "Missing required fields"}), 400
 
         if len(password) < config.MIN_PASSWORD_LENGTH:
-            return jsonify({"error": f"Password must be at least {config.MIN_PASSWORD_LENGTH} characters"}), 400
+            return (
+                jsonify(
+                    {"error": f"Password must be at least {config.MIN_PASSWORD_LENGTH} characters"}
+                ),
+                400,
+            )
         if len(password) > config.MAX_PASSWORD_LENGTH:
-            return jsonify({"error": f"Password must be at most {config.MAX_PASSWORD_LENGTH} characters"}), 400
+            return (
+                jsonify(
+                    {"error": f"Password must be at most {config.MAX_PASSWORD_LENGTH} characters"}
+                ),
+                400,
+            )
 
         conn = get_db_connection()
 
@@ -87,18 +97,21 @@ def signup():
         conn.commit()
 
         user_role = user[3] if len(user) > 3 else role
-        token = create_jwt_token(
-            created_user_id, role=user_role, name=user[1], email=user[2]
+        token = create_jwt_token(created_user_id, role=user_role, name=user[1], email=user[2])
+        return (
+            jsonify(
+                {
+                    "id": created_user_id,
+                    "user_id": created_user_id,
+                    "name": user[1],
+                    "email": user[2],
+                    "role": user_role,
+                    "token": token,
+                    "success": True,
+                }
+            ),
+            201,
         )
-        return jsonify({
-            "id": created_user_id,
-            "user_id": created_user_id,
-            "name": user[1],
-            "email": user[2],
-            "role": user_role,
-            "token": token,
-            "success": True,
-        }), 201
 
     except Exception as e:
         logger.error("Unexpected error: %s", e, exc_info=True)
@@ -147,14 +160,19 @@ def signin():
                 conn.rollback()
 
         token = create_jwt_token(user_id, role=role, name=name, email=user_email)
-        return jsonify({
-            "id": user_id,
-            "user_id": user_id,
-            "name": name,
-            "email": user_email,
-            "role": role,
-            "token": token,
-        }), 200
+        return (
+            jsonify(
+                {
+                    "id": user_id,
+                    "user_id": user_id,
+                    "name": name,
+                    "email": user_email,
+                    "role": role,
+                    "token": token,
+                }
+            ),
+            200,
+        )
 
     except Exception as e:
         if conn:
@@ -178,10 +196,12 @@ def forgot_password():
         conn = get_db_connection()
         user_row = auth_repo.get_user_name_by_email(conn, email)
 
-        response = jsonify({
-            "success": True,
-            "message": "If an account exists with this email, you will receive password reset instructions.",
-        })
+        response = jsonify(
+            {
+                "success": True,
+                "message": "If an account exists with this email, you will receive password reset instructions.",
+            }
+        )
 
         if user_row:
             import secrets
@@ -247,9 +267,19 @@ def reset_password():
             return jsonify({"error": "Token, email, and new password are required"}), 400
 
         if len(new_password) < config.MIN_PASSWORD_LENGTH:
-            return jsonify({"error": f"Password must be at least {config.MIN_PASSWORD_LENGTH} characters"}), 400
+            return (
+                jsonify(
+                    {"error": f"Password must be at least {config.MIN_PASSWORD_LENGTH} characters"}
+                ),
+                400,
+            )
         if len(new_password) > config.MAX_PASSWORD_LENGTH:
-            return jsonify({"error": f"Password must be at most {config.MAX_PASSWORD_LENGTH} characters"}), 400
+            return (
+                jsonify(
+                    {"error": f"Password must be at most {config.MAX_PASSWORD_LENGTH} characters"}
+                ),
+                400,
+            )
 
         conn = get_db_connection()
 
@@ -257,14 +287,22 @@ def reset_password():
 
         row = auth_repo.validate_reset_token(conn, email, token, datetime.utcnow())
         if not row:
-            return jsonify({"error": "Invalid or expired reset link. Please request a new password reset."}), 400
+            return (
+                jsonify(
+                    {"error": "Invalid or expired reset link. Please request a new password reset."}
+                ),
+                400,
+            )
 
         new_hash = hash_password(new_password)
         auth_repo.reset_password(conn, email, new_hash)
         auth_repo.delete_reset_token(conn, email, token)
         conn.commit()
 
-        return jsonify({"success": True, "message": "Password has been reset. You can now sign in."}), 200
+        return (
+            jsonify({"success": True, "message": "Password has been reset. You can now sign in."}),
+            200,
+        )
 
     except Exception as e:
         if conn:

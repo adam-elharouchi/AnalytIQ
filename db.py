@@ -200,7 +200,9 @@ def get_db_connection():
                     cursor.close()
                 except Exception as test_error:
                     # Connection is stale, close it and retry
-                    logger.warning("Connection test failed on attempt %d: %s", attempt + 1, test_error)
+                    logger.warning(
+                        "Connection test failed on attempt %d: %s", attempt + 1, test_error
+                    )
                     try:
                         db_pool.putconn(g.db_conn, close=True)
                     except Exception:
@@ -213,7 +215,10 @@ def get_db_connection():
 
             except Exception as e:
                 logger.warning(
-                    "Error getting connection from pool (attempt %d/%d): %s", attempt + 1, max_retries, e
+                    "Error getting connection from pool (attempt %d/%d): %s",
+                    attempt + 1,
+                    max_retries,
+                    e,
                 )
                 if attempt < max_retries - 1:
                     # Wait before retrying

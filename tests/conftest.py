@@ -92,8 +92,6 @@ def mock_db(mock_db_connection, monkeypatch):
 
     # Patch in the canonical location (db module) so all blueprints get the mock
     monkeypatch.setattr('db.get_db_connection', mock_get_db)
-    # Keep app module patch for tests that reference app.get_db_connection directly
-    monkeypatch.setattr('app.get_db_connection', mock_get_db)
     # Patch blueprint modules so their imported reference is also mocked
     for module in [
         'blueprints.auth',

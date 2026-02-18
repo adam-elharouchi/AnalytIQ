@@ -120,10 +120,15 @@ def get_chapter_upload_url():
         if not signed:
             return jsonify({"error": "Storage service unavailable"}), 503
 
-        return jsonify({
-            "upload_url": signed.get("signedURL") or signed.get("signed_url"),
-            "storage_path": storage_path,
-        }), 200
+        return (
+            jsonify(
+                {
+                    "upload_url": signed.get("signedURL") or signed.get("signed_url"),
+                    "storage_path": storage_path,
+                }
+            ),
+            200,
+        )
 
     except Exception as e:
         logger.error("Unexpected error: %s", e, exc_info=True)
@@ -194,8 +199,15 @@ def upload_chapter(class_id):
 
         chapter_number = chapter_repo.get_next_chapter_number(conn, class_id)
         chapter_data = chapter_repo.insert_chapter(
-            conn, chapter_id, class_id, title, description,
-            chapter_number, pdf_url, pdf_filename, file_bytes,
+            conn,
+            chapter_id,
+            class_id,
+            title,
+            description,
+            chapter_number,
+            pdf_url,
+            pdf_filename,
+            file_bytes,
         )
 
         chapter_id_result = chapter_data[0]
@@ -217,9 +229,15 @@ def upload_chapter(class_id):
                             f"{chapter_id_result}_ex_{idx}_{int(datetime.now().timestamp() * 1000)}"
                         )
                         chapter_repo.insert_exercise(
-                            conn, exercise_id, chapter_id_result, class_id,
-                            exercise["title"], exercise["description"],
-                            exercise["difficulty"], exercise["solution_code"], idx,
+                            conn,
+                            exercise_id,
+                            chapter_id_result,
+                            class_id,
+                            exercise["title"],
+                            exercise["description"],
+                            exercise["difficulty"],
+                            exercise["solution_code"],
+                            idx,
                         )
                     exercises_generated = len(exercises)
                     conn.commit()
@@ -231,18 +249,23 @@ def upload_chapter(class_id):
 
         cache.invalidate_cache(f"chapters:*:{class_id}")
 
-        return jsonify({
-            "chapter_id": chapter_id_result,
-            "title": chapter_title_result,
-            "description": chapter_data[2],
-            "chapter_number": chapter_data[3],
-            "created_at": chapter_data[4].isoformat() if chapter_data[4] else None,
-            "pdf_url": pdf_url,
-            "pdf_text_extracted": pdf_text is not None,
-            "exercise_mode": exercise_mode,
-            "exercises_generated": exercises_generated,
-            "success": True,
-        }), 201
+        return (
+            jsonify(
+                {
+                    "chapter_id": chapter_id_result,
+                    "title": chapter_title_result,
+                    "description": chapter_data[2],
+                    "chapter_number": chapter_data[3],
+                    "created_at": chapter_data[4].isoformat() if chapter_data[4] else None,
+                    "pdf_url": pdf_url,
+                    "pdf_text_extracted": pdf_text is not None,
+                    "exercise_mode": exercise_mode,
+                    "exercises_generated": exercises_generated,
+                    "success": True,
+                }
+            ),
+            201,
+        )
 
     except Exception as e:
         logger.error("Unexpected error: %s", e, exc_info=True)
@@ -304,10 +327,13 @@ def update_chapter(chapter_id):
         data = request.json or {}
         user_id = g.user_id
 
-        errors = validate_fields(data, [
-            ("title", False, config.MAX_CHAPTER_TITLE_LENGTH),
-            ("description", False, config.MAX_CLASS_DESCRIPTION_LENGTH),
-        ])
+        errors = validate_fields(
+            data,
+            [
+                ("title", False, config.MAX_CHAPTER_TITLE_LENGTH),
+                ("description", False, config.MAX_CLASS_DESCRIPTION_LENGTH),
+            ],
+        )
         if errors:
             return jsonify({"error": errors[0]}), 400
 
@@ -346,6 +372,7 @@ def delete_chapter(chapter_id):
         if not chapter_data:
             return jsonify({"error": "Chapter not found"}), 404
 
+        class_id = chapter_data[0]
         professor_id = chapter_data[2]
         if professor_id != user_id:
             return jsonify({"error": "Only the class owner can delete chapters"}), 403
@@ -390,10 +417,22 @@ def generate_exercises_for_chapter(chapter_id):
             pdf_text = extract_text_from_pdf_bytes(bytes(pdf_data))
         except Exception as e:
             logger.error("Failed to extract text from PDF: %s", e, exc_info=True)
-            return jsonify({"error": "Failed to extract text from the PDF. Please check the file and try again."}), 500
+            return (
+                jsonify(
+                    {
+                        "error": "Failed to extract text from the PDF. Please check the file and try again."
+                    }
+                ),
+                500,
+            )
 
         if not pdf_text:
-            return jsonify({"error": "Could not extract text from PDF. PDF may be empty or image-based."}), 400
+            return (
+                jsonify(
+                    {"error": "Could not extract text from PDF. PDF may be empty or image-based."}
+                ),
+                400,
+            )
 
         if not generate_exercises_from_pdf_content:
             return jsonify({"error": "Exercise generator not available"}), 500
@@ -414,9 +453,15 @@ def generate_exercises_for_chapter(chapter_id):
         for idx, exercise in enumerate(exercises, 1):
             exercise_id = f"{chapter_id}_ex_{idx}_{int(datetime.now().timestamp() * 1000)}"
             chapter_repo.insert_exercise(
-                conn, exercise_id, chapter_id, class_id,
-                exercise["title"], exercise["description"],
-                exercise["difficulty"], exercise["solution_code"], idx,
+                conn,
+                exercise_id,
+                chapter_id,
+                class_id,
+                exercise["title"],
+                exercise["description"],
+                exercise["difficulty"],
+                exercise["solution_code"],
+                idx,
             )
             exercises_generated += 1
 
@@ -424,11 +469,16 @@ def generate_exercises_for_chapter(chapter_id):
 
         cache.invalidate_cache(f"chap_exercises:*:{chapter_id}")
 
-        return jsonify({
-            "success": True,
-            "exercises_generated": exercises_generated,
-            "chapter_id": chapter_id,
-        }), 201
+        return (
+            jsonify(
+                {
+                    "success": True,
+                    "exercises_generated": exercises_generated,
+                    "chapter_id": chapter_id,
+                }
+            ),
+            201,
+        )
 
     except Exception as e:
         logger.error("Unexpected error: %s", e, exc_info=True)
@@ -500,11 +550,14 @@ def create_exercise(class_id, chapter_id):
 
         user_id = g.user_id
 
-        errors = validate_fields(data, [
-            ("title", False, config.MAX_EXERCISE_TITLE_LENGTH),
-            ("description", False, config.MAX_EXERCISE_DESCRIPTION_LENGTH),
-            ("solution_code", False, config.MAX_SOLUTION_CODE_LENGTH),
-        ])
+        errors = validate_fields(
+            data,
+            [
+                ("title", False, config.MAX_EXERCISE_TITLE_LENGTH),
+                ("description", False, config.MAX_EXERCISE_DESCRIPTION_LENGTH),
+                ("solution_code", False, config.MAX_SOLUTION_CODE_LENGTH),
+            ],
+        )
         if errors:
             return jsonify({"error": errors[0]}), 400
 
@@ -520,9 +573,14 @@ def create_exercise(class_id, chapter_id):
         exercise_id = f"ex_{str(uuid.uuid4())[:8]}"
 
         chapter_repo.insert_manual_exercise(
-            conn, exercise_id, class_id, chapter_id,
-            data.get("title"), data.get("description"),
-            data.get("difficulty", "medium"), data.get("solution_code", ""),
+            conn,
+            exercise_id,
+            class_id,
+            chapter_id,
+            data.get("title"),
+            data.get("description"),
+            data.get("difficulty", "medium"),
+            data.get("solution_code", ""),
             user_id,
         )
         conn.commit()
@@ -563,15 +621,14 @@ def serve_chapter_pdf(chapter_id):
             cors_origin = "*" if "*" in allowed else (origin if origin in allowed else None)
 
             response = Response(pdf_bytes, mimetype="application/pdf")
-            response.headers["Content-Disposition"] = (
-                f'inline; filename="{pdf_filename}"'
-            )
+            response.headers["Content-Disposition"] = f'inline; filename="{pdf_filename}"'
             if cors_origin:
                 response.headers["Access-Control-Allow-Origin"] = cors_origin
             return response
 
         elif pdf_filename:
             from flask import current_app
+
             upload_folder = current_app.config.get("UPLOAD_FOLDER", "uploads")
             pdf_path = os.path.join(upload_folder, pdf_filename)
             if os.path.exists(pdf_path):

@@ -13,7 +13,7 @@ import os
 import time
 from datetime import datetime
 
-from flask import Blueprint, g, jsonify, request
+from flask import Blueprint, jsonify, request
 
 import config
 from auth_helpers import decode_jwt_token, require_auth, validate_fields
@@ -239,7 +239,12 @@ def get_task_status(task_id):
 
     except Exception as e:
         logger.error("Failed to get task status", extra={"error": str(e), "task_id": task_id})
-        return jsonify({"error": "Failed to retrieve task status. Please try again.", "task_id": task_id}), 500
+        return (
+            jsonify(
+                {"error": "Failed to retrieve task status. Please try again.", "task_id": task_id}
+            ),
+            500,
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -258,12 +263,15 @@ def submit_contact():
         subject = data.get("subject")
         message = data.get("message")
 
-        errors = validate_fields(data, [
-            ("name", True, config.MAX_NAME_LENGTH),
-            ("email", True, config.MAX_EMAIL_LENGTH),
-            ("subject", True, 200),
-            ("message", True, config.MAX_GENERIC_TEXT_LENGTH),
-        ])
+        errors = validate_fields(
+            data,
+            [
+                ("name", True, config.MAX_NAME_LENGTH),
+                ("email", True, config.MAX_EMAIL_LENGTH),
+                ("subject", True, 200),
+                ("message", True, config.MAX_GENERIC_TEXT_LENGTH),
+            ],
+        )
         if errors:
             return jsonify({"error": errors[0]}), 400
 

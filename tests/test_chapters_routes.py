@@ -260,20 +260,13 @@ class TestUpdateChapter:
 
 class TestDeleteChapter:
     def test_delete_chapter_owner_returns_200(self, client, mock_db):
-        """Chapter owner can delete chapter.
-
-        NOTE: blueprints/chapters.py::delete_chapter has a NameError bug on
-        the cache.invalidate_cache line (``class_id`` is referenced before
-        assignment).  The route currently returns 500 because of this bug.
-        Once the bug is fixed the assertion should be changed to 200.
-        """
+        """Chapter owner can delete chapter."""
         cursor = mock_db.cursor()
         cursor.fetchone.return_value = ("class-abc", 1, "prof-user-id")
 
         resp = client.delete("/api/chapters/ch-1", headers=AUTH_PROF)
 
-        # Bug: NameError in delete_chapter causes 500; update to 200 after fix
-        assert resp.status_code == 500
+        assert resp.status_code == 200
 
     def test_delete_chapter_non_owner_returns_403(self, client, mock_db):
         """Non-owner cannot delete chapter."""
