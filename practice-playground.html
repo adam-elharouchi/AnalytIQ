@@ -893,9 +893,7 @@
             return;
           }
 
-          const apiUrl = window.API_BASE_URL || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-            ? 'http://localhost:5001/api'
-            : 'https://analytiq-qbfr.onrender.com/api');
+          const apiUrl = window.API_BASE_URL || '/api';
 
           // Load exercise from API
           const response = await fetchWithCache(`${apiUrl}/chapters/${encodeURIComponent(chapterId)}/exercises?user_id=${userId}`);
@@ -1188,7 +1186,7 @@
           return;
         }
 
-        const apiUrl = window.API_BASE_URL || 'https://analytiq-qbfr.onrender.com/api';
+        const apiUrl = window.API_BASE_URL || '/api';
 
         console.log('Saving exercise score:', { userId, exerciseId, score, accuracy, timeSpent });
 

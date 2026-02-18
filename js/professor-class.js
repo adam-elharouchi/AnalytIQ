@@ -1062,24 +1062,8 @@ async function loadResources() {
                             resource.resource_type === 'txt' ? '📝' : '🔗';
 
           let url = resource.resource_url || resource.url || '#';
-          // Fix relative URLs to point to API
-          if (url.startsWith('/')) {
-            // Remove leading slash to avoid double slash if base has it, though normally base doesn't.
-            // Usually API_BASE_URL is '.../api', and url is '/api/resource...'.
-            // Wait, if url is '/api/resources/files/...' and API_BASE_URL is '.../api', we might duplicate '/api' if we blindly concat.
-            // But window.API_BASE_URL is usually 'https://...onrender.com/api'.
-            // If url is '/api/resources...', then 'https://.../api/api/resources' might be wrong.
-            // Actually, file uploads returning '/api/resources/files/...' implies they are relative to SERVER ROOT.
-            // window.API_BASE_URL includes '/api'.
-            // So we should replace the domain part.
-            // Safest: Use window.API_BASE_URL's origin + url.
-
-            // Simplest safely:
-            if (window.API_BASE_URL && window.API_BASE_URL.startsWith('http')) {
-              const apiOrigin = new URL(window.API_BASE_URL).origin;
-              url = `${apiOrigin}${url}`;
-            }
-          }
+          // Server-relative resource paths (e.g. /api/resources/files/...) are used as-is
+          // because API_BASE_URL is same-origin ('/api'), so no origin prepending is needed.
           let linkTarget = '';
           let linkText = 'Visit Resource';
 

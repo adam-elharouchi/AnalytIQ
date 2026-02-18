@@ -582,12 +582,8 @@ async function loadResources() {
           }
 
           let url = resource.resource_url || resource.url || '#';
-
-          // Fix relative URLs to point to API (e.g. /api/resources/...)
-          if (url && url.startsWith('/') && window.API_BASE_URL && window.API_BASE_URL.startsWith('http')) {
-            const apiOrigin = new URL(window.API_BASE_URL).origin;
-            url = `${apiOrigin}${url}`;
-          }
+          // Server-relative resource paths (e.g. /api/resources/files/...) are used as-is
+          // because API_BASE_URL is same-origin ('/api'), so no origin prepending is needed.
 
           // Fix missing protocol for typically external resources (datasets, links, videos)
           // Avoid touching 'tool' which can be relative (e.g. code-assistant.html)
