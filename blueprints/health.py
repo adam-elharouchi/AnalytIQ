@@ -10,6 +10,7 @@ Routes:
 
 import logging
 import os
+import time
 from datetime import datetime
 
 from flask import Blueprint, g, jsonify, request
@@ -25,6 +26,11 @@ from supabase_storage import storage_health_check
 logger = logging.getLogger(__name__)
 bp = Blueprint("health", __name__)
 
+# 30-second in-process cache for /api/health results
+_health_cache = None  # type: tuple | None  (health_status dict, status_code int)
+_health_cache_time = 0.0
+_HEALTH_CACHE_TTL = 30  # seconds
+
 
 # ---------------------------------------------------------------------------
 # Health check
@@ -33,7 +39,17 @@ bp = Blueprint("health", __name__)
 
 @bp.route("/api/health", methods=["GET"])
 def health():
-    """Comprehensive health check — 200 healthy, 503 degraded."""
+    """Comprehensive health check — 200 healthy, 503 degraded.
+
+    Results are cached for 30 s so rapid polling doesn't hammer the DB.
+    """
+    global _health_cache, _health_cache_time
+
+    now = time.monotonic()
+    if _health_cache is not None and (now - _health_cache_time) < _HEALTH_CACHE_TTL:
+        cached_status, cached_code = _health_cache
+        return jsonify(cached_status), cached_code
+
     health_status = {
         "status": "healthy",
         "timestamp": datetime.utcnow().isoformat(),
@@ -111,25 +127,28 @@ def health():
             "note": "Caching feature flag off",
         }
 
-    # 5. Supabase Storage (CRITICAL for PDFs)
+    # 5. Supabase Storage (NON-CRITICAL — PDF uploads degrade gracefully)
     try:
         storage_status = storage_health_check()
         health_status["services"]["storage"] = storage_status
         if not storage_status.get("healthy", False):
-            all_healthy = False
-            logger.error(f"Health check: Storage unhealthy: {storage_status.get('message')}")
+            logger.warning("Health check: Storage unhealthy: %s", storage_status.get("message"))
     except Exception as e:
-        all_healthy = False
-        health_status["services"]["storage"] = {"status": "error", "error": str(e)}
-        logger.error(f"Health check: Storage error: {e}")
+        health_status["services"]["storage"] = {"status": "error", "error": str(e)[:200]}
+        logger.warning("Health check: Storage error: %s", e)
 
+    status_code = 200
     if not all_healthy:
         health_status["status"] = "degraded"
         logger.warning("Health check: system degraded")
-        return jsonify(health_status), 503
+        status_code = 503
+    else:
+        logger.info("Health check: all systems healthy")
 
-    logger.info("Health check: all systems healthy")
-    return jsonify(health_status), 200
+    _health_cache = (health_status, status_code)
+    _health_cache_time = time.monotonic()
+
+    return jsonify(health_status), status_code
 
 
 # ---------------------------------------------------------------------------

@@ -463,6 +463,9 @@ def get_class_progress(class_id):
         students = class_repo.get_class_enrolled_students_for_progress(conn, class_id)
         progress_rows = class_repo.get_class_progress_bulk(conn, class_id)
 
+        # O(1) lookup by exercise_id instead of O(n) scan per progress row
+        exercise_lookup = {ex[0]: (ex[1], ex[2]) for ex in exercises}
+
         # Build nested structure from flat result set
         progress_data = {}
         for student in students:
@@ -479,13 +482,7 @@ def get_class_progress(class_id):
             exercise_id = row[1]
 
             if student_id in progress_data:
-                exercise_title = None
-                exercise_difficulty = None
-                for ex in exercises:
-                    if ex[0] == exercise_id:
-                        exercise_title = ex[1]
-                        exercise_difficulty = ex[2]
-                        break
+                exercise_title, exercise_difficulty = exercise_lookup.get(exercise_id, (None, None))
 
                 progress_data[student_id]["exercises"][exercise_id] = {
                     "exercise_id": exercise_id,
