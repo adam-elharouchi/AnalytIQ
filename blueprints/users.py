@@ -24,6 +24,7 @@ from flask import Blueprint, g, jsonify, request
 import config
 import cache
 import utils
+from audit import audit
 from auth_helpers import hash_password, require_auth, validate_email, validate_fields, verify_password
 from db import get_db_connection
 from extensions import csrf_exempt
@@ -100,6 +101,7 @@ def update_profile():
             user_repo.update_user_name(conn, user_id, full_name)
 
         user_repo.upsert_profile(conn, user_id, full_name, bio, profile_picture)
+        audit(conn, "UPDATE_PROFILE", resource_type="user", resource_id=user_id)
         conn.commit()
 
         cache.invalidate_cache(f"profile:{user_id}")
@@ -197,6 +199,7 @@ def update_password():
 
         new_hash = hash_password(new_password)
         user_repo.update_password_hash(conn, user_id, new_hash)
+        audit(conn, "UPDATE_PASSWORD", resource_type="user", resource_id=user_id)
         conn.commit()
 
         return jsonify({"success": True}), 200
@@ -218,6 +221,7 @@ def delete_user():
         conn = get_db_connection()
 
         user_repo.delete_user(conn, user_id)
+        audit(conn, "DELETE_USER", resource_type="user", resource_id=user_id)
         conn.commit()
 
         return jsonify({"success": True}), 200
@@ -761,6 +765,13 @@ def update_practice_progress():
             current_attempts + 1,
         )
 
+        audit(
+            conn,
+            "EXERCISE_SUBMISSION",
+            resource_type="exercise",
+            resource_id=exercise_id,
+            details={"score": score, "accuracy": accuracy, "is_new_best": is_new_best},
+        )
         conn.commit()
 
         return (

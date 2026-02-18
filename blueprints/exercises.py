@@ -5,6 +5,7 @@ import logging
 from flask import Blueprint, g, jsonify, request
 import cache
 import config
+from audit import audit
 from auth_helpers import require_auth, validate_fields
 from db import get_db_connection
 from extensions import csrf_exempt
@@ -208,6 +209,7 @@ def delete_exercise(exercise_id):
 
         chapter_id = location[0]
         exercise_repo.delete_exercise(conn, exercise_id)
+        audit(conn, "DELETE_EXERCISE", resource_type="exercise", resource_id=exercise_id, details={"chapter_id": chapter_id})
         conn.commit()
 
         cache.invalidate_cache(f"exercise:*:{exercise_id}")
