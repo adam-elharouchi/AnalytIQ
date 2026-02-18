@@ -119,9 +119,15 @@ def cache_response(ttl=None, key_prefix=""):
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            # Skip caching if disabled or Redis not available
+            # Skip caching if disabled, Redis not available, or in test mode
             if not FEATURE_CACHING or not redis_client:
                 return func(*args, **kwargs)
+            try:
+                from flask import current_app
+                if current_app.testing:
+                    return func(*args, **kwargs)
+            except RuntimeError:
+                pass
 
             # Include g.user_id to scope cache per authenticated user
             try:
