@@ -104,6 +104,26 @@ def delete_pdf(filename):
         return False
 
 
+def get_presigned_upload_url(storage_path):
+    """
+    Create a presigned upload URL for direct browser-to-Supabase upload.
+
+    Args:
+        storage_path: Unique path in the bucket (e.g. "chapters/abc123_file.pdf")
+
+    Returns:
+        dict with {"signedURL": str, "token": str, "path": str}, or None on failure.
+    """
+    if not supabase:
+        raise ValueError("Supabase client not initialized")
+    try:
+        response = supabase.storage.from_(SUPABASE_BUCKET).create_signed_upload_url(storage_path)
+        return response
+    except Exception as e:
+        print(f"Error creating presigned upload URL: {e}")
+        return None
+
+
 def migrate_pdf_from_db(chapter_id, pdf_data, pdf_filename):
     """
     Migrate a single PDF from database to Supabase Storage

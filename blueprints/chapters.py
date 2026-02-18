@@ -12,6 +12,7 @@ from werkzeug.utils import secure_filename
 
 import cache
 import config
+import supabase_storage
 from auth_helpers import require_auth, validate_fields
 from db import get_db_connection
 from extensions import csrf_exempt
@@ -104,6 +105,29 @@ def validate_pdf_file(file):
 
     logger.info("PDF validation passed", extra={"size_mb": file_size / 1024 / 1024})
     return True, None
+
+
+@bp.route("/api/chapters/upload-url", methods=["GET"])
+@require_auth
+def get_chapter_upload_url():
+    """Return a Supabase presigned upload URL for direct browser-to-Supabase PDF upload."""
+    try:
+        filename = request.args.get("filename", "upload.pdf")
+        safe_name = secure_filename(filename) or "upload.pdf"
+        storage_path = f"chapters/{uuid.uuid4().hex[:8]}_{safe_name}"
+
+        signed = supabase_storage.get_presigned_upload_url(storage_path)
+        if not signed:
+            return jsonify({"error": "Storage service unavailable"}), 503
+
+        return jsonify({
+            "upload_url": signed.get("signedURL") or signed.get("signed_url"),
+            "storage_path": storage_path,
+        }), 200
+
+    except Exception as e:
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
 @bp.route("/api/classes/<class_id>/chapters", methods=["POST"])

@@ -220,6 +220,23 @@ if (typeof window.conversationAPI === 'undefined') {
                 console.error('Error deleting conversation:', error);
             }
             return false;
+        },
+
+        async appendMessage(conversationId, role, content) {
+            if (!getCurrentUserId()) return false;
+
+            try {
+                const response = await authFetch(`${window.API_BASE_URL}/users/conversations/${conversationId}/messages`, {
+                    method: 'POST',
+                    body: JSON.stringify({ role, content })
+                });
+                // Invalidate this conversation's cache so next GET fetches fresh data
+                apiCache.clear(`/users/conversations/${conversationId}`);
+                return response.ok;
+            } catch (error) {
+                console.error('Error appending message:', error);
+            }
+            return false;
         }
     };
 }
@@ -329,5 +346,20 @@ if (typeof window.preferencesAPI === 'undefined') {
             return false;
         }
     };
+}
+
+// Get a Supabase presigned upload URL for direct browser-to-storage PDF uploads (Task 34)
+async function getPresignedUploadUrl(filename) {
+    try {
+        const response = await authFetch(
+            `${window.API_BASE_URL}/chapters/upload-url?filename=${encodeURIComponent(filename)}`
+        );
+        if (response.ok) {
+            return await response.json(); // { upload_url, storage_path }
+        }
+    } catch (error) {
+        console.error('Error getting presigned upload URL:', error);
+    }
+    return null;
 }
 

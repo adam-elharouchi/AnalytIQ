@@ -251,6 +251,21 @@ def replace_conversation_messages(conn, conversation_id, messages):
     cur.close()
 
 
+def append_conversation_message(conn, conversation_id, role, content):
+    """Append a single message to a conversation (auto-increments message_order)."""
+    cur = conn.cursor()
+    cur.execute(
+        """
+        INSERT INTO conversation_messages (conversation_id, role, content, message_order)
+        SELECT %s, %s, %s, COALESCE(MAX(message_order), -1) + 1
+        FROM conversation_messages
+        WHERE conversation_id = %s
+        """,
+        (conversation_id, role, content, conversation_id),
+    )
+    cur.close()
+
+
 def soft_delete_conversation(conn, conversation_id, user_id):
     cur = conn.cursor()
     cur.execute(
