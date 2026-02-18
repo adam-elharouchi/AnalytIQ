@@ -171,7 +171,7 @@ def verify_password(password, hashed_password):
             is_valid = bcrypt.checkpw(password.encode("utf-8"), hashed_password.encode("utf-8"))
             return (is_valid, False)  # Valid bcrypt hash, no rehash needed
         except Exception as e:
-            print(f"Bcrypt verification error: {e}")
+            logger.warning("Bcrypt verification error: %s", e)
             return (False, False)
     else:
         # Legacy hash - verify and flag for rehashing

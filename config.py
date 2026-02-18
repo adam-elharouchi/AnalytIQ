@@ -43,7 +43,7 @@ MAX_PDF_SIZE_MB = int(os.getenv("MAX_PDF_SIZE_MB", 50))
 MAX_PDF_SIZE_BYTES = MAX_PDF_SIZE_MB * 1024 * 1024
 
 # Allowed Extensions
-ALLOWED_EXTENSIONS = {"pdf"}
+ALLOWED_EXTENSIONS = {"pdf", "csv", "xlsx", "xls", "json", "txt", "ipynb", "docx"}
 
 # PDF Validation
 PDF_HEADER_CHECK_BYTES = 1024

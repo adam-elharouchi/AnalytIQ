@@ -5,7 +5,10 @@ Provides caching functionality for frequently accessed endpoints
 
 import json
 import functools
+import logging
 import config
+
+logger = logging.getLogger(__name__)
 
 REDIS_URL = config.REDIS_URL
 CACHE_DEFAULT_TTL = config.CACHE_DEFAULT_TTL
@@ -21,9 +24,9 @@ try:
 
     # Test connection
     redis_client.ping()
-    print(f"✅ Redis cache initialized (TTL: {CACHE_DEFAULT_TTL}s)")
+    logger.info("Redis cache initialized (TTL: %ss)", CACHE_DEFAULT_TTL)
 except Exception as e:
-    print(f"⚠️  Redis not available: {e}")
+    logger.warning("Redis not available: %s", e)
     redis_client = None
 
 
@@ -46,7 +49,7 @@ def get_cached(key):
             return json.loads(value)
         return None
     except Exception as e:
-        print(f"Cache get error: {e}")
+        logger.warning("Cache get error: %s", e)
         return None
 
 
@@ -72,7 +75,7 @@ def set_cached(key, value, ttl=None):
         redis_client.setex(key, ttl, json.dumps(value))
         return True
     except Exception as e:
-        print(f"Cache set error: {e}")
+        logger.warning("Cache set error: %s", e)
         return False
 
 
@@ -95,7 +98,7 @@ def invalidate_cache(pattern):
             return redis_client.delete(*keys)
         return 0
     except Exception as e:
-        print(f"Cache invalidation error: {e}")
+        logger.warning("Cache invalidation error: %s", e)
         return 0
 
 
