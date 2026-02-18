@@ -16,7 +16,7 @@
     <!-- Back Button -->
     <div style="margin-bottom: 1rem;">
       <a href="professor-dashboard.html"
-        style="color: #2569f4; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;">
+        style="color: var(--color-primary); text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;">
         <span>←</span>
         <span>Back to Dashboard</span>
       </a>
@@ -31,11 +31,11 @@
     <div id="classHeader" style="display: none; margin-bottom: 2rem;">
       <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
         <div style="flex: 1;">
-          <h1 id="className" style="margin-bottom: 0.5rem; color: #222c3e;"></h1>
+          <h1 id="className" style="margin-bottom: 0.5rem; color: var(--color-dark);"></h1>
           <p id="classDescription" style="color: #64748b; margin-bottom: 0.5rem;"></p>
           <div style="display: flex; gap: 1rem; align-items: center;">
             <span
-              style="background: #2569f4; color: white; padding: 0.375rem 0.75rem; border-radius: 1rem; font-size: 0.875rem; font-weight: 600;"
+              style="background: var(--color-primary); color: white; padding: 0.375rem 0.75rem; border-radius: 1rem; font-size: 0.875rem; font-weight: 600;"
               id="classCode"></span>
             <span style="color: #64748b; font-size: 0.875rem;">Class Code</span>
           </div>
@@ -50,15 +50,15 @@
       <div
         style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-top: 1.5rem; padding: 1.5rem; background: #f8fafc; border-radius: 0.5rem; text-align: center;">
         <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
-          <div style="font-size: 2rem; font-weight: 600; color: #2569f4;" id="studentCountStat">0</div>
+          <div style="font-size: 2rem; font-weight: 600; color: var(--color-primary);" id="studentCountStat">0</div>
           <div style="font-size: 0.875rem; color: #64748b;">Students</div>
         </div>
         <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
-          <div style="font-size: 2rem; font-weight: 600; color: #2569f4;" id="chapterCountStat">0</div>
+          <div style="font-size: 2rem; font-weight: 600; color: var(--color-primary);" id="chapterCountStat">0</div>
           <div style="font-size: 0.875rem; color: #64748b;">Chapters</div>
         </div>
         <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
-          <div style="font-size: 2rem; font-weight: 600; color: #2569f4;" id="exerciseCountStat">0</div>
+          <div style="font-size: 2rem; font-weight: 600; color: var(--color-primary);" id="exerciseCountStat">0</div>
           <div style="font-size: 0.875rem; color: #64748b;">Exercises</div>
         </div>
       </div>
@@ -78,7 +78,7 @@
     <!-- Chapters Tab -->
     <div id="tabContentChapters" class="tab-content" style="display: none;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-        <h2 style="margin: 0; color: #222c3e;">Chapters</h2>
+        <h2 style="margin: 0; color: var(--color-dark);">Chapters</h2>
         <button class="btn btn-primary" onclick="showUploadChapterModal()">➕ Upload Chapter</button>
       </div>
 
@@ -94,7 +94,7 @@
     <!-- Exercises Tab -->
     <div id="tabContentExercises" class="tab-content" style="display: none;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-        <h2 style="margin: 0; color: #222c3e;">Exercises</h2>
+        <h2 style="margin: 0; color: var(--color-dark);">Exercises</h2>
         <div style="display: flex; gap: 0.5rem;">
           <a href="#"
             onclick="window.location.href='upload-assistant.html?class_id=' + new URLSearchParams(window.location.search).get('class_id')"
@@ -118,7 +118,7 @@
     <!-- Resources Tab -->
     <div id="tabContentResources" class="tab-content" style="display: none;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-        <h2 style="margin: 0; color: #222c3e;">Course Resources</h2>
+        <h2 style="margin: 0; color: var(--color-dark);">Course Resources</h2>
         <button class="btn btn-primary" onclick="showAddResourceModal()">➕ Add Resource</button>
       </div>
 
@@ -135,7 +135,7 @@
     <!-- Students Tab -->
     <div id="tabContentStudents" class="tab-content" style="display: none;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-        <h2 style="margin: 0; color: #222c3e;">Enrolled Students</h2>
+        <h2 style="margin: 0; color: var(--color-dark);">Enrolled Students</h2>
         <div style="display: flex; align-items: center; gap: 0.5rem;">
           <span style="color: #64748b; font-size: 0.875rem;" id="studentsCount">0 students</span>
         </div>
@@ -153,7 +153,7 @@
     <!-- Progress Tab -->
     <div id="tabContentProgress" class="tab-content" style="display: none;">
       <div style="margin-bottom: 1.5rem;">
-        <h2 style="margin: 0 0 1rem 0; color: #222c3e;">Class Leaderboards</h2>
+        <h2 style="margin: 0 0 1rem 0; color: var(--color-dark);">Class Leaderboards</h2>
         <p style="color: #64748b;">See how students are performing in the class exercises.</p>
       </div>
 
@@ -187,7 +187,7 @@
         <div id="exLeaderboardContainer" style="display: none;">
           <div style="margin-bottom: 1rem;">
             <label for="leaderboardExerciseSelect"
-              style="font-weight: 500; color: #222c3e; margin-right: 0.5rem;">Select Exercise:</label>
+              style="font-weight: 500; color: var(--color-dark); margin-right: 0.5rem;">Select Exercise:</label>
             <select id="leaderboardExerciseSelect" onchange="loadExerciseLeaderboard(this.value)"
               style="padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 0.25rem;">
               <option value="">-- Choose an Exercise --</option>
@@ -209,7 +209,7 @@
       <div
         style="background: white; border-radius: 0.5rem; padding: 2rem; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-          <h2 style="margin: 0; color: #222c3e;">Upload Chapter</h2>
+          <h2 style="margin: 0; color: var(--color-dark);">Upload Chapter</h2>
           <button onclick="hideUploadChapterModal()"
             style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b;">&times;</button>
         </div>
@@ -217,20 +217,20 @@
         <form id="uploadChapterForm" onsubmit="handleUploadChapter(event)">
           <div style="margin-bottom: 1.5rem;">
             <label for="chapterTitle"
-              style="display: block; margin-bottom: 0.5rem; color: #222c3e; font-weight: 500;">Chapter Title *</label>
+              style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Chapter Title *</label>
             <input type="text" id="chapterTitle" required placeholder="e.g., Chapter 2: Business Analytics Foundations"
               style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;" />
           </div>
 
           <div style="margin-bottom: 1.5rem;">
             <label for="chapterDescription"
-              style="display: block; margin-bottom: 0.5rem; color: #222c3e; font-weight: 500;">Description</label>
+              style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Description</label>
             <textarea id="chapterDescription" rows="3" placeholder="Optional: Add a description for this chapter..."
               style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem; resize: vertical;"></textarea>
           </div>
 
           <div style="margin-bottom: 1.5rem;">
-            <label for="chapterPDF" style="display: block; margin-bottom: 0.5rem; color: #222c3e; font-weight: 500;">PDF
+            <label for="chapterPDF" style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">PDF
               File *</label>
             <input type="file" id="chapterPDF" accept=".pdf" required
               style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;" />
@@ -239,7 +239,7 @@
           </div>
 
           <div style="margin-bottom: 1.5rem;">
-            <label style="display: block; margin-bottom: 0.5rem; color: #222c3e; font-weight: 500;">Exercise
+            <label style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Exercise
               Generation</label>
             <div style="display: flex; flex-direction: column; gap: 0.75rem;">
               <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
@@ -268,7 +268,7 @@
       style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center;">
       <div style="background: white; border-radius: 0.5rem; padding: 2rem; max-width: 500px; width: 90%;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-          <h2 style="margin: 0; color: #222c3e;">Edit Class</h2>
+          <h2 style="margin: 0; color: var(--color-dark);">Edit Class</h2>
           <button onclick="hideEditClassModal()"
             style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b;">&times;</button>
         </div>
@@ -276,14 +276,14 @@
         <form id="editClassForm" onsubmit="handleEditClass(event)">
           <div style="margin-bottom: 1.5rem;">
             <label for="editClassName"
-              style="display: block; margin-bottom: 0.5rem; color: #222c3e; font-weight: 500;">Class Name *</label>
+              style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Class Name *</label>
             <input type="text" id="editClassName" required
               style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;" />
           </div>
 
           <div style="margin-bottom: 1.5rem;">
             <label for="editClassDescription"
-              style="display: block; margin-bottom: 0.5rem; color: #222c3e; font-weight: 500;">Description</label>
+              style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Description</label>
             <textarea id="editClassDescription" rows="4"
               style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem; resize: vertical;"></textarea>
           </div>
@@ -340,7 +340,7 @@
     <div
       style="background: white; border-radius: 0.5rem; padding: 2rem; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-        <h2 style="margin: 0; color: #222c3e;">Add Resource</h2>
+        <h2 style="margin: 0; color: var(--color-dark);">Add Resource</h2>
         <button onclick="hideAddResourceModal()"
           style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b;">&times;</button>
       </div>
@@ -348,21 +348,21 @@
       <form id="addResourceForm" onsubmit="handleAddResource(event)">
         <div style="margin-bottom: 1.5rem;">
           <label for="resourceTitle"
-            style="display: block; margin-bottom: 0.5rem; color: #222c3e; font-weight: 500;">Resource Title *</label>
+            style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Resource Title *</label>
           <input type="text" id="resourceTitle" required placeholder="e.g., Python Documentation"
             style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;" />
         </div>
 
         <div style="margin-bottom: 1.5rem;">
           <label for="resourceDescription"
-            style="display: block; margin-bottom: 0.5rem; color: #222c3e; font-weight: 500;">Description</label>
+            style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Description</label>
           <textarea id="resourceDescription" rows="3" placeholder="Describe this resource and how it helps students..."
             style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem; resize: vertical;"></textarea>
         </div>
 
         <div style="margin-bottom: 1.5rem;">
           <label for="resourceType"
-            style="display: block; margin-bottom: 0.5rem; color: #222c3e; font-weight: 500;">Resource Type *</label>
+            style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Resource Type *</label>
           <select id="resourceType" required
             style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;"
             onchange="updateResourceInputType()">
@@ -380,7 +380,7 @@
 
         <!-- Resource Input Type Selection (Link or Upload) -->
         <div id="resourceInputTypeSection" style="margin-bottom: 1.5rem; display: none;">
-          <label style="display: block; margin-bottom: 0.5rem; color: #222c3e; font-weight: 500;">Resource Source
+          <label style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Resource Source
             *</label>
           <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
             <label
@@ -403,7 +403,7 @@
         <!-- Link/URL Input -->
         <div id="resourceUrlSection" style="margin-bottom: 1.5rem;">
           <label for="resourceUrl"
-            style="display: block; margin-bottom: 0.5rem; color: #222c3e; font-weight: 500;">Resource URL *</label>
+            style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Resource URL *</label>
           <input type="url" id="resourceUrl" placeholder="https://example.com or code-assistant.html"
             style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;" />
           <small style="color: #64748b; font-size: 0.875rem; display: block; margin-top: 0.5rem;">Enter a full URL
@@ -413,13 +413,13 @@
         <!-- File Upload Input -->
         <div id="resourceFileSection" style="margin-bottom: 1.5rem; display: none;">
           <label for="resourceFile"
-            style="display: block; margin-bottom: 0.5rem; color: #222c3e; font-weight: 500;">Upload File *</label>
+            style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Upload File *</label>
           <input type="file" id="resourceFile" accept=".pdf,.csv,.xlsx,.xls,.txt,.json,.ipynb"
             style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;" />
           <small style="color: #64748b; font-size: 0.875rem; display: block; margin-top: 0.5rem;">Supported formats:
             PDF, CSV, Excel, TXT, JSON, Jupyter Notebook (.ipynb)</small>
           <small id="resourceFileInfo"
-            style="color: #2569f4; font-size: 0.875rem; display: none; margin-top: 0.5rem; font-weight: 500;"></small>
+            style="color: var(--color-primary); font-size: 0.875rem; display: none; margin-top: 0.5rem; font-weight: 500;"></small>
         </div>
 
         <div id="addResourceError" class="error-message"
@@ -440,7 +440,7 @@
     <div
       style="background: white; border-radius: 0.5rem; padding: 2rem; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-        <h2 style="margin: 0; color: #222c3e;">Create New Exercise</h2>
+        <h2 style="margin: 0; color: var(--color-dark);">Create New Exercise</h2>
         <button onclick="hideCreateExerciseModal()"
           style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b;">&times;</button>
       </div>
@@ -448,7 +448,7 @@
       <form id="createExerciseForm" onsubmit="handleCreateExercise(event)">
         <div style="margin-bottom: 1.5rem;">
           <label for="exerciseChapter"
-            style="display: block; margin-bottom: 0.5rem; color: #222c3e; font-weight: 500;">Chapter *</label>
+            style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Chapter *</label>
           <select id="exerciseChapter" required
             style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;">
             <option value="">Select a chapter...</option>
@@ -457,21 +457,21 @@
 
         <div style="margin-bottom: 1.5rem;">
           <label for="exerciseTitle"
-            style="display: block; margin-bottom: 0.5rem; color: #222c3e; font-weight: 500;">Exercise Title *</label>
+            style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Exercise Title *</label>
           <input type="text" id="exerciseTitle" required placeholder="e.g., Calculate mean and median"
             style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;" />
         </div>
 
         <div style="margin-bottom: 1.5rem;">
           <label for="exerciseDescription"
-            style="display: block; margin-bottom: 0.5rem; color: #222c3e; font-weight: 500;">Description</label>
+            style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Description</label>
           <textarea id="exerciseDescription" rows="3" placeholder="Describe what students should do in this exercise..."
             style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem; resize: vertical;"></textarea>
         </div>
 
         <div style="margin-bottom: 1.5rem;">
           <label for="exerciseDifficulty"
-            style="display: block; margin-bottom: 0.5rem; color: #222c3e; font-weight: 500;">Difficulty *</label>
+            style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Difficulty *</label>
           <select id="exerciseDifficulty" required
             style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;">
             <option value="easy">Easy</option>
@@ -482,7 +482,7 @@
 
         <div style="margin-bottom: 1.5rem;">
           <label for="exerciseSolution"
-            style="display: block; margin-bottom: 0.5rem; color: #222c3e; font-weight: 500;">Solution Code</label>
+            style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Solution Code</label>
           <textarea id="exerciseSolution" rows="6"
             placeholder="# Enter the solution code here...&#10;# Example:&#10;import pandas as pd&#10;df = pd.read_csv('data.csv')&#10;print(df.head())"
             style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 0.875rem; font-family: 'Courier New', monospace; resize: vertical;"></textarea>
@@ -508,7 +508,7 @@
     style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center;">
     <div style="background: white; border-radius: 0.5rem; padding: 2rem; max-width: 600px; width: 90%;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-        <h2 style="margin: 0; color: #222c3e;">Edit Chapter</h2>
+        <h2 style="margin: 0; color: var(--color-dark);">Edit Chapter</h2>
         <button onclick="hideEditChapterModal()"
           style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b;">&times;</button>
       </div>
@@ -516,14 +516,14 @@
       <form id="editChapterForm" onsubmit="handleEditChapter(event)">
         <div style="margin-bottom: 1.5rem;">
           <label for="editChapterTitle"
-            style="display: block; margin-bottom: 0.5rem; color: #222c3e; font-weight: 500;">Chapter Title *</label>
+            style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Chapter Title *</label>
           <input type="text" id="editChapterTitle" required
             style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;" />
         </div>
 
         <div style="margin-bottom: 1.5rem;">
           <label for="editChapterDescription"
-            style="display: block; margin-bottom: 0.5rem; color: #222c3e; font-weight: 500;">Description</label>
+            style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Description</label>
           <textarea id="editChapterDescription" rows="4"
             style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem; resize: vertical;"></textarea>
         </div>
@@ -544,7 +544,7 @@
     <div
       style="background: white; border-radius: 0.5rem; padding: 2rem; max-width: 500px; width: 90%; text-align: center;">
       <div style="margin-bottom: 1.5rem; font-size: 3rem;">⚠️</div>
-      <h2 style="margin: 0 0 1rem 0; color: #222c3e;">Delete Chapter?</h2>
+      <h2 style="margin: 0 0 1rem 0; color: var(--color-dark);">Delete Chapter?</h2>
       <p style="color: #64748b; margin-bottom: 2rem;">Are you sure you want to delete this chapter? All associated
         exercises will also be deleted. This action cannot be undone.</p>
 

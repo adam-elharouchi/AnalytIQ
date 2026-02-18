@@ -54,7 +54,7 @@ async function loadClassData(classId) {
     loadingState.style.display = 'none';
     loadingState.innerHTML = `
       <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
-      <h2 style="color: #222c3e; margin-bottom: 0.5rem;">Error Loading Class</h2>
+      <h2 style="color: var(--color-dark); margin-bottom: 0.5rem;">Error Loading Class</h2>
       <p style="color: #64748b; margin-bottom: 1.5rem;">${error.message}</p>
       <button class="btn btn-primary" onclick="window.location.href='student-classes.html'">Back to Classes</button>
     `;
@@ -222,7 +222,7 @@ async function loadChapters() {
 
     if (chapters.length === 0) {
       chaptersList.innerHTML = `
-        <div style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem;">
+        <div style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 0.5rem;">
           <div style="font-size: 3rem; margin-bottom: 1rem;">📄</div>
           <p style="color: #64748b;">No chapters available yet.</p>
         </div>
@@ -268,7 +268,7 @@ async function loadExercises() {
 
     if (chapters.length === 0) {
       exercisesList.innerHTML = `
-        <div style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem;">
+        <div style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 0.5rem;">
           <div style="font-size: 3rem; margin-bottom: 1rem;">💪</div>
           <p style="color: #64748b;">No chapters found. Exercises will appear here once chapters are available.</p>
         </div>
@@ -301,7 +301,7 @@ async function loadExercises() {
 
     if (allExercises.length === 0) {
       exercisesList.innerHTML = `
-        <div style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem;">
+        <div style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 0.5rem;">
           <div style="font-size: 3rem; margin-bottom: 1rem;">💪</div>
           <p style="color: #64748b;">No exercises available yet.</p>
         </div>
@@ -329,7 +329,7 @@ async function loadExercises() {
       const chapterData = exercisesByChapter[chapterId];
       return `
             <div class="chapter-section" style="grid-column: 1 / -1; margin-bottom: 2rem;">
-              <h2 style="margin-top: 2rem; margin-bottom: 0.5rem; color: #222c3e; font-size: 1.75rem; border-bottom: 2px solid #2569f4; padding-bottom: 0.5rem;">${escapeHtml(chapterData.chapter_title)}</h2>
+              <h2 style="margin-top: 2rem; margin-bottom: 0.5rem; color: var(--color-dark); font-size: 1.75rem; border-bottom: 2px solid var(--color-primary); padding-bottom: 0.5rem;">${escapeHtml(chapterData.chapter_title)}</h2>
             </div>
             ${chapterData.exercises.map(exercise => `
               <div class="practice-card">
@@ -375,7 +375,7 @@ async function renderChapters(chapters) {
 
   if (!chapters || chapters.length === 0) {
     chaptersList.innerHTML = `
-      <div style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem;">
+      <div style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 0.5rem;">
         <div style="font-size: 3rem; margin-bottom: 1rem;">📄</div>
         <p style="color: #64748b;">No chapters available yet.</p>
       </div>
@@ -397,11 +397,11 @@ async function renderChapters(chapters) {
     const isTargetChapter = scrollToChapterId === chapter.chapter_id;
 
     chaptersHTML += `
-      <div class="chapter-card" id="${chapterIdAttr}" style="background: white; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 1.5rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: start; ${isTargetChapter ? 'border: 2px solid #2569f4; box-shadow: 0 4px 6px -1px rgba(37, 105, 244, 0.1);' : ''}">
+      <div class="chapter-card" id="${chapterIdAttr}" style="background: white; border: 1px solid var(--border-color); border-radius: 0.5rem; padding: 1.5rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: start; ${isTargetChapter ? 'border: 2px solid var(--color-primary); box-shadow: 0 4px 6px -1px var(--color-primary-light);' : ''}">
           <div style="flex: 1;">
           <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-            <span style="background: #2569f4; color: white; padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.875rem; font-weight: 600;">Chapter ${chapter.chapter_number || ''}</span>
-            <h3 style="margin: 0; color: #222c3e; font-size: 1.25rem;">${escapeHtml(chapter.title)}</h3>
+            <span style="background: var(--color-primary); color: white; padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.875rem; font-weight: 600;">Chapter ${chapter.chapter_number || ''}</span>
+            <h3 style="margin: 0; color: var(--color-dark); font-size: 1.25rem;">${escapeHtml(chapter.title)}</h3>
           </div>
           ${chapter.description ? `<p style="color: #64748b; margin-bottom: 0.5rem;">${escapeHtml(chapter.description)}</p>` : ''}
           <div style="font-size: 0.875rem; color: #64748b;">
@@ -528,7 +528,7 @@ async function loadResources() {
 
     if (combinedResources.length === 0) {
       resourcesList.innerHTML = `
-        <div style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem;">
+        <div style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 0.5rem;">
           <div style="font-size: 3rem; margin-bottom: 1rem;">📖</div>
           <p style="color: #64748b;">No resources available yet.</p>
         </div>
@@ -565,7 +565,7 @@ async function loadResources() {
 
         return `
           <div style="margin-bottom: 2.5rem;">
-            <h3 style="color: #222c3e; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #e2e8f0; display: flex; align-items: center; gap: 0.5rem;">
+            <h3 style="color: var(--color-dark); margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border-color); display: flex; align-items: center; gap: 0.5rem;">
               <span>${typeInfo.icon}</span>
               <span>${typeInfo.label}</span>
             </h3>
@@ -645,12 +645,12 @@ async function loadResources() {
           }
 
           return `
-                  <div class="resource-card" style="background: white; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.1)';">
+                  <div class="resource-card" style="background: white; border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.1)';">
                     <div style="font-size: 2rem; margin-bottom: 0.75rem;">${icon}</div>
-                    <h3 style="margin: 0 0 0.5rem 0; color: #222c3e; font-size: 1.125rem;">${escapeHtml(resource.title)}</h3>
+                    <h3 style="margin: 0 0 0.5rem 0; color: var(--color-dark); font-size: 1.125rem;">${escapeHtml(resource.title)}</h3>
                     <p style="color: #64748b; margin: 0 0 1rem 0; font-size: 0.875rem; line-height: 1.5;">${escapeHtml(resource.description || '')}</p>
                     <div style="display: flex; justify-content: space-between; align-items: center;">
-                      <a href="${escapeHtml(url)}" ${linkTarget} class="resource-link" style="color: #2569f4; text-decoration: none; font-weight: 500; font-size: 0.875rem; display: inline-flex; align-items: center; gap: 0.25rem;">
+                      <a href="${escapeHtml(url)}" ${linkTarget} class="resource-link" style="color: var(--color-primary); text-decoration: none; font-weight: 500; font-size: 0.875rem; display: inline-flex; align-items: center; gap: 0.25rem;">
                         ${isDownload ? '⬇️' : ''} ${linkText} ${!isDownload ? '→' : ''}
                       </a>
                     </div>
@@ -699,7 +699,7 @@ async function loadStudents() {
 
     if (students.length === 0) {
       studentsList.innerHTML = `
-        <div style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem;">
+        <div style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 0.5rem;">
           <div style="font-size: 3rem; margin-bottom: 1rem;">👥</div>
           <p style="color: #64748b;">No students enrolled yet.</p>
         </div>
@@ -711,8 +711,8 @@ async function loadStudents() {
       studentsList.innerHTML = `
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem;">
           ${students.map(student => `
-            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 1rem;">
-              <div style="font-weight: 600; color: #222c3e; margin-bottom: 0.25rem;">${escapeHtml(student.name || student.email || 'Unknown')}</div>
+            <div style="background: white; border: 1px solid var(--border-color); border-radius: 0.5rem; padding: 1rem;">
+              <div style="font-weight: 600; color: var(--color-dark); margin-bottom: 0.25rem;">${escapeHtml(student.name || student.email || 'Unknown')}</div>
               <div style="font-size: 0.875rem; color: #64748b;">${escapeHtml(student.email || '')}</div>
             </div>
           `).join('')}
@@ -823,9 +823,9 @@ async function loadAvgLeaderboard() {
     }
 
     container.innerHTML = `
-            <div style="background: white; border-radius: 0.5rem; border: 1px solid #e2e8f0; overflow: hidden; max-width: 800px; margin: 0 auto;">
+            <div style="background: white; border-radius: 0.5rem; border: 1px solid var(--border-color); overflow: hidden; max-width: 800px; margin: 0 auto;">
                 <table style="width: 100%; border-collapse: collapse;">
-                    <thead style="background: #f8fafc; border-bottom: 2px solid #e2e8f0;">
+                    <thead style="background: #f8fafc; border-bottom: 2px solid var(--border-color);">
                          <tr>
                             <th style="padding: 1rem; text-align: center; width: 60px;">Rank</th>
                             <th style="padding: 1rem; text-align: left;">Student</th>
@@ -834,15 +834,15 @@ async function loadAvgLeaderboard() {
                     </thead>
                     <tbody>
                         ${leaderboard.map(student => `
-                            <tr style="border-bottom: 1px solid #e2e8f0; ${student.student_id === currentUser.user_id ? 'background-color: #eff6ff;' : ''}">
+                            <tr style="border-bottom: 1px solid var(--border-color); ${student.student_id === currentUser.user_id ? 'background-color: #eff6ff;' : ''}">
                                 <td style="padding: 1rem; text-align: center; font-weight: bold; color: ${student.rank <= 3 ? '#eab308' : '#64748b'};">
                                     ${student.rank === 1 ? '🥇' : student.rank === 2 ? '🥈' : student.rank === 3 ? '🥉' : student.rank}
                                 </td>
                                 <td style="padding: 1rem; font-weight: 500;">
                                     ${escapeHtml(student.name)}
-                                    ${student.student_id === currentUser.user_id ? '<span style="font-size: 0.75rem; background: #2569f4; color: white; padding: 2px 6px; border-radius: 4px; margin-left: 0.5rem;">YOU</span>' : ''}
+                                    ${student.student_id === currentUser.user_id ? '<span style="font-size: 0.75rem; background: var(--color-primary); color: white; padding: 2px 6px; border-radius: 4px; margin-left: 0.5rem;">YOU</span>' : ''}
                                 </td>
-                                <td style="padding: 1rem; text-align: right; font-weight: 600; color: #2569f4;">${student.average_score}%</td>
+                                <td style="padding: 1rem; text-align: right; font-weight: 600; color: var(--color-primary);">${student.average_score}%</td>
                             </tr>
                         `).join('')}
                     </tbody>
@@ -860,7 +860,7 @@ async function loadAvgLeaderboard() {
 async function loadStudentExerciseLeaderboard(exerciseId) {
   const container = document.getElementById('lbExContent');
   if (!exerciseId) {
-    container.innerHTML = '<div style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem;"><p style="color: #64748b;">Select an exercise above to see rankings.</p></div>';
+    container.innerHTML = '<div style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 0.5rem;"><p style="color: #64748b;">Select an exercise above to see rankings.</p></div>';
     return;
   }
 
@@ -883,9 +883,9 @@ async function loadStudentExerciseLeaderboard(exerciseId) {
     }
 
     container.innerHTML = `
-            <div style="background: white; border-radius: 0.5rem; border: 1px solid #e2e8f0; overflow: hidden; max-width: 800px; margin: 0 auto;">
+            <div style="background: white; border-radius: 0.5rem; border: 1px solid var(--border-color); overflow: hidden; max-width: 800px; margin: 0 auto;">
                 <table style="width: 100%; border-collapse: collapse;">
-                    <thead style="background: #f8fafc; border-bottom: 2px solid #e2e8f0;">
+                    <thead style="background: #f8fafc; border-bottom: 2px solid var(--border-color);">
                          <tr>
                             <th style="padding: 1rem; text-align: center; width: 60px;">Rank</th>
                             <th style="padding: 1rem; text-align: left;">Student</th>
@@ -894,15 +894,15 @@ async function loadStudentExerciseLeaderboard(exerciseId) {
                     </thead>
                     <tbody>
                         ${leaderboard.map(student => `
-                            <tr style="border-bottom: 1px solid #e2e8f0; ${student.student_id === currentUser.user_id ? 'background-color: #eff6ff;' : ''}">
+                            <tr style="border-bottom: 1px solid var(--border-color); ${student.student_id === currentUser.user_id ? 'background-color: #eff6ff;' : ''}">
                                 <td style="padding: 1rem; text-align: center; font-weight: bold; color: ${student.rank <= 3 ? '#eab308' : '#64748b'};">
                                     ${student.rank === 1 ? '🥇' : student.rank === 2 ? '🥈' : student.rank === 3 ? '🥉' : student.rank}
                                 </td>
                                 <td style="padding: 1rem; font-weight: 500;">
                                     ${escapeHtml(student.name)}
-                                    ${student.student_id === currentUser.user_id ? '<span style="font-size: 0.75rem; background: #2569f4; color: white; padding: 2px 6px; border-radius: 4px; margin-left: 0.5rem;">YOU</span>' : ''}
+                                    ${student.student_id === currentUser.user_id ? '<span style="font-size: 0.75rem; background: var(--color-primary); color: white; padding: 2px 6px; border-radius: 4px; margin-left: 0.5rem;">YOU</span>' : ''}
                                 </td>
-                                <td style="padding: 1rem; text-align: right; font-weight: 600; color: #2569f4;">${student.score}%</td>
+                                <td style="padding: 1rem; text-align: right; font-weight: 600; color: var(--color-primary);">${student.score}%</td>
                             </tr>
                         `).join('')}
                     </tbody>

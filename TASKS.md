@@ -1,7 +1,7 @@
 # AnalytIQ — Master Task List
 
 > Generated: 2026-02-17 | Last updated: 2026-02-17
-> Total: 87 tasks (37 completed, 50 pending)
+> Total: 87 tasks (38 completed, 49 pending)
 
 ---
 
@@ -40,6 +40,7 @@
 | CDN-4 | Added `Cache-Control: public, max-age=86400` for non-API responses in production in `after_request` |
 | CDN-5 | Added `Cache-Control: no-store, no-cache, must-revalidate, max-age=0` + `Pragma: no-cache` for all `/api/*` responses in `after_request` |
 | CDN-7 | Added Cloudflare Cache Rule documentation to `render.yaml` (Render web services don't support route-level headers in YAML — Flask `after_request` headers are the correct mechanism; Cloudflare edge just needs to respect `Cache-Control: public`) |
+| 53 | Added 60+ CSS custom properties in `:root` (colors, spacing, radii, shadows, typography, transitions); replaced all ~65 `#2569f4` and ~21 `#222c3e` hardcoded references across `styles.css`, 8 HTML files, and 6 JS files |
 | 28 | Added 50KB (`MAX_AI_MESSAGE_LENGTH`) + 100-message (`MAX_AI_CONVERSATION_MESSAGES`) payload cap in `blueprints/ai.py` — oversized requests are rejected before forwarding to Gemini (400 / 413) |
 | 29 | Added `@require_auth` to both leaderboard endpoints (`/api/exercises/<id>/leaderboard`, `/api/leaderboard/grand`); removed `email` field from responses; capped `limit` at `config.MAX_PAGE_SIZE` |
 | 30 | Made Supabase Storage non-critical in health check (failure logs warning, does not set `all_healthy = False`); added 30s in-process result cache on `/api/health` |
@@ -150,9 +151,7 @@
 
 ## Design System
 
-| # | Task |
-|---|------|
-| 53 | Add CSS custom properties (`--color-primary`, `--spacing-md`, `--radius-sm`, etc.) in `:root` block; update all ~30 hardcoded `#2569f4` references |
+**Current state (complete):** Task 53 done. Comprehensive `:root` design token system added to `css/styles.css` with 60+ CSS custom properties covering colors (`--color-primary`, `--color-dark`, semantic error/success/warning/info colors, badge colors), spacing (`--spacing-xs` through `--spacing-2xl`), border radii (`--radius-xs` through `--radius-pill`), shadows, typography (font families, sizes, line heights), layout, and transitions. All ~65 hardcoded `#2569f4` and ~21 `#222c3e` references replaced across `styles.css`, 8 HTML files, and 6 JS files. Legacy aliases (`--primary-color`, `--primary-dark`, `--secondary-color`) preserved for backward compatibility.
 
 ---
 
@@ -226,7 +225,7 @@
    Remaining: Tasks 32, 34, 35
 
 4. **Frontend** — apiClient, ui-states, design tokens:
-   Tasks 13, 14, 15, 24, 25, 26, 27, 53
+   Tasks 13, 14, 15, 24, 25, 26, 27, ~~53~~
 
 5. **Testing** — consolidate + add integration + security tests:
    Tasks 43, 44, 45, 47, 48, 49

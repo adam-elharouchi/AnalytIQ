@@ -42,17 +42,17 @@ function toggleChapterSource(source) {
         existingSection.style.display = 'block';
         newSection.style.display = 'none';
         existingActions.style.display = 'block';
-        existingOption.style.borderColor = '#2569f4';
+        existingOption.style.borderColor = 'var(--color-primary)';
         existingOption.style.background = '#eff6ff';
-        newOption.style.borderColor = '#e2e8f0';
+        newOption.style.borderColor = 'var(--border-color)';
         newOption.style.background = 'white';
     } else {
         existingSection.style.display = 'none';
         newSection.style.display = 'block';
         existingActions.style.display = 'none';
-        newOption.style.borderColor = '#2569f4';
+        newOption.style.borderColor = 'var(--color-primary)';
         newOption.style.background = '#eff6ff';
-        existingOption.style.borderColor = '#e2e8f0';
+        existingOption.style.borderColor = 'var(--border-color)';
         existingOption.style.background = 'white';
     }
 }
@@ -356,11 +356,11 @@ function renderExercises() {
         <div class="exercise-card">
             <div style="margin-bottom: 1rem;">
                 <label style="display: block; font-size: 0.8rem; color: #64748b;">Title</label>
-                <input type="text" class="ex-title" value="${escapeHtml(ex.title)}" style="width: 100%; border: 1px solid #e2e8f0; padding: 0.5rem; border-radius: 0.25rem;">
+                <input type="text" class="ex-title" value="${escapeHtml(ex.title)}" style="width: 100%; border: 1px solid var(--border-color); padding: 0.5rem; border-radius: 0.25rem;">
             </div>
             <div style="margin-bottom: 1rem;">
                 <label style="display: block; font-size: 0.8rem; color: #64748b;">Description</label>
-                <textarea class="ex-desc" style="width: 100%; border: 1px solid #e2e8f0; padding: 0.5rem; border-radius: 0.25rem; rows: 2;">${escapeHtml(ex.description)}</textarea>
+                <textarea class="ex-desc" style="width: 100%; border: 1px solid var(--border-color); padding: 0.5rem; border-radius: 0.25rem; rows: 2;">${escapeHtml(ex.description)}</textarea>
             </div>
             <div style="margin-bottom: 1rem;">
                  <span style="background: ${getDifficultyColor(ex.difficulty)}; color: white; padding: 0.2rem 0.5rem; border-radius: 0.25rem; font-size: 0.8rem;">${ex.difficulty}</span>

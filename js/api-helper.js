@@ -1,7 +1,10 @@
 // API Helper Functions
-// Declare API_BASE_URL as a global variable - single source of truth
+// Declare API_BASE_URL as a global variable - single source of truth.
+// Use /api for same-origin. For split deployment (e.g. static site + separate API host),
+// set <meta name="api-base-url" content="https://your-api-host.com/api"> so the login and API calls hit the correct server.
 if (typeof window.API_BASE_URL === 'undefined') {
-    window.API_BASE_URL = '/api';
+    const meta = typeof document !== 'undefined' && document.querySelector('meta[name="api-base-url"]');
+    window.API_BASE_URL = (meta && meta.getAttribute('content')) || '/api';
 }
 
 // Simple Cache Implementation
@@ -124,7 +127,7 @@ function getDifficultyColor(difficulty) {
     const diff = (difficulty || 'medium').toLowerCase();
     if (diff === 'easy') return '#10b981';
     if (diff === 'hard') return '#ef4444';
-    return '#2569f4'; // medium
+    return 'var(--color-primary)'; // medium
 }
 
 // Conversation API functions
