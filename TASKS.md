@@ -1,7 +1,7 @@
 # AnalytIQ — Master Task List
 
 > Generated: 2026-02-17 | Last updated: 2026-02-17
-> Total: 87 tasks (31 completed, 56 pending)
+> Total: 87 tasks (36 completed, 51 pending)
 
 ---
 
@@ -40,6 +40,11 @@
 | CDN-4 | Added `Cache-Control: public, max-age=86400` for non-API responses in production in `after_request` |
 | CDN-5 | Added `Cache-Control: no-store, no-cache, must-revalidate, max-age=0` + `Pragma: no-cache` for all `/api/*` responses in `after_request` |
 | CDN-7 | Added Cloudflare Cache Rule documentation to `render.yaml` (Render web services don't support route-level headers in YAML — Flask `after_request` headers are the correct mechanism; Cloudflare edge just needs to respect `Cache-Control: public`) |
+| 28 | Added 50KB (`MAX_AI_MESSAGE_LENGTH`) + 100-message (`MAX_AI_CONVERSATION_MESSAGES`) payload cap in `blueprints/ai.py` — oversized requests are rejected before forwarding to Gemini (400 / 413) |
+| 29 | Added `@require_auth` to both leaderboard endpoints (`/api/exercises/<id>/leaderboard`, `/api/leaderboard/grand`); removed `email` field from responses; capped `limit` at `config.MAX_PAGE_SIZE` |
+| 30 | Made Supabase Storage non-critical in health check (failure logs warning, does not set `all_healthy = False`); added 30s in-process result cache on `/api/health` |
+| 31 | Added per-user rate limits on `/api/ai/chat` — 20 req/min + 100 req/hr keyed by `g.user_id` via `_apply_ai_rate_limits` conditional-wrapper decorator |
+| 33 | Replaced O(n²) `for ex in exercises` scan inside `get_class_progress` with an `exercise_lookup` dict built once in O(n); inner lookup is now O(1) |
 
 ---
 
@@ -90,14 +95,11 @@
 
 ## Performance — Backend
 
+**Tasks 28–31 and 33 complete.** Remaining:
+
 | # | Task |
 |---|------|
-| 28 | Add payload size cap (50KB, 100 messages) on AI chat endpoint before forwarding to Gemini |
-| 29 | Add `@require_auth` to both leaderboard endpoints; remove `email` from response; cap `limit` at `MAX_PAGE_SIZE` |
-| 30 | Make storage non-critical in health check; add 30s cache on health check results |
-| 31 | Add per-user rate limit on AI chat: 20/min, 100/hr, keyed by `user_id` |
 | 32 | Apply `@cache_response` to the 8 most-read endpoints + add cache invalidation on writes |
-| 33 | Replace N+1 loop in professor analytics with a single aggregated JOIN query + 60s cache |
 | 34 | Supabase presigned upload URLs — frontend uploads PDFs directly to Supabase, bypassing the Flask server |
 | 35 | Append-only conversation messages — frontend sends delta only, backend inserts single row (no full-replace) |
 
@@ -220,8 +222,8 @@
 
 2. ~~**CDN & same-origin API**~~ **DONE** (tasks CDN-1 through CDN-7)
 
-3. **Backend performance** — caching, rate limiting, leaderboard fixes:
-   Tasks 28, 29, 30, 31, 32, 33, 34, 35
+3. ~~**Backend performance** — caching, rate limiting, leaderboard fixes (28–31, 33 done)~~:
+   Remaining: Tasks 32, 34, 35
 
 4. **Frontend** — apiClient, ui-states, design tokens:
    Tasks 13, 14, 15, 24, 25, 26, 27, 53
