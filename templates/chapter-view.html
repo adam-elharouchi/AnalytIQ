@@ -1,0 +1,1839 @@
+{% extends "base.html" %}
+
+{% block title %}Chapter{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .chapter-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem;
+    }
+
+    .back-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: #64748b;
+      text-decoration: none;
+      margin-bottom: 2rem;
+      font-weight: 500;
+      font-size: 0.9375rem;
+      padding: 0.75rem 1.25rem;
+      border-radius: 0.5rem;
+      background: white;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .back-button:hover {
+      background: #f8fafc;
+      color: var(--color-primary);
+      border-color: #cbd5e1;
+      transform: translateX(-2px);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+
+    .back-button:active {
+      transform: translateX(-1px);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .back-button span:first-child {
+      font-size: 1.25rem;
+      display: inline-flex;
+      align-items: center;
+      line-height: 1;
+      font-weight: 600;
+    }
+
+    .chapter-header {
+      background: white;
+      padding: 2.5rem;
+      border-radius: 1rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      border-left: 6px solid var(--color-primary);
+      margin-bottom: 2rem;
+    }
+
+    .chapter-title {
+      font-size: 2.75rem;
+      font-weight: 800;
+      color: #0f172a;
+      margin: 0 0 0.75rem 0;
+    }
+
+    .chapter-description {
+      color: #64748b;
+      font-size: 1rem;
+      font-style: italic;
+    }
+
+    .pdf-pages-container {
+      background: white;
+      padding: 2rem;
+      border-radius: 1rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      overflow-x: auto;
+      max-width: 100%;
+    }
+
+    .pdf-page {
+      margin-bottom: 0.75rem;
+      text-align: center;
+      position: relative;
+    }
+
+    .pdf-page:last-child {
+      margin-bottom: 0;
+    }
+
+    .pdf-page-scaled {
+      display: inline-block;
+      max-width: 100%;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    .pdf-page-wrapper {
+      position: relative;
+      display: inline-block;
+      margin: 0 auto;
+      transform-origin: top left;
+    }
+
+    .pdf-page canvas {
+      display: block;
+      vertical-align: top;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      border-radius: 0.5rem;
+    }
+
+    /* Text layer: rendered by pdfjsLib.renderTextLayer for correct positioning */
+    .pdf-text-layer {
+      position: absolute;
+      left: 0;
+      top: 0;
+      overflow: hidden;
+      line-height: 1;
+      pointer-events: auto;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+
+    .pdf-text-layer span {
+      position: absolute;
+      white-space: pre;
+      color: transparent !important;
+      cursor: text;
+      user-select: text;
+      -webkit-user-select: text;
+      transform-origin: 0% 0%;
+    }
+
+    .pdf-text-layer span::selection {
+      background: rgba(37, 105, 244, 0.35);
+    }
+
+    .pdf-text-layer br {
+      display: none;
+    }
+
+    .pdf-highlight {
+      pointer-events: auto;
+      border-radius: 1px;
+      padding: 0.08em 0.06em;
+      line-height: 1.35;
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
+    }
+
+    /* Applied directly to text spans so background is visible */
+    .pdf-highlight-yellow { background: rgba(253, 224, 71, 0.7) !important; }
+    .pdf-highlight-blue  { background: rgba(147, 197, 253, 0.7) !important; }
+    .pdf-highlight-pink  { background: rgba(249, 168, 212, 0.7) !important; }
+    .pdf-highlight-green { background: rgba(134, 239, 172, 0.7) !important; }
+
+    /* Freeform marker layer (for drawing highlights anywhere on the page) */
+    .pdf-mark-layer {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none; /* Enabled in JS only when marker mode is active */
+    }
+
+    .marker-rect {
+      position: absolute;
+      border-radius: 4px;
+      background: rgba(253, 224, 71, 0.6);
+      pointer-events: none;
+    }
+
+    .marker-rect-yellow {
+      background: rgba(253, 224, 71, 0.6);
+    }
+
+    .marker-rect-blue {
+      background: rgba(147, 197, 253, 0.6);
+    }
+
+    .marker-rect-pink {
+      background: rgba(249, 168, 212, 0.6);
+    }
+
+    .marker-rect-green {
+      background: rgba(134, 239, 172, 0.6);
+    }
+
+    .page-number {
+      margin-top: 0.35rem;
+      color: #64748b;
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+
+    /* Left sidebar: highlight bar next to PDF, sticky so it stays in view when scrolling */
+    .study-toolbar-sidebar {
+      position: sticky;
+      top: 1.5rem;
+      align-self: flex-start;
+      width: 80px;
+      flex-shrink: 0;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.75rem;
+      padding: 0.75rem 0.5rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      z-index: 50;
+    }
+
+    .study-toolbar-sidebar .study-toolbar-label {
+      font-size: 0.625rem;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .study-toolbar-sidebar .highlight-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: 2px solid #e2e8f0;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+    .study-toolbar-sidebar .highlight-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+
+    .study-toolbar-sidebar .highlight-btn.active {
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 2px rgba(37, 105, 244, 0.3);
+    }
+
+    .study-toolbar-sidebar .highlight-btn.yellow { background: rgba(253, 224, 71, 0.8); }
+    .study-toolbar-sidebar .highlight-btn.blue  { background: rgba(147, 197, 253, 0.8); }
+    .study-toolbar-sidebar .highlight-btn.pink { background: rgba(249, 168, 212, 0.8); }
+    .study-toolbar-sidebar .highlight-btn.green { background: rgba(134, 239, 172, 0.8); }
+
+    .study-toolbar-sidebar .toolbar-divider {
+      width: 32px;
+      height: 1px;
+      background: #e2e8f0;
+    }
+
+    .study-toolbar-sidebar .btn-bookmark,
+    .study-toolbar-sidebar .btn-notes-panel,
+    .study-toolbar-sidebar .btn-add-note {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      font-size: 1.125rem;
+      border-radius: 0.5rem;
+      border: 1px solid #e2e8f0;
+      background: white;
+      color: #475569;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      flex-shrink: 0;
+    }
+
+    .study-toolbar-sidebar .btn-bookmark:hover,
+    .study-toolbar-sidebar .btn-notes-panel:hover,
+    .study-toolbar-sidebar .btn-add-note:hover {
+      background: #f1f5f9;
+      color: var(--color-primary);
+    }
+
+    .study-toolbar-sidebar .btn-bookmark.bookmarked {
+      background: #fef3c7;
+      border-color: #f59e0b;
+      color: #b45309;
+    }
+
+    /* Marker / eraser mode toggle buttons */
+    .marker-mode-toggle {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      align-items: center;
+      margin-top: 0.25rem;
+    }
+
+    .marker-mode-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      border: 1px solid #e2e8f0;
+      background: #f8fafc;
+      color: #475569;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.1s;
+    }
+
+    .marker-mode-btn:hover {
+      background: #e5edff;
+      border-color: var(--color-primary);
+      color: var(--color-primary);
+      transform: translateY(-1px);
+    }
+
+    .marker-mode-btn.active {
+      background: var(--color-primary);
+      border-color: var(--color-primary);
+      color: #ffffff;
+      box-shadow: 0 0 0 2px rgba(37, 105, 244, 0.3);
+    }
+
+    /* Selection popup for highlight / add note */
+    .selection-popup {
+      position: fixed;
+      z-index: 1000;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.5rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      padding: 0.25rem;
+      display: flex;
+      gap: 0.25rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s;
+    }
+
+    .selection-popup.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .selection-popup button {
+      padding: 0.4rem 0.6rem;
+      font-size: 0.8125rem;
+      border: none;
+      border-radius: 0.375rem;
+      background: #f1f5f9;
+      color: #334155;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .selection-popup button:hover {
+      background: var(--color-primary);
+      color: white;
+    }
+
+    .selection-popup button.remove-btn:hover {
+      background: #dc2626;
+      color: white;
+    }
+
+    /* Study layout: main content; left bar and right panel are fixed so they don't get cut off when scrolling */
+    .study-layout {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+
+    .study-main {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      gap: 1rem;
+      transition: margin-right 0.2s ease;
+    }
+
+    .study-side-panel {
+      width: 300px;
+      flex-shrink: 0;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.75rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      overflow: hidden;
+      max-height: calc(100vh - 8rem);
+      display: flex;
+      flex-direction: column;
+      position: sticky;
+      top: 1.5rem;
+      align-self: flex-start;
+    }
+
+    .study-side-panel.hidden {
+      display: none;
+    }
+
+    .study-side-panel-header {
+      padding: 1rem;
+      border-bottom: 1px solid #e2e8f0;
+      font-weight: 600;
+      color: #0f172a;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .study-side-panel-header button {
+      background: none;
+      border: none;
+      font-size: 1.25rem;
+      color: #64748b;
+      cursor: pointer;
+      padding: 0 0.25rem;
+      line-height: 1;
+    }
+
+    .study-side-panel-header button:hover {
+      color: #0f172a;
+    }
+
+    .study-side-panel-content {
+      padding: 0.75rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .study-panel-section {
+      margin-bottom: 1.25rem;
+    }
+
+    .study-panel-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .study-panel-section h4 {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #64748b;
+      margin: 0 0 0.5rem 0;
+      padding-bottom: 0.25rem;
+    }
+
+    .bookmark-item,
+    .note-item {
+      padding: 0.5rem 0.75rem;
+      margin-bottom: 0.5rem;
+      background: #f8fafc;
+      border-radius: 0.5rem;
+      border: 1px solid #e2e8f0;
+      cursor: pointer;
+      font-size: 0.875rem;
+      transition: background 0.2s;
+    }
+
+    .bookmark-item:hover,
+    .note-item:hover {
+      background: #eff6ff;
+      border-color: var(--color-primary);
+    }
+
+    .bookmark-item .page-badge {
+      display: inline-block;
+      background: var(--color-primary);
+      color: white;
+      padding: 0.15rem 0.5rem;
+      border-radius: 0.25rem;
+      font-size: 0.75rem;
+      margin-right: 0.5rem;
+    }
+
+    .note-item {
+      position: relative;
+      padding-right: 2.5rem;
+    }
+
+    .note-item .note-text {
+      color: #475569;
+      margin-top: 0.25rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .note-item-actions {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      display: flex;
+      gap: 0.25rem;
+    }
+
+    .note-item-actions button {
+      width: 26px;
+      height: 26px;
+      padding: 0;
+      border: none;
+      border-radius: 0.25rem;
+      background: #f1f5f9;
+      color: #64748b;
+      cursor: pointer;
+      font-size: 0.875rem;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .note-item-actions button:hover {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+
+    .note-item-actions button.delete-btn:hover {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+
+    .note-edit-form {
+      padding: 0.5rem 0;
+    }
+
+    .note-edit-form textarea {
+      width: 100%;
+      min-height: 80px;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      font-family: inherit;
+      resize: vertical;
+      margin-bottom: 0.5rem;
+    }
+
+    .note-edit-form .note-edit-actions {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: flex-end;
+    }
+
+    .note-edit-form .note-edit-actions button {
+      padding: 0.35rem 0.75rem;
+      font-size: 0.8125rem;
+      border-radius: 0.375rem;
+      border: 1px solid #e2e8f0;
+      background: white;
+      color: #475569;
+      cursor: pointer;
+    }
+
+    .note-edit-form .note-edit-actions button.save-btn {
+      background: var(--color-primary);
+      border-color: var(--color-primary);
+      color: white;
+    }
+
+    .study-empty {
+      color: #94a3b8;
+      font-size: 0.875rem;
+      padding: 0.75rem;
+      text-align: center;
+    }
+
+    /* Add note popup inside study panel (right side, under "My study panel") */
+    .add-note-panel-popup {
+      padding: 1rem;
+      margin-bottom: 1rem;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.5rem;
+    }
+
+    .add-note-panel-popup.hidden {
+      display: none !important;
+    }
+
+    .add-note-panel-popup:not(.hidden) {
+      display: block;
+    }
+
+    .add-note-panel-label {
+      margin: 0 0 0.5rem 0;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #0f172a;
+    }
+
+    .add-note-panel-popup textarea {
+      width: 100%;
+      min-height: 72px;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+      font-family: inherit;
+      resize: vertical;
+      margin-bottom: 0.75rem;
+      box-sizing: border-box;
+    }
+
+    .add-note-panel-popup textarea:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(37, 105, 244, 0.2);
+    }
+
+    .add-note-panel-actions {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: flex-end;
+    }
+
+    .add-note-panel-actions button {
+      padding: 0.4rem 0.75rem;
+      font-size: 0.8125rem;
+      border-radius: 0.375rem;
+      cursor: pointer;
+    }
+
+    .add-note-panel-actions .btn-cancel-note-panel {
+      border: 1px solid #e2e8f0;
+      background: white;
+      color: #475569;
+    }
+
+    .add-note-panel-actions .btn-save-note-panel {
+      border: none;
+      background: var(--color-primary);
+      color: white;
+    }
+
+    /* In-page add-note card (no browser prompt) */
+    .add-note-card {
+      position: fixed;
+      z-index: 1001;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 90%;
+      max-width: 420px;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.75rem;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+      padding: 1.25rem;
+      transition: opacity 0.2s, visibility 0.2s;
+    }
+
+    .add-note-card.hidden {
+      display: none !important;
+    }
+
+    .add-note-card:not(.hidden) {
+      display: block;
+    }
+
+    .add-note-label {
+      margin: 0 0 0.75rem 0;
+      font-size: 0.9375rem;
+      font-weight: 600;
+      color: #0f172a;
+    }
+
+    .add-note-card textarea {
+      width: 100%;
+      min-height: 88px;
+      padding: 0.75rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.5rem;
+      font-size: 0.9375rem;
+      font-family: inherit;
+      resize: vertical;
+      margin-bottom: 1rem;
+      box-sizing: border-box;
+    }
+
+    .add-note-card textarea:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(37, 105, 244, 0.2);
+    }
+
+    .add-note-actions {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: flex-end;
+    }
+
+    .add-note-actions .btn-cancel-note {
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.5rem;
+      background: white;
+      color: #475569;
+      cursor: pointer;
+    }
+
+    .add-note-actions .btn-cancel-note:hover {
+      background: #f8fafc;
+      color: #0f172a;
+    }
+
+    .add-note-actions .btn-save-note {
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+      border: none;
+      border-radius: 0.5rem;
+      background: var(--color-primary);
+      color: white;
+      cursor: pointer;
+    }
+
+    .add-note-actions .btn-save-note:hover {
+      background: #1d58d8;
+    }
+
+    /* Toast at bottom of screen (green for success) */
+    .toast-container {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      pointer-events: none;
+    }
+
+    .toast {
+      padding: 0.75rem 1.25rem;
+      border-radius: 0.5rem;
+      font-size: 0.9375rem;
+      font-weight: 500;
+      color: white;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      animation: toast-in 0.3s ease;
+    }
+
+    .toast.success {
+      background: #059669;
+    }
+
+    @keyframes toast-in {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .loading-state {
+      text-align: center;
+      padding: 6rem 2rem;
+      color: #64748b;
+    }
+
+    .loading-spinner {
+      display: inline-block;
+      width: 50px;
+      height: 50px;
+      border: 5px solid #e2e8f0;
+      border-top-color: var(--color-primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 1.5rem;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+<nav class="navbar" id="navbar"></nav>
+
+  <main class="chapter-container">
+    <a href="javascript:history.back()" class="back-button">
+      <span>←</span>
+      <span>Back</span>
+    </a>
+
+    <div class="chapter-header">
+      <h1 class="chapter-title" id="chapterTitle">Loading Chapter...</h1>
+      <p class="chapter-description" id="chapterDescription"></p>
+    </div>
+
+    <div class="study-layout">
+      <!-- Left sidebar: highlight bar (scrolls alongside pages) -->
+      <div class="study-toolbar-sidebar" id="studyToolbar" style="display: none;">
+        <span class="study-toolbar-label">Highlight</span>
+        <button type="button" class="highlight-btn yellow active" data-color="yellow" title="Yellow" aria-label="Yellow"></button>
+        <button type="button" class="highlight-btn blue" data-color="blue" title="Blue" aria-label="Blue"></button>
+        <button type="button" class="highlight-btn pink" data-color="pink" title="Pink" aria-label="Pink"></button>
+        <button type="button" class="highlight-btn green" data-color="green" title="Green" aria-label="Green"></button>
+        <div class="marker-mode-toggle" aria-label="Highlighter tools">
+          <button type="button" class="marker-mode-btn active" id="btnMarkerMode" title="Marker mode" aria-label="Marker mode">🖍️</button>
+          <button type="button" class="marker-mode-btn" id="btnEraserMode" title="Eraser mode" aria-label="Eraser mode">🧽</button>
+        </div>
+        <span class="toolbar-divider"></span>
+        <button type="button" class="btn-bookmark" id="btnBookmark" title="Bookmark current page" aria-label="Bookmark page"><span aria-hidden="true">🔖</span></button>
+        <button type="button" class="btn-notes-panel" id="btnNotesPanel" title="My study panel" aria-label="Study panel">📋</button>
+        <button type="button" class="btn-add-note" id="btnAddNote" title="Add note" aria-label="Add note">📝</button>
+      </div>
+
+      <div class="study-main">
+        <div id="contentContainer" class="pdf-pages-container">
+          <div class="loading-state">
+            <div class="loading-spinner"></div>
+            <p>Loading PDF pages...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Side panel: bookmarks and notes -->
+      <aside class="study-side-panel hidden" id="studySidePanel">
+        <div class="study-side-panel-header">
+          <span>My study panel</span>
+          <button type="button" id="closeStudyPanel" aria-label="Close panel">×</button>
+        </div>
+        <div class="study-side-panel-content">
+          <!-- Add note popup: appears under "My study panel" when Note button is clicked -->
+          <div class="add-note-panel-popup hidden" id="addNotePanelPopup">
+            <p class="add-note-panel-label" id="addNotePanelLabel">Add a note for this page</p>
+            <textarea id="addNotePanelTextarea" rows="3" placeholder="Type your note..." aria-labelledby="addNotePanelLabel"></textarea>
+            <div class="add-note-panel-actions">
+              <button type="button" class="btn-cancel-note-panel" id="btnCancelNotePanel">Cancel</button>
+              <button type="button" class="btn-save-note-panel" id="btnSaveNotePanel">Save note</button>
+            </div>
+          </div>
+          <div class="study-panel-section">
+            <h3>Bookmarks</h3>
+            <div id="bookmarksList"></div>
+          </div>
+          <div class="study-panel-section">
+            <h3>Notes</h3>
+            <div id="notesList"></div>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Selection popup (highlight / add note) -->
+    <div class="selection-popup" id="selectionPopup">
+      <button type="button" id="btnHighlightSelection">Highlight</button>
+      <button type="button" id="btnRemoveHighlightSelection" class="remove-btn" title="Remove highlight from selection">Remove highlight</button>
+      <button type="button" id="btnAddNoteSelection">Add note</button>
+    </div>
+
+    <!-- In-page add-note card (replaces browser prompt) -->
+    <div class="add-note-card hidden" id="addNoteCard">
+      <p class="add-note-label" id="addNoteLabel">Add a note for this selection:</p>
+      <textarea id="addNoteTextarea" rows="3" placeholder="Type your note..." aria-labelledby="addNoteLabel"></textarea>
+      <div class="add-note-actions">
+        <button type="button" class="btn-cancel-note" id="btnCancelNote">Cancel</button>
+        <button type="button" class="btn-save-note" id="btnSaveNote">Save note</button>
+      </div>
+    </div>
+
+    <!-- Toast for bookmark success (bottom of screen, green) -->
+    <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+  </main>
+{% endblock %}
+
+{% block scripts %}
+<script src="js/api-helper.js"></script>
+  <!-- JS load order: api-helper.js (head, provides authFetch) → auth.js → navigation.js -->
+  <script src="js/auth.js"></script>
+  <script src="js/navigation.js"></script>
+  <script>
+    let currentChapterId = null;
+    let currentClassId = null;
+    let currentUserId = null;
+    let pdfDoc = null;
+    let pdfUrl = null;
+    let numPages = 0;
+    let currentHighlightColor = 'yellow';
+    let studyData = { highlights: [], bookmarks: [], notes: [] };
+    let pageTextItems = [];  // text content items per page for coordinate lookup
+    let cachedSelection = null;  // cache selection info before it's cleared by button click
+
+    // Marker / eraser (freeform highlighter) state
+    let markerMode = true;              // When true, dragging acts like a marker on the page
+    let eraserMode = false;             // When true, clicks erase existing marker highlights
+    let isDrawingMarker = false;
+    let markerStart = null;
+    let markerCurrentEl = null;
+
+    const STUDY_STORAGE_KEY = () => `analytiq_study_${currentUserId}_${currentChapterId}`;
+
+    function getStudyData() {
+      try {
+        const raw = localStorage.getItem(STUDY_STORAGE_KEY());
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          studyData = {
+            highlights: parsed.highlights || [],
+            bookmarks: parsed.bookmarks || [],
+            notes: parsed.notes || []
+          };
+        }
+      } catch (e) {
+        studyData = { highlights: [], bookmarks: [], notes: [] };
+      }
+      return studyData;
+    }
+
+    function saveStudyData() {
+      try {
+        localStorage.setItem(STUDY_STORAGE_KEY(), JSON.stringify(studyData));
+      } catch (e) {
+        console.warn('Could not save study data:', e);
+      }
+    }
+
+    function showSelectionPopup(x, y) {
+      const popup = document.getElementById('selectionPopup');
+      popup.classList.add('visible');
+      popup.style.left = `${Math.min(x, window.innerWidth - 220)}px`;
+      popup.style.top = `${y - 48}px`;
+    }
+
+    function hideSelectionPopup() {
+      document.getElementById('selectionPopup').classList.remove('visible');
+    }
+
+    function getPageIndexFromElement(el) {
+      const page = el.closest('.pdf-page');
+      return page ? parseInt(page.getAttribute('data-page-index'), 10) : -1;
+    }
+
+    function getItemIndicesFromSelection(selection) {
+      if (!selection.rangeCount) return null;
+      const range = selection.getRangeAt(0);
+      const pageEl = range.startContainer.nodeType === Node.TEXT_NODE
+        ? range.startContainer.parentElement.closest('.pdf-page')
+        : range.startContainer.closest('.pdf-page');
+      if (!pageEl) return null;
+      if (pageEl !== (range.endContainer.nodeType === Node.TEXT_NODE ? range.endContainer.parentElement : range.endContainer).closest('.pdf-page')) return null;
+      const allSpans = Array.from(pageEl.querySelectorAll('.pdf-text-layer span[data-item-index]'));
+      let minIdx = Infinity, maxIdx = -Infinity;
+      allSpans.forEach(function (span) {
+        if (!range.intersectsNode(span)) return;
+        const idx = parseInt(span.getAttribute('data-item-index'), 10);
+        if (idx < minIdx) minIdx = idx;
+        if (idx > maxIdx) maxIdx = idx;
+      });
+      if (minIdx === Infinity || maxIdx === -Infinity) return null;
+      return { pageIndex: parseInt(pageEl.getAttribute('data-page-index'), 10), startIdx: minIdx, endIdx: maxIdx };
+    }
+
+    function applyHighlightToRange(pageIndex, startIdx, endIdx, color) {
+      const pageEl = document.querySelector('.pdf-page[data-page-index="' + pageIndex + '"]');
+      if (!pageEl) return;
+      const layer = pageEl.querySelector('.pdf-text-layer');
+      if (!layer) return;
+      const allSpans = Array.from(layer.querySelectorAll('span[data-item-index]'));
+      var startSpan = null, endSpan = null;
+      for (var s = 0; s < allSpans.length; s++) {
+        var idx = parseInt(allSpans[s].getAttribute('data-item-index'), 10);
+        if (idx === startIdx) startSpan = allSpans[s];
+        if (idx === endIdx) endSpan = allSpans[s];
+      }
+      if (!startSpan || !endSpan) return;
+      var startIdxInList = allSpans.indexOf(startSpan);
+      var endIdxInList = allSpans.indexOf(endSpan);
+      if (startIdxInList === -1 || endIdxInList === -1) return;
+      var toWrap = allSpans.slice(Math.min(startIdxInList, endIdxInList), Math.max(startIdxInList, endIdxInList) + 1);
+      toWrap.forEach(function (span) {
+        span.classList.add('pdf-highlight', 'pdf-highlight-' + color);
+        span.setAttribute('data-highlight-color', color);
+      });
+    }
+
+    function applySavedHighlights() {
+      const data = getStudyData();
+      (data.highlights || []).forEach(h => {
+        // Skip area/marker highlights here – they are rendered separately
+        if (h.type === 'area' || (typeof h.x === 'number' && typeof h.width === 'number')) return;
+        applyHighlightToRange(h.pageIndex, h.startIdx, h.endIdx, h.color);
+      });
+    }
+
+    function renderMarkerHighlights() {
+      const data = getStudyData();
+      (data.highlights || []).forEach(function (h) {
+        if (!(h.type === 'area' || (typeof h.x === 'number' && typeof h.width === 'number'))) return;
+        const layer = document.querySelector('.pdf-mark-layer[data-page-index="' + h.pageIndex + '"]');
+        if (!layer) return;
+        const baseWidth = parseFloat(layer.style.width) || layer.offsetWidth || 1;
+        const baseHeight = parseFloat(layer.style.height) || layer.offsetHeight || 1;
+        const el = document.createElement('div');
+        el.className = 'marker-rect marker-rect-' + (h.color || 'yellow');
+        var highlightId = h.id;
+        if (!highlightId) {
+          highlightId = 'legacy_' + h.pageIndex + '_' + (h.x || 0) + '_' + (h.y || 0) + '_' + (h.width || 0) + '_' + (h.height || 0);
+        }
+        el.setAttribute('data-highlight-id', highlightId);
+        const x = (h.x || 0) * baseWidth;
+        const y = (h.y || 0) * baseHeight;
+        const w = (h.width || 0) * baseWidth;
+        const ht = (h.height || 0) * baseHeight;
+        el.style.left = x + 'px';
+        el.style.top = y + 'px';
+        el.style.width = w + 'px';
+        el.style.height = ht + 'px';
+        layer.appendChild(el);
+      });
+    }
+
+    function setupMarkerLayerEvents(layer, pageIndex) {
+      // Layer is created once per page; attach drawing / erasing handlers
+      layer.addEventListener('mousedown', function (e) {
+        if (e.button !== 0) return;
+
+        const bounds = layer.getBoundingClientRect();
+        const baseWidth = parseFloat(layer.style.width) || bounds.width || 1;
+        const baseHeight = parseFloat(layer.style.height) || bounds.height || 1;
+        const scaleX = bounds.width / baseWidth;
+        const scaleY = bounds.height / baseHeight;
+        const localX = (e.clientX - bounds.left) / scaleX;
+        const localY = (e.clientY - bounds.top) / scaleY;
+
+        // Eraser mode: click to remove any marker highlight under the cursor
+        if (eraserMode && !markerMode) {
+          e.preventDefault();
+          const rects = Array.from(layer.querySelectorAll('.marker-rect'));
+          let removedAny = false;
+          const baseW = parseFloat(layer.style.width) || 1;
+          const baseH = parseFloat(layer.style.height) || 1;
+          rects.forEach(function (el) {
+            const r = el.getBoundingClientRect();
+            const within =
+              e.clientX >= r.left &&
+              e.clientX <= r.right &&
+              e.clientY >= r.top &&
+              e.clientY <= r.bottom;
+            if (!within) return;
+            var hid = el.getAttribute('data-highlight-id');
+            var nx = (parseFloat(el.style.left) || 0) / baseW;
+            var ny = (parseFloat(el.style.top) || 0) / baseH;
+            var nw = (parseFloat(el.style.width) || 0) / baseW;
+            var nh = (parseFloat(el.style.height) || 0) / baseH;
+            el.remove();
+            if (hid) {
+              if (hid.indexOf('legacy_') === 0) {
+                studyData.highlights = (studyData.highlights || []).filter(function (h) {
+                  if (!(h.type === 'area' || (typeof h.x === 'number' && typeof h.width === 'number'))) return true;
+                  if (h.pageIndex !== pageIndex) return true;
+                  var dx = Math.abs((h.x || 0) - nx);
+                  var dy = Math.abs((h.y || 0) - ny);
+                  var dw = Math.abs((h.width || 0) - nw);
+                  var dh = Math.abs((h.height || 0) - nh);
+                  return !(dx < 0.002 && dy < 0.002 && dw < 0.002 && dh < 0.002);
+                });
+              } else {
+                studyData.highlights = (studyData.highlights || []).filter(function (h) {
+                  return h.id !== hid;
+                });
+              }
+              removedAny = true;
+            }
+          });
+          if (removedAny) {
+            saveStudyData();
+            showToast('Highlight erased', 'success');
+          }
+          return;
+        }
+
+        // Marker mode: drag to draw a new highlight area (freeform marker)
+        if (!markerMode) return;
+        e.preventDefault();
+        isDrawingMarker = true;
+        markerStart = {
+          x: localX,
+          y: localY,
+          pageIndex: pageIndex,
+        };
+        markerCurrentEl = document.createElement('div');
+        markerCurrentEl.className = 'marker-rect marker-rect-' + currentHighlightColor;
+        markerCurrentEl.style.left = localX + 'px';
+        markerCurrentEl.style.top = localY + 'px';
+        markerCurrentEl.style.width = '1px';
+        markerCurrentEl.style.height = '1px';
+        layer.appendChild(markerCurrentEl);
+      });
+
+      layer.addEventListener('mousemove', function (e) {
+        if (!isDrawingMarker || !markerCurrentEl) return;
+        const bounds = layer.getBoundingClientRect();
+        const baseWidth = parseFloat(layer.style.width) || bounds.width || 1;
+        const baseHeight = parseFloat(layer.style.height) || bounds.height || 1;
+        const scaleX = bounds.width / baseWidth;
+        const scaleY = bounds.height / baseHeight;
+        const x = (e.clientX - bounds.left) / scaleX;
+        const y = (e.clientY - bounds.top) / scaleY;
+        const startX = markerStart.x;
+        const startY = markerStart.y;
+        const left = Math.min(startX, x);
+        const top = Math.min(startY, y);
+        const width = Math.abs(x - startX);
+        const height = Math.abs(y - startY);
+        markerCurrentEl.style.left = left + 'px';
+        markerCurrentEl.style.top = top + 'px';
+        markerCurrentEl.style.width = Math.max(width, 1) + 'px';
+        markerCurrentEl.style.height = Math.max(height, 1) + 'px';
+      });
+
+      ['mouseup', 'mouseleave'].forEach(function (evt) {
+        layer.addEventListener(evt, function () {
+          if (!isDrawingMarker || !markerCurrentEl) return;
+          const bounds = layer.getBoundingClientRect();
+          const baseWidth = parseFloat(layer.style.width) || bounds.width || 1;
+          const baseHeight = parseFloat(layer.style.height) || bounds.height || 1;
+          const w = parseFloat(markerCurrentEl.style.width) || 0;
+          const h = parseFloat(markerCurrentEl.style.height) || 0;
+          // If the drawn area is tiny, treat it as a cancel
+          if (w < 4 || h < 4) {
+            markerCurrentEl.remove();
+            markerCurrentEl = null;
+            isDrawingMarker = false;
+            return;
+          }
+
+          const left = parseFloat(markerCurrentEl.style.left) || 0;
+          const top = parseFloat(markerCurrentEl.style.top) || 0;
+
+          const id = 'ah_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+          const areaHighlight = {
+            id: id,
+            type: 'area',
+            pageIndex: pageIndex,
+            color: currentHighlightColor,
+            x: left / baseWidth,
+            y: top / baseHeight,
+            width: w / baseWidth,
+            height: h / baseHeight,
+          };
+
+          markerCurrentEl.setAttribute('data-highlight-id', id);
+
+          studyData.highlights.push(areaHighlight);
+          saveStudyData();
+
+          markerCurrentEl = null;
+          isDrawingMarker = false;
+        });
+      });
+    }
+
+    function addHighlightFromSelection() {
+      const sel = window.getSelection();
+      var text = sel.toString().trim();
+      var indices = text ? getItemIndicesFromSelection(sel) : null;
+      // Fallback to cached selection if live selection was cleared by button click
+      if (!indices && cachedSelection) {
+        indices = cachedSelection.indices;
+        text = cachedSelection.text;
+      }
+      if (!indices || !text) return;
+      const pageIndex = indices.pageIndex, startIdx = indices.startIdx, endIdx = indices.endIdx;
+      studyData.highlights.push({ pageIndex, startIdx, endIdx, color: currentHighlightColor, text: text.slice(0, 200) });
+      saveStudyData();
+      applyHighlightToRange(pageIndex, startIdx, endIdx, currentHighlightColor);
+      sel.removeAllRanges();
+      cachedSelection = null;
+      hideSelectionPopup();
+    }
+
+    function removeHighlightFromSelection() {
+      const sel = window.getSelection();
+      var indices = getItemIndicesFromSelection(sel);
+      // Fallback to cached selection
+      if (!indices && cachedSelection) {
+        indices = cachedSelection.indices;
+      }
+      if (!indices) return;
+      var pageIndex = indices.pageIndex, startIdx = indices.startIdx, endIdx = indices.endIdx;
+      var pageEl = document.querySelector('.pdf-page[data-page-index="' + pageIndex + '"]');
+      if (!pageEl) return;
+      var layer = pageEl.querySelector('.pdf-text-layer');
+      if (!layer) return;
+      var allSpans = Array.from(layer.querySelectorAll('span[data-item-index]'));
+      allSpans.forEach(function (span) {
+        var idx = parseInt(span.getAttribute('data-item-index'), 10);
+        if (idx >= startIdx && idx <= endIdx && span.classList.contains('pdf-highlight')) {
+          span.classList.remove('pdf-highlight', 'pdf-highlight-yellow', 'pdf-highlight-blue', 'pdf-highlight-pink', 'pdf-highlight-green');
+          span.removeAttribute('data-highlight-color');
+        }
+      });
+      studyData.highlights = studyData.highlights.filter(function (h) {
+        if (h.pageIndex !== pageIndex) return true;
+        var overlap = !(endIdx < h.startIdx || startIdx > h.endIdx);
+        return !overlap;
+      });
+      saveStudyData();
+      sel.removeAllRanges();
+      cachedSelection = null;
+      hideSelectionPopup();
+    }
+
+    async function downloadAnnotatedPDF() {
+      if (!pdfUrl || !studyData.highlights || studyData.highlights.length === 0) {
+        alert('No highlights to include. Highlight some text first, then download.');
+        return;
+      }
+      var btn = document.getElementById('btnDownloadPdf');
+      if (!btn) return;
+      var origText = btn.textContent;
+      btn.textContent = '...';
+      btn.disabled = true;
+      try {
+        var resp = await fetch(pdfUrl);
+        var pdfBytes = await resp.arrayBuffer();
+        var pdfLibDoc = await PDFLib.PDFDocument.load(pdfBytes);
+        var pages = pdfLibDoc.getPages();
+        var colorMap = {
+          yellow: PDFLib.rgb(253/255, 224/255, 71/255),
+          blue:   PDFLib.rgb(147/255, 197/255, 253/255),
+          pink:   PDFLib.rgb(249/255, 168/255, 212/255),
+          green:  PDFLib.rgb(134/255, 239/255, 172/255)
+        };
+        for (var hi = 0; hi < studyData.highlights.length; hi++) {
+          var h = studyData.highlights[hi];
+          if (h.pageIndex >= pages.length) continue;
+          var pg = pages[h.pageIndex];
+          var pgH = pg.getHeight();
+          var items = pageTextItems[h.pageIndex] || [];
+          for (var ii = h.startIdx; ii <= h.endIdx && ii < items.length; ii++) {
+            var item = items[ii];
+            if (!item || !item.str || !item.transform) continue;
+            var tx = item.transform;
+            var x = tx[4] || 0;
+            var y = tx[5] || 0;
+            var fontH = Math.sqrt((tx[0]*tx[0]) + (tx[3]*tx[3])) || 12;
+            var w = item.width || (item.str.length * fontH * 0.6);
+            pg.drawRectangle({
+              x: x,
+              y: y - 2,
+              width: w,
+              height: fontH + 4,
+              color: colorMap[h.color] || colorMap.yellow,
+              opacity: 0.45
+            });
+          }
+        }
+        var annotatedBytes = await pdfLibDoc.save();
+        var blob = new Blob([annotatedBytes], { type: 'application/pdf' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        var title = document.getElementById('chapterTitle').textContent || 'chapter';
+        a.download = title.replace(/[^a-zA-Z0-9 _-]/g, '') + ' (annotated).pdf';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (e) {
+        console.error('Download failed:', e);
+        alert('Failed to generate annotated PDF: ' + e.message);
+      }
+      btn.textContent = origText;
+      btn.disabled = false;
+    }
+
+    function showAddNoteCard() {
+      var text = cachedSelection ? cachedSelection.text : '';
+      var indices = cachedSelection ? cachedSelection.indices : null;
+      const pageIndex = indices ? indices.pageIndex : getCurrentPageIndex();
+      const labelEl = document.getElementById('addNoteLabel');
+      labelEl.textContent = text ? 'Add a note for this selection:' : 'Add a note for this page:';
+      const card = document.getElementById('addNoteCard');
+      const textarea = document.getElementById('addNoteTextarea');
+      textarea.value = '';
+      card.classList.remove('hidden');
+      card.dataset.pendingPageIndex = String(pageIndex);
+      card.dataset.pendingQuoted = text ? text.slice(0, 120) : '';
+      hideSelectionPopup();
+      setTimeout(function () { textarea.focus(); }, 100);
+    }
+
+    function hideAddNoteCard() {
+      document.getElementById('addNoteCard').classList.add('hidden');
+      document.getElementById('addNoteCard').removeAttribute('data-pending-page-index');
+      document.getElementById('addNoteCard').removeAttribute('data-pending-quoted');
+    }
+
+    function saveAddNoteFromCard() {
+      const card = document.getElementById('addNoteCard');
+      const textarea = document.getElementById('addNoteTextarea');
+      const content = textarea.value.trim();
+      if (!content) return;
+      const pageIndex = parseInt(card.dataset.pendingPageIndex || '0', 10);
+      const quoted = card.dataset.pendingQuoted || null;
+      studyData.notes.push({
+        id: 'n_' + Date.now(),
+        pageIndex,
+        content: content,
+        quoted: quoted || null,
+        createdAt: new Date().toISOString()
+      });
+      saveStudyData();
+      if (window.getSelection()) window.getSelection().removeAllRanges();
+      cachedSelection = null;
+      hideAddNoteCard();
+      renderStudyPanel();
+    }
+
+    function addNoteFromSelection() {
+      const sel = window.getSelection();
+      var text = sel.toString().trim();
+      var indices = text ? getItemIndicesFromSelection(sel) : null;
+      if (!indices && cachedSelection) {
+        text = cachedSelection.text;
+        indices = cachedSelection.indices;
+      }
+      // Cache the latest selection for the add-note card and then show it
+      if (indices && text) {
+        cachedSelection = { text: text, indices: indices };
+      }
+      showAddNoteCard();
+    }
+
+    function openAddNotePanelPopup() {
+      const pageIndex = getCurrentPageIndex();
+      document.getElementById('studySidePanel').classList.remove('hidden');
+      var layout = document.querySelector('.study-layout');
+      if (layout) layout.classList.add('panel-open');
+      const popup = document.getElementById('addNotePanelPopup');
+      const label = document.getElementById('addNotePanelLabel');
+      const textarea = document.getElementById('addNotePanelTextarea');
+      label.textContent = 'Add a note for this page (Page ' + (pageIndex + 1) + ')';
+      textarea.value = '';
+      popup.classList.remove('hidden');
+      popup.dataset.pendingPageIndex = String(pageIndex);
+      setTimeout(function () { textarea.focus(); }, 150);
+    }
+
+    function hideAddNotePanelPopup() {
+      const popup = document.getElementById('addNotePanelPopup');
+      popup.classList.add('hidden');
+      popup.removeAttribute('data-pending-page-index');
+      document.getElementById('addNotePanelTextarea').value = '';
+    }
+
+    function saveAddNoteFromPanel() {
+      const popup = document.getElementById('addNotePanelPopup');
+      const textarea = document.getElementById('addNotePanelTextarea');
+      const content = textarea.value.trim();
+      if (!content) return;
+      const pageIndex = parseInt(popup.dataset.pendingPageIndex || '0', 10);
+      studyData.notes.push({
+        id: 'n_' + Date.now(),
+        pageIndex: pageIndex,
+        content: content,
+        quoted: null,
+        createdAt: new Date().toISOString()
+      });
+      saveStudyData();
+      renderStudyPanel();
+      hideAddNotePanelPopup();
+    }
+
+    function getCurrentPageIndex() {
+      const pages = document.querySelectorAll('.pdf-page');
+      const viewportMid = window.scrollY + window.innerHeight / 2;
+      let best = 0;
+      let bestDist = Infinity;
+      pages.forEach((p, i) => {
+        const rect = p.getBoundingClientRect();
+        const mid = rect.top + rect.height / 2 + window.scrollY;
+        const dist = Math.abs(mid - viewportMid);
+        if (dist < bestDist) {
+          bestDist = dist;
+          best = i;
+        }
+      });
+      return best;
+    }
+
+    function showToast(message, type) {
+      type = type || 'success';
+      const container = document.getElementById('toastContainer');
+      const el = document.createElement('div');
+      el.className = 'toast ' + type;
+      el.textContent = message;
+      container.appendChild(el);
+      setTimeout(function () {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(10px)';
+        setTimeout(function () { el.remove(); }, 300);
+      }, 2500);
+    }
+
+    function addBookmark() {
+      const pageIndex = getCurrentPageIndex();
+      const existingIndex = studyData.bookmarks.findIndex(function (b) { return b.pageIndex === pageIndex; });
+      const btn = document.getElementById('btnBookmark');
+
+      // If this page is already bookmarked, unbookmark it
+      if (existingIndex !== -1) {
+        studyData.bookmarks.splice(existingIndex, 1);
+        saveStudyData();
+        renderStudyPanel();
+        if (btn) {
+          btn.classList.remove('bookmarked');
+          btn.innerHTML = '<span aria-hidden="true">🔖</span>';
+        }
+        showToast('Bookmark removed', 'success');
+        return;
+      }
+
+      // Otherwise add a new bookmark for this page
+      studyData.bookmarks.push({
+        id: 'b_' + Date.now(),
+        pageIndex: pageIndex,
+        label: `Page ${pageIndex + 1}`,
+        createdAt: new Date().toISOString()
+      });
+      saveStudyData();
+      renderStudyPanel();
+      if (btn) {
+        btn.classList.add('bookmarked');
+        btn.innerHTML = '<span aria-hidden="true">✓</span>';
+        setTimeout(function () {
+          btn.classList.remove('bookmarked');
+          btn.innerHTML = '<span aria-hidden="true">🔖</span>';
+        }, 1500);
+      }
+      showToast('Page bookmarked', 'success');
+    }
+
+    function scrollToPage(pageIndex) {
+      const el = document.querySelector(`.pdf-page[data-page-index="${pageIndex}"]`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function deleteNote(noteId, e) {
+      if (e) e.stopPropagation();
+      studyData.notes = studyData.notes.filter(function (n) { return n.id !== noteId; });
+      saveStudyData();
+      renderStudyPanel();
+    }
+
+    function startEditNote(noteId, e) {
+      if (e) e.stopPropagation();
+      const note = studyData.notes.find(function (n) { return n.id === noteId; });
+      if (!note) return;
+      const notesList = document.getElementById('notesList');
+      const itemEl = notesList.querySelector('[data-note-id="' + escapeHtml(noteId) + '"]');
+      if (!itemEl) return;
+      const contentEl = itemEl.querySelector('.note-text');
+      const formHtml = '<div class="note-edit-form" data-note-id="' + escapeHtml(noteId) + '">' +
+        '<textarea class="note-edit-textarea" rows="3">' + escapeHtml(note.content) + '</textarea>' +
+        '<div class="note-edit-actions"><button type="button" class="cancel-btn">Cancel</button><button type="button" class="save-btn">Save</button></div></div>';
+      const wrap = document.createElement('div');
+      wrap.className = 'note-item-editing';
+      wrap.innerHTML = formHtml;
+      itemEl.replaceWith(wrap);
+      const form = wrap.querySelector('.note-edit-form');
+      const ta = wrap.querySelector('.note-edit-textarea');
+      ta.focus();
+      wrap.querySelector('.cancel-btn').addEventListener('click', function (ev) {
+        ev.stopPropagation();
+        renderStudyPanel();
+      });
+      wrap.querySelector('.save-btn').addEventListener('click', function (ev) {
+        ev.stopPropagation();
+        note.content = ta.value.trim();
+        saveStudyData();
+        renderStudyPanel();
+      });
+    }
+
+    function renderStudyPanel() {
+      const data = getStudyData();
+      const bookmarksList = document.getElementById('bookmarksList');
+      const notesList = document.getElementById('notesList');
+
+      if (!data.bookmarks || data.bookmarks.length === 0) {
+        bookmarksList.innerHTML = '<div class="study-empty">No bookmarks yet. Use the 🔖 button on a page to add one.</div>';
+      } else {
+        bookmarksList.innerHTML = data.bookmarks
+          .sort(function (a, b) { return a.pageIndex - b.pageIndex; })
+          .map(function (b) {
+            return '<div class="bookmark-item" data-page="' + b.pageIndex + '" role="button" tabindex="0"><span class="page-badge">Page ' + (b.pageIndex + 1) + '</span>' + (b.label || 'Page ' + (b.pageIndex + 1)) + '</div>';
+          })
+          .join('');
+        bookmarksList.querySelectorAll('.bookmark-item').forEach(function (el) {
+          el.addEventListener('click', function () {
+            scrollToPage(parseInt(el.getAttribute('data-page'), 10));
+          });
+        });
+      }
+
+      if (!data.notes || data.notes.length === 0) {
+        notesList.innerHTML = '<div class="study-empty">No notes yet. Click the 📝 button in the toolbar to add a note for the current page.</div>';
+      } else {
+        notesList.innerHTML = data.notes
+          .slice()
+          .reverse()
+          .map(function (n) {
+            return '<div class="note-item" data-note-id="' + escapeHtml(n.id) + '" data-page="' + n.pageIndex + '" role="button" tabindex="0">' +
+              '<div class="note-item-actions"><button type="button" class="edit-btn" title="Edit note" aria-label="Edit">✎</button><button type="button" class="delete-btn" title="Delete note" aria-label="Delete">×</button></div>' +
+              '<span class="page-badge">Page ' + (n.pageIndex + 1) + '</span>' +
+              (n.quoted ? '<em>' + escapeHtml(n.quoted) + '</em>' : '') +
+              '<div class="note-text">' + escapeHtml(n.content) + '</div></div>';
+          })
+          .join('');
+        notesList.querySelectorAll('.note-item').forEach(function (el) {
+          var page = parseInt(el.getAttribute('data-page'), 10);
+          var noteId = el.getAttribute('data-note-id');
+          el.addEventListener('click', function (e) {
+            if (e.target.closest('.note-item-actions')) return;
+            scrollToPage(page);
+          });
+          var editBtn = el.querySelector('.edit-btn');
+          var delBtn = el.querySelector('.delete-btn');
+          if (editBtn) editBtn.addEventListener('click', function (e) { startEditNote(noteId, e); });
+          if (delBtn) delBtn.addEventListener('click', function (e) { deleteNote(noteId, e); });
+        });
+      }
+    }
+
+    function escapeHtml(s) {
+      const div = document.createElement('div');
+      div.textContent = s;
+      return div.innerHTML;
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      const authManager = new AuthManager();
+      if (!authManager.requireAuth()) return;
+
+      const urlParams = new URLSearchParams(window.location.search);
+      currentChapterId = urlParams.get('chapter_id');
+      currentClassId = urlParams.get('class_id');
+      const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+      currentUserId = currentUser.user_id || 'anon';
+
+      if (!currentChapterId) {
+        document.getElementById('contentContainer').innerHTML = '<div class="loading-state"><p>Error: Chapter ID missing</p></div>';
+        return;
+      }
+
+      loadChapterPDF();
+    });
+
+    async function loadChapterPDF() {
+      const container = document.getElementById('contentContainer');
+
+      try {
+        const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        if (!currentUser.user_id) throw new Error('User not logged in');
+        currentUserId = currentUser.user_id;
+
+        const apiUrl = window.API_BASE_URL || '/api';
+
+        const chapterResponse = await authFetch(`${apiUrl}/classes/${encodeURIComponent(currentClassId)}/chapters`);
+        const chaptersData = await chapterResponse.json();
+        if (!chapterResponse.ok) throw new Error(chaptersData.error || 'Failed to load chapters');
+
+        const chapter = chaptersData.chapters.find(c => c.chapter_id === currentChapterId);
+        if (!chapter) throw new Error('Chapter not found');
+
+        document.getElementById('chapterTitle').textContent = chapter.title || 'Untitled Chapter';
+        document.getElementById('chapterDescription').textContent = chapter.description || '';
+
+        pdfUrl = `${apiUrl}/chapters/${encodeURIComponent(chapter.chapter_id)}/pdf`;
+        await renderPDFPages(pdfUrl, container);
+
+        getStudyData();
+        applySavedHighlights();      // Text-based highlights (legacy)
+        renderMarkerHighlights();    // Freeform marker highlights
+        renderStudyPanel();
+
+        document.getElementById('studyToolbar').style.display = 'flex';
+
+        document.querySelectorAll('.study-toolbar-sidebar .highlight-btn').forEach(btn => {
+          btn.addEventListener('click', function () {
+            currentHighlightColor = this.getAttribute('data-color');
+            document.querySelectorAll('.highlight-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            // When a highlight color is chosen, enable marker mode so students can draw anywhere
+            markerMode = true;
+            eraserMode = false;
+            document.getElementById('btnMarkerMode')?.classList.add('active');
+            document.getElementById('btnEraserMode')?.classList.remove('active');
+            // Enable pointer events on all marker layers
+            document.querySelectorAll('.pdf-mark-layer').forEach(function (layer) {
+              layer.style.pointerEvents = 'auto';
+            });
+          });
+        });
+        const btnMarkerMode = document.getElementById('btnMarkerMode');
+        const btnEraserMode = document.getElementById('btnEraserMode');
+        if (btnMarkerMode && btnEraserMode) {
+          btnMarkerMode.addEventListener('click', function () {
+            markerMode = true;
+            eraserMode = false;
+            btnMarkerMode.classList.add('active');
+            btnEraserMode.classList.remove('active');
+            document.querySelectorAll('.pdf-mark-layer').forEach(function (layer) {
+              layer.style.pointerEvents = 'auto';
+            });
+          });
+          btnEraserMode.addEventListener('click', function () {
+            markerMode = false;
+            eraserMode = true;
+            btnMarkerMode.classList.remove('active');
+            btnEraserMode.classList.add('active');
+            document.querySelectorAll('.pdf-mark-layer').forEach(function (layer) {
+              layer.style.pointerEvents = 'auto';
+            });
+          });
+        }
+        document.getElementById('btnBookmark').addEventListener('click', addBookmark);
+        document.getElementById('btnNotesPanel').addEventListener('click', function () {
+          document.getElementById('studySidePanel').classList.remove('hidden');
+        });
+        document.getElementById('btnAddNote').addEventListener('click', openAddNotePanelPopup);
+        document.getElementById('btnNotesPanel').addEventListener('click', function () {
+          var panel = document.getElementById('studySidePanel');
+          panel.classList.remove('hidden');
+          document.querySelector('.study-layout').classList.add('panel-open');
+        });
+        document.getElementById('closeStudyPanel').addEventListener('click', function () {
+          document.getElementById('studySidePanel').classList.add('hidden');
+          document.querySelector('.study-layout').classList.remove('panel-open');
+          hideAddNotePanelPopup();
+        });
+        document.getElementById('btnSaveNotePanel').addEventListener('click', saveAddNoteFromPanel);
+        document.getElementById('btnCancelNotePanel').addEventListener('click', hideAddNotePanelPopup);
+        document.getElementById('btnHighlightSelection').addEventListener('click', addHighlightFromSelection);
+        document.getElementById('btnRemoveHighlightSelection').addEventListener('click', removeHighlightFromSelection);
+        document.getElementById('btnAddNoteSelection').addEventListener('click', addNoteFromSelection);
+        document.getElementById('btnSaveNote').addEventListener('click', saveAddNoteFromCard);
+        document.getElementById('btnCancelNote').addEventListener('click', hideAddNoteCard);
+
+        document.addEventListener('keydown', function (e) {
+          if (e.key === 'Escape' && !document.getElementById('addNoteCard').classList.contains('hidden')) {
+            hideAddNoteCard();
+          }
+        });
+
+        document.addEventListener('selectionchange', function () {
+          const sel = window.getSelection();
+          const text = sel.toString().trim();
+          if (!text) {
+            // Don't hide popup if we have a cached selection (user clicking popup button)
+            if (!cachedSelection) hideSelectionPopup();
+            return;
+          }
+          // Cache the selection info so it survives button clicks
+          const indices = getItemIndicesFromSelection(sel);
+          if (indices) {
+            cachedSelection = { text: text, indices: indices };
+          }
+          const range = sel.rangeCount ? sel.getRangeAt(0) : null;
+          if (!range) return;
+          const rect = range.getBoundingClientRect();
+          if (rect.width > 0 && rect.height > 0) {
+            showSelectionPopup(rect.left + rect.width / 2, rect.top);
+          }
+        });
+        // Prevent mousedown on popup from clearing the selection
+        document.getElementById('selectionPopup').addEventListener('mousedown', function (e) {
+          e.preventDefault();
+        });
+        document.addEventListener('mousedown', function (e) {
+          if (!document.getElementById('selectionPopup').contains(e.target)) {
+            cachedSelection = null;
+            hideSelectionPopup();
+          }
+        });
+
+      } catch (error) {
+        console.error('Error:', error);
+        container.innerHTML = `<div class="loading-state"><p>Error loading PDF: ${error.message}</p><button class="btn btn-primary" onclick="javascript:history.back()" style="margin-top: 1rem;">Go Back</button></div>`;
+      }
+    }
+
+    async function renderPDFPages(pdfPath, container) {
+      if (typeof pdfjsLib === 'undefined') {
+        throw new Error('PDF.js library not loaded. Please refresh the page.');
+      }
+
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+      const loadingTask = pdfjsLib.getDocument(pdfPath);
+      pdfDoc = await loadingTask.promise;
+      numPages = pdfDoc.numPages;
+      container.innerHTML = '';
+
+      var renderScale = 2.5;
+      var scaleFactor = 1;
+
+      for (var pageNum = 1; pageNum <= numPages; pageNum++) {
+        var page = await pdfDoc.getPage(pageNum);
+        var viewport = page.getViewport({ scale: renderScale });
+        if (pageNum === 1) {
+          var maxW = 900;
+          var parent = container.parentElement;
+          if (typeof window !== 'undefined' && window.innerWidth > 0)
+            maxW = window.innerWidth - 280;
+          if (parent && parent.clientWidth > 200)
+            maxW = Math.min(maxW, parent.clientWidth - 80);
+          scaleFactor = maxW / viewport.width;
+          scaleFactor = Math.max(0.5, Math.min(1, scaleFactor));
+        }
+
+        var pageDiv = document.createElement('div');
+        pageDiv.className = 'pdf-page';
+        pageDiv.setAttribute('data-page-index', String(pageNum - 1));
+
+        var scaledOuter = document.createElement('div');
+        scaledOuter.className = 'pdf-page-scaled';
+        scaledOuter.style.width = (viewport.width * scaleFactor) + 'px';
+        scaledOuter.style.height = (viewport.height * scaleFactor) + 'px';
+
+        var wrapper = document.createElement('div');
+        wrapper.className = 'pdf-page-wrapper';
+        wrapper.style.width = viewport.width + 'px';
+        wrapper.style.height = viewport.height + 'px';
+        wrapper.style.transform = 'scale(' + scaleFactor + ')';
+
+        var canvas = document.createElement('canvas');
+        var context = canvas.getContext('2d');
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+        await page.render({
+          canvasContext: context,
+          viewport: viewport
+        }).promise;
+        wrapper.appendChild(canvas);
+
+        var textLayerDiv = document.createElement('div');
+        textLayerDiv.className = 'pdf-text-layer';
+        textLayerDiv.style.width = viewport.width + 'px';
+        textLayerDiv.style.height = viewport.height + 'px';
+        textLayerDiv.style.setProperty('--scale-factor', String(renderScale));
+
+        try {
+          var textContent = await page.getTextContent();
+          var allItems = textContent.items || [];
+          pageTextItems[pageNum - 1] = allItems.filter(function(it) { return it.str && it.str.length > 0; });
+          var usedBuiltIn = false;
+          if (typeof pdfjsLib.renderTextLayer === 'function') {
+            try {
+              var textLayerTask = pdfjsLib.renderTextLayer({
+                textContentSource: textContent,
+                container: textLayerDiv,
+                viewport: viewport
+              });
+              await textLayerTask.promise;
+              usedBuiltIn = true;
+            } catch (e2) {
+              console.warn('renderTextLayer failed, using fallback', e2);
+              textLayerDiv.innerHTML = '';
+            }
+          }
+          if (!usedBuiltIn) {
+            var fitems = pageTextItems[pageNum - 1];
+            for (var fi = 0; fi < fitems.length; fi++) {
+              var fItem = fitems[fi];
+              var fTx = fItem.transform || [];
+              var fSpan = document.createElement('span');
+              fSpan.setAttribute('data-item-index', String(fi));
+              fSpan.textContent = fItem.str;
+              var fx = (fTx[4] || 0) * renderScale;
+              var fy = (fTx[5] || 0) * renderScale;
+              var fH = (Math.sqrt((fTx[0]*fTx[0]) + (fTx[3]*fTx[3])) || 12) * renderScale;
+              fSpan.style.left = fx + 'px';
+              fSpan.style.top = (viewport.height - fy - fH) + 'px';
+              fSpan.style.fontSize = fH + 'px';
+              fSpan.style.fontFamily = 'sans-serif';
+              textLayerDiv.appendChild(fSpan);
+            }
+          }
+          var renderedSpans = textLayerDiv.querySelectorAll('span');
+          for (var si = 0; si < renderedSpans.length; si++) {
+            renderedSpans[si].setAttribute('data-item-index', String(si));
+          }
+        } catch (e) {
+          console.warn('Text layer failed for page ' + pageNum, e);
+        }
+
+        // Marker layer for freeform highlighting on this page
+        var markLayerDiv = document.createElement('div');
+        markLayerDiv.className = 'pdf-mark-layer';
+        markLayerDiv.style.width = viewport.width + 'px';
+        markLayerDiv.style.height = viewport.height + 'px';
+        markLayerDiv.setAttribute('data-page-index', String(pageNum - 1));
+        // Pointer events are enabled when marker mode is active (set in JS)
+        setupMarkerLayerEvents(markLayerDiv, pageNum - 1);
+
+        wrapper.appendChild(textLayerDiv);
+        wrapper.appendChild(markLayerDiv);
+        scaledOuter.appendChild(wrapper);
+        pageDiv.appendChild(scaledOuter);
+
+        var pageLabel = document.createElement('div');
+        pageLabel.className = 'page-number';
+        pageLabel.textContent = 'Page ' + pageNum + ' of ' + numPages;
+        pageDiv.appendChild(pageLabel);
+
+        container.appendChild(pageDiv);
+      }
+    }
+  </script>
+{% endblock %}

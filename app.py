@@ -4,7 +4,8 @@ import sys
 import uuid
 
 from dotenv import load_dotenv
-from flask import Flask, g, jsonify, request, send_from_directory
+from flask import Flask, g, jsonify, render_template, request, send_from_directory
+from jinja2 import TemplateNotFound
 from pythonjsonlogger import jsonlogger
 from werkzeug.exceptions import HTTPException
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -352,18 +353,23 @@ app.url_map.converters["no_api_path"] = NoApiPathConverter
 
 @app.route("/", methods=["GET"])
 def serve_index():
-    return send_from_directory(_ROOT, "index.html")
+    return render_template("index.html")
 
 
 @app.route("/<no_api_path:path>", methods=["GET"])
 def serve_frontend(path):
-    """Serve frontend static files (HTML, CSS, JS, etc.) for local dev."""
+    """Serve frontend files: render HTML via Jinja2; serve static assets directly."""
     safe = os.path.normpath(path)
     if safe.startswith("..") or os.path.isabs(safe):
         return jsonify({"error": "Forbidden"}), 403
+    if safe.endswith(".html"):
+        try:
+            return render_template(safe)
+        except TemplateNotFound:
+            return render_template("index.html")
     full = os.path.join(_ROOT, safe)
     if not os.path.isfile(full):
-        return send_from_directory(_ROOT, "index.html")
+        return render_template("index.html")
     return send_from_directory(_ROOT, safe)
 
 
