@@ -221,12 +221,7 @@ async function loadChapters() {
     const chapters = data.chapters || [];
 
     if (chapters.length === 0) {
-      chaptersList.innerHTML = `
-        <div style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 0.5rem;">
-          <div style="font-size: 3rem; margin-bottom: 1rem;">📄</div>
-          <p style="color: #64748b;">No chapters available yet.</p>
-        </div>
-      `;
+      uiStates.showEmpty(chaptersList, '📄 No chapters yet', 'No chapters have been uploaded for this class yet.');
       return;
     }
 
@@ -267,12 +262,7 @@ async function loadExercises() {
     const chapters = chaptersData.chapters || [];
 
     if (chapters.length === 0) {
-      exercisesList.innerHTML = `
-        <div style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 0.5rem;">
-          <div style="font-size: 3rem; margin-bottom: 1rem;">💪</div>
-          <p style="color: #64748b;">No chapters found. Exercises will appear here once chapters are available.</p>
-        </div>
-      `;
+      uiStates.showEmpty(exercisesList, '✏️ No exercises yet', 'Exercises will appear here once chapters are uploaded.');
       return;
     }
 
@@ -300,12 +290,7 @@ async function loadExercises() {
     const allExercises = exercisesArrays.flat();
 
     if (allExercises.length === 0) {
-      exercisesList.innerHTML = `
-        <div style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 0.5rem;">
-          <div style="font-size: 3rem; margin-bottom: 1rem;">💪</div>
-          <p style="color: #64748b;">No exercises available yet.</p>
-        </div>
-      `;
+      uiStates.showEmpty(exercisesList, '✏️ No exercises yet', 'No exercises have been generated for this class yet.');
       return;
     }
 
@@ -374,12 +359,7 @@ async function renderChapters(chapters) {
   const chaptersList = document.getElementById('chaptersList');
 
   if (!chapters || chapters.length === 0) {
-    chaptersList.innerHTML = `
-      <div style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 0.5rem;">
-        <div style="font-size: 3rem; margin-bottom: 1rem;">📄</div>
-        <p style="color: #64748b;">No chapters available yet.</p>
-      </div>
-    `;
+    uiStates.showEmpty(chaptersList, '📄 No chapters yet', 'No chapters have been uploaded for this class yet.');
     return;
   }
 

@@ -160,10 +160,11 @@ function renderConversationHistory() {
   }
 
   if (filteredConversations.length === 0) {
-    const message = currentConversationTab === 'archived'
-      ? 'No archived conversations'
-      : 'No previous conversations';
-    list.innerHTML = `<p class="no-conversations">${message}</p>`;
+    if (currentConversationTab === 'archived') {
+      uiStates.showEmpty(list, '📦 No archived conversations', 'Archived conversations will appear here.');
+    } else {
+      uiStates.showEmpty(list, '💬 No conversations', 'Start a new conversation to get coding help.');
+    }
     return;
   }
 
@@ -290,40 +291,40 @@ async function archiveConversation(conversationId) {
 async function deleteConversation(conversationId) {
   event.stopPropagation();
 
-  // Confirm deletion
-  if (!confirm('Are you sure you want to delete this conversation? This action cannot be undone.')) {
-    return;
-  }
+  uiStates.showConfirmModal(
+    'Are you sure you want to delete this conversation? This action cannot be undone.',
+    async function () {
+      try {
+        // Delete via API (if available)
+        if (typeof conversationAPI !== 'undefined') {
+          await conversationAPI.delete(conversationId);
+        }
 
-  try {
-    // Delete via API (if available)
-    if (typeof conversationAPI !== 'undefined') {
-      await conversationAPI.delete(conversationId);
-    }
+        // Remove from local list
+        conversationHistoryList = conversationHistoryList.filter(c => c.id !== conversationId);
 
-    // Remove from local list
-    conversationHistoryList = conversationHistoryList.filter(c => c.id !== conversationId);
+        // If this was the current conversation, start a new one
+        if (conversationId === currentConversationId) {
+          startNewConversation();
+        }
 
-    // If this was the current conversation, start a new one
-    if (conversationId === currentConversationId) {
-      startNewConversation();
-    }
-
-    renderConversationHistory();
-  } catch (error) {
-    console.error('Error deleting conversation:', error);
-    // Fallback to localStorage
-    const conversation = conversationHistoryList.find(c => c.id === conversationId);
-    if (conversation) {
-      conversation.deleted = true;
-      conversation.deletedAt = new Date().toISOString();
-      localStorage.setItem('conversationHistory', JSON.stringify(conversationHistoryList));
-      if (conversationId === currentConversationId) {
-        startNewConversation();
+        renderConversationHistory();
+      } catch (error) {
+        console.error('Error deleting conversation:', error);
+        // Fallback to localStorage
+        const conversation = conversationHistoryList.find(c => c.id === conversationId);
+        if (conversation) {
+          conversation.deleted = true;
+          conversation.deletedAt = new Date().toISOString();
+          localStorage.setItem('conversationHistory', JSON.stringify(conversationHistoryList));
+          if (conversationId === currentConversationId) {
+            startNewConversation();
+          }
+          renderConversationHistory();
+        }
       }
-      renderConversationHistory();
     }
-  }
+  );
 }
 
 // Start new conversation
@@ -2079,39 +2080,42 @@ function copyToClipboardFallback(text, button) {
 
 // Clear chat
 function clearChat() {
-  if (confirm('Clear all chat messages?')) {
-    document.getElementById('chatMessages').innerHTML = `
-      <div class="welcome-section" id="conversationStarters">
-        <div class="welcome-message">
-          <p>Hello! I'm your Code Assistant. Just type your request or paste your code below!</p>
-        </div>
-        <div class="conversation-starters">
-          <div class="starter-grid">
-            <button class="starter-btn" onclick="useStarter('Create a function to calculate factorial')">
-              Create a function to calculate factorial
-            </button>
-            <button class="starter-btn" onclick="useStarter('Write a REST API endpoint')">
-              Write a REST API endpoint
-            </button>
-            <button class="starter-btn" onclick="useStarter('Debug and fix errors in my code')">
-              Debug and fix errors
-            </button>
-            <button class="starter-btn" onclick="useStarter('Create a histogram visualization')">
-              Create a histogram visualization
-            </button>
+  uiStates.showConfirmModal(
+    'Clear all chat messages? This cannot be undone.',
+    function () {
+      document.getElementById('chatMessages').innerHTML = `
+        <div class="welcome-section" id="conversationStarters">
+          <div class="welcome-message">
+            <p>Hello! I'm your Code Assistant. Just type your request or paste your code below!</p>
+          </div>
+          <div class="conversation-starters">
+            <div class="starter-grid">
+              <button class="starter-btn" onclick="useStarter('Create a function to calculate factorial')">
+                Create a function to calculate factorial
+              </button>
+              <button class="starter-btn" onclick="useStarter('Write a REST API endpoint')">
+                Write a REST API endpoint
+              </button>
+              <button class="starter-btn" onclick="useStarter('Debug and fix errors in my code')">
+                Debug and fix errors
+              </button>
+              <button class="starter-btn" onclick="useStarter('Create a histogram visualization')">
+                Create a histogram visualization
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    `;
-    chatHistory = [];
-    uploadedData = null;
-    uploadedFileName = null;
-    conversationContext = {
-      lastCode: null,
-      lastCodeType: null,
-      modifications: []
-    };
-  }
+      `;
+      chatHistory = [];
+      uploadedData = null;
+      uploadedFileName = null;
+      conversationContext = {
+        lastCode: null,
+        lastCodeType: null,
+        modifications: []
+      };
+    }
+  );
 }
 
 // Simple code generation functions (abbreviated versions)

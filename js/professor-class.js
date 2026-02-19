@@ -167,12 +167,7 @@ async function loadChapters() {
     const chapters = data.chapters || [];
 
     if (chapters.length === 0) {
-      chaptersList.innerHTML = `
-        <div style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 0.5rem;">
-          <div style="font-size: 3rem; margin-bottom: 1rem;">📄</div>
-          <p style="color: #64748b;">No chapters yet. Upload your first chapter to get started.</p>
-        </div>
-      `;
+      uiStates.showEmpty(chaptersList, '📄 No chapters yet', 'Upload your first chapter to get started.');
     } else {
       chaptersList.innerHTML = chapters.map(chapter => `
         <div class="chapter-card" style="background: white; border: 1px solid var(--border-color); border-radius: 0.5rem; padding: 1.5rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: start;">
@@ -272,12 +267,7 @@ async function loadStudents() {
     }
 
     if (students.length === 0) {
-      studentsList.innerHTML = `
-        <div style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 0.5rem;">
-          <div style="font-size: 3rem; margin-bottom: 1rem;">👥</div>
-          <p style="color: #64748b;">No students enrolled yet.</p>
-        </div>
-      `;
+      uiStates.showEmpty(studentsList, '👥 No students enrolled yet', 'Students will appear here once they join using your class code.');
     } else {
       studentsList.innerHTML = `
         <div style="overflow-x: auto;">
@@ -576,12 +566,7 @@ async function loadExercises() {
     const chapters = chaptersData.chapters || [];
 
     if (chapters.length === 0) {
-      exercisesList.innerHTML = `
-        <div style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 0.5rem;">
-          <div style="font-size: 3rem; margin-bottom: 1rem;">💪</div>
-          <p style="color: #64748b;">No chapters found. Upload chapters to generate exercises.</p>
-        </div>
-      `;
+      uiStates.showEmpty(exercisesList, '✏️ No exercises yet', 'Upload chapters first to generate exercises.');
       return;
     }
 
@@ -605,12 +590,7 @@ async function loadExercises() {
     }
 
     if (allExercises.length === 0) {
-      exercisesList.innerHTML = `
-        <div style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 0.5rem;">
-          <div style="font-size: 3rem; margin-bottom: 1rem;">💪</div>
-          <p style="color: #64748b;">No exercises found. Exercises will be auto-generated when you upload chapters with auto-generation enabled, or create them manually.</p>
-        </div>
-      `;
+      uiStates.showEmpty(exercisesList, '✏️ No exercises yet', 'Exercises will be generated when you upload chapters, or create them manually.');
     } else {
       // Group by chapter
       const exercisesByChapter = {};
@@ -1440,45 +1420,46 @@ async function finishResourceAction(message) {
 
 // Delete resource
 async function deleteResource(resourceId, chapterId = null) {
-  if (!confirm('Are you sure you want to delete this resource?')) {
-    return;
-  }
+  uiStates.showConfirmModal(
+    'Are you sure you want to delete this resource? This action cannot be undone.',
+    async function () {
+      const currentUser = getCurrentUser();
+      if (!currentUser || !currentUser.user_id || !currentClassId) {
+        alert('Error: User not logged in');
+        return;
+      }
 
-  const currentUser = getCurrentUser();
-  if (!currentUser || !currentUser.user_id || !currentClassId) {
-    alert('Error: User not logged in');
-    return;
-  }
+      try {
+        let response;
 
-  try {
-    let response;
+        // If it's a chapter PDF, delete the chapter instead
+        if (chapterId || resourceId.startsWith('pdf_')) {
+          const actualChapterId = chapterId || resourceId.replace('pdf_', '');
+          response = await authFetch(`${window.API_BASE_URL}/chapters/${encodeURIComponent(actualChapterId)}`, {
+            method: 'DELETE'
+          });
+        } else {
+          // Regular resource deletion
+          response = await authFetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/resources/${encodeURIComponent(resourceId)}`, {
+            method: 'DELETE'
+          });
+        }
 
-    // If it's a chapter PDF, delete the chapter instead
-    if (chapterId || resourceId.startsWith('pdf_')) {
-      const actualChapterId = chapterId || resourceId.replace('pdf_', '');
-      response = await authFetch(`${window.API_BASE_URL}/chapters/${encodeURIComponent(actualChapterId)}`, {
-        method: 'DELETE'
-      });
-    } else {
-      // Regular resource deletion
-      response = await authFetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/resources/${encodeURIComponent(resourceId)}`, {
-        method: 'DELETE'
-      });
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to delete resource');
+        }
+
+        // Reload resources and chapters
+        await loadResources();
+        await loadChapters();
+      } catch (error) {
+        console.error('Error deleting resource:', error);
+        alert('Failed to delete resource: ' + error.message);
+      }
     }
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || 'Failed to delete resource');
-    }
-
-    // Reload resources and chapters
-    await loadResources();
-    await loadChapters();
-  } catch (error) {
-    console.error('Error deleting resource:', error);
-    alert('Failed to delete resource: ' + error.message);
-  }
+  );
 }
 
 // Edit resource - variable to track which resource is being edited
@@ -2361,40 +2342,41 @@ async function handleDeleteChapter() {
 
 // Delete Exercise
 async function deleteExercise(exerciseId, exerciseTitle) {
-  if (!confirm(`Are you sure you want to delete the exercise "${exerciseTitle}"? This action cannot be undone.`)) {
-    return;
-  }
+  uiStates.showConfirmModal(
+    `Are you sure you want to delete the exercise "${exerciseTitle}"? This action cannot be undone.`,
+    async function () {
+      const currentUser = getCurrentUser();
+      if (!currentUser || !currentUser.user_id) {
+        alert('Error: User not logged in');
+        return;
+      }
 
-  const currentUser = getCurrentUser();
-  if (!currentUser || !currentUser.user_id) {
-    alert('Error: User not logged in');
-    return;
-  }
+      try {
+        const response = await authFetch(`${window.API_BASE_URL}/exercises/${encodeURIComponent(exerciseId)}`, {
+          method: 'DELETE'
+        });
 
-  try {
-    const response = await authFetch(`${window.API_BASE_URL}/exercises/${encodeURIComponent(exerciseId)}`, {
-      method: 'DELETE'
-    });
+        const data = await response.json();
 
-    const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to delete exercise');
+        }
 
-    if (!response.ok) {
-      throw new Error(data.error || 'Failed to delete exercise');
+        // Success - reload exercises
+        await loadExercises();
+
+        // Update exercise count in header
+        if (currentClassData) {
+          currentClassData.exercise_count = Math.max(0, (currentClassData.exercise_count || 1) - 1);
+          document.getElementById('exerciseCountStat').textContent = currentClassData.exercise_count;
+        }
+
+      } catch (error) {
+        console.error('Error deleting exercise:', error);
+        alert(`Error deleting exercise: ${error.message}`);
+      }
     }
-
-    // Success - reload exercises
-    await loadExercises();
-
-    // Update exercise count in header
-    if (currentClassData) {
-      currentClassData.exercise_count = Math.max(0, (currentClassData.exercise_count || 1) - 1);
-      document.getElementById('exerciseCountStat').textContent = currentClassData.exercise_count;
-    }
-
-  } catch (error) {
-    console.error('Error deleting exercise:', error);
-    alert(`Error deleting exercise: ${error.message}`);
-  }
+  );
 }
 
 // Event delegation for dynamically added buttons

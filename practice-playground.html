@@ -989,9 +989,21 @@
       difficultyBadge.textContent = exerciseData.difficulty.charAt(0).toUpperCase() + exerciseData.difficulty.slice(1);
       difficultyBadge.className = 'difficulty-badge ' + exerciseData.difficulty;
 
-      // Set initial code template (optional - could be empty or have starter code)
-      document.getElementById('codeEditor').value = '';
+      // Set initial code template — restore draft from localStorage if available
+      const _draftKey = 'analytiq_draft_' + exerciseData.id;
+      const _savedDraft = localStorage.getItem(_draftKey);
+      const codeEditorEl = document.getElementById('codeEditor');
+      codeEditorEl.value = _savedDraft || '';
       updateLineNumbers();
+
+      // Debounced autosave: persist editor content every 500 ms of inactivity
+      let _autosaveTimer = null;
+      codeEditorEl.addEventListener('input', function () {
+        clearTimeout(_autosaveTimer);
+        _autosaveTimer = setTimeout(function () {
+          localStorage.setItem(_draftKey, codeEditorEl.value);
+        }, 500);
+      });
 
       // Start timer
       startTimer();
@@ -1120,6 +1132,11 @@
 
       // Stop timer
       stopTimer();
+
+      // Clear autosave draft now that the exercise is submitted
+      if (exerciseData && exerciseData.id) {
+        localStorage.removeItem('analytiq_draft_' + exerciseData.id);
+      }
 
       // Mark as submitted
       hasSubmitted = true;
