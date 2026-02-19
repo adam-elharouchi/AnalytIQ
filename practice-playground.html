@@ -648,15 +648,15 @@
   <nav class="navbar" id="navbar"></nav>
 
   <!-- Code Assistant Chat Widget -->
-  <button class="chat-widget-button" id="chatWidgetButton" onclick="toggleChatWidget()" title="Ask a question">
-    <span class="logo-iq">IQ</span>
+  <button class="chat-widget-button" id="chatWidgetButton" onclick="toggleChatWidget()" title="Ask a question" aria-label="Open Code Assistant">
+    <span class="logo-iq" aria-hidden="true">IQ</span>
   </button>
 
   <div class="chat-widget-container" id="chatWidgetContainer">
     <div class="chat-modal">
       <div class="chat-modal-header">
         <h3>Code Assistant</h3>
-        <button class="chat-modal-close" onclick="toggleChatWidget()">×</button>
+        <button class="chat-modal-close" onclick="toggleChatWidget()" aria-label="Close Code Assistant">×</button>
       </div>
       <div class="chat-modal-body">
         <div class="chat-messages" id="chatMessagesContainer">
@@ -671,7 +671,7 @@
           style="position: relative; bottom: auto; left: auto; right: auto; padding: 0.5rem 1rem; border-top: 1px solid var(--border-color);">
           <div class="input-container-compact">
             <div class="input-wrapper">
-              <textarea class="chat-input-compact" id="chatInputField"
+              <textarea class="chat-input-compact" id="chatInputField" aria-label="Chat message"
                 placeholder="Type your message, paste code, or describe what you need..." rows="2"
                 onkeydown="handlePlaygroundKeyDown(event)"></textarea>
               <button class="btn-send-compact" id="chatSendButton" onclick="sendPlaygroundChatMessage()"
@@ -730,7 +730,7 @@
           </div>
           <div class="code-editor-container">
             <div class="code-editor-line-numbers" id="lineNumbers"></div>
-            <textarea id="codeEditor" class="code-editor" placeholder="Write your code here..." spellcheck="false"
+            <textarea id="codeEditor" class="code-editor" aria-labelledby="codeEditorTitle" placeholder="Write your code here..." spellcheck="false"
               onscroll="syncLineNumbers()" oninput="updateLineNumbers()"
               onkeydown="handleCodeEditorKeyDown(event)"></textarea>
             <div id="codeDisplay" class="code-display"></div>

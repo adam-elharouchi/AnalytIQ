@@ -21,18 +21,18 @@
   <main class="code-assistant-fullpage" id="codeAssistantPage">
     <!-- Collapsed Sidebar (Always Visible) -->
     <div class="collapsed-sidebar" id="collapsedSidebar">
-      <button class="sidebar-logo-toggle" onclick="toggleSidebar()" title="Toggle sidebar">
-        <span class="logo-iq">IQ</span>
+      <button class="sidebar-logo-toggle" onclick="toggleSidebar()" title="Toggle sidebar" aria-label="Toggle sidebar">
+        <span class="logo-iq" aria-hidden="true">IQ</span>
       </button>
       <button class="sidebar-new-conversation-btn collapsed" onclick="startNewConversation()"
-        title="New conversation">+</button>
+        title="New conversation" aria-label="New conversation">+</button>
     </div>
 
     <!-- Conversation History Sidebar -->
     <div class="conversation-sidebar" id="conversationSidebar">
       <div class="sidebar-header">
         <h3>Conversation History</h3>
-        <button class="sidebar-toggle" onclick="toggleSidebar()" title="Hide sidebar">←</button>
+        <button class="sidebar-toggle" onclick="toggleSidebar()" title="Hide sidebar" aria-label="Hide sidebar">←</button>
       </div>
       <div class="sidebar-tabs">
         <button class="sidebar-tab active" onclick="switchConversationTab('active')" id="activeTab">Active</button>
@@ -74,17 +74,17 @@
       <div class="chat-input-area-fixed">
         <div class="input-container-compact">
           <div class="input-wrapper">
-            <textarea id="chatInput" class="chat-input-compact"
+            <textarea id="chatInput" class="chat-input-compact" aria-label="Chat message"
               placeholder="Type your message, paste code, or describe what you need..." rows="2"
               onkeydown="handleKeyDown(event)"></textarea>
             <button class="btn-send-compact" onclick="sendMessage()" title="Send message">Send</button>
           </div>
           <div class="input-actions-compact">
-            <label class="oval-btn file-upload-oval-btn" title="Upload file">
-              <input type="file" id="fileUpload" onchange="handleFileUpload(event)" />
-              <span>📎 Upload</span>
+            <label class="oval-btn file-upload-oval-btn" title="Upload file" aria-label="Upload file">
+              <input type="file" id="fileUpload" onchange="handleFileUpload(event)" aria-label="Upload a file" />
+              <span aria-hidden="true">📎 Upload</span>
             </label>
-            <label class="oval-btn gemini-oval-btn" title="Gemini Model">
+            <label class="oval-btn gemini-oval-btn" title="Gemini Model" aria-label="Gemini model selector">
               <select id="geminiModelSelect" class="oval-select" onchange="updateGeminiModel()" title="Gemini Model">
                 <option value="gemini-2.5-flash">Gemini 2.5 Flash - Fast & efficient</option>
                 <option value="gemini-2.5-pro">Gemini 2.5 Pro - Production reliable</option>

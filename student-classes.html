@@ -52,11 +52,11 @@
     <!-- Join Class Modal -->
     <div id="joinClassModal"
       style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center;">
-      <div
+      <div role="dialog" aria-modal="true" aria-labelledby="joinClassModalTitle"
         style="background: white; border-radius: 0.5rem; padding: 2rem; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-          <h2 style="margin: 0; color: var(--color-dark);">Join Class</h2>
-          <button onclick="hideJoinClassModal()"
+          <h2 id="joinClassModalTitle" style="margin: 0; color: var(--color-dark);">Join Class</h2>
+          <button onclick="hideJoinClassModal()" aria-label="Close dialog"
             style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b;">&times;</button>
         </div>
 

@@ -210,11 +210,11 @@
     <!-- Upload Chapter Modal -->
     <div id="uploadChapterModal"
       style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center;">
-      <div
+      <div role="dialog" aria-modal="true" aria-labelledby="uploadChapterModalTitle"
         style="background: white; border-radius: 0.5rem; padding: 2rem; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-          <h2 style="margin: 0; color: var(--color-dark);">Upload Chapter</h2>
-          <button onclick="hideUploadChapterModal()"
+          <h2 id="uploadChapterModalTitle" style="margin: 0; color: var(--color-dark);">Upload Chapter</h2>
+          <button onclick="hideUploadChapterModal()" aria-label="Close dialog"
             style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b;">&times;</button>
         </div>
 
@@ -270,10 +270,10 @@
     <!-- Edit Class Modal -->
     <div id="editClassModal"
       style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center;">
-      <div style="background: white; border-radius: 0.5rem; padding: 2rem; max-width: 500px; width: 90%;">
+      <div role="dialog" aria-modal="true" aria-labelledby="editClassModalTitle" style="background: white; border-radius: 0.5rem; padding: 2rem; max-width: 500px; width: 90%;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-          <h2 style="margin: 0; color: var(--color-dark);">Edit Class</h2>
-          <button onclick="hideEditClassModal()"
+          <h2 id="editClassModalTitle" style="margin: 0; color: var(--color-dark);">Edit Class</h2>
+          <button onclick="hideEditClassModal()" aria-label="Close dialog"
             style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b;">&times;</button>
         </div>
 
@@ -341,11 +341,11 @@
   <!-- Add Resource Modal -->
   <div id="addResourceModal"
     style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center;">
-    <div
+    <div role="dialog" aria-modal="true" aria-labelledby="addResourceModalTitle"
       style="background: white; border-radius: 0.5rem; padding: 2rem; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-        <h2 style="margin: 0; color: var(--color-dark);">Add Resource</h2>
-        <button onclick="hideAddResourceModal()"
+        <h2 id="addResourceModalTitle" style="margin: 0; color: var(--color-dark);">Add Resource</h2>
+        <button onclick="hideAddResourceModal()" aria-label="Close dialog"
           style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b;">&times;</button>
       </div>
 
@@ -441,11 +441,11 @@
   <!-- Create Exercise Modal -->
   <div id="createExerciseModal"
     style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center;">
-    <div
+    <div role="dialog" aria-modal="true" aria-labelledby="createExerciseModalTitle"
       style="background: white; border-radius: 0.5rem; padding: 2rem; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-        <h2 style="margin: 0; color: var(--color-dark);">Create New Exercise</h2>
-        <button onclick="hideCreateExerciseModal()"
+        <h2 id="createExerciseModalTitle" style="margin: 0; color: var(--color-dark);">Create New Exercise</h2>
+        <button onclick="hideCreateExerciseModal()" aria-label="Close dialog"
           style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b;">&times;</button>
       </div>
 
@@ -510,10 +510,10 @@
   <!-- Edit Chapter Modal -->
   <div id="editChapterModal"
     style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center;">
-    <div style="background: white; border-radius: 0.5rem; padding: 2rem; max-width: 600px; width: 90%;">
+    <div role="dialog" aria-modal="true" aria-labelledby="editChapterModalTitle" style="background: white; border-radius: 0.5rem; padding: 2rem; max-width: 600px; width: 90%;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-        <h2 style="margin: 0; color: var(--color-dark);">Edit Chapter</h2>
-        <button onclick="hideEditChapterModal()"
+        <h2 id="editChapterModalTitle" style="margin: 0; color: var(--color-dark);">Edit Chapter</h2>
+        <button onclick="hideEditChapterModal()" aria-label="Close dialog"
           style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b;">&times;</button>
       </div>
 
@@ -545,10 +545,10 @@
   <!-- Delete Chapter Modal -->
   <div id="deleteChapterModal"
     style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center;">
-    <div
+    <div role="dialog" aria-modal="true" aria-labelledby="deleteChapterModalTitle"
       style="background: white; border-radius: 0.5rem; padding: 2rem; max-width: 500px; width: 90%; text-align: center;">
-      <div style="margin-bottom: 1.5rem; font-size: 3rem;">⚠️</div>
-      <h2 style="margin: 0 0 1rem 0; color: var(--color-dark);">Delete Chapter?</h2>
+      <div style="margin-bottom: 1.5rem; font-size: 3rem;" aria-hidden="true">⚠️</div>
+      <h2 id="deleteChapterModalTitle" style="margin: 0 0 1rem 0; color: var(--color-dark);">Delete Chapter?</h2>
       <p style="color: #64748b; margin-bottom: 2rem;">Are you sure you want to delete this chapter? All associated
         exercises will also be deleted. This action cannot be undone.</p>
 

@@ -30,8 +30,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     userMenu = `
       <li class="user-menu">
-        <button class="user-menu-toggle profile-picture-btn" onclick="toggleUserMenu()" title="User Menu">
-          <img src="${avatarSrc}" alt="Profile" class="nav-profile-picture" />
+        <button class="user-menu-toggle profile-picture-btn" onclick="toggleUserMenu()" title="User Menu" aria-label="User menu" aria-expanded="false" aria-controls="userMenuDropdown">
+          <img src="${avatarSrc}" alt="Profile picture" class="nav-profile-picture" />
         </button>
         <div class="user-menu-dropdown" id="userMenuDropdown">
           <div class="user-menu-header">
@@ -83,11 +83,11 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   const navHTML = `
-    <div class="nav-container">
-      <a href="index.html" class="nav-brand">
-        <span class="logo-analyt">Analyt</span><span class="logo-iq">IQ</span>
+    <div class="nav-container" role="navigation" aria-label="Main navigation">
+      <a href="index.html" class="nav-brand" aria-label="AnalytIQ home">
+        <span class="logo-analyt" aria-hidden="true">Analyt</span><span class="logo-iq" aria-hidden="true">IQ</span>
       </a>
-      <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">☰</button>
+      <button class="mobile-menu-toggle" onclick="toggleMobileMenu()" aria-label="Open navigation menu" aria-expanded="false" aria-controls="navLinks">☰</button>
       <ul class="nav-links" id="navLinks">
         <li><a href="index.html" ${currentPage === 'index.html' ? 'class="active"' : ''}>Home</a></li>
         ${roleLinks}
@@ -136,7 +136,12 @@ function updateNavProfilePicture() {
 
 // Handle sign out
 function handleSignOut() {
-  if (confirm('Are you sure you want to sign out?')) {
+  if (typeof uiStates !== 'undefined' && uiStates.showConfirmModal) {
+    uiStates.showConfirmModal('Are you sure you want to sign out?', function () {
+      localStorage.removeItem('currentUser');
+      window.location.href = 'login.html';
+    });
+  } else {
     localStorage.removeItem('currentUser');
     window.location.href = 'login.html';
   }
@@ -144,16 +149,20 @@ function handleSignOut() {
 
 function toggleMobileMenu() {
   const navLinks = document.getElementById('navLinks');
+  const toggle = document.querySelector('.mobile-menu-toggle');
   if (navLinks) {
-    navLinks.classList.toggle('active');
+    const expanded = navLinks.classList.toggle('active');
+    if (toggle) toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
   }
 }
 
 // Toggle user menu dropdown
 function toggleUserMenu() {
   const dropdown = document.getElementById('userMenuDropdown');
+  const toggle = document.querySelector('.user-menu-toggle');
   if (dropdown) {
-    dropdown.classList.toggle('active');
+    const expanded = dropdown.classList.toggle('active');
+    if (toggle) toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
   }
 }
 

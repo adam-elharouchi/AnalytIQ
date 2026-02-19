@@ -20,7 +20,8 @@
     <p class="subtitle">Curated resources to enhance your data analytics journey</p>
     
     <div class="search-bar">
-      <input type="text" id="searchInput" placeholder="Search resources..." onkeyup="filterResources()" />
+      <label for="searchInput" class="sr-only">Search resources</label>
+      <input type="text" id="searchInput" placeholder="Search resources..." onkeyup="filterResources()" aria-label="Search resources" />
     </div>
     
     <div class="resource-categories">

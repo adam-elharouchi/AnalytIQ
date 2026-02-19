@@ -628,6 +628,7 @@
     .add-note-panel-popup textarea:focus {
       outline: none;
       border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(37, 105, 244, 0.2);
     }
 
     .add-note-panel-actions {
@@ -856,18 +857,18 @@
           <!-- Add note popup: appears under "My study panel" when Note button is clicked -->
           <div class="add-note-panel-popup hidden" id="addNotePanelPopup">
             <p class="add-note-panel-label" id="addNotePanelLabel">Add a note for this page</p>
-            <textarea id="addNotePanelTextarea" rows="3" placeholder="Type your note..."></textarea>
+            <textarea id="addNotePanelTextarea" rows="3" placeholder="Type your note..." aria-labelledby="addNotePanelLabel"></textarea>
             <div class="add-note-panel-actions">
               <button type="button" class="btn-cancel-note-panel" id="btnCancelNotePanel">Cancel</button>
               <button type="button" class="btn-save-note-panel" id="btnSaveNotePanel">Save note</button>
             </div>
           </div>
           <div class="study-panel-section">
-            <h4>Bookmarks</h4>
+            <h3>Bookmarks</h3>
             <div id="bookmarksList"></div>
           </div>
           <div class="study-panel-section">
-            <h4>Notes</h4>
+            <h3>Notes</h3>
             <div id="notesList"></div>
           </div>
         </div>
@@ -884,7 +885,7 @@
     <!-- In-page add-note card (replaces browser prompt) -->
     <div class="add-note-card hidden" id="addNoteCard">
       <p class="add-note-label" id="addNoteLabel">Add a note for this selection:</p>
-      <textarea id="addNoteTextarea" rows="3" placeholder="Type your note..."></textarea>
+      <textarea id="addNoteTextarea" rows="3" placeholder="Type your note..." aria-labelledby="addNoteLabel"></textarea>
       <div class="add-note-actions">
         <button type="button" class="btn-cancel-note" id="btnCancelNote">Cancel</button>
         <button type="button" class="btn-save-note" id="btnSaveNote">Save note</button>
