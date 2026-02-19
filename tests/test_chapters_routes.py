@@ -144,7 +144,9 @@ class TestUploadChapter:
         ]
 
         pdf_bytes = _make_pdf_bytes()
-        with patch("blueprints.chapters.extract_text_from_pdf_bytes", return_value="some text"), \
+        mock_extractor = MagicMock()
+        mock_extractor.extract_text.return_value = "some text"
+        with patch("blueprints.chapters.content_extractor", mock_extractor), \
              patch("blueprints.chapters.generate_exercises_from_pdf_content", return_value=None):
             resp = client.post(
                 "/api/classes/class-abc/chapters",
