@@ -1,7 +1,7 @@
 # AnalytIQ — Master Task List
 
 > Generated: 2026-02-17 | Last updated: 2026-02-19
-> Total: 87 tasks (62 completed, 25 pending)
+> Total: 87 tasks (74 completed, 13 pending)
 
 ---
 
@@ -64,6 +64,25 @@
 | 57 | Created `docs/ARCHITECTURE.md` (full system reference: tech stack, repo layout, request lifecycle, DB schema, auth flow, AI pipeline, frontend patterns, Celery, deployment, CI/CD, design decisions). Prepended `AUTO-GENERATED` comment to all 21 `docs/knowledge_base/*.md` files. |
 | 65 | WCAG 2.1 AA audit: `role=dialog`, `aria-modal`, `aria-labelledby` on all 10 modals across 6 HTML files; `aria-label` on nav/sidebar/chat buttons; `aria-expanded` sync on mobile/user-menu toggles; `h4→h3` heading hierarchy fix; focus ring restored on note textarea; focus trap + focus-on-open in `showConfirmModal()`; replaced `confirm()` in sign-out with modal; created `docs/ACCESSIBILITY.md` |
 | LIB-1 | Extended chapter upload to accept `.ipynb`, `.docx`, `.csv`, `.txt` (in addition to `.pdf`). Created `python/content_extractor.py` with format dispatch; preserved PDF-only security scan; added `python-docx>=1.1.0` to `requirements.txt`; 15 new unit tests in `tests/test_content_extractor.py` |
+| 11 | `ALLOWED_EXTENSIONS` unified in `config.py` (pdf, csv, xlsx, xls, json, txt, ipynb, docx); shadows removed from `app.py` and `blueprints/chapters.py` |
+| 12 | All ~45 `print()` calls in production web-server files replaced with structured `logger.*`; messages appear in Render JSON log viewer with `request_id` tracing |
+| 13 | `templates/base.html` created with 5 Jinja2 blocks; all 17 HTML pages converted to `templates/*.html` extending base; `render_template()` replaces `send_from_directory()` for HTML routes |
+| 16 | Guard clauses + extracted helper functions reduce max nesting depth from 5→3 in `blueprints/auth.py`, `chapters.py`, `classes.py` |
+| 19 | `scripts/check_legacy_hashes.py` created — queries production DB for users still on legacy bcrypt scheme |
+| 20 | `audit.py` created with `ensure_audit_log_table()` + `audit()` helper; wired into 12 mutation endpoints across 5 blueprints; rows commit atomically with business operation |
+| 26 | `ProxyFix` added to `app.py` for Cloudflare X-Forwarded-For; `Cache-Control: public, max-age=86400` on static assets in production |
+| 36 | `_CircuitBreaker` added in `blueprints/ai.py` — trips after 5 consecutive Gemini failures; auto-resets after 60s |
+| 37 | `js/offline-detector.js` created — shows red "You are offline" banner on `window.offline`; dismisses on reconnect |
+| 38 | Gunicorn `post_fork` / `worker_exit` / `worker_abort` hooks reset psycopg2 connection pool after each fork cycle |
+| 40 | `assign_request_id()` `before_request` generates `g.request_id = uuid4()` on every request; `_RequestIdFilter` injects into JSON logs; `X-Request-ID` response header added; Sentry tagged |
+| 42 | `/api/health/detail` (`@require_auth`) returns full per-service diagnostics; public `/api/health` returns `{status: healthy|degraded}` only |
+| 44 | `tests/integration/` created with 31 real-DB tests: `test_auth_integration.py` (13) + `test_classes_integration.py` (18); savepoint-per-test isolation; skips when `DATABASE_URL` absent |
+| 47 | `tests/e2e/` created with 4 test files (signup, chapter upload, exercises, AI chat) using `requests` against live server; `@pytest.mark.e2e` excludes from CI |
+| 48 | `load-tests/` created with 3 k6 scripts (login burst 50 VUs, exercise list 100 VUs, AI chat 10 VUs) + shared helpers + README |
+| 56 | `js/exercises-database.js` deleted (was dead code); `practice-playground.html` updated to replace `ALL_EXERCISES` with `[]` (exercises served from API) |
+| 58 | `api_docs.py` expanded from 5 routes to 47 paths / 65 operations covering all 7 blueprints; Swagger UI at `/api/docs` |
+| 59 | `continue-on-error: true` removed from flake8 + black CI steps; CI now fails hard on any formatting violation |
+| 60 | `validate_email()` added to `auth_helpers.py` (RFC 5321 regex + max-length); wired into `signup`, `forgot_password`, `update_profile` |
 
 ---
 
@@ -75,14 +94,16 @@
 
 ## Code Quality
 
-**Tasks 11 and 12 complete.** `ALLOWED_EXTENSIONS` unified in `config.py` (full set: pdf, csv, xlsx, xls, json, txt, ipynb, docx); shadows removed from `app.py` and `blueprints/chapters.py`. All `print()` calls in production web-server files replaced with structured `logger.*` — messages now appear in Render's JSON log viewer with `request_id` tracing. Remaining:
+**All tasks complete.** `ALLOWED_EXTENSIONS` unified in `config.py`; `print()` → `logger.*`; `js/api-client.js` + `js/constants.js` created; `templates/base.html` with 17 Jinja2 templates; guard clauses reduce nesting depth from 5→3 across blueprints. **Section complete.**
 
 | # | Task |
 |---|------|
-| ~~13~~ | ~~Switch to Jinja2 server-side templates with `templates/base.html` (eliminates boilerplate across 14 HTML files)~~ ✅ |
-| 14 | Consolidate three JS fetch wrappers (`fetch`, `authFetch`, `fetchWithCache`) into single `apiClient` module |
-| 15 | Extract all magic numbers/strings to `config.py` (Python) and `js/constants.js` (frontend) |
-| ~~16~~ | ~~Refactor deeply nested conditionals in app.py with guard clauses and extracted helper functions~~ ✅ |
+| ~~11~~ | ~~Unify `ALLOWED_EXTENSIONS` in `config.py`~~ ✅ |
+| ~~12~~ | ~~Replace `print()` with `logger.*`~~ ✅ |
+| ~~13~~ | ~~Jinja2 `templates/base.html` — 17 pages converted~~ ✅ |
+| ~~14~~ | ~~Unified `js/api-client.js` module~~ ✅ |
+| ~~15~~ | ~~`js/constants.js` + magic numbers extracted to `config.py`~~ ✅ |
+| ~~16~~ | ~~Guard clauses + helper functions reduce nesting depth~~ ✅ |
 
 ---
 
@@ -128,11 +149,7 @@
 
 ## Testing
 
-**Tasks 43, 44, 45 and 49 complete.** `tests/integration/` created with 31 real-DB tests across 2 files: `test_auth_integration.py` (13 tests — user insert, profile/settings/preferences rows, duplicate-email constraint, password reset token validation) and `test_classes_integration.py` (18 tests — class CRUD, cascade deletes, enrollment uniqueness, chapter/exercise ops, audit_log writes). Tests use savepoint-per-test isolation, skip gracefully when DATABASE_URL is absent, and run automatically in CI alongside unit tests. Remaining:
-
-| # | Task |
-|---|------|
-**Tasks 47, 48 complete.** `tests/e2e/` created with 4 test files (signup, chapter upload, exercises, AI chat) using `requests` against a live server; `@pytest.mark.e2e` excludes them from CI. `load-tests/` created with 3 k6 scripts (login burst 50 VUs, exercise list 100 VUs, AI chat 10 VUs) + shared helpers + README. **Section complete.**
+**All tasks complete.** Coverage-farming tests deleted and replaced with 6 behavioral test files. `tests/integration/` added with 31 real-DB tests (savepoint isolation, CI-ready). Password + leaderboard auth tests added. E2E test suite (`tests/e2e/`) + k6 load tests (`load-tests/`) created. **Section complete.**
 
 ---
 
@@ -150,13 +167,7 @@
 
 ## Documentation
 
-**Task 56 complete.** `js/exercises-database.js` deleted; `practice-playground.html` updated to remove script tag and replace `ALL_EXERCISES` reference with `[]` (exercises now served from API). Remaining:
-
-**Tasks 55, 57 complete.** `docs/SECURITY.md` and `docs/ARCHITECTURE.md` created. All 21 `knowledge_base/*.md` files labeled AUTO-GENERATED. Remaining:
-
-| # | Task |
-|---|------|
-**Task 58 complete.** `api_docs.py` expanded from 5 routes to 47 paths / 65 operations covering all 7 blueprints. Swagger UI already served at `/api/docs` via `flask-swagger-ui`. **Section complete.**
+**All tasks complete.** Dead `js/exercises-database.js` deleted. `docs/SECURITY.md`, `docs/ARCHITECTURE.md`, `docs/ACCESSIBILITY.md` created. `docs/PROJECT_OVERVIEW.md` updated. All 21 `knowledge_base/*.md` files labeled AUTO-GENERATED. `api_docs.py` expanded to 47 paths / 65 operations; Swagger UI at `/api/docs`. **Section complete.**
 
 ---
 
@@ -203,22 +214,19 @@
 
 2. ~~**CDN & same-origin API**~~ **DONE** (tasks CDN-1 through CDN-7)
 
-3. ~~**Backend performance** — caching, rate limiting, leaderboard fixes, presigned URLs, append-only messages (28–35 done)~~
+3. ~~**Backend performance** — caching, rate limiting, leaderboard fixes, presigned URLs, append-only messages~~ **DONE** (tasks 28–35)
 
-4. ~~**Frontend** — apiClient, ui-states, design tokens (14, 15, 24, 25, 27, 53 done)~~:
-   ~~Task 13 (Jinja2 templates) done.~~ Remaining: Task 26 (Cloudflare CDN — infrastructure)
+4. ~~**Frontend** — apiClient, ui-states, design tokens, Jinja2 templates, Cloudflare ProxyFix~~ **DONE** (tasks 13–15, 24–27, 53)
 
-5. **Testing** — consolidate + add integration + security tests:
-   ~~Tasks 43, 45, 49 done~~ — Remaining: Tasks 44, 47, 48
+5. ~~**Testing** — behavioral tests, integration, E2E, load tests~~ **DONE** (tasks 43–49)
 
-6. **Security (remaining)** — legacy hashes, audit log:
-   Tasks 19, 20
+6. ~~**Security** — legacy hashes, audit log~~ **DONE** (tasks 19–20)
 
-7. **LMS Integration** — LTI 1.3 + roster sync:
+7. **LMS Integration** — LTI 1.3 + roster sync *(skipped — out of current scope)*:
    Tasks LMS-1 through LMS-6
 
-8. **External Content Import** — multi-format + OER platforms:
-   Tasks LIB-1 through LIB-7
+8. **External Content Import** — multi-format + OER platforms *(skipped — out of current scope)*:
+   Tasks LIB-2 through LIB-7
 
-9. **Long-term** — accessibility audit, Flask-Smorest migration:
-   Tasks 58, 65
+9. **Deferred** — PostHog analytics *(pending FERPA legal review)*:
+   Task 41
