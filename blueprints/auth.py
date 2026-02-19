@@ -99,7 +99,13 @@ def signup():
         except Exception as e:
             logger.warning("Failed to create ai_agent_digest", extra={"error": str(e)})
 
-        audit(conn, "CREATE_USER", resource_type="user", resource_id=created_user_id, details={"role": role})
+        audit(
+            conn,
+            "CREATE_USER",
+            resource_type="user",
+            resource_id=created_user_id,
+            details={"role": role},
+        )
         conn.commit()
 
         user_role = user[3] if len(user) > 3 else role

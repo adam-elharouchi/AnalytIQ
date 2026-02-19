@@ -25,7 +25,13 @@ import config
 import cache
 import utils
 from audit import audit
-from auth_helpers import hash_password, require_auth, validate_email, validate_fields, verify_password
+from auth_helpers import (
+    hash_password,
+    require_auth,
+    validate_email,
+    validate_fields,
+    verify_password,
+)
 from db import get_db_connection
 from extensions import csrf_exempt
 from repositories import user_repository as user_repo

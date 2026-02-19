@@ -220,7 +220,13 @@ def upload_chapter(class_id):
         chapter_id_result = chapter_data[0]
         chapter_title_result = chapter_data[1]
 
-        audit(conn, "CREATE_CHAPTER", resource_type="chapter", resource_id=chapter_id_result, details={"class_id": class_id})
+        audit(
+            conn,
+            "CREATE_CHAPTER",
+            resource_type="chapter",
+            resource_id=chapter_id_result,
+            details={"class_id": class_id},
+        )
         exercises_generated = 0
         if exercise_mode == "auto" and pdf_text and generate_exercises_from_pdf_content:
             try:
@@ -386,7 +392,13 @@ def delete_chapter(chapter_id):
             return jsonify({"error": "Only the class owner can delete chapters"}), 403
 
         chapter_repo.delete_chapter_and_exercises(conn, chapter_id)
-        audit(conn, "DELETE_CHAPTER", resource_type="chapter", resource_id=chapter_id, details={"class_id": class_id})
+        audit(
+            conn,
+            "DELETE_CHAPTER",
+            resource_type="chapter",
+            resource_id=chapter_id,
+            details={"class_id": class_id},
+        )
         conn.commit()
 
         cache.invalidate_cache(f"chapters:*:{class_id}")

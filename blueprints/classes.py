@@ -96,7 +96,13 @@ def create_class():
             )
 
         new_class = class_repo.insert_class(conn, class_code, user_id, name, description)
-        audit(conn, "CREATE_CLASS", resource_type="class", resource_id=new_class[0], details={"class_code": class_code})
+        audit(
+            conn,
+            "CREATE_CLASS",
+            resource_type="class",
+            resource_id=new_class[0],
+            details={"class_code": class_code},
+        )
         conn.commit()
 
         cache.invalidate_cache(f"classes:user:{user_id}:*")
@@ -386,7 +392,13 @@ def enroll_in_class():
             return jsonify({"error": "Already enrolled in this class"}), 400
 
         enrolled_at = class_repo.enroll_student(conn, class_id, user_id)
-        audit(conn, "ENROLL_CLASS", resource_type="class", resource_id=class_id, details={"class_name": class_name})
+        audit(
+            conn,
+            "ENROLL_CLASS",
+            resource_type="class",
+            resource_id=class_id,
+            details={"class_name": class_name},
+        )
         conn.commit()
 
         cache.invalidate_cache(f"enrolled:{user_id}")
