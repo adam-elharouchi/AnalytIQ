@@ -209,7 +209,13 @@ def delete_exercise(exercise_id):
 
         chapter_id = location[0]
         exercise_repo.delete_exercise(conn, exercise_id)
-        audit(conn, "DELETE_EXERCISE", resource_type="exercise", resource_id=exercise_id, details={"chapter_id": chapter_id})
+        audit(
+            conn,
+            "DELETE_EXERCISE",
+            resource_type="exercise",
+            resource_id=exercise_id,
+            details={"chapter_id": chapter_id},
+        )
         conn.commit()
 
         cache.invalidate_cache(f"exercise:*:{exercise_id}")
