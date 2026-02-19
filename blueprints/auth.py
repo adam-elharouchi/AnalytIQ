@@ -193,6 +193,33 @@ def signin():
         return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
+def _send_reset_email(mail_instance, to_email, user_name, reset_link):
+    """Send password reset email. Logs warnings on failure; never raises."""
+    if not mail_instance:
+        logger.info("Mail not configured. Skipping password reset email.")
+        return
+    try:
+        sender = os.getenv("MAIL_DEFAULT_SENDER")
+        sender_name = os.getenv("MAIL_SENDER_NAME")
+        if sender_name and sender:
+            msg = Message(
+                "Password Reset Request",
+                recipients=[to_email],
+                sender=(sender_name, sender),
+            )
+        else:
+            msg = Message("Password Reset Request", recipients=[to_email])
+        msg.body = (
+            f"Hello {user_name},\n\n"
+            f"Someone requested a password reset for your AnalytIQ account.\n\n"
+            f"Click here to reset your password: {reset_link}\n\n"
+            f"This link expires in 1 hour. If you did not request this, please ignore this email."
+        )
+        mail_instance.send(msg)
+    except Exception as mail_err:
+        logger.warning("Failed to send password reset email: %s", mail_err)
+
+
 @bp.route("/api/users/forgot-password", methods=["POST"])
 @csrf_exempt
 @limiter.limit("3 per hour")
@@ -204,26 +231,17 @@ def forgot_password():
 
         if not email:
             return jsonify({"error": "Email is required"}), 400
-
         if not validate_email(email):
             return jsonify({"error": "Invalid email address"}), 400
 
         conn = get_db_connection()
         user_row = auth_repo.get_user_name_by_email(conn, email)
 
-        response = jsonify(
-            {
-                "success": True,
-                "message": "If an account exists with this email, you will receive password reset instructions.",
-            }
-        )
-
         if user_row:
             import secrets
             from datetime import timedelta
 
             token = secrets.token_urlsafe(32)
-
             auth_repo.ensure_password_resets_table(conn)
             expires_at = datetime.utcnow() + timedelta(hours=1)
             auth_repo.insert_password_reset_token(conn, email, token, expires_at)
@@ -234,32 +252,17 @@ def forgot_password():
                 frontend_url = "https://www.myanalytiq.org"
             base_url = (frontend_url or request.host_url).rstrip("/") + "/"
             reset_link = f"{base_url}reset-password.html?token={token}&email={email}"
+            _send_reset_email(mail, email, user_row[1], reset_link)
 
-            if mail:
-                try:
-                    sender = os.getenv("MAIL_DEFAULT_SENDER")
-                    sender_name = os.getenv("MAIL_SENDER_NAME")
-                    if sender_name and sender:
-                        msg = Message(
-                            "Password Reset Request",
-                            recipients=[email],
-                            sender=(sender_name, sender),
-                        )
-                    else:
-                        msg = Message("Password Reset Request", recipients=[email])
-                    msg.body = (
-                        f"Hello {user_row[1]},\n\n"
-                        f"Someone requested a password reset for your AnalytIQ account.\n\n"
-                        f"Click here to reset your password: {reset_link}\n\n"
-                        f"This link expires in 1 hour. If you did not request this, please ignore this email."
-                    )
-                    mail.send(msg)
-                except Exception as mail_err:
-                    logger.warning("Failed to send email: %s", mail_err)
-            else:
-                logger.info("Mail not configured. Skipping email.")
-
-        return response, 200
+        return (
+            jsonify(
+                {
+                    "success": True,
+                    "message": "If an account exists with this email, you will receive password reset instructions.",
+                }
+            ),
+            200,
+        )
 
     except Exception as e:
         logger.error("Unexpected error: %s", e, exc_info=True)
