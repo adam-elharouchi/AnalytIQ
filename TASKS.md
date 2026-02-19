@@ -1,7 +1,7 @@
 # AnalytIQ — Master Task List
 
 > Generated: 2026-02-17 | Last updated: 2026-02-19
-> Total: 87 tasks (55 completed, 32 pending)
+> Total: 87 tasks (57 completed, 30 pending)
 
 ---
 
@@ -62,6 +62,8 @@
 | 52 | Added 500ms debounced localStorage autosave in `practice-playground.html` (key: `analytiq_draft_<exercise_id>`). Draft restored on load, cleared on submit. |
 | 55 | Created `docs/SECURITY.md` — covers auth, JWT, rate limits, password policy, input validation limits, security headers, CSP, file upload, CSRF, FERPA audit log, CI scan, known TODOs. |
 | 57 | Created `docs/ARCHITECTURE.md` (full system reference: tech stack, repo layout, request lifecycle, DB schema, auth flow, AI pipeline, frontend patterns, Celery, deployment, CI/CD, design decisions). Prepended `AUTO-GENERATED` comment to all 21 `docs/knowledge_base/*.md` files. |
+| 65 | WCAG 2.1 AA audit: `role=dialog`, `aria-modal`, `aria-labelledby` on all 10 modals across 6 HTML files; `aria-label` on nav/sidebar/chat buttons; `aria-expanded` sync on mobile/user-menu toggles; `h4→h3` heading hierarchy fix; focus ring restored on note textarea; focus trap + focus-on-open in `showConfirmModal()`; replaced `confirm()` in sign-out with modal; created `docs/ACCESSIBILITY.md` |
+| LIB-1 | Extended chapter upload to accept `.ipynb`, `.docx`, `.csv`, `.txt` (in addition to `.pdf`). Created `python/content_extractor.py` with format dispatch; preserved PDF-only security scan; added `python-docx>=1.1.0` to `requirements.txt`; 15 new unit tests in `tests/test_content_extractor.py` |
 
 ---
 
@@ -165,14 +167,6 @@
 
 ---
 
-## Accessibility
-
-| # | Task |
-|---|------|
-| 65 | Run axe-core audit on all 14 pages; fix ARIA labels, focus rings, keyboard-navigable modals, alt text, color contrast; produce `ACCESSIBILITY.md` |
-
----
-
 ## LMS Integration
 
 > Target LMS platforms: Canvas, Blackboard, Moodle, Google Classroom, D2L Brightspace
@@ -195,7 +189,6 @@
 
 | # | Task |
 |---|------|
-| LIB-1 | Extend upload support to `.ipynb`, `.docx`, `.csv`, `.txt` with format-specific text extractors |
 | LIB-2 | PyPI package doc importer — professor enters package name, system fetches official docs, converts to chapter |
 | LIB-3 | URL content importer — paste any URL (GitHub README, article, blog post), system scrapes + converts to chapter |
 | LIB-4 | OpenStax importer — browse OpenStax catalog via API, pick book + chapter, import directly |
