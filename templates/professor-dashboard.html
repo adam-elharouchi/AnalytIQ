@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Professor Dashboard{% endblock %}
+
+{% block content %}
+<nav class="navbar" id="navbar"></nav>
+  
+  <main class="container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+      <div>
+        <h1>Professor Dashboard</h1>
+        <p class="subtitle">Manage your classes, upload chapters, and track student progress</p>
+      </div>
+      <button class="btn btn-primary" onclick="showCreateClassModal()" style="display: flex; align-items: center; gap: 0.5rem;">
+        <span>➕</span>
+        <span>Create New Class</span>
+      </button>
+    </div>
+    
+    <!-- Loading State -->
+    <div id="loadingState" style="text-align: center; padding: 3rem;">
+      <p style="color: #64748b;">Loading classes...</p>
+    </div>
+    
+    <!-- Empty State -->
+    <div id="emptyState" style="display: none; text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem;">
+      <div style="font-size: 3rem; margin-bottom: 1rem;">📚</div>
+      <h2 style="color: var(--color-dark); margin-bottom: 0.5rem;">No Classes Yet</h2>
+      <p style="color: #64748b; margin-bottom: 1.5rem;">Create your first class to get started</p>
+      <button class="btn btn-primary" onclick="showCreateClassModal()">Create Your First Class</button>
+    </div>
+    
+    <!-- Classes Grid -->
+    <div id="classesGrid" style="display: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem;">
+      <!-- Classes will be dynamically inserted here -->
+    </div>
+    
+    <!-- Create Class Modal -->
+    <div id="createClassModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center;">
+      <div role="dialog" aria-modal="true" aria-labelledby="createClassModalTitle" style="background: white; border-radius: 0.5rem; padding: 2rem; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+          <h2 id="createClassModalTitle" style="margin: 0; color: var(--color-dark);">Create New Class</h2>
+          <button onclick="hideCreateClassModal()" aria-label="Close dialog" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b;">&times;</button>
+        </div>
+        
+        <form id="createClassForm" onsubmit="handleCreateClass(event)">
+          <div style="margin-bottom: 1.5rem;">
+            <label for="className" style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Class Name *</label>
+            <input 
+              type="text" 
+              id="className" 
+              required 
+              placeholder="e.g., Business Analytics 101"
+              style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;"
+            />
+          </div>
+          
+          <div style="margin-bottom: 1.5rem;">
+            <label for="classCode" style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Class Code/ID *</label>
+            <input 
+              type="text" 
+              id="classCode" 
+              required 
+              placeholder="e.g., BA101, ANALYTICS2024"
+              pattern="[A-Za-z0-9\-_]{3,20}"
+              title="3-20 characters (letters, numbers, hyphens, underscores only)"
+              style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;"
+            />
+            <small style="display: block; margin-top: 0.25rem; color: #64748b; font-size: 0.875rem;">3-20 characters. Students will use this code to enroll in your class.</small>
+          </div>
+          
+          <div style="margin-bottom: 1.5rem;">
+            <label for="classDescription" style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Description</label>
+            <textarea 
+              id="classDescription" 
+              rows="4"
+              placeholder="Optional: Add a description for your class..."
+              style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem; resize: vertical;"
+            ></textarea>
+          </div>
+          
+          <div id="createClassError" class="error-message" style="display: none; margin-bottom: 1rem;"></div>
+          
+          <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+            <button type="button" class="btn btn-secondary" onclick="hideCreateClassModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary">Create Class</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+{% endblock %}
+
+{% block scripts %}
+<!-- JS load order: api-helper.js (head) → auth.js → navigation.js → professor-dashboard.js -->
+  <script src="js/auth.js"></script>
+  <script src="js/navigation.js"></script>
+  <script src="js/professor-dashboard.js"></script>
+  <script>
+    // Require authentication and professor role
+    document.addEventListener('DOMContentLoaded', function() {
+      const authManager = new AuthManager();
+      if (!authManager.requireAuth()) {
+        return; // Will redirect to login
+      }
+      
+      // Check if user is a professor
+      const currentUser = authManager.getCurrentUser();
+      if (!currentUser || currentUser.role !== 'professor') {
+        alert('Access denied. This page is for professors only.');
+        window.location.href = 'index.html';
+        return;
+      }
+      
+      // Load classes
+      loadClasses();
+    });
+  </script>
+{% endblock %}

@@ -1,7 +1,7 @@
 # AnalytIQ — Master Task List
 
 > Generated: 2026-02-17 | Last updated: 2026-02-19
-> Total: 87 tasks (60 completed, 27 pending)
+> Total: 87 tasks (62 completed, 25 pending)
 
 ---
 
@@ -79,10 +79,10 @@
 
 | # | Task |
 |---|------|
-| 13 | Switch to Jinja2 server-side templates with `templates/base.html` (eliminates boilerplate across 14 HTML files) |
+| ~~13~~ | ~~Switch to Jinja2 server-side templates with `templates/base.html` (eliminates boilerplate across 14 HTML files)~~ ✅ |
 | 14 | Consolidate three JS fetch wrappers (`fetch`, `authFetch`, `fetchWithCache`) into single `apiClient` module |
 | 15 | Extract all magic numbers/strings to `config.py` (Python) and `js/constants.js` (frontend) |
-| 16 | Refactor deeply nested conditionals in app.py with guard clauses and extracted helper functions |
+| ~~16~~ | ~~Refactor deeply nested conditionals in app.py with guard clauses and extracted helper functions~~ ✅ |
 
 ---
 
@@ -206,7 +206,7 @@
 3. ~~**Backend performance** — caching, rate limiting, leaderboard fixes, presigned URLs, append-only messages (28–35 done)~~
 
 4. ~~**Frontend** — apiClient, ui-states, design tokens (14, 15, 24, 25, 27, 53 done)~~:
-   Remaining: Task 13 (Jinja2 templates), Task 26 (Cloudflare CDN — infrastructure)
+   ~~Task 13 (Jinja2 templates) done.~~ Remaining: Task 26 (Cloudflare CDN — infrastructure)
 
 5. **Testing** — consolidate + add integration + security tests:
    ~~Tasks 43, 45, 49 done~~ — Remaining: Tasks 44, 47, 48

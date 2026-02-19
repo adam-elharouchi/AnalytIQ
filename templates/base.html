@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>{% block title %}AnalytIQ{% endblock %} - AnalytIQ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <script src="js/api-helper.js"></script>
+  <script src="js/constants.js"></script>
+  <script src="js/api-client.js"></script>
+  <script src="js/ui-states.js"></script>
+  <script src="js/offline-detector.js"></script>
+  {% block extra_head %}{% endblock %}
+</head>
+<body{% block body_attrs %}{% endblock %}>
+  {% block content %}{% endblock %}
+  {% block scripts %}{% endblock %}
+</body>
+</html>
