@@ -41,12 +41,7 @@ async function loadClasses() {
     console.error('Error loading classes:', error);
     loadingState.style.display = 'none';
     emptyState.style.display = 'block';
-    emptyState.innerHTML = `
-      <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
-      <h2 style="color: var(--color-dark); margin-bottom: 0.5rem;">Error Loading Classes</h2>
-      <p style="color: #64748b; margin-bottom: 1.5rem;">${error.message}</p>
-      <button class="btn btn-primary" onclick="loadClasses()">Retry</button>
-    `;
+    uiStates.showError(emptyState, 'Error loading classes: ' + error.message, () => loadClasses());
   }
 }
 
@@ -231,30 +226,30 @@ async function deleteClass(classId, className) {
     return;
   }
 
-  // Confirm deletion
-  const confirmed = confirm(`Are you sure you want to delete "${className}"?\n\nThis will permanently delete:\n• All chapters\n• All exercises\n• All student enrollments\n\nThis action cannot be undone.`);
+  uiStates.showConfirmModal(
+    `Are you sure you want to delete "${className}"? This will permanently delete all chapters, exercises, and student enrollments. This action cannot be undone.`,
+    async function () {
+      try {
+        const response = await authFetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(classId)}`, {
+          method: 'DELETE'
+        });
 
-  if (!confirmed) return;
+        const data = await response.json();
 
-  try {
-    const response = await authFetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(classId)}`, {
-      method: 'DELETE'
-    });
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to delete class');
+        }
 
-    const data = await response.json();
+        // Reload classes to reflect deletion
+        loadClasses();
+        alert(`Class "${className}" has been deleted.`);
 
-    if (!response.ok) {
-      throw new Error(data.error || 'Failed to delete class');
+      } catch (error) {
+        console.error('Error deleting class:', error);
+        alert('Error deleting class: ' + error.message);
+      }
     }
-
-    // Reload classes to reflect deletion
-    loadClasses();
-    alert(`Class "${className}" has been deleted.`);
-
-  } catch (error) {
-    console.error('Error deleting class:', error);
-    alert('Error deleting class: ' + error.message);
-  }
+  );
 }
 
 

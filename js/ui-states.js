@@ -6,11 +6,13 @@
  *   uiStates.showEmpty(el, 'No classes yet', 'Create one', 'Create your first class', '#');
  *   uiStates.showError(el, 'Failed to load', () => loadData());
  *   uiStates.showContent(el, '<div>...</div>');
+ *   uiStates.showConfirmModal('Delete this?', () => doDelete());
  */
 (function () {
     'use strict';
 
     let _stylesInjected = false;
+    let _modalStylesInjected = false;
 
     function _injectStyles() {
         if (_stylesInjected) return;
@@ -29,6 +31,25 @@
             '.ui-empty-state p { margin: 0 0 20px; font-size: 0.9rem; }',
             '.ui-error-state { text-align: center; padding: 32px 24px; color: #ef4444; }',
             '.ui-error-state p { margin: 0 0 16px; font-size: 0.9rem; }',
+        ].join('\n');
+        document.head.appendChild(style);
+    }
+
+    function _injectModalStyles() {
+        if (_modalStylesInjected) return;
+        _modalStylesInjected = true;
+        const style = document.createElement('style');
+        style.textContent = [
+            '.ui-confirm-backdrop { position: fixed; inset: 0; z-index: 9000; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; animation: ui-fade-in 0.15s ease; }',
+            '@keyframes ui-fade-in { from { opacity: 0; } to { opacity: 1; } }',
+            '.ui-confirm-card { background: #fff; border-radius: var(--radius-lg, 12px); padding: 24px 36px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); max-width: 420px; width: 90%; text-align: center; animation: ui-slide-up 0.18s ease; }',
+            '@keyframes ui-slide-up { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }',
+            '.ui-confirm-message { font-size: 0.95rem; color: var(--color-dark, #1e293b); line-height: 1.55; margin: 0 0 24px; }',
+            '.ui-confirm-actions { display: flex; gap: 12px; justify-content: center; }',
+            '.ui-confirm-btn { padding: 9px 22px; border: none; border-radius: 6px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: opacity 0.15s; }',
+            '.ui-confirm-btn:hover { opacity: 0.85; }',
+            '.ui-confirm-btn-danger { background: var(--color-error, #ef4444); color: #fff; }',
+            '.ui-confirm-btn-cancel { background: #e5e7eb; color: var(--color-dark, #1e293b); }',
         ].join('\n');
         document.head.appendChild(style);
     }
@@ -79,6 +100,60 @@
 
         showContent: function (container, html) {
             container.innerHTML = html;
+        },
+
+        showConfirmModal: function (message, onConfirm, onCancel) {
+            _injectModalStyles();
+            var backdrop = document.createElement('div');
+            backdrop.className = 'ui-confirm-backdrop';
+
+            var card = document.createElement('div');
+            card.className = 'ui-confirm-card';
+
+            var msg = document.createElement('p');
+            msg.className = 'ui-confirm-message';
+            msg.textContent = message || 'Are you sure?';
+
+            var actions = document.createElement('div');
+            actions.className = 'ui-confirm-actions';
+
+            var cancelBtn = document.createElement('button');
+            cancelBtn.className = 'ui-confirm-btn ui-confirm-btn-cancel';
+            cancelBtn.textContent = 'Cancel';
+
+            var confirmBtn = document.createElement('button');
+            confirmBtn.className = 'ui-confirm-btn ui-confirm-btn-danger';
+            confirmBtn.textContent = 'Confirm';
+
+            actions.appendChild(cancelBtn);
+            actions.appendChild(confirmBtn);
+            card.appendChild(msg);
+            card.appendChild(actions);
+            backdrop.appendChild(card);
+            document.body.appendChild(backdrop);
+
+            function _close() {
+                if (backdrop.parentNode) backdrop.parentNode.removeChild(backdrop);
+                document.removeEventListener('keydown', _onKeydown);
+            }
+            function _onKeydown(e) {
+                if (e.key === 'Escape') { _close(); if (typeof onCancel === 'function') onCancel(); }
+            }
+
+            confirmBtn.addEventListener('click', function () {
+                _close();
+                if (typeof onConfirm === 'function') onConfirm();
+            });
+            cancelBtn.addEventListener('click', function () {
+                _close();
+                if (typeof onCancel === 'function') onCancel();
+            });
+            backdrop.addEventListener('click', function (e) {
+                if (e.target === backdrop) { _close(); if (typeof onCancel === 'function') onCancel(); }
+            });
+            document.addEventListener('keydown', _onKeydown);
+
+            return backdrop;
         },
     };
 }());

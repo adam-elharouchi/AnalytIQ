@@ -53,12 +53,7 @@ async function loadEnrolledClasses() {
     console.error('Error loading classes:', error);
     loadingState.style.display = 'none';
     emptyState.style.display = 'block';
-    emptyState.innerHTML = `
-      <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
-      <h2 style="color: var(--color-dark); margin-bottom: 0.5rem;">Error Loading Classes</h2>
-      <p style="color: #64748b; margin-bottom: 1.5rem;">${error.message}</p>
-      <button class="btn btn-primary" onclick="loadEnrolledClasses()">Retry</button>
-    `;
+    uiStates.showError(emptyState, 'Error loading classes: ' + error.message, () => loadEnrolledClasses());
   }
 }
 
