@@ -1,7 +1,7 @@
 # AnalytIQ — Master Task List
 
-> Generated: 2026-02-17 | Last updated: 2026-02-18
-> Total: 87 tasks (48 completed, 39 pending)
+> Generated: 2026-02-17 | Last updated: 2026-02-19
+> Total: 87 tasks (55 completed, 32 pending)
 
 ---
 
@@ -57,6 +57,11 @@
 | 45 | Password min 8 / max 72 validation added to `POST /api/users/signup` and `POST /api/users/reset-password` using `config.MIN_PASSWORD_LENGTH` / `config.MAX_PASSWORD_LENGTH`; 4 existing tests updated from short test passwords |
 | 49 | Created `tests/test_security.py` — 51 tests, one per authenticated endpoint, all asserting 401 when no Bearer token is provided. Covers users (20), classes (16), chapters (8), exercises (6), AI (1). Acts as auth-regression guard in CI. |
 | 43 | Deleted 38 `test_app_*.py` coverage-farming files; replaced with 6 domain-organized behavioral test files: `test_auth.py` (18), `test_classes_routes.py` (27), `test_chapters_routes.py` (23), `test_exercises_routes.py` (18), `test_users_routes.py` (38), `test_ai_routes.py` (8). Tests verify response shape and business rules, not just status code ranges. |
+| 50 | Replaced all inline `innerHTML` empty-state blobs across `professor-dashboard.js`, `professor-class.js`, `student-class.js`, `student-classes.js`, `code-assistant.js` with `uiStates.showEmpty()` / `uiStates.showError()` calls. |
+| 51 | Added `uiStates.showConfirmModal()` to `js/ui-states.js` (animated backdrop, Esc/click-outside-to-cancel, danger/cancel styling). Replaced all 6 browser `confirm()` calls: `deleteClass`, `deleteResource`, `deleteExercise`, `deleteConversation`, `clearChat`. |
+| 52 | Added 500ms debounced localStorage autosave in `practice-playground.html` (key: `analytiq_draft_<exercise_id>`). Draft restored on load, cleared on submit. |
+| 55 | Created `docs/SECURITY.md` — covers auth, JWT, rate limits, password policy, input validation limits, security headers, CSP, file upload, CSRF, FERPA audit log, CI scan, known TODOs. |
+| 57 | Created `docs/ARCHITECTURE.md` (full system reference: tech stack, repo layout, request lifecycle, DB schema, auth flow, AI pipeline, frontend patterns, Celery, deployment, CI/CD, design decisions). Prepended `AUTO-GENERATED` comment to all 21 `docs/knowledge_base/*.md` files. |
 
 ---
 
@@ -132,11 +137,7 @@
 
 ## UI / UX
 
-| # | Task |
-|---|------|
-| 50 | Add empty state per page: illustration + CTA (e.g. "No chapters yet — upload your first PDF") |
-| 51 | Add `ConfirmModal` component in `ui-states.js` for all destructive actions (delete class, delete chapter) |
-| 52 | Add debounced localStorage autosave (500ms) for exercise playground with restore-on-load |
+**Tasks 50, 51, 52 complete.** `uiStates.showConfirmModal()` added to `js/ui-states.js`; replaces all 6 browser `confirm()` calls. `showEmpty()` / `showError()` wired into 5 JS files. 500ms debounced autosave + restore added to exercise playground. **Section complete.**
 
 ---
 
@@ -150,10 +151,10 @@
 
 **Task 56 complete.** `js/exercises-database.js` deleted; `practice-playground.html` updated to remove script tag and replace `ALL_EXERCISES` reference with `[]` (exercises now served from API). Remaining:
 
+**Tasks 55, 57 complete.** `docs/SECURITY.md` and `docs/ARCHITECTURE.md` created. All 21 `knowledge_base/*.md` files labeled AUTO-GENERATED. Remaining:
+
 | # | Task |
 |---|------|
-| 55 | Replace `SECURITY_AUDIT_COMPLETE.md` with accurate `SECURITY.md` |
-| 57 | Add AUTO-GENERATED label to `knowledge_base/` files; write human-maintained `ARCHITECTURE.md` |
 | 58 | Auto-generate OpenAPI 3.0 docs via Flask-Smorest; expose Swagger UI at `/api/docs` |
 
 ---
