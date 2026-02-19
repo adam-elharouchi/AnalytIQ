@@ -24,13 +24,13 @@ from repositories.exercise_repository import ensure_exercises_table
 logger = logging.getLogger(__name__)
 bp = Blueprint("chapters", __name__)
 
-# Add python directory to path for PDF processor and exercise generator
+# Add python directory to path for content extractor and exercise generator
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "python"))
 try:
-    from pdf_processor import extract_text_from_pdf_bytes
+    import content_extractor
 except ImportError:
-    logger.warning("PDF processor not available. PDF uploads will not work.")
-    extract_text_from_pdf_bytes = None
+    logger.warning("Content extractor not available. File text extraction will not work.")
+    content_extractor = None
 
 try:
     from exercise_generator import generate_exercises_from_pdf_content
@@ -162,20 +162,23 @@ def upload_chapter(class_id):
             return jsonify({"error": "No file selected"}), 400
 
         if not allowed_file(file.filename):
-            return jsonify({"error": "Invalid file type. Only PDF files are allowed."}), 400
+            return jsonify({"error": "Invalid file type. Allowed: pdf, txt, csv, ipynb, docx"}), 400
 
-        is_valid, error_message = validate_pdf_file(file)
-        if not is_valid:
-            logger.warning(
-                "PDF upload rejected",
-                extra={
-                    "filename": file.filename,
-                    "error": error_message,
-                    "user_id": user_id,
-                    "class_id": class_id,
-                },
-            )
-            return jsonify({"error": error_message}), 400
+        # PDF-specific security validation (magic bytes + suspicious pattern scan)
+        ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
+        if ext == "pdf":
+            is_valid, error_message = validate_pdf_file(file)
+            if not is_valid:
+                logger.warning(
+                    "PDF upload rejected",
+                    extra={
+                        "filename": file.filename,
+                        "error": error_message,
+                        "user_id": user_id,
+                        "class_id": class_id,
+                    },
+                )
+                return jsonify({"error": error_message}), 400
 
         title = request.form.get("title", "").strip()
         description = request.form.get("description", "").strip()
@@ -191,11 +194,14 @@ def upload_chapter(class_id):
         pdf_url = f"/api/chapters/{chapter_id}/pdf"
 
         pdf_text = None
-        if extract_text_from_pdf_bytes:
+        if content_extractor:
             try:
-                pdf_text = extract_text_from_pdf_bytes(file_bytes)
+                pdf_text = content_extractor.extract_text(file_bytes, filename)
+            except ValueError as e:
+                logger.warning("Content extraction rejected: %s", e)
+                return jsonify({"error": str(e)}), 400
             except Exception as e:
-                logger.warning("Could not extract text from PDF: %s", e)
+                logger.warning("Could not extract text from file: %s", e)
                 pdf_text = None
 
         chapter_number = chapter_repo.get_next_chapter_number(conn, class_id)
@@ -413,17 +419,17 @@ def generate_exercises_for_chapter(chapter_id):
         if not pdf_data:
             return jsonify({"error": "PDF data not found for this chapter"}), 404
 
-        if not extract_text_from_pdf_bytes:
-            return jsonify({"error": "PDF processor not available"}), 500
+        if not content_extractor:
+            return jsonify({"error": "Content extractor not available"}), 500
 
         try:
-            pdf_text = extract_text_from_pdf_bytes(bytes(pdf_data))
+            pdf_text = content_extractor.extract_text(bytes(pdf_data), "chapter.pdf")
         except Exception as e:
-            logger.error("Failed to extract text from PDF: %s", e, exc_info=True)
+            logger.error("Failed to extract text from chapter file: %s", e, exc_info=True)
             return (
                 jsonify(
                     {
-                        "error": "Failed to extract text from the PDF. Please check the file and try again."
+                        "error": "Failed to extract text from the file. Please check the file and try again."
                     }
                 ),
                 500,
