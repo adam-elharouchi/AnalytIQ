@@ -104,14 +104,21 @@
 
         showConfirmModal: function (message, onConfirm, onCancel) {
             _injectModalStyles();
+            var msgId = 'ui-confirm-msg-' + Math.random().toString(36).slice(2);
+
             var backdrop = document.createElement('div');
             backdrop.className = 'ui-confirm-backdrop';
+            backdrop.setAttribute('aria-hidden', 'true');
 
             var card = document.createElement('div');
             card.className = 'ui-confirm-card';
+            card.setAttribute('role', 'dialog');
+            card.setAttribute('aria-modal', 'true');
+            card.setAttribute('aria-labelledby', msgId);
 
             var msg = document.createElement('p');
             msg.className = 'ui-confirm-message';
+            msg.id = msgId;
             msg.textContent = message || 'Are you sure?';
 
             var actions = document.createElement('div');
@@ -132,12 +139,24 @@
             backdrop.appendChild(card);
             document.body.appendChild(backdrop);
 
+            // Move focus into modal on open
+            cancelBtn.focus();
+
             function _close() {
                 if (backdrop.parentNode) backdrop.parentNode.removeChild(backdrop);
                 document.removeEventListener('keydown', _onKeydown);
             }
             function _onKeydown(e) {
-                if (e.key === 'Escape') { _close(); if (typeof onCancel === 'function') onCancel(); }
+                if (e.key === 'Escape') { _close(); if (typeof onCancel === 'function') onCancel(); return; }
+                // Focus trap: keep Tab cycling between cancel and confirm
+                if (e.key === 'Tab') {
+                    e.preventDefault();
+                    if (document.activeElement === cancelBtn) {
+                        confirmBtn.focus();
+                    } else {
+                        cancelBtn.focus();
+                    }
+                }
             }
 
             confirmBtn.addEventListener('click', function () {
