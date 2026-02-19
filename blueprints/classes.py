@@ -42,6 +42,21 @@ def ensure_resources_table():
         logger.warning("Error checking resources table: %s", e)
 
 
+# ---------------------------------------------------------------------------
+# Private helpers
+# ---------------------------------------------------------------------------
+
+
+def _get_other_resources(conn, class_id):
+    """Fetch non-chapter resources for a class. Returns [] on error (table may not exist yet)."""
+    try:
+        class_repo.ensure_resources_table(conn)
+        return class_repo.get_class_other_resources(conn, class_id)
+    except Exception as e:
+        logger.warning("Error fetching class_resources: %s", e)
+        return []
+
+
 # ============================================================================
 # Classes CRUD
 # ============================================================================
@@ -253,26 +268,19 @@ def get_class_resources(class_id):
                 }
             )
 
-        try:
-            class_repo.ensure_resources_table(conn)
-            other_resources = class_repo.get_class_other_resources(conn, class_id)
-            for res in other_resources:
-                resource_url = res[4]
-                if not resource_url and res[0]:
-                    resource_url = f"/api/resources/{res[0]}/download"
-                resources.append(
-                    {
-                        "resource_id": res[0],
-                        "title": res[1],
-                        "description": res[2],
-                        "resource_type": res[3],
-                        "url": resource_url,
-                        "created_at": res[5].isoformat() if res[5] else None,
-                        "is_custom": True,
-                    }
-                )
-        except Exception as table_err:
-            logger.warning("Error fetching class_resources: %s", table_err)
+        for res in _get_other_resources(conn, class_id):
+            resource_url = res[4] or (f"/api/resources/{res[0]}/download" if res[0] else None)
+            resources.append(
+                {
+                    "resource_id": res[0],
+                    "title": res[1],
+                    "description": res[2],
+                    "resource_type": res[3],
+                    "url": resource_url,
+                    "created_at": res[5].isoformat() if res[5] else None,
+                    "is_custom": True,
+                }
+            )
 
         return jsonify({"all_resources": resources}), 200
 

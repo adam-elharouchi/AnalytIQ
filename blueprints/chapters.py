@@ -108,6 +108,51 @@ def validate_pdf_file(file):
     return True, None
 
 
+# ---------------------------------------------------------------------------
+# Private helpers
+# ---------------------------------------------------------------------------
+
+
+def _auto_generate_exercises(conn, pdf_text, chapter_id, chapter_title, class_id):
+    """Generate exercises from chapter text. Returns count generated (0 on any failure)."""
+    if not pdf_text or not generate_exercises_from_pdf_content:
+        return 0
+    try:
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            raise ValueError("GEMINI_API_KEY not set")
+        exercises = generate_exercises_from_pdf_content(pdf_text, chapter_title, api_key)
+        if not exercises:
+            return 0
+        for idx, exercise in enumerate(exercises, 1):
+            exercise_id = f"{chapter_id}_ex_{idx}_{int(datetime.now().timestamp() * 1000)}"
+            chapter_repo.insert_exercise(
+                conn,
+                exercise_id,
+                chapter_id,
+                class_id,
+                exercise["title"],
+                exercise["description"],
+                exercise["difficulty"],
+                exercise["solution_code"],
+                idx,
+            )
+        conn.commit()
+        return len(exercises)
+    except Exception as e:
+        logger.warning("Could not generate exercises: %s", e)
+        return 0
+
+
+def _get_cors_origin(req):
+    """Return the appropriate CORS origin header value for a file response, or None."""
+    origin = req.headers.get("Origin", "")
+    allowed = config.CORS_ORIGINS
+    if "*" in allowed:
+        return "*"
+    return origin if origin in allowed else None
+
+
 @bp.route("/api/chapters/upload-url", methods=["GET"])
 @require_auth
 def get_chapter_upload_url():
@@ -228,36 +273,10 @@ def upload_chapter(class_id):
             details={"class_id": class_id},
         )
         exercises_generated = 0
-        if exercise_mode == "auto" and pdf_text and generate_exercises_from_pdf_content:
-            try:
-                api_key = os.getenv("GEMINI_API_KEY")
-                if not api_key:
-                    raise ValueError("GEMINI_API_KEY not set")
-                exercises = generate_exercises_from_pdf_content(
-                    pdf_text, chapter_title_result, api_key
-                )
-
-                if exercises:
-                    for idx, exercise in enumerate(exercises, 1):
-                        exercise_id = (
-                            f"{chapter_id_result}_ex_{idx}_{int(datetime.now().timestamp() * 1000)}"
-                        )
-                        chapter_repo.insert_exercise(
-                            conn,
-                            exercise_id,
-                            chapter_id_result,
-                            class_id,
-                            exercise["title"],
-                            exercise["description"],
-                            exercise["difficulty"],
-                            exercise["solution_code"],
-                            idx,
-                        )
-                    exercises_generated = len(exercises)
-                    conn.commit()
-            except Exception as e:
-                logger.warning("Could not generate exercises: %s", e)
-                exercises_generated = 0
+        if exercise_mode == "auto":
+            exercises_generated = _auto_generate_exercises(
+                conn, pdf_text, chapter_id_result, chapter_title_result, class_id
+            )
 
         conn.commit()
 
@@ -637,12 +656,9 @@ def serve_chapter_pdf(chapter_id):
 
         if pdf_data:
             pdf_bytes = bytes(pdf_data)
-            origin = request.headers.get("Origin", "")
-            allowed = config.CORS_ORIGINS
-            cors_origin = "*" if "*" in allowed else (origin if origin in allowed else None)
-
             response = Response(pdf_bytes, mimetype="application/pdf")
             response.headers["Content-Disposition"] = f'inline; filename="{pdf_filename}"'
+            cors_origin = _get_cors_origin(request)
             if cors_origin:
                 response.headers["Access-Control-Allow-Origin"] = cors_origin
             return response
@@ -652,16 +668,13 @@ def serve_chapter_pdf(chapter_id):
 
             upload_folder = current_app.config.get("UPLOAD_FOLDER", "uploads")
             pdf_path = os.path.join(upload_folder, pdf_filename)
-            if os.path.exists(pdf_path):
-                origin = request.headers.get("Origin", "")
-                allowed = config.CORS_ORIGINS
-                cors_origin = "*" if "*" in allowed else (origin if origin in allowed else None)
-                response = send_from_directory(upload_folder, pdf_filename)
-                if cors_origin:
-                    response.headers["Access-Control-Allow-Origin"] = cors_origin
-                return response
-            else:
+            if not os.path.exists(pdf_path):
                 return jsonify({"error": f"PDF file not found: {pdf_filename}"}), 404
+            response = send_from_directory(upload_folder, pdf_filename)
+            cors_origin = _get_cors_origin(request)
+            if cors_origin:
+                response.headers["Access-Control-Allow-Origin"] = cors_origin
+            return response
 
     except Exception as e:
         logger.error("Unexpected error: %s", e, exc_info=True)
