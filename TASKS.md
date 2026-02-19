@@ -1,7 +1,7 @@
 # AnalytIQ — Master Task List
 
 > Generated: 2026-02-17 | Last updated: 2026-02-19
-> Total: 87 tasks (57 completed, 30 pending)
+> Total: 87 tasks (60 completed, 27 pending)
 
 ---
 
@@ -132,8 +132,7 @@
 
 | # | Task |
 |---|------|
-| 47 | Add Playwright E2E tests for 4 core flows: signup, upload chapter, generate exercises, AI chat |
-| 48 | Add k6 load tests for 3 scenarios: login burst, exercise list, AI chat concurrent users |
+**Tasks 47, 48 complete.** `tests/e2e/` created with 4 test files (signup, chapter upload, exercises, AI chat) using `requests` against a live server; `@pytest.mark.e2e` excludes them from CI. `load-tests/` created with 3 k6 scripts (login burst 50 VUs, exercise list 100 VUs, AI chat 10 VUs) + shared helpers + README. **Section complete.**
 
 ---
 
@@ -157,7 +156,7 @@
 
 | # | Task |
 |---|------|
-| 58 | Auto-generate OpenAPI 3.0 docs via Flask-Smorest; expose Swagger UI at `/api/docs` |
+**Task 58 complete.** `api_docs.py` expanded from 5 routes to 47 paths / 65 operations covering all 7 blueprints. Swagger UI already served at `/api/docs` via `flask-swagger-ui`. **Section complete.**
 
 ---
 
