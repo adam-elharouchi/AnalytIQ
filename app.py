@@ -284,10 +284,8 @@ def after_request(response):
         # HTML pages must never be cached by CDN — deploys must propagate instantly.
         # CSS, JS, and images are content-hashed implicitly via ETags and can be cached.
         if not config.DEBUG:
-            content_type = response.content_type or ""
-            path = request.path
-            is_static_asset = (
-                path.endswith((".css", ".js", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico", ".woff", ".woff2"))
+            is_static_asset = request.path.endswith(
+                (".css", ".js", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico", ".woff", ".woff2")
             )
             if is_static_asset:
                 response.headers["Cache-Control"] = "public, max-age=86400"
