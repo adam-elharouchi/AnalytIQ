@@ -584,3 +584,27 @@ footer a:hover,
     background: rgba(255, 255, 255, 0.1) !important;
     color: var(--text-primary) !important;
 }
+
+/* ── 28. Professor Dashboard Class Cards (Inline style overrides) ── */
+.class-card {
+    background: var(--bg-card) !important;
+    border-color: var(--border-color) !important;
+}
+
+.class-card h3[style*="color: var(--color-dark)"] {
+    color: var(--text-primary) !important;
+}
+
+.class-card p[style*="color: #64748b"],
+.class-card div[style*="color: #64748b"] {
+    color: var(--text-secondary) !important;
+}
+
+.class-card div[style*="background: #f8fafc"] {
+    background: rgba(17, 24, 39, 0.6) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.class-card button[style*="color: #dc2626"] {
+    color: var(--color-error-text) !important;
+}
