@@ -1,0 +1,586 @@
+/* ════════════════════════════════════════════════════════════════
+   LOCAL DEV ONLY — Dark Theme Override
+   DO NOT deploy this file. Remove this <link> tag and this file
+   before any production build / git push.
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Override design tokens ── */
+:root {
+    --bg-primary: #111827;
+    /* deep navy page bg        */
+    --bg-secondary: #1a2235;
+    /* slightly lighter navy     */
+    --bg-card: rgba(34, 44, 62, 0.82);
+    /* frosted navy card  */
+    --text-primary: #f0f4ff;
+    /* near-white body text      */
+    --text-secondary: rgba(210, 220, 240, 0.65);
+    --border-color: rgba(255, 255, 255, 0.10);
+
+    /* Shadows stay but deepen */
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+
+    /* Badge colours → muted versions for dark bg */
+    --color-badge-beginner-bg: rgba(37, 105, 244, 0.2);
+    --color-badge-beginner-text: #93c5fd;
+    --color-badge-intermediate-bg: rgba(217, 119, 6, 0.2);
+    --color-badge-intermediate-text: #fcd34d;
+    --color-badge-advanced-bg: rgba(239, 68, 68, 0.2);
+    --color-badge-advanced-text: #fca5a5;
+    --color-badge-easy-bg: rgba(5, 150, 105, 0.2);
+    --color-badge-easy-text: #6ee7b7;
+
+    /* Error / success / info — darken backgrounds */
+    --color-error-bg: rgba(239, 68, 68, 0.15);
+    --color-error-text: #fca5a5;
+    --color-error-border: #ef4444;
+    --color-success-bg: rgba(5, 150, 105, 0.15);
+    --color-success-text: #6ee7b7;
+    --color-success-border: #059669;
+    --color-info-bg: rgba(37, 105, 244, 0.15);
+    --color-info-text: #93c5fd;
+    --color-info-border: #2569f4;
+}
+
+/* ── 2. Page body & global base ── */
+body {
+    background-color: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
+}
+
+/* ── 3. Navbar — frosted glass ── */
+.navbar {
+    background: rgba(17, 24, 39, 0.80) !important;
+    backdrop-filter: blur(14px) !important;
+    -webkit-backdrop-filter: blur(14px) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+}
+
+.logo-analyt {
+    color: var(--text-primary) !important;
+}
+
+.nav-links a {
+    color: var(--text-secondary) !important;
+}
+
+.nav-links a:hover,
+.nav-links a.active {
+    color: var(--color-primary) !important;
+}
+
+.user-menu-toggle {
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+}
+
+.user-menu-dropdown {
+    background: rgba(26, 34, 53, 0.96) !important;
+    backdrop-filter: blur(14px) !important;
+    -webkit-backdrop-filter: blur(14px) !important;
+    border-color: var(--border-color) !important;
+}
+
+.user-menu-item {
+    color: var(--text-primary) !important;
+}
+
+.user-menu-item:hover {
+    background: rgba(37, 105, 244, 0.12) !important;
+}
+
+.user-menu-header .user-name {
+    color: var(--text-primary) !important;
+}
+
+.user-menu-divider {
+    background: var(--border-color) !important;
+}
+
+/* ── 4. Cards — all flavours ── */
+.dashboard-card,
+.module-card,
+.practice-card,
+.resource-card,
+.class-card,
+.stat-card,
+.info-card,
+.chapter-card,
+.exercise-card,
+.leaderboard-card,
+.contact-card,
+.upload-card,
+.section-card,
+.profile-card,
+.notification-card,
+.terms-section,
+.privacy-section {
+    background: var(--bg-card) !important;
+    backdrop-filter: blur(14px) !important;
+    -webkit-backdrop-filter: blur(14px) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+.dashboard-card h2,
+.module-header h2,
+.practice-header h2,
+.section-card h2,
+.section-card h3 {
+    color: var(--text-primary) !important;
+}
+
+/* ── 5. Login / auth pages ── */
+.login-container {
+    background: var(--bg-primary) !important;
+}
+
+.login-card {
+    background: rgba(34, 44, 62, 0.90) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5) !important;
+}
+
+.login-header p,
+.login-tab,
+.login-footer p {
+    color: var(--text-secondary) !important;
+}
+
+.login-tabs {
+    border-color: var(--border-color) !important;
+}
+
+.login-tab-content .form-group label {
+    color: var(--text-primary) !important;
+}
+
+.login-tab-content .form-group input,
+.login-tab-content .form-group select,
+.login-tab-content .form-group textarea {
+    background: rgba(17, 24, 39, 0.7) !important;
+    color: var(--text-primary) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+.login-tab-content .form-group input::placeholder {
+    color: var(--text-secondary) !important;
+}
+
+/* ── 6. Forms (all pages) ── */
+.form-group label {
+    color: var(--text-primary) !important;
+}
+
+.form-group small {
+    color: var(--text-secondary) !important;
+}
+
+input,
+textarea,
+select {
+    background: rgba(17, 24, 39, 0.7) !important;
+    color: var(--text-primary) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: var(--text-secondary) !important;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    border-color: var(--color-primary) !important;
+    box-shadow: 0 0 0 3px rgba(37, 105, 244, 0.25) !important;
+    outline: none !important;
+}
+
+/* ── 7. Buttons ── */
+.btn-secondary {
+    background: rgba(34, 44, 62, 0.85) !important;
+    color: var(--text-primary) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+.btn-secondary:hover {
+    background: rgba(37, 105, 244, 0.18) !important;
+    border-color: var(--color-primary) !important;
+    color: var(--color-white) !important;
+}
+
+/* ── 8. Tables ── */
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+th {
+    background: rgba(37, 105, 244, 0.15) !important;
+    color: var(--text-primary) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+td {
+    color: var(--text-primary) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+tr:hover td {
+    background: rgba(37, 105, 244, 0.08) !important;
+}
+
+/* ── 9. Modals ── */
+.modal {
+    background: rgba(0, 0, 0, 0.7) !important;
+}
+
+.modal-content {
+    background: rgba(26, 34, 53, 0.97) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    color: var(--text-primary) !important;
+}
+
+.modal-header {
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+.modal-header h2 {
+    color: var(--text-primary) !important;
+}
+
+.modal-footer {
+    border-top: 1px solid var(--border-color) !important;
+}
+
+.modal-close {
+    color: var(--text-secondary) !important;
+    background: transparent !important;
+}
+
+.modal-close:hover {
+    color: var(--text-primary) !important;
+}
+
+/* ── 10. Tabs (all flavours) ── */
+.tab-button,
+.login-tab,
+.sub-tab-button {
+    color: var(--text-secondary) !important;
+    background: transparent !important;
+}
+
+.tab-button:hover,
+.login-tab:hover {
+    color: var(--text-primary) !important;
+}
+
+.tab-button.active,
+.login-tab.active {
+    color: var(--color-primary) !important;
+    border-bottom-color: var(--color-primary) !important;
+}
+
+.tabs-border,
+.login-tabs {
+    border-color: var(--border-color) !important;
+}
+
+/* ── 11. Progress bars ── */
+.progress-bar {
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.progress-fill {
+    background: var(--color-primary) !important;
+}
+
+.progress-text {
+    color: var(--text-secondary) !important;
+}
+
+/* ── 12. Code editor / playground panels ── */
+.playground-container,
+.code-panel,
+.output-section,
+.editor-container,
+.editor-section,
+.output-panel {
+    background: rgba(17, 24, 39, 0.95) !important;
+    border-color: var(--border-color) !important;
+    color: #e2e8f0 !important;
+}
+
+.panel-header,
+.editor-header,
+.output-header {
+    background: rgba(26, 34, 53, 0.95) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+/* ── 13. Sidebar (code assistant already dark, reinforce) ── */
+.sidebar,
+.chat-sidebar {
+    background: rgba(17, 24, 39, 0.97) !important;
+    border-right: 1px solid var(--border-color) !important;
+}
+
+.chat-area,
+.chat-main {
+    background: rgba(17, 24, 39, 0.90) !important;
+}
+
+.message-bubble.user-message {
+    background: rgba(37, 105, 244, 0.25) !important;
+    color: var(--text-primary) !important;
+}
+
+.message-bubble.assistant-message,
+.message-bubble.bot-message {
+    background: rgba(34, 44, 62, 0.85) !important;
+    color: var(--text-primary) !important;
+}
+
+.chat-input-area {
+    background: rgba(17, 24, 39, 0.97) !important;
+    border-top: 1px solid var(--border-color) !important;
+}
+
+.chat-input {
+    background: rgba(26, 34, 53, 0.9) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+}
+
+/* ── 14. Dropdowns / selects ── */
+select option {
+    background: #1a2235;
+    color: var(--text-primary);
+}
+
+/* ── 15. Lists & resource items ── */
+.resource-item,
+.chapter-item,
+.exercise-item,
+.class-item {
+    background: var(--bg-card) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+.resource-item:hover,
+.chapter-item:hover,
+.exercise-item:hover {
+    background: rgba(37, 105, 244, 0.1) !important;
+    border-color: rgba(37, 105, 244, 0.35) !important;
+}
+
+/* ── 16. Notification & alert banners ── */
+.alert-info {
+    background: var(--color-info-bg) !important;
+    color: var(--color-info-text) !important;
+    border-color: var(--color-info-border) !important;
+}
+
+.alert-success {
+    background: var(--color-success-bg) !important;
+    color: var(--color-success-text) !important;
+    border-color: var(--color-success-border) !important;
+}
+
+.alert-error {
+    background: var(--color-error-bg) !important;
+    color: var(--color-error-text) !important;
+    border-color: var(--color-error-border) !important;
+}
+
+.error-message {
+    background: var(--color-error-bg) !important;
+    color: var(--color-error-text) !important;
+    border-color: var(--color-error-border) !important;
+}
+
+.success-message {
+    background: var(--color-success-bg) !important;
+    color: var(--color-success-text) !important;
+    border-color: var(--color-success-border) !important;
+}
+
+/* ── 17. Empty states & loading skeletons ── */
+.empty-state,
+.loading-state {
+    color: var(--text-secondary) !important;
+}
+
+.skeleton {
+    background: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* ── 18. Footer ── */
+footer,
+.home-footer {
+    background: rgba(17, 24, 39, 0.95) !important;
+    border-top: 1px solid var(--border-color) !important;
+    color: var(--text-secondary) !important;
+}
+
+footer a,
+.home-footer a {
+    color: var(--text-secondary) !important;
+}
+
+footer a:hover,
+.home-footer a:hover {
+    color: var(--color-primary) !important;
+}
+
+/* ── 19. Upload page drag zone ── */
+.upload-zone,
+.drop-zone {
+    background: rgba(34, 44, 62, 0.7) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    color: var(--text-secondary) !important;
+}
+
+.upload-zone:hover,
+.drop-zone:hover,
+.drop-zone.drag-over {
+    border-color: var(--color-primary) !important;
+    background: rgba(37, 105, 244, 0.1) !important;
+}
+
+/* ── 20. Profile page ── */
+.profile-section,
+.profile-info {
+    background: var(--bg-card) !important;
+    border-color: var(--border-color) !important;
+}
+
+.profile-label {
+    color: var(--text-secondary) !important;
+}
+
+/* ── 21. Terms / Privacy ── */
+.terms-section,
+.privacy-section,
+.content-section {
+    background: var(--bg-card) !important;
+    border-color: var(--border-color) !important;
+}
+
+.terms-section h2,
+.privacy-section h2,
+.terms-section h3,
+.privacy-section h3,
+.content-section h2,
+.content-section h3 {
+    color: var(--text-primary) !important;
+}
+
+.terms-section p,
+.privacy-section p,
+.content-section p,
+.content-section li {
+    color: var(--text-secondary) !important;
+}
+
+/* ── 22. Contact page ── */
+.contact-card {
+    background: var(--bg-card) !important;
+    border-color: var(--border-color) !important;
+}
+
+/* ── 23. Subtle scrollbar for dark theme ── */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(17, 24, 39, 0.8);
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(37, 105, 244, 0.5);
+}
+
+/* ── 24. Selection colour ── */
+::selection {
+    background: rgba(37, 105, 244, 0.35);
+    color: #fff;
+}
+
+/* ── 25. ui-states.js dynamically-injected elements ── */
+.ui-skeleton {
+    background: linear-gradient(90deg,
+            rgba(255, 255, 255, 0.06) 25%,
+            rgba(255, 255, 255, 0.10) 50%,
+            rgba(255, 255, 255, 0.06) 75%) !important;
+}
+
+.ui-skeleton-card {
+    border-color: var(--border-color) !important;
+    background: var(--bg-card) !important;
+}
+
+.ui-empty-state h3 {
+    color: var(--text-primary) !important;
+}
+
+.ui-empty-state p,
+.ui-empty-state {
+    color: var(--text-secondary) !important;
+}
+
+.ui-error-state {
+    color: var(--color-error-text, #fca5a5) !important;
+}
+
+/* ── 26. Inline-styled dashboard state containers ── */
+#emptyState,
+#loadingState,
+#classesGrid,
+[id$="State"] {
+    background: var(--bg-card) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+/* ── 27. Modal dialogs with hardcoded background:white ── */
+[role="dialog"],
+.ui-confirm-card {
+    background: rgba(26, 34, 53, 0.97) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+[role="dialog"] h2,
+[role="dialog"] label {
+    color: var(--text-primary) !important;
+}
+
+[role="dialog"] input,
+[role="dialog"] textarea,
+[role="dialog"] select {
+    background: rgba(17, 24, 39, 0.7) !important;
+    color: var(--text-primary) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+.ui-confirm-btn-cancel {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: var(--text-primary) !important;
+}
