@@ -222,7 +222,7 @@
 
 6. ~~**Security** — legacy hashes, audit log~~ **DONE** (tasks 19–20)
 
-7. **LMS Integration** — LTI 1.3 + roster sync *(skipped — out of current scope)*:
+7. **LMS Integration** — LTI 1.3 + roster sync *(in progress)*:
    Tasks LMS-1 through LMS-6
 
 8. **External Content Import** — multi-format + OER platforms *(skipped — out of current scope)*:
