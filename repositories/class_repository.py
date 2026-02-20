@@ -53,7 +53,8 @@ def get_class_detail(conn, class_id):
     cur.execute(
         """
         SELECT c.class_id, c.name, c.description, c.professor_id, c.created_at,
-               u.name AS professor_name, u.email AS professor_email
+               u.name AS professor_name, u.email AS professor_email,
+               c.lti_context_id, c.ags_enabled
         FROM classes c
         JOIN users u ON c.professor_id = u.user_id
         WHERE c.class_id = %s

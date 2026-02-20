@@ -11,10 +11,16 @@
         <h1>Professor Dashboard</h1>
         <p class="subtitle">Manage your classes, upload chapters, and track student progress</p>
       </div>
-      <button class="btn btn-primary" onclick="showCreateClassModal()" style="display: flex; align-items: center; gap: 0.5rem;">
-        <span>➕</span>
-        <span>Create New Class</span>
-      </button>
+      <div style="display: flex; gap: .75rem; align-items: center;">
+        <a href="/lti-setup.html" class="btn btn-secondary" style="display: flex; align-items: center; gap: 0.4rem; text-decoration: none;">
+          <span>🔗</span>
+          <span>LMS Setup</span>
+        </a>
+        <button class="btn btn-primary" onclick="showCreateClassModal()" style="display: flex; align-items: center; gap: 0.5rem;">
+          <span>➕</span>
+          <span>Create New Class</span>
+        </button>
+      </div>
     </div>
     
     <!-- Loading State -->

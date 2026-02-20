@@ -32,10 +32,13 @@ CREATE TABLE IF NOT EXISTS users (
     user_id       VARCHAR(255) UNIQUE NOT NULL,
     name          VARCHAR(255) NOT NULL,
     email         VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
+    password_hash VARCHAR(255),
     role          VARCHAR(50),
+    lti_sub       VARCHAR(255),
+    lti_issuer    VARCHAR(500),
     created_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
-    updated_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
+    updated_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (lti_sub, lti_issuer)
 );
 
 CREATE TABLE IF NOT EXISTS user_profiles (
@@ -80,12 +83,17 @@ CREATE TABLE IF NOT EXISTS ai_agent_digest (
 );
 
 CREATE TABLE IF NOT EXISTS classes (
-    class_id     VARCHAR(255) PRIMARY KEY,
-    professor_id VARCHAR(255) NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
-    name         VARCHAR(255) NOT NULL,
-    description  TEXT,
-    created_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
-    updated_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
+    class_id          VARCHAR(255) PRIMARY KEY,
+    professor_id      VARCHAR(255) NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    name              VARCHAR(255) NOT NULL,
+    description       TEXT,
+    lti_context_id    VARCHAR(500),
+    lti_issuer        VARCHAR(500),
+    nrps_context_url  TEXT,
+    ags_enabled       BOOLEAN      DEFAULT FALSE,
+    ags_lineitems_url TEXT,
+    created_at        TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+    updated_at        TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS class_enrollments (
@@ -135,6 +143,34 @@ CREATE TABLE IF NOT EXISTS audit_log (
 );
 CREATE INDEX IF NOT EXISTS idx_audit_log_user_id    ON audit_log (user_id);
 CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON audit_log (created_at DESC);
+
+CREATE TABLE IF NOT EXISTS lti_configurations (
+    config_id      VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    platform_name  VARCHAR(255) NOT NULL,
+    issuer         VARCHAR(500) NOT NULL,
+    client_id      VARCHAR(255) NOT NULL,
+    auth_login_url TEXT        NOT NULL,
+    auth_token_url TEXT        NOT NULL,
+    key_set_url    TEXT        NOT NULL,
+    deployment_ids TEXT[]      DEFAULT '{}',
+    created_by     VARCHAR(255) REFERENCES users(user_id) ON DELETE SET NULL,
+    created_at     TIMESTAMP   DEFAULT CURRENT_TIMESTAMP,
+    updated_at     TIMESTAMP   DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (issuer, client_id)
+);
+
+CREATE TABLE IF NOT EXISTS lti_sessions (
+    session_id       VARCHAR(255) PRIMARY KEY,
+    user_id          VARCHAR(255) REFERENCES users(user_id) ON DELETE CASCADE,
+    class_id         VARCHAR(255) REFERENCES classes(class_id) ON DELETE SET NULL,
+    nrps_context_url TEXT,
+    lti_context_id   TEXT,
+    issuer           VARCHAR(500),
+    client_id        VARCHAR(255),
+    launch_data      JSONB,
+    expires_at       TIMESTAMP   NOT NULL,
+    created_at       TIMESTAMP   DEFAULT CURRENT_TIMESTAMP
+);
 """
 
 

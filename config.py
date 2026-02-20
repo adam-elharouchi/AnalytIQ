@@ -94,6 +94,18 @@ JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", SECRET_KEY)
 JWT_ACCESS_TOKEN_EXPIRES_HOURS = int(os.getenv("JWT_EXPIRY_HOURS", 168))  # 7 days default
 JWT_ALGORITHM = "HS256"
 
+# ============================================================================
+# LTI 1.3
+# ============================================================================
+# RSA key pair (PEM format). Generate with: python3 scripts/generate_lti_keys.py
+LTI_PRIVATE_KEY = os.getenv("LTI_PRIVATE_KEY", "")
+LTI_PUBLIC_KEY = os.getenv("LTI_PUBLIC_KEY", "")
+LTI_KEY_ID = os.getenv("LTI_KEY_ID", "analytiq-lti-key-1")
+# Canonical base URL of this tool — used in deep linking and JWKS references
+LTI_TOOL_URL = os.getenv("LTI_TOOL_URL", "https://myanalytiq.org")
+# Lifetime of LTI launch sessions stored in DB (seconds)
+LTI_SESSION_TTL = int(os.getenv("LTI_SESSION_TTL", 3600))
+
 # CORS
 CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*").split(",")
 CORS_MAX_AGE = int(os.getenv("CORS_MAX_AGE", 3600))
