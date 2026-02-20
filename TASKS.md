@@ -1,7 +1,7 @@
 # AnalytIQ — Master Task List
 
 > Generated: 2026-02-17 | Last updated: 2026-02-19
-> Total: 87 tasks (74 completed, 13 pending)
+> Total: 87 tasks (80 completed, 7 pending)
 
 ---
 
@@ -83,6 +83,12 @@
 | 58 | `api_docs.py` expanded from 5 routes to 47 paths / 65 operations covering all 7 blueprints; Swagger UI at `/api/docs` |
 | 59 | `continue-on-error: true` removed from flake8 + black CI steps; CI now fails hard on any formatting violation |
 | 60 | `validate_email()` added to `auth_helpers.py` (RFC 5321 regex + max-length); wired into `signup`, `forgot_password`, `update_profile` |
+| LMS-1 | `lti_configurations` table (`migrations/001_lti_tables.sql`) + `repositories/lti_repository.py` — stores LMS platform registrations (issuer, client_id, JWKS URL, token/auth URLs, deployment IDs) |
+| LMS-2 | `blueprints/lti.py` — OIDC login initiation (`/lti/login`), LTI launch (`/lti/launch`): validates id_token, upserts user (lti_sub→email→create), issues AnalytIQ JWT, renders `lti-launch.html` redirect page |
+| LMS-3 | NRPS roster sync — `POST /api/lti/sync-roster/<class_id>` pulls LMS roster via `NamesRolesProvisioningService`; auto-enrolls students; "Sync from LMS" button in Students tab (shown only when class is LTI-linked) |
+| LMS-4 | Deep linking — `GET /lti/launch` deep link handler renders chapter picker (`lti-deep-link.html`); `POST /lti/deep-link/return` returns signed `DeepLinkResource` JWT auto-submitting back to LMS |
+| LMS-5 | Professor LTI setup UI (`templates/lti-setup.html`) — 3-tab: Tool Info (copy JWKS/login/launch URLs), LMS Platforms list, Register Platform form; "LMS Setup" button added to professor dashboard header |
+| LMS-6 | `lti_sessions` table + user upsert — LTI-only accounts with `password_hash = NULL`; `lti_sub`+`lti_issuer` columns on `users`; LTI context columns on `classes` (`lti_context_id`, `nrps_context_url`, `ags_enabled`, `ags_lineitems_url`); AGS grade passback (`POST /api/lti/ags/<class_id>/<exercise_id>`) with per-class toggle |
 
 ---
 
@@ -182,14 +188,16 @@
 > Target LMS platforms: Canvas, Blackboard, Moodle, Google Classroom, D2L Brightspace
 > Standard: LTI 1.3 + LTI Advantage (Names and Roles Provisioning Service)
 
+**All tasks complete.** Full LTI 1.3 integration shipped: `PyLTI1p3` library, RSA key pair generation (`scripts/generate_lti_keys.py`), platform registration CRUD, OIDC login/launch, user upsert (lti_sub→email→new account), NRPS roster sync, AGS grade passback (per-class toggle), deep linking, and professor setup UI. **Section complete.**
+
 | # | Task |
 |---|------|
-| LMS-1 | Add `lti_config` table — store `client_id`, JWKS URL, token URL, auth URL per LMS platform per institution |
-| LMS-2 | Implement OIDC login initiation + callback: `/lti/login`, `/lti/launch` using `pylti1.3` library |
-| LMS-3 | Implement NRPS roster sync — "Sync Students" button pulls enrolled list from Canvas/Blackboard into AnalytIQ class |
-| LMS-4 | Add LTI deep linking — professors link specific AnalytIQ classes/chapters from inside their LMS |
-| LMS-5 | Build professor LTI setup UI — generate tool XML/JSON config file to paste into Canvas/Blackboard admin |
-| LMS-6 | Add `lti_sessions` table — map LMS user identities to AnalytIQ `user_id`; handle first-time vs returning LTI users |
+| ~~LMS-1~~ | ~~Add `lti_config` table~~ ✅ |
+| ~~LMS-2~~ | ~~Implement OIDC login initiation + callback~~ ✅ |
+| ~~LMS-3~~ | ~~Implement NRPS roster sync~~ ✅ |
+| ~~LMS-4~~ | ~~Add LTI deep linking~~ ✅ |
+| ~~LMS-5~~ | ~~Build professor LTI setup UI~~ ✅ |
+| ~~LMS-6~~ | ~~Add `lti_sessions` table + user identity mapping~~ ✅ |
 
 ---
 
@@ -222,8 +230,7 @@
 
 6. ~~**Security** — legacy hashes, audit log~~ **DONE** (tasks 19–20)
 
-7. **LMS Integration** — LTI 1.3 + roster sync *(in progress)*:
-   Tasks LMS-1 through LMS-6
+7. ~~**LMS Integration** — LTI 1.3 + roster sync~~ **DONE** (tasks LMS-1 through LMS-6)
 
 8. **External Content Import** — multi-format + OER platforms *(skipped — out of current scope)*:
    Tasks LIB-2 through LIB-7

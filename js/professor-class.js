@@ -105,6 +105,40 @@ function renderClassHeader(data) {
   document.getElementById('studentCountStat').textContent = data.student_count || 0;
   document.getElementById('chapterCountStat').textContent = data.chapter_count || 0;
   document.getElementById('exerciseCountStat').textContent = data.exercise_count || 0;
+
+  // Show "Sync from LMS" button only when class is linked to an LMS context
+  const syncBtn = document.getElementById('syncLmsBtn');
+  if (syncBtn) {
+    syncBtn.style.display = data.lti_context_id ? 'inline-flex' : 'none';
+  }
+}
+
+async function syncLmsRoster() {
+  const classId = currentClassId;
+  if (!classId) return;
+
+  const btn = document.getElementById('syncLmsBtn');
+  const originalText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '⏳ Syncing…';
+
+  try {
+    const response = await authFetch(`${window.API_BASE_URL.replace('/api', '')}/api/lti/sync-roster/${encodeURIComponent(classId)}`, {
+      method: 'POST'
+    });
+    const data = await response.json();
+    if (response.ok) {
+      alert(`LMS sync complete: ${data.enrolled} new student(s) enrolled (${data.total_members} total members).`);
+      loadClassData(classId);
+    } else {
+      alert('LMS sync failed: ' + (data.error || 'Unknown error'));
+    }
+  } catch (err) {
+    alert('Network error during LMS sync. Please try again.');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalText;
+  }
 }
 
 // Switch tabs

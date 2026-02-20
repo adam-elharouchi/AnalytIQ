@@ -220,6 +220,8 @@ def get_class(class_id):
                     "created_at": class_data[4].isoformat() if class_data[4] else None,
                     "professor_name": class_data[5],
                     "professor_email": class_data[6] if len(class_data) > 6 else None,
+                    "lti_context_id": class_data[7] if len(class_data) > 7 else None,
+                    "ags_enabled": class_data[8] if len(class_data) > 8 else False,
                     "student_count": student_count,
                     "chapter_count": chapter_count,
                     "exercise_count": exercise_count,
