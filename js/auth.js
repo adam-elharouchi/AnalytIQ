@@ -193,7 +193,7 @@ async function handleSignIn(event) {
   errorDiv.style.display = 'none';
 
   try {
-    const user = await authManager.signIn(email, password);
+    await authManager.signIn(email, password);
     // Always redirect to home page
     window.location.href = 'index.html';
   } catch (error) {
@@ -231,6 +231,18 @@ async function handleSignUp(event) {
     return;
   }
 
+  // Validate password length
+  if (password.length < 8) {
+    errorDiv.textContent = 'Password must be at least 8 characters';
+    errorDiv.style.display = 'block';
+    return;
+  }
+  if (password.length > 72) {
+    errorDiv.textContent = 'Password must be at most 72 characters';
+    errorDiv.style.display = 'block';
+    return;
+  }
+
   // Validate passwords match
   if (password !== confirmPassword) {
     errorDiv.textContent = 'Passwords do not match';
@@ -241,11 +253,10 @@ async function handleSignUp(event) {
   try {
     // Show loading state
     const submitButton = event.target.querySelector('button[type="submit"]');
-    const originalButtonText = submitButton.textContent;
     submitButton.disabled = true;
     submitButton.textContent = 'Creating account...';
 
-    const user = await authManager.signUp(name, email, password);
+    await authManager.signUp(name, email, password);
 
     // Always redirect to home page
     window.location.href = 'index.html';

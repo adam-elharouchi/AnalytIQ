@@ -229,6 +229,10 @@ async function handlePasswordChange(event) {
     alert('New password must be at least 8 characters long');
     return;
   }
+  if (newPassword.length > 72) {
+    alert('New password must be at most 72 characters long');
+    return;
+  }
 
   // Check if passwords match
   if (newPassword !== confirmPassword) {
