@@ -3,6 +3,15 @@ document.addEventListener('DOMContentLoaded', function () {
     const codeElement = document.getElementById('codeAnimation');
     if (!codeElement) return;
 
+    // Prevent duplicate animation on bfcache restore
+    if (window.__homeAnimInitialised) return;
+    window.__homeAnimInitialised = true;
+
+    // Reset flag when page is restored from bfcache
+    window.addEventListener('pageshow', function (e) {
+        if (e.persisted) window.__homeAnimInitialised = false;
+    });
+
     // ── Code to animate ───────────────────────────────────────────
     const code = `# Import the necessary libraries
 from sklearn.datasets import load_wine
