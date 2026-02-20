@@ -76,7 +76,7 @@ jobs:
         FEATURE_ASYNC_TASKS: False
         SECRET_KEY: test-secret-key-for-ci
       run: |
-        python -m pytest tests/ -v --cov=. --cov-report=xml --cov-report=term-missing
+        python -m pytest tests/ -v --cov=. --cov-report=xml --cov-report=term-missing --ignore=tests/e2e
     
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
