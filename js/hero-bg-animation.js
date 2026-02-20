@@ -10,12 +10,21 @@
 (function () {
     'use strict';
 
+    // ── Prevent duplicate initialisation (bfcache / repeated navigations) ──
+    if (window.__heroBgInitialised) return;
+    window.__heroBgInitialised = true;
+
     // ── Reduced-motion guard ──────────────────────────────────────
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     // ── Only run on the home page ─────────────────────────────────
     const scene = document.getElementById('heroBgScene');
     if (!scene) return;
+
+    // ── Helper: clear any previously-appended children (safety net) ──
+    function clearLayer(el) {
+        if (el) el.innerHTML = '';
+    }
 
     if (prefersReduced) {
         // Static fallback: just show the dark tinted scene, no animation
@@ -28,6 +37,7 @@
     // ══════════════════════════════════════════════════════════════
     const farLayer = document.getElementById('heroBgFar');
     if (farLayer) {
+        clearLayer(farLayer);
         const chars = '01abcdefghijklmnopqrstuvwxyz=()[]{}#.,_<>+-*/|&%$@!?';
         const colCount = Math.floor(window.innerWidth / 60);
 
@@ -54,6 +64,7 @@
     // MID LAYER — ghost code blocks scrolling upward
     // ══════════════════════════════════════════════════════════════
     const midLayer = document.getElementById('heroBgMid');
+    clearLayer(midLayer);
 
     const ghostSnippets = [
         `import pandas as pd\nimport numpy as np\n\ndf = pd.read_csv('data.csv')\nprint(df.shape)`,
@@ -88,6 +99,7 @@
     // FOREGROUND LAYER — floating IDE windows with live typing
     // ══════════════════════════════════════════════════════════════
     const fgLayer = document.getElementById('heroBgFg');
+    clearLayer(fgLayer);
 
     const windowConfigs = [
         {
@@ -306,5 +318,13 @@ plt.show()`,
             setTimeout(createTypingEngine(body, cfg.snippet), startDelay);
         });
     }
+
+    // ── Handle bfcache: reset flag so we re-init cleanly on back-nav ──
+    window.addEventListener('pageshow', function (e) {
+        if (e.persisted) {
+            // Page was restored from bfcache — reset flag and re-run
+            window.__heroBgInitialised = false;
+        }
+    });
 
 })();
