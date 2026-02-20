@@ -16,7 +16,6 @@ Routes:
   PUT  /api/lti/ags-toggle/<class_id>     — Toggle AGS on/off for a class  [professor]
 """
 
-import json
 import logging
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -222,7 +221,6 @@ def lti_jwks():
         from cryptography.hazmat.primitives.serialization import load_pem_public_key
         from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
         import base64
-        import struct
     except ImportError:
         return jsonify({"error": "cryptography package not installed"}), 500
 
@@ -308,7 +306,6 @@ def lti_launch():
     """Main LTI 1.3 launch endpoint. Validates id_token, upserts user, issues JWT."""
     try:
         from pylti1p3.contrib.flask import FlaskMessageLaunch, FlaskRequest
-        from pylti1p3.exception import LtiException
     except ImportError:
         return jsonify({"error": "PyLTI1p3 not installed"}), 500
 
