@@ -280,10 +280,21 @@ def after_request(response):
         response.headers["Pragma"] = "no-cache"
 
     else:
-        # CDN-4: Allow Cloudflare (and other CDNs) to cache static assets in production.
-        # In development keep the default no-cache so file changes are always visible.
+        # CDN-4: Cache static assets long-term; serve HTML fresh on every request.
+        # HTML pages must never be cached by CDN — deploys must propagate instantly.
+        # CSS, JS, and images are content-hashed implicitly via ETags and can be cached.
         if not config.DEBUG:
-            response.headers["Cache-Control"] = "public, max-age=86400"
+            content_type = response.content_type or ""
+            path = request.path
+            is_static_asset = (
+                path.endswith((".css", ".js", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico", ".woff", ".woff2"))
+            )
+            if is_static_asset:
+                response.headers["Cache-Control"] = "public, max-age=86400"
+            else:
+                # HTML and everything else: revalidate on every request
+                response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+                response.headers["Pragma"] = "no-cache"
 
     # Content-Security-Policy in report-only mode on all responses.
     # Violations are logged in the browser console without blocking anything.
