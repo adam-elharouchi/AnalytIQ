@@ -2685,6 +2685,29 @@ h1 {
   border: none;
 }
 
+/* When the animated background is active, give the hero text a white card */
+body.hero-bg-active .hero-section {
+  background: rgba(34, 44, 62, 0.82);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-radius: var(--radius-xl);
+  padding: 1.5rem 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 32px rgba(0, 0, 0, 0.35);
+}
+
+body.hero-bg-active .hero-section h1 {
+  color: var(--color-white);
+}
+
+body.hero-bg-active .hero-section h1 .logo-analyt {
+  color: var(--color-primary);
+}
+
+body.hero-bg-active .hero-section p {
+  color: rgba(255, 255, 255, 0.75);
+}
+
 .hero-section h1 {
   color: var(--text-primary);
   font-size: 2.5rem;
@@ -4005,7 +4028,7 @@ body.home-page .container {
 }
 
 .home-footer {
-  background-color: var(--color-dark);
+  background-color: #111827;
   color: white;
   width: 100%;
   padding: 1rem 0 0.75rem 0;
@@ -4227,3 +4250,456 @@ body.home-page .container {
     max-width: 100%;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   LOCAL DEV ONLY — Hero Animated Coding Background
+   Remove this entire section before any production deploy.
+   Scoped to body.hero-bg-active to avoid leaking into other pages.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Scene: fixed full-viewport layer behind everything ── */
+.hero-bg-scene {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background: var(--color-dark);
+  pointer-events: none;
+}
+
+/* Static fallback when reduced-motion is preferred */
+.hero-bg-scene.hero-bg-reduced {
+  background: var(--color-dark);
+}
+
+/* ── Dark overlay for content readability ── */
+.hero-bg-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to bottom,
+      rgba(34, 44, 62, 0.55) 0%,
+      rgba(34, 44, 62, 0.35) 40%,
+      rgba(34, 44, 62, 0.35) 60%,
+      rgba(34, 44, 62, 0.65) 100%);
+  z-index: 4;
+}
+
+/* ── Page content sits above the scene ── */
+body.hero-bg-active main,
+body.hero-bg-active footer {
+  position: relative;
+  z-index: 200;
+}
+
+body.hero-bg-active .navbar {
+  position: relative;
+  z-index: 9000;
+}
+
+/* Lighten the main container background so the scene shows through */
+body.hero-bg-active .container {
+  background: transparent;
+}
+
+body.hero-bg-active {
+  background: transparent;
+}
+
+/* Make nav dark/frosted with white text on hero page */
+body.hero-bg-active .navbar {
+  background: rgba(17, 24, 39, 0.82) !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+/* White logo + links on hero page */
+body.hero-bg-active .logo-analyt {
+  color: #ffffff !important;
+}
+
+body.hero-bg-active .nav-links a {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+body.hero-bg-active .nav-links a:hover,
+body.hero-bg-active .nav-links a.active {
+  color: #ffffff !important;
+}
+
+body.hero-bg-active .user-menu-toggle {
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+/* Ensure dropdown floats above scene layers.
+   position:fixed escapes the navbar's backdrop-filter stacking context. */
+body.hero-bg-active .user-menu-dropdown {
+  position: fixed !important;
+  top: 4rem !important;
+  right: 1.5rem !important;
+  z-index: 99999 !important;
+  background: rgba(17, 24, 39, 0.97) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.7) !important;
+}
+
+body.hero-bg-active .user-menu-item {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+body.hero-bg-active .user-menu-item:hover {
+  background: rgba(37, 105, 244, 0.15) !important;
+  color: #ffffff !important;
+}
+
+body.hero-bg-active .user-menu-header .user-name {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+body.hero-bg-active .user-menu-divider {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* ── FAR LAYER: drifting character columns ── */
+.hero-bg-layer-far {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.hero-bg-col {
+  position: absolute;
+  top: -120%;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.8;
+  color: var(--color-primary);
+  white-space: pre;
+  animation: heroBgDriftDown linear infinite;
+  will-change: transform;
+}
+
+@keyframes heroBgDriftDown {
+  from {
+    transform: translateY(0);
+  }
+
+  to {
+    transform: translateY(220vh);
+  }
+}
+
+/* ── MID LAYER: ghost code blocks ── */
+.hero-bg-layer-mid {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  overflow: hidden;
+}
+
+.hero-bg-ghost {
+  position: absolute;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  line-height: 1.7;
+  color: var(--color-white);
+  white-space: pre;
+  animation: heroBgScrollUp linear infinite;
+  will-change: transform;
+}
+
+@keyframes heroBgScrollUp {
+  from {
+    transform: translateY(30vh);
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  85% {
+    opacity: 1;
+  }
+
+  to {
+    transform: translateY(-60vh);
+    opacity: 0;
+  }
+}
+
+/* ── FOREGROUND LAYER: floating IDE windows ── */
+.hero-bg-layer-fg {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.hero-bg-window {
+  position: absolute;
+  width: clamp(260px, 28vw, 380px);
+  background: rgba(34, 44, 62, 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(226, 232, 240, 0.18);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+  animation: heroBgFloat ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Window positions */
+.hero-bg-float-a {
+  top: 12%;
+  left: 3%;
+  animation-duration: 14s;
+  animation-delay: 0s;
+}
+
+.hero-bg-float-b {
+  top: 30%;
+  right: 2%;
+  animation-duration: 17s;
+  animation-delay: -5s;
+}
+
+.hero-bg-float-c {
+  bottom: 10%;
+  left: 8%;
+  animation-duration: 20s;
+  animation-delay: -9s;
+}
+
+@keyframes heroBgFloat {
+  0% {
+    transform: translateY(0px) rotate(0deg);
+  }
+
+  25% {
+    transform: translateY(-10px) rotate(0.3deg);
+  }
+
+  50% {
+    transform: translateY(-18px) rotate(-0.2deg);
+  }
+
+  75% {
+    transform: translateY(-8px) rotate(0.15deg);
+  }
+
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+}
+
+/* Title bar */
+.hero-bg-window-titlebar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.5rem 0.75rem;
+  background: rgba(100, 116, 139, 0.35);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.12);
+}
+
+.hero-bg-window-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.hero-bg-window-dot.dot-red {
+  background: var(--color-dot-red);
+}
+
+.hero-bg-window-dot.dot-yellow {
+  background: var(--color-dot-yellow);
+}
+
+.hero-bg-window-dot.dot-green {
+  background: var(--color-dot-green);
+}
+
+.hero-bg-window-filename {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.55);
+  letter-spacing: 0.02em;
+}
+
+/* Code body */
+.hero-bg-window-body {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  line-height: 1.65;
+  color: var(--color-white);
+  white-space: pre-wrap;
+  word-break: break-all;
+  background: transparent;
+  min-height: 120px;
+  max-height: 220px;
+  overflow: hidden;
+}
+
+/* Blinking cursor */
+.hero-bg-typed-cursor {
+  display: inline-block;
+  color: var(--color-primary);
+  animation: heroBgBlink 1s step-end infinite;
+  font-weight: 400;
+}
+
+@keyframes heroBgBlink {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
+  }
+}
+
+/* ── Syntax highlight classes used by the typing engine ── */
+.hero-kw-comment {
+  color: #546e7a;
+  /* steel blue-grey */
+}
+
+.hero-kw-keyword {
+  color: #c792ea;
+  /* purple */
+}
+
+.hero-kw-string {
+  color: #c3e88d;
+  /* green */
+}
+
+.hero-kw-number {
+  color: #f78c6c;
+  /* orange */
+}
+
+.hero-kw-function {
+  color: #82aaff;
+  /* light blue */
+}
+
+/* ── prefers-reduced-motion: kill all animations ── */
+@media (prefers-reduced-motion: reduce) {
+  .hero-bg-scene * {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .hero-bg-layer-far,
+  .hero-bg-layer-mid,
+  .hero-bg-layer-fg {
+    display: none;
+  }
+
+  .hero-bg-overlay {
+    background: rgba(34, 44, 62, 0.6);
+  }
+}
+
+/* ── Responsive: hide windows on small screens ── */
+@media (max-width: 768px) {
+
+  .hero-bg-float-b,
+  .hero-bg-float-c {
+    display: none;
+  }
+
+  .hero-bg-float-a {
+    width: 220px;
+    top: 8%;
+    left: 2%;
+    font-size: 0.6rem;
+  }
+}
+
+/* ── Neon blue hover glows (LOCAL DEV ONLY) ── */
+
+/* Nav cards */
+body.hero-bg-active .page-nav-card {
+  background: rgba(34, 44, 62, 0.82) !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: var(--color-white) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+}
+
+body.hero-bg-active .page-nav-card p {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+body.hero-bg-active .page-nav-card h2 {
+  color: var(--color-white) !important;
+}
+
+body.hero-bg-active .page-nav-card:hover {
+  background: rgba(34, 44, 62, 0.96) !important;
+  border-color: var(--color-primary) !important;
+  box-shadow:
+    0 0 0 1px var(--color-primary),
+    0 0 14px 3px rgba(37, 105, 244, 0.55),
+    0 0 36px 8px rgba(37, 105, 244, 0.25) !important;
+  transform: translateY(-4px);
+}
+
+/* Hero text card */
+body.hero-bg-active .hero-section {
+  transition: box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+body.hero-bg-active .hero-section:hover {
+  border-color: var(--color-primary);
+  box-shadow:
+    0 0 0 1px var(--color-primary),
+    0 0 18px 4px var(--color-primary-shadow),
+    0 0 40px 10px var(--color-primary-ring-md);
+}
+
+/* Floating IDE windows */
+body.hero-bg-active .hero-bg-window {
+  transition: box-shadow 0.25s ease, border-color 0.25s ease;
+  pointer-events: auto;
+}
+
+body.hero-bg-active .hero-bg-window:hover {
+  border-color: var(--color-primary);
+  box-shadow:
+    0 0 0 1px var(--color-primary),
+    0 0 20px 4px var(--color-primary-shadow),
+    0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+/* Navbar links */
+body.hero-bg-active .nav-links a {
+  transition: color 0.2s, text-shadow 0.2s;
+}
+
+body.hero-bg-active .nav-links a:hover,
+body.hero-bg-active .nav-links a.active {
+  color: var(--color-primary);
+  text-shadow: 0 0 8px var(--color-primary-shadow);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   END LOCAL DEV ONLY
+   ═══════════════════════════════════════════════════════════════ */
