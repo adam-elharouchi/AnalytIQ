@@ -29,11 +29,11 @@ try:
 except ImportError:
     generate_exercises_from_pdf_content = None
 
-# Import Flask-Mail for email
+# Import Resend for email
 try:
-    from flask_mail import Message
+    import resend
 except ImportError:
-    Message = None
+    resend = None
 
 
 class DatabaseTask(Task):
@@ -195,7 +195,7 @@ def generate_exercises_async(self, pdf_text, chapter_title, chapter_id, class_id
 @celery_app.task(name="tasks.send_email_async")
 def send_email_async(recipient, subject, body):
     """
-    Send email asynchronously using Resend API
+    Send email asynchronously using Resend API.
 
     Args:
         recipient: Email recipient
@@ -206,25 +206,34 @@ def send_email_async(recipient, subject, body):
         dict: {'success': bool, 'recipient': str}
     """
     try:
-        import resend
-        from config import RESEND_API_KEY, MAIL_DEFAULT_SENDER
-        
-        if not RESEND_API_KEY:
-            return {"success": False, "error": "Resend API key not configured", "recipient": recipient}
+        if not resend:
+            return {"success": False, "error": "Resend library not installed", "recipient": recipient}
 
-        resend.api_key = RESEND_API_KEY
-        
-        resend.Emails.send({
-            "from": MAIL_DEFAULT_SENDER,
-            "to": recipient,
+        # Initialize Resend API key
+        if not getattr(resend, "api_key", None):
+            resend.api_key = os.getenv("RESEND_API_KEY")
+
+        if not getattr(resend, "api_key", None):
+            return {"success": False, "error": "RESEND_API_KEY is missing", "recipient": recipient}
+
+        # Default sender (MUST match verified domain in Resend)
+        from_email = os.getenv("MAIL_DEFAULT_SENDER", "techsupport@myanalytiq.org")
+
+        logger.info(f"📧 Sending email FROM: {from_email} TO: {recipient}")
+
+        response = resend.Emails.send({
+            "from": f"AnalytIQ Support <{from_email}>",
+            "to": [recipient],
             "subject": subject,
-            "html": body
+            "html": body,
         })
+
+        logger.info(f"✅ Resend success: {response}")
 
         return {"success": True, "recipient": recipient}
 
     except Exception as e:
-        logger.error("Failed to send email async", extra={"error": str(e), "recipient": recipient})
+        logger.error(f"❌ Resend error: {repr(e)}")
         return {"success": False, "error": str(e), "recipient": recipient}
 
 
