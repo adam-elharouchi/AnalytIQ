@@ -25,7 +25,7 @@ from auth_helpers import (
     verify_password,
 )
 from db import get_db_connection
-from extensions import Message, csrf_exempt, limiter, mail
+from extensions import csrf_exempt, limiter
 from repositories import auth_repository as auth_repo
 
 logger = logging.getLogger(__name__)
@@ -193,31 +193,29 @@ def signin():
         return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
-def _send_reset_email(mail_instance, to_email, user_name, reset_link):
-    """Send password reset email. Logs warnings on failure; never raises."""
-    if not mail_instance:
-        logger.info("Mail not configured. Skipping password reset email.")
-        return
+def _send_reset_email(to_email, user_name, reset_link):
+    """Send password reset email via tasks."""
+    from tasks import send_email_async
+    import os
+    
     try:
-        sender = os.getenv("MAIL_DEFAULT_SENDER")
-        sender_name = os.getenv("MAIL_SENDER_NAME")
-        if sender_name and sender:
-            msg = Message(
-                "Password Reset Request",
-                recipients=[to_email],
-                sender=(sender_name, sender),
-            )
-        else:
-            msg = Message("Password Reset Request", recipients=[to_email])
-        msg.body = (
-            f"Hello {user_name},\n\n"
-            f"Someone requested a password reset for your AnalytIQ account.\n\n"
-            f"Click here to reset your password: {reset_link}\n\n"
+        subject = "Password Reset Request"
+        body = (
+            f"Hello {user_name},<br><br>"
+            f"Someone requested a password reset for your AnalytIQ account.<br><br>"
+            f"Click here to reset your password: <a href='{reset_link}'>{reset_link}</a><br><br>"
             f"This link expires in 1 hour. If you did not request this, please ignore this email."
         )
-        mail_instance.send(msg)
-    except Exception as mail_err:
-        logger.warning("Failed to send password reset email: %s", mail_err)
+        
+        FEATURE_ASYNC_TASKS = os.getenv("FEATURE_ASYNC_TASKS", "False").lower() == "true"
+        if FEATURE_ASYNC_TASKS:
+            send_email_async.delay(to_email, subject, body)
+            logger.info("Queued password reset email async.")
+        else:
+            send_email_async(to_email, subject, body)
+            logger.info("Sent password reset email synchronously.")
+    except Exception as e:
+        logger.warning("Failed to queue password reset email: %s", e)
 
 
 @bp.route("/api/users/forgot-password", methods=["POST"])
@@ -252,7 +250,7 @@ def forgot_password():
                 frontend_url = "https://www.myanalytiq.org"
             base_url = (frontend_url or request.host_url).rstrip("/") + "/"
             reset_link = f"{base_url}reset-password.html?token={token}&email={email}"
-            _send_reset_email(mail, email, user_row[1], reset_link)
+            _send_reset_email(email, user_row[1], reset_link)
 
         return (
             jsonify(

@@ -20,7 +20,7 @@ from auth_helpers import decode_jwt_token, require_auth, validate_fields
 from cache import cache_health_check
 from celery_app import celery_app
 from db import close_conn_safely, get_db_connection
-from extensions import csrf_exempt, mail
+from extensions import csrf_exempt
 from supabase_storage import storage_health_check
 
 logger = logging.getLogger(__name__)
@@ -86,15 +86,16 @@ def _run_health_checks():
 
     # 3. Email service (NON-CRITICAL)
     try:
-        if mail:
+        import resend
+        if getattr(resend, "api_key", None) or os.getenv("RESEND_API_KEY"):
             health_status["services"]["email"] = {
                 "status": "configured",
-                "note": "Flask-Mail initialized",
+                "note": "Resend configured",
             }
         else:
             health_status["services"]["email"] = {
                 "status": "not_configured",
-                "note": "Flask-Mail not installed",
+                "note": "Resend API key missing",
                 "impact": "Password reset emails unavailable",
             }
     except Exception as e:
