@@ -58,24 +58,6 @@ class TestTasksImportErrors:
                 sys.modules.pop("exercise_generator", None)
             importlib.reload(tasks_module)
 
-    def test_flask_mail_import_error(self):
-        """Lines 32-33: flask_mail import fails"""
-        import tasks as tasks_module
-
-        orig_message = tasks_module.Message
-        orig_mail_mod = sys.modules.get("flask_mail")
-
-        try:
-            sys.modules["flask_mail"] = None
-            importlib.reload(tasks_module)
-            assert tasks_module.Message is None
-        finally:
-            if orig_mail_mod is not None:
-                sys.modules["flask_mail"] = orig_mail_mod
-            else:
-                sys.modules.pop("flask_mail", None)
-            importlib.reload(tasks_module)
-
 
 # ========================================================================
 # cache.py Redis exception (lines 29-31)

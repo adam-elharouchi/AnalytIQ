@@ -195,7 +195,7 @@ def generate_exercises_async(self, pdf_text, chapter_title, chapter_id, class_id
 @celery_app.task(name="tasks.send_email_async")
 def send_email_async(recipient, subject, body):
     """
-    Send email asynchronously
+    Send email asynchronously using Resend API
 
     Args:
         recipient: Email recipient
@@ -206,19 +206,25 @@ def send_email_async(recipient, subject, body):
         dict: {'success': bool, 'recipient': str}
     """
     try:
-        # Import Flask app and mail
-        from app import app, mail
+        import resend
+        from config import RESEND_API_KEY, MAIL_DEFAULT_SENDER
+        
+        if not RESEND_API_KEY:
+            return {"success": False, "error": "Resend API key not configured", "recipient": recipient}
 
-        if not mail:
-            return {"success": False, "error": "Flask-Mail not configured", "recipient": recipient}
-
-        with app.app_context():
-            msg = Message(subject=subject, recipients=[recipient], html=body)
-            mail.send(msg)
+        resend.api_key = RESEND_API_KEY
+        
+        resend.Emails.send({
+            "from": MAIL_DEFAULT_SENDER,
+            "to": recipient,
+            "subject": subject,
+            "html": body
+        })
 
         return {"success": True, "recipient": recipient}
 
     except Exception as e:
+        logger.error("Failed to send email async", extra={"error": str(e), "recipient": recipient})
         return {"success": False, "error": str(e), "recipient": recipient}
 
 

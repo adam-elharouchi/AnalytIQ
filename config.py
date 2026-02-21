@@ -123,12 +123,8 @@ GEMINI_TIMEOUT = int(os.getenv("GEMINI_TIMEOUT", 60))  # seconds
 # EMAIL CONFIGURATION
 # ============================================================================
 
-MAIL_SERVER = os.getenv("MAIL_SERVER", "smtp.gmail.com")
-MAIL_PORT = int(os.getenv("MAIL_PORT", 587))
-MAIL_USE_TLS = os.getenv("MAIL_USE_TLS", "True").lower() == "true"
-MAIL_USERNAME = os.getenv("MAIL_USERNAME")
-MAIL_PASSWORD = os.getenv("MAIL_PASSWORD")
-MAIL_DEFAULT_SENDER = os.getenv("MAIL_DEFAULT_SENDER", "noreply@analytiq.com")
+RESEND_API_KEY = os.getenv("RESEND_API_KEY")
+MAIL_DEFAULT_SENDER = os.getenv("MAIL_DEFAULT_SENDER", "techsupport@myanalytIQ.org")
 
 # ============================================================================
 # LOGGING
@@ -246,8 +242,8 @@ def validate_config():
 
     # Check email config if notifications enabled
     if FEATURE_EMAIL_NOTIFICATIONS:
-        if not MAIL_USERNAME or not MAIL_PASSWORD:
-            errors.append("MAIL_USERNAME and MAIL_PASSWORD required when FEATURE_EMAIL is enabled")
+        if not RESEND_API_KEY:
+            errors.append("RESEND_API_KEY required when FEATURE_EMAIL is enabled")
 
     # Check secret key in production
     if ENV == "production" and SECRET_KEY == "dev-secret-key-change-in-production":

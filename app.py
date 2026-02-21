@@ -98,17 +98,9 @@ logger.info(
     },
 )
 
-# Email configuration (Flask-Mail)
-if mail is not None:
-    app.config["MAIL_SERVER"] = config.MAIL_SERVER
-    app.config["MAIL_PORT"] = config.MAIL_PORT
-    app.config["MAIL_USE_TLS"] = config.MAIL_USE_TLS
-    app.config["MAIL_USERNAME"] = config.MAIL_USERNAME
-    app.config["MAIL_PASSWORD"] = config.MAIL_PASSWORD
-    app.config["MAIL_DEFAULT_SENDER"] = config.MAIL_DEFAULT_SENDER
-    mail.init_app(app)
-else:
-    logger.warning("Flask-Mail not installed. Email features will not work.")
+# Email configuration (Resend)
+if config.FEATURE_EMAIL_NOTIFICATIONS and not config.RESEND_API_KEY:
+    logger.warning("RESEND_API_KEY not configured. Email features will not work.")
 
 # Rate limiting — configured via extensions.py
 try:

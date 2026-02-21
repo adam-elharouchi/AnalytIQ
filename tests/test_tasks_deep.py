@@ -107,12 +107,11 @@ class TestGenerateExercisesTask:
 class TestSendEmailTask:
     """Test send_email_async task - lines 192-206"""
 
-    @patch("tasks.Message", None)
+    @patch("config.RESEND_API_KEY", None)
     def test_send_email_no_message_class(self):
-        """Test when Flask-Mail Message not available"""
+        """Test when API Key not available"""
         from tasks import send_email_async
         result = send_email_async("test@test.com", "Subject", "<p>Body</p>")
-        # Should handle gracefully (may fail due to import issues)
         assert isinstance(result, dict)
 
     def test_send_email_exception(self):
