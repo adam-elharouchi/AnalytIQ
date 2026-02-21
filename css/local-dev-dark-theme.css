@@ -552,7 +552,6 @@ footer a:hover,
 /* ── 26. Inline-styled dashboard state containers ── */
 #emptyState,
 #loadingState,
-#classesGrid,
 [id$="State"] {
     background: var(--bg-card) !important;
     border-color: var(--border-color) !important;
