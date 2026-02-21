@@ -196,8 +196,7 @@ def signin():
 def _send_reset_email(to_email, user_name, reset_link):
     """Send password reset email synchronously."""
     from utils.email_service import send_email
-    import os
-    
+
     try:
         subject = "Password Reset Request"
         body = (
@@ -206,7 +205,6 @@ def _send_reset_email(to_email, user_name, reset_link):
             f"Click here to reset your password: <a href='{reset_link}'>{reset_link}</a><br><br>"
             f"This link expires in 1 hour. If you did not request this, please ignore this email."
         )
-        
         send_email(to_email=to_email, subject=subject, html_content=body)
         logger.info("Sent password reset email synchronously.")
     except Exception as e:

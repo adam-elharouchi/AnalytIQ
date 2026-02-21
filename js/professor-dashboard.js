@@ -51,7 +51,7 @@ function renderClasses(classes) {
   classesGrid.innerHTML = classes.map(classItem => `
     <div class="class-card" style="background: white; border: 1px solid var(--border-color); border-radius: 0.5rem; padding: 1.5rem; transition: box-shadow 0.2s;">
       <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
-        <h3 style="margin: 0; color: var(--color-dark); font-size: 1.25rem;">${escapeHtml(classItem.name)}</h3>
+        <h3 style="margin: 0;font-size: 1.25rem;">${escapeHtml(classItem.name)}</h3>
         <span style="background: var(--color-primary); color: white; padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.875rem; font-weight: 600;">${escapeHtml(classItem.class_id)}</span>
       </div>
       

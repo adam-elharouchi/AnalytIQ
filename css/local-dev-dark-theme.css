@@ -567,7 +567,8 @@ footer a:hover,
 }
 
 [role="dialog"] h2,
-[role="dialog"] label {
+[role="dialog"] label,
+.ui-confirm-message {
     color: var(--text-primary) !important;
 }
 

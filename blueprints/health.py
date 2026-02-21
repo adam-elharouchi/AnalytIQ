@@ -87,6 +87,7 @@ def _run_health_checks():
     # 3. Email service (NON-CRITICAL)
     try:
         import resend
+
         if getattr(resend, "api_key", None) or os.getenv("RESEND_API_KEY"):
             health_status["services"]["email"] = {
                 "status": "configured",
