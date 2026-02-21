@@ -98,9 +98,10 @@ logger.info(
     },
 )
 
-# Email configuration (Resend)
-if config.FEATURE_EMAIL_NOTIFICATIONS and not config.RESEND_API_KEY:
-    logger.warning("RESEND_API_KEY not configured. Email features will not work.")
+# Email configuration (Flask-Mail)
+# Email configuration has moved to Resend in tasks.py
+if mail is not None:
+    logger.warning("Mail initialization removed. Using Resend now.")
 
 # Rate limiting — configured via extensions.py
 try:

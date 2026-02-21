@@ -58,6 +58,24 @@ class TestTasksImportErrors:
                 sys.modules.pop("exercise_generator", None)
             importlib.reload(tasks_module)
 
+    def test_resend_import_error(self):
+        """Lines 32-35: resend import fails"""
+        import tasks as tasks_module
+
+        orig_resend = getattr(tasks_module, "resend", None)
+        orig_resend_mod = sys.modules.get("resend")
+
+        try:
+            sys.modules["resend"] = None
+            importlib.reload(tasks_module)
+            assert getattr(tasks_module, "resend", None) is None
+        finally:
+            if orig_resend_mod is not None:
+                sys.modules["resend"] = orig_resend_mod
+            else:
+                sys.modules.pop("resend", None)
+            importlib.reload(tasks_module)
+
 
 # ========================================================================
 # cache.py Redis exception (lines 29-31)

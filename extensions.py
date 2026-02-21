@@ -4,9 +4,13 @@ Shared Flask extension instances that are created without an app object
 and later configured via init_app() in app.py.
 """
 
-# Email (Resend)
-# Using resend Python SDK directly, no Flask extension needed.
+# ---------------------------------------------------------------------------
+# Email (Flask-Mail)
+# ---------------------------------------------------------------------------
+
+# Removed Flask-Mail
 mail = None
+Message = None
 
 # ---------------------------------------------------------------------------
 # Rate Limiting

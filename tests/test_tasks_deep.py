@@ -107,12 +107,15 @@ class TestGenerateExercisesTask:
 class TestSendEmailTask:
     """Test send_email_async task - lines 192-206"""
 
-    @patch("config.RESEND_API_KEY", None)
-    def test_send_email_no_message_class(self):
-        """Test when API Key not available"""
+    @patch("tasks.resend", None)
+    def test_send_email_no_resend_installed(self):
+        """Test when Resend is not available"""
         from tasks import send_email_async
         result = send_email_async("test@test.com", "Subject", "<p>Body</p>")
+        # Should handle gracefully and return False success status
         assert isinstance(result, dict)
+        assert result.get("success") is False
+        assert "not installed" in result.get("error", "")
 
     def test_send_email_exception(self):
         """Test email sending with exception"""
