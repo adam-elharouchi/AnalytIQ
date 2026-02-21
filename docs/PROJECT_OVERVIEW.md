@@ -1,79 +1,232 @@
-# AnalytIQ Project Overview
+# AnalytIQ - The Comprehensive Blueprint
 
-## 📖 Introduction
-AnalytIQ is an AI-powered educational platform designed to enhance the learning experience for students and professors in the field of coding and analytics. The platform provides interactive tools, real-time feedback, and comprehensive metrics to track progress.
+*This document serves as the absolute, definitive, and exhaustive breakdown of the AnalytIQ platform, covering every facet of its purpose, architecture, user journeys, data flow, integrations, and deployment strategy.*
 
-## 🏗️ Architecture & Tech Stack
+---
 
-### Backend
-The backend is built with **Python** using the **Flask** framework, providing a robust and scalable API.
-- **Framework**: Flask (3.0.0)
-- **Database**: PostgreSQL (via Supabase) with connection pooling (Psycopg2)
-- **AI Engine**: Google Gemini API (gemini-1.5-flash/pro) via `google-generativeai`
-- **Async Tasks**: Celery with Redis for background processing
-- **Authentication**: JWT (JSON Web Tokens) with `PyJWT`
-- **Security**: Flask-Limiter (Rate Limiting), Flask-WTF (CSRF), Bcrypt (Password Hashing)
-- **Monitoring**: Sentry for error tracking
+## 🌟 1. Executive Summary & Vision
 
-### Frontend
-The frontend is built using standard web technologies, ensuring compatibility and performance.
-- **Languages**: HTML5, CSS3, JavaScript (Vanilla ES6+)
-- **Styling**: Custom CSS with responsive design
-- **State Management**: `localStorage` for user sessions and caching
-- **API Interaction**: Custom `api-helper.js` with authenticated fetch wrapper and caching
+### What is AnalytIQ?
+AnalytIQ is a modern, monolithic, AI-augmented Learning Management System (LMS) and interactive coding environment. It bridges the gap between passive consumption of educational material (reading slides) and active, hands-on learning (writing and debugging code). Built with a striking Middle Eastern-inspired dark aesthetic featuring glassmorphism and animated accents, it provides a premium user experience that feels less like a traditional academic portal and more like a modern developer tool.
 
-### Infrastructure
-- **Deployment**: Render (Web Service + Redis)
-- **Storage**: Supabase Storage for file uploads (PDFs, etc.)
-- **Version Control**: Git & GitHub
+### Who is it For? (Core Personas)
+1. **The Student:** Wants a unified space to view lectures, practice coding immediately contextually relevant to the material, track their progress, and get instant, non-judgmental help from an AI tutor when stuck.
+2. **The Professor (Educator):** Wants zero friction in creating coursework. They simply upload their existing PDF slide decks; AnalytIQ's AI autonomously parses the content and generates quizzes, coding exercises, and lesson summaries. They also require robust analytics to identify struggling students.
+3. **The Institution (Admin):** Needs the platform to integrate seamlessly into their existing ecosystem (Canvas, Moodle, Blackboard) via strict LTI 1.3 standards, ensuring SSO (Single Sign-On) and secure grade pass-back without managing separate rosters.
 
-## 📂 Key File Structure
+---
 
-### Root Directory
-- `app.py`: The main entry point for the Flask application. Contains API routes, database connection logic, and authentication handlers.
-- `config.py`: Centralized configuration file handling environment variables, database settings, and feature flags.
-- `requirements.txt`: List of Python dependencies.
-- `Procfile`: Command to run the application on Render/Heroku (`gunicorn app:app`).
-- `start_server.sh`: Shell script to start the local development server.
+## 🏗️ 2. System Architecture & The "How It Works" Flow
 
-### Source Directories
-- **`js/`**: Contains frontend JavaScript logic.
-  - `api-helper.js`: Core utility for API requests, caching, and authentication.
-  - `auth.js`: Handles login, signup, and session management.
-  - `code-assistant.js`: Logic for the AI code assistant and chat interface.
-  - `student-*.js`: Logic specific to student views.
-  - `professor-*.js`: Logic specific to professor views.
-- **`css/`**: Global and page-specific stylesheets.
-- **`python/`**: Helper Python modules (e.g., PDF processing, exercise generation).
-- **`docs/`**: Project documentation files.
+AnalytIQ employs a **Client-Server Architecture** heavily relying on a **Monolithic Flask Backend** rendering dynamic HTML via Jinja2, coupled with **Vanilla JavaScript** managing localized DOM state and asynchronous data fetching.
 
-### HTML Templates (Root)
-- `index.html`: Landing page and marketing site.
-- `login.html`: Login page; `reset-password.html`: Password reset flow.
-- `student-classes.html`: Student class list; `student-class.html`: Individual class view with chapters and exercises.
-- `professor-dashboard.html`: Professor overview and class management; `professor-class.html`: Per-class management, analytics, and leaderboard.
-- `practice-playground.html`: Interactive coding exercise environment with AI hint assistant.
-- `code-assistant.html`: Free-form AI coding assistant with conversation history.
-- `upload-assistant.html`: PDF chapter upload flow for professors.
-- `chapter-view.html`: In-browser PDF viewer for students.
-- `modules.html`: Course module browser.
-- `profile.html`: User profile and preferences.
-- `resources.html`: Supplementary resources page.
-- `contact.html`: Contact form.
+### The Request Lifecycle (A Deep Dive)
+1. **Client Interaction:** A user clicks a button (e.g., "Submit Code"). Validated locally, `api-helper.js` intercepts the request.
+2. **Token Injection:** `api-helper.js` retrieves the user's JSON Web Token (JWT) securely from `localStorage` and attaches it to the `Authorization: Bearer <token>` header.
+3. **Network Transit & CORS:** The browser fires a preflight `OPTIONS` request. `app.py` handles this dynamically, allowing specific origins (development vs. production URLs).
+4. **Backend Gateway (`app.py`):** 
+   - **Rate Limiting:** `Flask-Limiter` checks (via Redis or Memory) if the user has exceeded their endpoint quota (preventing DDoS or AI abuse).
+   - **CSRF Check:** `Flask-WTF` validates the Cross-Site Request Forgery token if it's a mutating request (POST/PUT/DELETE).
+   - **Error Tracking:** `Sentry SDK` attaches a unique `request_id` context to the transaction.
+5. **Blueprint Routing:** The request hits a specific Flask Blueprint (e.g., `/blueprints/exercises.py -> submit_exercise()`).
+6. **Authentication Validation (`@token_required`):** A decorator decodes the JWT, verifies the signature using `config.SECRET_KEY`, checks expiration, and mounts the `user_id` and `role` to the Flask `g` object.
+7. **Database Transaction (`db.py`):** 
+   - A connection is pulled from the `psycopg2.pool.ThreadedConnectionPool`.
+   - Raw, parameterized SQL executes against the PostgreSQL database (preventing SQL injection).
+   - The connection is returned to the pool, and the result is serialized into a JSON dictionary.
+8. **Heavy Processing (The AI Fork):**
+   - *If the request requires complex AI (e.g., parsing a 50-page PDF):* The backend kicks the job over to **Celery**. Celery queues the task in **Redis**. The user is immediately returned a `job_id` (HTTP 202 Accepted) and the frontend begins polling a status endpoint until the worker finishes.
+   - *If it's a fast task (like evaluating code):* The backend synchronously calls the Gemini API, awaits the response, formats it, and returns it.
+9. **Client Response & DOM Update:** The JSON payload arrives. Vanilla JavaScript parses it, conditionally applies CSS classes (e.g., turning a div green for a correct answer), and updates `localStorage` caches if necessary.
 
-## 🌐 Website Features
+---
 
-### Student Portal
-- **Dashboard**: View enrolled classes, recent activity, and progress.
-- **Class View**: Access course materials, assignments, and grades.
-- **Practice Playground**: Interactive coding environment with real-time AI assistance.
+## 🛠️ 3. The Exhaustive Tech Stack
 
-### Professor Portal
-- **Dashboard**: Manage classes, view student analytics, and track performance.
-- **Class Management**: Upload resources (PDFs), create assignments, and monitor student engagement.
-- **AI Tools**: Generate exercises and quizzes from course content automatically.
+### 🖥️ Frontend layer (The Visual Interface)
+The frontend deliberately avoids heavy SPA frameworks (React/Vue) to ensure lightning-fast initial page loads, utilizing standard web specifications.
 
-### General
-- **AI Assistant**: Context-aware chat for coding help and concept explanation.
-- **Profile Management**: Update user details and preferences.
-- **Responsive Design**: Optimized for desktop and tablet usage.
+*   **HTML5 / Jinja2:** The structural backbone. Templates (`templates/`) use Jinja2 logic (`{% if user.role == 'professor' %}`) to conditionally render UI blocks server-side right on the initial document load.
+*   **CSS3 (Custom Styling):** No Bootstrap or Tailwind. The entire aesthetic is built from scratch utilizing CSS Variables (`:root`), Flexbox, Grid, and complex pseudo-elements for glassmorphism panels. The `local-dev-dark-theme.css` acts as the primary visual override.
+*   **JavaScript (Vanilla ES6+):** Highly modularized JS files (`auth.js`, `student-class.js`). It heavily utilizes the `Fetch API`, `async/await`, Promises, and standard DOM traversal (`document.querySelector`).
+*   **State & Caching:** 
+    - `localStorage`: Stores persistent data like JWT auth tokens, user themes, and non-sensitive structural data.
+    - `sessionStorage`: Stores ephemeral data (like the script of an ongoing AI chat) that should die when the tab closes.
+*   **Code Editor Component:** Integrated libraries (like Monaco or CodeMirror configurations) to provide syntax highlighting, line numbers, and auto-indentation within the `practice-playground.html`.
+
+### 🧠 Backend Layer (The Brain)
+*   **Python 3.x:** The core programming language, chosen for its vast data-science/AI ecosystem and readable syntax.
+*   **Flask (3.0.0):** The web server framework. It handles HTTP routing, request parsing, and response generation.
+    *   **Blueprints:** Used extensively to split the app into logical modules:
+        *   `auth.py`: Login, registration, password hashing (Bcrypt), JWT issuing.
+        *   `users.py`: Profile fetching, settings updates.
+        *   `classes.py`: CRUD operations for university courses.
+        *   `chapters.py`: Managing modules/modules within a class.
+        *   `exercises.py`: Code challenge evaluations and progress tracking.
+        *   `ai.py`: The gateway to Google Gemini (chat bots, hints).
+        *   `lti.py`: Handles complex OAuth2/OIDC flows for LMS integrations.
+*   **Middleware & Security:**
+    *   `Flask-Limiter`: Prevents endpoint abuse.
+    *   `Flask-WTF`: Issues and validates CSRF tokens against cross-site attacks.
+    *   `PyJWT`: Cryptographically signs user sessions (stateless auth).
+    *   `Sentry-SDK`: Catches unhandled exceptions, sanitizes Personal Identifiable Information (PII), and alerts developers in real-time.
+
+### 🗄️ Database & Storage Layer (The Memory)
+*   **PostgreSQL:** The primary relational database. Chosen for ACID compliance, robust foreign-key constraints, and complex querying capabilities.
+    *   **Architecture:** We use raw SQL queries via `psycopg2` with `psycopg2.extras.DictCursor` (for dictionary-like row access). We employ a `ThreadedConnectionPool` (Min 1, Max 20 connections) to handle concurrent traffic without exhausting DB resources.
+    *   **Core Tables Overview:**
+        *   `users`: ID, email, password_hash, role (student/professor), timestamps.
+        *   `classes`: ID, professor_id (FK), name, description, join_code.
+        *   `class_roster`: Junction table linking `users` (students) to `classes`.
+        *   `chapters`: ID, class_id (FK), title, sequence_order, pdf_url.
+        *   `exercises`: ID, chapter_id (FK), type (code/quiz), question, expected_logic.
+        *   `exercise_completions`: Tracks which student completed which exercise, their code snapshot, and timestamp.
+*   **Supabase Storage / Cloud Storage:** Used exclusively as an S3-compatible Blob store. When a professor uploads a PDF lecture, the binary file is streamed to a bucket, and a public/signed URL string is saved to the `chapters` table.
+
+### 🤖 AI Integration (The Core Differentiator)
+*   **Google Gemini API (`gemini-1.5-flash` & `gemini-1.5-pro`):**
+    *   **The AI Coding Assistant (`code-assistant.html`):** Uses strict prompt engineering to act as a "Socratic Tutor." It is instructed *never* to give the direct answer but to guide the student towards writing the correct logic.
+    *   **Autonomous Content Generation (`exercise_generator.py`):** When a PDF is uploaded, `pdf_processor.py` extracts the raw text. This text is fed into a massive, highly-structured prompt to Gemini, utilizing "Structured JSON Output" mode to guarantee the AI returns a valid, parseable JSON array of relevant coding questions and multiple-choice quizzes based *only* on the slide content.
+
+### ⚡ Background Tasks (The Workhorses)
+*   **Celery:** A distributed task queue. It takes heavy, long-running Python functions (like sending bulk emails, crunching analytics, or processing 100-page PDFs through an LLM) out of the main HTTP request/response cycle, preventing the web server from freezing or timing out.
+*   **Redis:** Acts as the "Message Broker." Flask sends a message ("Hey celery, process PDF ID #45") to Redis. A background Celery Worker constantly monitors Redis, picks up the message, executes the heavy Python code, and updates a status table when finished.
+
+---
+
+## 🛣️ 4. Comprehensive User Journeys
+
+### The Student Journey
+1. **Onboarding:** Registers via `/api/auth/register`, inputs a unique class `join_code` provided by their professor.
+2. **The Dashboard (`student-classes.html`):** Land on a grid of enrolled classes showing progress bars (calculated by joining `exercises` against `exercise_completions`).
+3. **The Chapter View (`chapter-view.html`):** An immersive, split-screen layout. The left pane renders the assigned PDF (via an embedded object or PDF.js). The right pane dynamically lists reading summaries, automatically generated quizzes, and coding challenges associated with that specific chapter.
+4. **The Practice Playground (`practice-playground.html`):**
+   - Click a code challenge.
+   - The user types logic into the syntax-highlighted editor.
+   - They can click "Ask AI for Hint." The frontend packages their *current code state* + *the question text* and sends it to the `/api/ai/hint` endpoint.
+   - They submit code. The backend evaluates it (either via strict string matching, regex logic checks, or an AI grader for complex logic) and persists the completion status.
+
+### The Professor Journey
+1. **Class Creation:** Creates a class (`professor-dashboard.html`); a unique alphanumeric `join_code` is generated.
+2. **The Upload Assistant (`upload-assistant.html`):** The crown jewel of the educator platform.
+   - Drag and drop a PDF lecture (e.g., "Introduction to Python Data Structures.pdf").
+   - Define extraction parameters (e.g., "Generate 3 coding questions and 2 quizzes").
+   - The file uploads to Blob storage. The backend fires the Celery worker.
+   - A loading spinner tracks the background job status.
+   - The AI returns structured JSON. The frontend presents a confirmation table allowing the professor to edit, approve, or reject the AI's generated questions.
+3. **Analytics Tracking (`professor-class.html`):** A granular dashboard showing tables of the student roster, visualizing who has completed which exercises, identifying bottlenecks (e.g., "80% of students failed Exercise #4"), and presenting leaderboards mapped to UI components.
+
+---
+
+## 🔌 5. Infrastructure, LTI 1.3, & DevOps
+
+### LTI 1.3 Integration (Learning Tools Interoperability)
+AnalytIQ is not a walled garden; it is designed for enterprise university adoption.
+*   **The Problem:** Universities won't buy software if students have to create new accounts and professors have to manually copy grades over.
+*   **The Standard:** LTI 1.3 utilizes OpenID Connect (OIDC) and OAuth 2.0.
+*   **The Flow (`lti.py` & `lti-*` templates):**
+    1. A student clicks an "AnalytIQ Week 1 Assignment" link inside Canvas.
+    2. Canvas sends an OIDC login initiation to `/api/lti/login`.
+    3. AnalytIQ redirects back to Canvas for authentication.
+    4. Canvas POSTs a massive, cryptographically-signed JWT (the `id_token`) to `/api/lti/launch`.
+    5. AnalytIQ validates the signature against the university's public keys (JWKS).
+    6. AnalytIQ reads the token: "Ah, this is John Doe, role: Learner, accessing Course ID: 101."
+    7. AnalytIQ automatically provisions an account in the background (SSO) and drops them directly into the specific assignment (`target_link_uri`).
+    8. Upon completion, AnalytIQ utilizes the LTI Advantage Assignment and Grade Services (AGS) APIs to push the grade score (0.0 to 1.0) directly into the Canvas Gradebook.
+
+### Deployment & CI/CD Strategy
+*   **Hosting Context:** Entirely serverless/managed infrastructure.
+*   **Application Server:** **Render (Web Services)** running Gunicorn (a Python WSGI HTTP Server). Gunicorn manages multiple worker processes (gevent/sync) to handle concurrent web traffic.
+*   **Database Host:** **Supabase (Managed PostgreSQL)**. It handles backups, replication, and provides a powerful SQL editor.
+*   **Cache/Queue Host:** **Render (Managed Redis)**. Handles session caching, rate-limit counters, and the Celery broker queue.
+*   **Continuous Integration (CI):** GitHub Actions. On every commit/PR:
+    1. Lints the Python code (`flake8`/`black`).
+    2. Runs the `pytest` suite (targeting >80% coverage).
+    3. Mock dependencies (like the database and Gemini API) are used to test complex logic (e.g., "Does the auth middleware correctly reject an expired token?").
+    4. Upon passing, code merges to main and triggers an automated deployment hook on Render, seamlessly replacing the active container.
+
+---
+
+## 📁 6. The Complete File & Directory Map
+
+```text
+/AnalytIQ
+│
+├── ⚙️ ROOT CONFIGURATION & APPLICATION ENTRY
+│   ├── app.py                     # CORE HUB: Initializes Flask, configures Logging (jsonlogger), Sentry, CORS, Rate Limiting (limiter), CSRF, Blueprint registration, and API V1 aliases.
+│   ├── config.py                  # Single point of truth pulling keys from `.env` (DATABASE_URL, SECRET_KEY, CELERY_BROKER).
+│   ├── db.py                      # Initializes `psycopg2.pool.ThreadedConnectionPool` and context managers for executing raw UI.
+│   ├── extensions.py              # Instantiates Flask extensions (limiter, mail, csrf) globally to prevent circular imports.
+│   ├── sentry_config.py           # Configures error tracking, filtering out passwords or PII before sending crashes.
+│   ├── Procfile                   # Instructs Render/Heroku how to boot (`web: gunicorn app:app`).
+│   ├── requirements.txt           # Python dependency lockfile (Flask, psycopg2-binary, pyjwt, celery, google-generativeai, etc.).
+│   ├── start_server.sh            # Developer utility script to boot the local environment cleanly.
+│   └── tests/                     # The comprehensive `pytest` test suite covering unit authentication, API routing, and component boundaries.
+│
+├── 🛣️ /blueprints/ (THE API ROUTES - RESTful Controllers)
+│   ├── __init__.py                # Package initializer.
+│   ├── auth.py                    # POST /login, POST /register, POST /reset-password (handles bcrypt hashing and JWT encoding/decoding).
+│   ├── users.py                   # GET /me, PUT /profile (user-specific CRUD).
+│   ├── classes.py                 # POST /classes (Professor creates config), GET /classes/student (Lists enrolled).
+│   ├── chapters.py                # CRUD for Modules/Syllabi. Includes logic for securing signed URLs for uploaded PDFs.
+│   ├── exercises.py               # POST /submit (Code evaluation), GET /metrics (Fetching completion aggregates).
+│   ├── ai.py                      # The Gemini Gateway. POST /chat (conversations), POST /hint (contextual debugging).
+│   ├── lti.py                     # The immensely complex OIDC handshake endpoints (`/login_initiator`, `/launch`, JWKS validation).
+│   └── health.py                  # A simple GET `/health` to allow Render/Load Balancers to verify the server hasn't crashed.
+│
+├── 🧠 /python/ (HEAVY BACKEND UTILITIES)
+│   ├── \_\_init\_\_.py
+│   ├── pdf_processor.py           # Uses libraries like `PyPDF2` or `pdfplumber` to extract raw strings from binary file streams.
+│   ├── exercise_generator.py      # Contains the massive PROMPT templates. Constructs context, requests Structured JSON from Gemini, and validates the output structure.
+│   └── helpers.py                 # Generic string manipulators, date formatters, or sanitizers.
+│
+├── 🎨 /templates/ (THE VIEW LAYER - Server Rendered HTML/Jinja)
+│   ├── base.html                  # THE MASTER TEMPLATE: Contains the `<head>`, global navbars, footer, and `{% block content %}`. All other pages `extend` this.
+│   ├── index.html                 # Marketing Landing Page: High-performance animations, feature breakdowns.
+│   ├── login.html / reset*.html   # Standard Auth UI shells.
+│   ├── profile.html               # User settings and theming preference dropdowns.
+│   ├── contact.html / resources   # Static informational pages.
+│   ├── privacy.html / terms.*     # Legal and compliance documentation (GDPR, FERPA statements).
+│   ├── security-compliance.html   # Detailed breakdown of data handling for institutional audits.
+│   │
+│   ├── 👨‍🎓 STUDENT PORTAL VIEWS
+│   │   ├── student-classes.html   # The grid dashboard of enrolled courses with progress tracking.
+│   │   ├── student-class.html     # The interior of a specific course, listing chapters sequentially.
+│   │   └── chapter-view.html      # The immersive learning split-screen (PDF left, exercises right).
+│   │
+│   ├── 👨‍🏫 PROFESSOR PORTAL VIEWS
+│   │   ├── professor-dashboard.html# The hub. Create new classes, view aggregate student health across all courses.
+│   │   ├── professor-class.html   # Deep dive into a specific roster, gradebook leaderboards, and module editing.
+│   │   └── upload-assistant.html  # The drag-and-drop PDF ingestion and AI-generation review workflow interface.
+│   │
+│   ├── 🛠️ INTERACTIVE TOOL VIEWS
+│   │   ├── practice-playground.html# The sandbox. Embedded code editor, console output simulator, and floating AI hint widget.
+│   │   └── code-assistant.html    # A full-width ChatGPT-style interface for general coding queries.
+│   │
+│   └── 🔗 LTI INTEGRATION VIEWS
+│       ├── lti-setup.html         # Form to generate Consumer Keys and Shared Secrets for LMS Admins.
+│       ├── lti-launch.html        # An interstitial "Loading..." screen validating the OAuth handshake.
+│       ├── lti-deep-link.html     # The UI inside Canvas where a professor selects *which* AnalytIQ assignment to link.
+│       └── lti-launch-error       # Graceful degradation UI if the OAuth signature fails.
+│
+├── 🖌️ /css/ (THE STYLE ARCHITECTURE)
+│   ├── style.css                  # Base resets, typography, and utility classes.
+│   ├── dashboard.css              # Grid layouts specific to the portal interfaces.
+│   └── local-dev-dark-theme.css   # **THE HERO THEME**: Contains all the Middle-Eastern inspired, high-contrast, glassmorphism CSS Variables, gradients, and hover state animations.
+│
+├── ⚙️ /js/ (THE CLIENT EXECUTORS)
+│   ├── api-helper.js              # **CRITICAL**: The centralized `fetch` wrapper. It automatically injects the JWT Header, checks for 401 Expirations, caches GET requests identically, and handles network timeouts.
+│   ├── auth.js                    # Binds to the login/register forms, manages `localStorage` session creation and wiping on logout.
+│   ├── home-animation.js          # IntersectionObservers and scroll-trigger animations for the `index.html` marketing page.
+│   ├── code-assistant.js          # Manages the chat history arrays, binds enter-key submission, auto-scrolls the chat window, and handles markdown-to-HTML rendering of the AI's response.
+│   ├── student-*.js               # Event bindings specific to student interactions (e.g., submitting an exercise).
+│   ├── professor-*.js             # Analytics chart rendering (e.g., Chart.js initializers) and handling the PDF upload multi-part form data pipeline.
+│   └── upload-workflow.js         # The complex state-machine handling the transition from "PDF Uploading" -> "AI Generating (polling)" -> "Approval Table Rendered."
+│
+└── 📚 /docs/ (THE KNOWLEDGE BASE)
+    ├── PROJECT_OVERVIEW.md        # (You are here). The master document.
+    ├── ARCHITECTURE.md            # Deep dive into the database schema and scaling heuristics.
+    ├── ACCESSIBILITY.md           # WCAG/A11y compliance notes and keyboard navigation standards.
+    ├── SECURITY.md                # Threat models, CSRF handling logic, and penetration testing guidelines.
+    └── knowledge_base/            # Auto-generated granular breakdowns of specific functions split across enumerated folders (e.g., 01-Security-Authentication.md).
+```

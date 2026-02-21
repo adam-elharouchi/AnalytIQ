@@ -4,17 +4,9 @@ Shared Flask extension instances that are created without an app object
 and later configured via init_app() in app.py.
 """
 
-# ---------------------------------------------------------------------------
-# Email (Flask-Mail)
-# ---------------------------------------------------------------------------
-
-try:
-    from flask_mail import Mail, Message  # noqa: F401 (Message re-exported for routes)
-
-    mail = Mail()
-except ImportError:
-    mail = None
-    Message = None
+# Email (Resend)
+# Using resend Python SDK directly, no Flask extension needed.
+mail = None
 
 # ---------------------------------------------------------------------------
 # Rate Limiting
