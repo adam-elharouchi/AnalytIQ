@@ -89,7 +89,7 @@ async function loadClassData(classId) {
     loadingState.innerHTML = `
       <div style="text-align: center; padding: 3rem;">
         <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
-        <h2 style="color: var(--color-dark); margin-bottom: 0.5rem;">Error Loading Class</h2>
+        <h2 style="margin-bottom: 0.5rem;">Error Loading Class</h2>
         <p style="color: #64748b; margin-bottom: 1.5rem;">${error.message}</p>
         <button class="btn btn-primary" onclick="window.location.href='professor-dashboard.html'">Back to Dashboard</button>
       </div>
@@ -208,7 +208,7 @@ async function loadChapters() {
           <div style="flex: 1;">
             <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
               <span style="background: var(--color-primary); color: white; padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.875rem; font-weight: 600;">Chapter ${chapter.chapter_number}</span>
-              <h3 style="margin: 0; color: var(--color-dark); font-size: 1.25rem;">${escapeHtml(chapter.title)}</h3>
+              <h3 style="margin: 0;font-size: 1.25rem;">${escapeHtml(chapter.title)}</h3>
             </div>
             ${chapter.description ? `<p style="color: #64748b; margin-bottom: 0.5rem;">${escapeHtml(chapter.description)}</p>` : ''}
             <div style="font-size: 0.875rem; color: #64748b;">
@@ -217,7 +217,7 @@ async function loadChapters() {
           </div>
           <div style="display: flex; gap: 0.5rem;">
             ${chapter.pdf_url || chapter.pdf_filename ? `<a href="chapter-view.html?chapter_id=${encodeURIComponent(chapter.chapter_id)}&class_id=${encodeURIComponent(currentClassId)}" class="btn btn-primary" style="text-decoration: none;">View PDF</a>` : ''}
-            <button class="btn btn-secondary" onclick="showEditChapterModal('${chapter.chapter_id}')" style="background: white; color: var(--color-dark); border: 1px solid #cbd5e1; padding: 0.5rem 0.75rem;">✏️</button>
+            <button class="btn btn-secondary" onclick="showEditChapterModal('${chapter.chapter_id}')" style="background: white;border: 1px solid #cbd5e1; padding: 0.5rem 0.75rem;">✏️</button>
             <button class="btn btn-secondary" onclick="showDeleteChapterModal('${chapter.chapter_id}')" style="background: white; color: #ef4444; border: 1px solid #fca5a5; padding: 0.5rem 0.75rem;">🗑️</button>
           </div>
         </div>
@@ -321,7 +321,7 @@ async function loadStudents() {
         const barColor = percentage >= 80 ? '#10b981' : percentage >= 50 ? '#f59e0b' : '#64748b';
         return `
                 <tr style="border-bottom: 1px solid var(--border-color);">
-                  <td style="padding: 1rem; color: var(--color-dark); font-weight: 500;">${escapeHtml(student.name)}</td>
+                  <td style="padding: 1rem;font-weight: 500;">${escapeHtml(student.name)}</td>
                   <td style="padding: 1rem; color: #64748b;">${escapeHtml(student.email)}</td>
                   <td style="padding: 1rem;">
                     <div style="display: flex; align-items: center; gap: 0.75rem;">
@@ -646,7 +646,7 @@ async function loadExercises() {
         const chapterData = exercisesByChapter[chapterId];
         return `
               <div class="chapter-section" style="grid-column: 1 / -1; margin-bottom: 2rem;">
-                <h2 style="margin-top: 2rem; margin-bottom: 0.5rem; color: var(--color-dark); font-size: 1.75rem; border-bottom: 2px solid var(--color-primary); padding-bottom: 0.5rem;">${escapeHtml(chapterData.chapter_title)}</h2>
+                <h2 style="margin-top: 2rem; margin-bottom: 0.5rem;font-size: 1.75rem; border-bottom: 2px solid var(--color-primary); padding-bottom: 0.5rem;">${escapeHtml(chapterData.chapter_title)}</h2>
               </div>
               ${chapterData.exercises.map(exercise => `
                 <div class="practice-card">
@@ -1058,7 +1058,7 @@ async function loadResources() {
 
         return `
           <div style="margin-bottom: 2.5rem;">
-            <h3 style="color: var(--color-dark); margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border-color); display: flex; align-items: center; gap: 0.5rem;">
+            <h3 style="margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border-color); display: flex; align-items: center; gap: 0.5rem;">
               <span>${typeInfo.icon}</span>
               <span>${typeInfo.label}</span>
             </h3>
@@ -1111,7 +1111,7 @@ async function loadResources() {
           return `
                   <div class="resource-card" style="background: white; border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.1)';">
                     <div style="font-size: 2rem; margin-bottom: 0.75rem;">${icon}</div>
-                    <h3 style="margin: 0 0 0.5rem 0; color: var(--color-dark); font-size: 1.125rem;">${escapeHtml(resource.title)}</h3>
+                    <h3 style="margin: 0 0 0.5rem 0;font-size: 1.125rem;">${escapeHtml(resource.title)}</h3>
                     <p style="color: #64748b; margin: 0 0 1rem 0; font-size: 0.875rem; line-height: 1.5;">${escapeHtml(resource.description || '')}</p>
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                       <a href="${escapeHtml(url)}" ${linkTarget} class="resource-link" style="color: var(--color-primary); text-decoration: none; font-weight: 500; font-size: 0.875rem;">
