@@ -49,6 +49,15 @@ body {
     color: var(--text-primary) !important;
 }
 
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    color: var(--text-primary) !important;
+}
+
 /* ── 3. Navbar — frosted glass ── */
 .navbar {
     background: rgba(17, 24, 39, 0.80) !important;

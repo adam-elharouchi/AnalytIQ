@@ -204,7 +204,7 @@ async function loadChapters() {
       uiStates.showEmpty(chaptersList, '📄 No chapters yet', 'Upload your first chapter to get started.');
     } else {
       chaptersList.innerHTML = chapters.map(chapter => `
-        <div class="chapter-card" style="background: white; border: 1px solid var(--border-color); border-radius: 0.5rem; padding: 1.5rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: start;">
+        <div class="chapter-card" style="background: var(--bg-card, #fff); border: 1px solid var(--border-color); border-radius: 0.5rem; padding: 1.5rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: start;">
           <div style="flex: 1;">
             <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
               <span style="background: var(--color-primary); color: white; padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.875rem; font-weight: 600;">Chapter ${chapter.chapter_number}</span>
@@ -217,8 +217,8 @@ async function loadChapters() {
           </div>
           <div style="display: flex; gap: 0.5rem;">
             ${chapter.pdf_url || chapter.pdf_filename ? `<a href="chapter-view.html?chapter_id=${encodeURIComponent(chapter.chapter_id)}&class_id=${encodeURIComponent(currentClassId)}" class="btn btn-primary" style="text-decoration: none;">View PDF</a>` : ''}
-            <button class="btn btn-secondary" onclick="showEditChapterModal('${chapter.chapter_id}')" style="background: white;border: 1px solid #cbd5e1; padding: 0.5rem 0.75rem;">✏️</button>
-            <button class="btn btn-secondary" onclick="showDeleteChapterModal('${chapter.chapter_id}')" style="background: white; color: #ef4444; border: 1px solid #fca5a5; padding: 0.5rem 0.75rem;">🗑️</button>
+            <button class="btn btn-secondary" onclick="showEditChapterModal('${chapter.chapter_id}')" style="background: var(--bg-card, #fff);border: 1px solid #cbd5e1; padding: 0.5rem 0.75rem;">✏️</button>
+            <button class="btn btn-secondary" onclick="showDeleteChapterModal('${chapter.chapter_id}')" style="background: var(--bg-card, #fff); color: #ef4444; border: 1px solid #fca5a5; padding: 0.5rem 0.75rem;">🗑️</button>
           </div>
         </div>
       `).join('');
@@ -306,7 +306,7 @@ async function loadStudents() {
       studentsList.innerHTML = `
         <div style="overflow-x: auto;">
           <table style="width: 100%; border-collapse: collapse; min-width: 700px;">
-            <thead style="background: #f8fafc; border-bottom: 2px solid var(--border-color);">
+            <thead style="background: var(--bg-secondary, #f8fafc); border-bottom: 2px solid var(--border-color);">
               <tr>
                 <th style="text-align: left; padding: 1rem; color: #64748b; font-weight: 600;">Name</th>
                 <th style="text-align: left; padding: 1rem; color: #64748b; font-weight: 600;">Email</th>
@@ -366,7 +366,7 @@ async function loadProgress() {
 
     if (students.length === 0) {
       progressOverview.innerHTML = `
-        <div style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 0.5rem;">
+        <div style="text-align: center; padding: 3rem; background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-color); border-radius: 0.5rem;">
           <div style="font-size: 3rem; margin-bottom: 1rem;">📊</div>
           <p style="color: #64748b;">No student data available yet.</p>
         </div>
@@ -376,7 +376,7 @@ async function loadProgress() {
 
     if (exercises.length === 0) {
       progressOverview.innerHTML = `
-        <div style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 0.5rem;">
+        <div style="text-align: center; padding: 3rem; background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-color); border-radius: 0.5rem;">
           <p style="color: #64748b;">No exercises defined yet.</p>
         </div>
       `;
@@ -389,9 +389,9 @@ async function loadProgress() {
     tableContainer.innerHTML = `
       <div style="overflow-x: auto;">
         <table style="width: 100%; border-collapse: collapse; min-width: 800px;">
-          <thead style="background: #f8fafc; border-bottom: 2px solid var(--border-color);">
+          <thead style="background: var(--bg-secondary, #f8fafc); border-bottom: 2px solid var(--border-color);">
             <tr>
-              <th style="text-align: left; padding: 1rem; position: sticky; left: 0; background: #f8fafc; z-index: 10;">Student</th>
+              <th style="text-align: left; padding: 1rem; position: sticky; left: 0; background: var(--bg-secondary, #f8fafc); z-index: 10;">Student</th>
               ${exercises.map(ex => `
                 <th style="padding: 1rem; text-align: center; min-width: 100px;">
                   <div style="font-size: 0.875rem; color: #64748b;">${escapeHtml(ex.title)}</div>
@@ -402,7 +402,7 @@ async function loadProgress() {
           <tbody>
             ${students.map(student => `
               <tr style="border-bottom: 1px solid var(--border-color);">
-                <td style="padding: 1rem; font-weight: 500; position: sticky; left: 0; background: white; border-right: 1px solid var(--border-color);">${escapeHtml(student.name)}</td>
+                <td style="padding: 1rem; font-weight: 500; position: sticky; left: 0; background: var(--bg-card, #fff); border-right: 1px solid var(--border-color);">${escapeHtml(student.name)}</td>
                 ${exercises.map(ex => {
       const progress = student.progress[ex.id];
       if (!progress) return '<td style="text-align: center; color: #cbd5e1;">-</td>';
@@ -486,9 +486,9 @@ async function loadAvgLeaderboard() {
     }
 
     container.innerHTML = `
-            <div style="background: white; border-radius: 0.5rem; border: 1px solid var(--border-color); overflow: hidden; max-width: 800px; margin: 0 auto;">
+            <div style="background: var(--bg-card, #fff); border-radius: 0.5rem; border: 1px solid var(--border-color); overflow: hidden; max-width: 800px; margin: 0 auto;">
                 <table style="width: 100%; border-collapse: collapse;">
-                    <thead style="background: #f8fafc; border-bottom: 2px solid var(--border-color);">
+                    <thead style="background: var(--bg-secondary, #f8fafc); border-bottom: 2px solid var(--border-color);">
                          <tr>
                             <th style="padding: 1rem; text-align: center; width: 60px;">Rank</th>
                             <th style="padding: 1rem; text-align: left;">Student</th>
@@ -522,7 +522,7 @@ async function loadAvgLeaderboard() {
 async function loadExerciseLeaderboard(exerciseId) {
   const container = document.getElementById('exLeaderboardContent');
   if (!exerciseId) {
-    container.innerHTML = '<div style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 0.5rem;"><p style="color: #64748b;">Select an exercise above to see the leaderboard.</p></div>';
+    container.innerHTML = '<div style="text-align: center; padding: 3rem; background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-color); border-radius: 0.5rem;"><p style="color: #64748b;">Select an exercise above to see the leaderboard.</p></div>';
     return;
   }
 
@@ -545,9 +545,9 @@ async function loadExerciseLeaderboard(exerciseId) {
     }
 
     container.innerHTML = `
-            <div style="background: white; border-radius: 0.5rem; border: 1px solid var(--border-color); overflow: hidden; max-width: 800px; margin: 0 auto;">
+            <div style="background: var(--bg-card, #fff); border-radius: 0.5rem; border: 1px solid var(--border-color); overflow: hidden; max-width: 800px; margin: 0 auto;">
                 <table style="width: 100%; border-collapse: collapse;">
-                    <thead style="background: #f8fafc; border-bottom: 2px solid var(--border-color);">
+                    <thead style="background: var(--bg-secondary, #f8fafc); border-bottom: 2px solid var(--border-color);">
                          <tr>
                             <th style="padding: 1rem; text-align: center; width: 60px;">Rank</th>
                             <th style="padding: 1rem; text-align: left;">Student</th>
@@ -1020,7 +1020,7 @@ async function loadResources() {
 
     if (combinedResources.length === 0) {
       resourcesList.innerHTML = `
-        <div style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 0.5rem;">
+        <div style="text-align: center; padding: 3rem; background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-color); border-radius: 0.5rem;">
           <div style="font-size: 3rem; margin-bottom: 1rem;">📖</div>
           <p style="color: #64748b;">No resources added yet. Add helpful links, documents, or external resources for your students.</p>
         </div>
@@ -1109,7 +1109,7 @@ async function loadResources() {
           }
 
           return `
-                  <div class="resource-card" style="background: white; border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.1)';">
+                  <div class="resource-card" style="background: var(--bg-card, #fff); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.1)';">
                     <div style="font-size: 2rem; margin-bottom: 0.75rem;">${icon}</div>
                     <h3 style="margin: 0 0 0.5rem 0;font-size: 1.125rem;">${escapeHtml(resource.title)}</h3>
                     <p style="color: #64748b; margin: 0 0 1rem 0; font-size: 0.875rem; line-height: 1.5;">${escapeHtml(resource.description || '')}</p>
@@ -1341,7 +1341,7 @@ async function createResource(event) {
 
       const uploadTimeout = setTimeout(() => {
         const errorDiv = document.getElementById('addResourceError');
-        errorDiv.style.cssText = 'display: block; margin-bottom: 1rem; padding: 0.75rem; background: #eff6ff; color: #1e40af; border-radius: 0.375rem; border: 1px solid #bfdbfe;';
+        errorDiv.style.cssText = 'display: block; margin-bottom: 1rem; padding: 0.75rem; background: var(--color-primary-light, rgba(37, 105, 244, 0.1)); color: #1e40af; border-radius: 0.375rem; border: 1px solid #bfdbfe;';
         errorDiv.innerHTML = '<strong>Processing Large File...</strong><br>This is a large file and may take longer to process (up to 5 mins). Please wait and do not close this window.';
       }, 30000);
 
@@ -1661,7 +1661,7 @@ async function loadDetailedProgress() {
 
     if (!data.students || data.students.length === 0) {
       container.innerHTML = `
-        <div style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 0.5rem;">
+        <div style="text-align: center; padding: 3rem; background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-color); border-radius: 0.5rem;">
           <div style="font-size: 3rem; margin-bottom: 1rem;">👥</div>
           <p style="color: #64748b;">No students enrolled yet.</p>
         </div>
@@ -1674,7 +1674,7 @@ async function loadDetailedProgress() {
 
     if (exercises.length === 0) {
       container.innerHTML = `
-        <div style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 0.5rem;">
+        <div style="text-align: center; padding: 3rem; background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-color); border-radius: 0.5rem;">
           <div style="font-size: 3rem; margin-bottom: 1rem;">📝</div>
           <p style="color: #64748b;">No exercises created yet.</p>
         </div>
@@ -1687,8 +1687,8 @@ async function loadDetailedProgress() {
       <div style="overflow-x: auto; border: 1px solid var(--border-color); border-radius: 0.5rem;">
         <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
           <thead>
-            <tr style="background: #f8fafc; border-bottom: 2px solid var(--border-color);">
-              <th style="padding: 0.75rem 1rem; text-align: left; position: sticky; left: 0; background: #f8fafc; z-index: 10;">Student</th>
+            <tr style="background: var(--bg-secondary, #f8fafc); border-bottom: 2px solid var(--border-color);">
+              <th style="padding: 0.75rem 1rem; text-align: left; position: sticky; left: 0; background: var(--bg-secondary, #f8fafc); z-index: 10;">Student</th>
               <th style="padding: 0.75rem 1rem; text-align: center; border-right: 1px solid var(--border-color);">Avg Score</th>
     `;
 
@@ -1717,8 +1717,8 @@ async function loadDetailedProgress() {
       const avg = count > 0 ? (totalScore / count).toFixed(1) : '-';
 
       html += `
-        <tr style="border-bottom: 1px solid var(--border-color); background: white;">
-          <td style="padding: 0.75rem 1rem; font-weight: 500; color: #1e293b; position: sticky; left: 0; background: white; border-right: 1px solid var(--border-color);">${student.name}</td>
+        <tr style="border-bottom: 1px solid var(--border-color); background: var(--bg-card, #fff);">
+          <td style="padding: 0.75rem 1rem; font-weight: 500; color: #1e293b; position: sticky; left: 0; background: var(--bg-card, #fff); border-right: 1px solid var(--border-color);">${student.name}</td>
           <td style="padding: 0.75rem 1rem; text-align: center; font-weight: 600; color: var(--color-primary); border-right: 1px solid var(--border-color);">${avg}</td>
       `;
 
@@ -1778,7 +1778,7 @@ async function loadAvgLeaderboard() {
 
     if (!data.leaderboard || data.leaderboard.length === 0) {
       container.innerHTML = `
-        <div style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 0.5rem;">
+        <div style="text-align: center; padding: 3rem; background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-color); border-radius: 0.5rem;">
           <p style="color: #64748b;">No data available for leaderboard yet.</p>
         </div>
       `;
@@ -1789,7 +1789,7 @@ async function loadAvgLeaderboard() {
     let html = `
       <div style="max-width: 800px; margin: 0 auto; border: 1px solid var(--border-color); border-radius: 0.5rem; overflow: hidden;">
         <table style="width: 100%; border-collapse: collapse;">
-          <thead style="background: #f8fafc; border-bottom: 2px solid var(--border-color);">
+          <thead style="background: var(--bg-secondary, #f8fafc); border-bottom: 2px solid var(--border-color);">
             <tr>
               <th style="padding: 1rem; text-align: center; width: 60px;">Rank</th>
               <th style="padding: 1rem; text-align: left;">Student</th>
@@ -1807,7 +1807,7 @@ async function loadAvgLeaderboard() {
       else if (entry.rank === 3) rankIcon = '🥉';
 
       html += `
-        <tr style="border-bottom: 1px solid var(--border-color); background: white;">
+        <tr style="border-bottom: 1px solid var(--border-color); background: var(--bg-card, #fff);">
           <td style="padding: 1rem; text-align: center; font-size: 1.2rem; font-weight: 600;">${rankIcon}</td>
           <td style="padding: 1rem; font-weight: 500;">${entry.name}</td>
           <td style="padding: 1rem; text-align: center; color: #64748b;">${entry.exercises_completed}</td>
@@ -1865,7 +1865,7 @@ async function loadExerciseLeaderboard(exerciseId) {
   const currentUser = getCurrentUser();
 
   if (!exerciseId) {
-    container.innerHTML = `<div style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 0.5rem;"><p style="color: #64748b;">Select an exercise above to see the leaderboard.</p></div>`;
+    container.innerHTML = `<div style="text-align: center; padding: 3rem; background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-color); border-radius: 0.5rem;"><p style="color: #64748b;">Select an exercise above to see the leaderboard.</p></div>`;
     return;
   }
 
@@ -1879,7 +1879,7 @@ async function loadExerciseLeaderboard(exerciseId) {
       // Handle the case where no scores exist for this exercise gracefully
       if (response.status === 404 || (data.message && data.message.includes('No scores'))) {
         container.innerHTML = `
-          <div style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 0.5rem;">
+          <div style="text-align: center; padding: 3rem; background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-color); border-radius: 0.5rem;">
             <p style="color: #64748b;">No scores recorded for this exercise yet.</p>
           </div>
         `;
@@ -1890,7 +1890,7 @@ async function loadExerciseLeaderboard(exerciseId) {
 
     if (!data.leaderboard || data.leaderboard.length === 0) {
       container.innerHTML = `
-        <div style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 0.5rem;">
+        <div style="text-align: center; padding: 3rem; background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-color); border-radius: 0.5rem;">
           <p style="color: #64748b;">No scores for this exercise yet.</p>
         </div>
       `;
@@ -1901,7 +1901,7 @@ async function loadExerciseLeaderboard(exerciseId) {
     let html = `
       <div style="max-width: 800px; margin: 0 auto; border: 1px solid var(--border-color); border-radius: 0.5rem; overflow: hidden;">
         <table style="width: 100%; border-collapse: collapse;">
-          <thead style="background: #f8fafc; border-bottom: 2px solid var(--border-color);">
+          <thead style="background: var(--bg-secondary, #f8fafc); border-bottom: 2px solid var(--border-color);">
             <tr>
               <th style="padding: 1rem; text-align: center; width: 60px;">Rank</th>
               <th style="padding: 1rem; text-align: left;">Student</th>
@@ -1921,7 +1921,7 @@ async function loadExerciseLeaderboard(exerciseId) {
       const date = entry.submitted_at ? new Date(entry.submitted_at).toLocaleDateString() : '-';
 
       html += `
-        <tr style="border-bottom: 1px solid var(--border-color); background: white;">
+        <tr style="border-bottom: 1px solid var(--border-color); background: var(--bg-card, #fff);">
           <td style="padding: 1rem; text-align: center; font-size: 1.2rem; font-weight: 600;">${rankIcon}</td>
           <td style="padding: 1rem; font-weight: 500;">${entry.name}</td>
           <td style="padding: 1rem; text-align: center; color: #64748b;">${date}</td>
