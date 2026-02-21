@@ -591,20 +591,131 @@ footer a:hover,
     border-color: var(--border-color) !important;
 }
 
-.class-card h3[style*="color: var(--color-dark)"] {
+/* Ensure the title uses the primary text color */
+.class-card h3 {
     color: var(--text-primary) !important;
 }
 
-.class-card p[style*="color: #64748b"],
-.class-card div[style*="color: #64748b"] {
+/* Ensure the description uses secondary text color */
+.class-card p {
     color: var(--text-secondary) !important;
 }
 
-.class-card div[style*="background: #f8fafc"] {
+/* The stats grid container (has the grid-template-columns inline style) */
+.class-card div[style*="grid-template-columns"] {
     background: rgba(17, 24, 39, 0.6) !important;
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 
-.class-card button[style*="color: #dc2626"] {
+/* The "Students" and "Chapters" text labels inside the stats grid */
+.class-card div[style*="grid-template-columns"]>div>div:nth-child(2) {
+    color: var(--text-secondary) !important;
+}
+
+/* Delete button */
+.class-card button[onclick^="deleteClass"] {
     color: var(--color-error-text) !important;
+}
+
+/* ── 29. Professor Class Inner Pages ── */
+
+/* A. Top Stats Container (overrides #f8fafc) */
+#classHeader>div[style*="grid-template-columns"] {
+    background: rgba(17, 24, 39, 0.6) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Stats text colors */
+#classHeader>div[style*="grid-template-columns"]>div>div:nth-child(2) {
+    color: var(--text-secondary) !important;
+}
+
+/* B. Empty States (overrides #f8fafc everywhere) */
+#chaptersList>div[style*="background: #f8fafc"],
+#exercisesList>div[style*="background: #f8fafc"],
+#resourcesList>div[style*="background: #f8fafc"],
+#studentsList>div[style*="background: #f8fafc"],
+#progressTableContainer>div[style*="background: #f8fafc"],
+#exLeaderboardContent>div[style*="background: #f8fafc"] {
+    background: rgba(17, 24, 39, 0.6) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+#chaptersList p,
+#exercisesList p,
+#resourcesList p,
+#studentsList p,
+#progressTableContainer p,
+#exLeaderboardContent p {
+    color: var(--text-secondary) !important;
+}
+
+/* C. Chapter Cards (Dynamically generated in JS) */
+.chapter-card {
+    background: var(--bg-card) !important;
+    border-color: var(--border-color) !important;
+}
+
+.chapter-card h3 {
+    color: var(--text-primary) !important;
+}
+
+.chapter-card p,
+.chapter-card div>span {
+    color: var(--text-secondary) !important;
+}
+
+/* D. Data Tables (Students, Progress, Leaderboards) */
+#studentsList table thead,
+#progressTableContainer table thead,
+#avgLeaderboardContainer table thead,
+#exLeaderboardContent table thead {
+    background: rgba(37, 105, 244, 0.15) !important;
+    border-color: var(--border-color) !important;
+}
+
+#studentsList table th,
+#progressTableContainer table th,
+#avgLeaderboardContainer table th,
+#exLeaderboardContent table th {
+    background: transparent !important;
+    /* let thead show */
+    color: var(--text-primary) !important;
+}
+
+#studentsList table td,
+#progressTableContainer table td,
+#avgLeaderboardContainer table td,
+#exLeaderboardContent table td {
+    color: var(--text-primary) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+    background: transparent !important;
+}
+
+#studentsList table tr,
+#progressTableContainer table tr,
+#avgLeaderboardContainer table tr,
+#exLeaderboardContent table tr {
+    border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Secondary text in table cells (Emails, dates, column subheaders) */
+#studentsList table td:nth-child(2),
+#studentsList table td:nth-child(4),
+#exLeaderboardContent table td:nth-child(4) {
+    color: var(--text-secondary) !important;
+}
+
+/* Sticky columns in the Detailed Matrix */
+#progressTableContainer th[style*="position: sticky"],
+#progressTableContainer td[style*="position: sticky"] {
+    background: var(--bg-card) !important;
+    border-right-color: var(--border-color) !important;
+}
+
+/* Leaderboard container background wrapper */
+#avgLeaderboardContainer>div,
+#exLeaderboardContent>div {
+    background: var(--bg-card) !important;
+    border-color: var(--border-color) !important;
 }
