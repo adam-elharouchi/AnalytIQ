@@ -130,6 +130,22 @@ function getDifficultyColor(difficulty) {
     return 'var(--color-primary)'; // medium
 }
 
+// Global UI Feedback Helpers
+function showError(message) {
+    if (typeof window.uiStates !== 'undefined' && window.uiStates.showConfirmModal) {
+        // Use custom modal if available
+        console.error("UI Error:", message);
+        alert("Error: " + message);
+    } else {
+        alert("Error: " + message);
+    }
+}
+
+function showSuccess(message) {
+    console.log("UI Success:", message);
+    alert("Success: " + message);
+}
+
 // Conversation API functions
 if (typeof window.conversationAPI === 'undefined') {
     window.conversationAPI = {
