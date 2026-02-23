@@ -320,7 +320,7 @@ def impersonate_user(user_id):
         cur = conn.cursor()
 
         cur.execute(
-            "SELECT user_id, name, email, role, is_super_admin FROM users WHERE user_id = %s",
+            "SELECT user_id, name, email, role FROM users WHERE user_id = %s",
             (user_id,),
         )
         target_user = cur.fetchone()
@@ -328,7 +328,7 @@ def impersonate_user(user_id):
         if not target_user:
             return jsonify({"error": "User not found"}), 404
 
-        if target_user[4]:  # is_super_admin
+        if target_user[3] == "superadmin":  # role
             return jsonify({"error": "Cannot impersonate another Super Admin"}), 403
 
         impersonator_id = getattr(g, "user_id", None)
@@ -342,7 +342,6 @@ def impersonate_user(user_id):
             role=target_user[3],
             name=target_user[1],
             email=target_user[2],
-            is_super_admin=False,  # Impersonated tokens are NEVER super admin
             impersonator_id=impersonator_id,
         )
 
@@ -363,6 +362,7 @@ def impersonate_user(user_id):
 
 
 @bp.route("/api/superadmin/contact-submissions", methods=["GET"])
+@require_auth
 @require_super_admin
 def get_contact_submissions():
     """Get all contact form submissions, ordered by most recent."""
@@ -382,7 +382,7 @@ def get_contact_submissions():
 
         cur.execute(
             """
-            SELECT id, name, email, subject, message, status, created_at, user_id
+            SELECT submission_id, name, email, subject, message, status, created_at, user_id
             FROM contact_submissions
             ORDER BY created_at DESC
             LIMIT %s OFFSET %s
