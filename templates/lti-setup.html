@@ -387,7 +387,7 @@
   </div><!-- /.lti-page -->
 
   <script>
-    var authToken = localStorage.getItem('token') || '';
+    var authToken = localStorage.getItem('authToken') || '';
 
     // ---------------------------------------------------------------------------
     // Tab switching
@@ -409,7 +409,10 @@
       fetch('/api/lti/tool-info', {
         headers: { 'Authorization': 'Bearer ' + authToken }
       })
-        .then(function (r) { return r.json(); })
+        .then(function (r) {
+          if (!r.ok) throw new Error('Status ' + r.status);
+          return r.json();
+        })
         .then(function (d) {
           setText('jwksUrl', d.jwks_url || '');
           setText('loginUrl', d.login_url || '');
@@ -417,7 +420,10 @@
           setText('deepLinkUrl', d.deep_link_url || '');
           setText('keyId', d.key_id || '');
         })
-        .catch(function () { showAlert('globalAlert', 'Failed to load tool info.', 'error'); });
+        .catch(function (err) {
+          console.error("LTI Tool Info Error:", err);
+          showAlert('globalAlert', 'Failed to load tool info. Are you signed in as a professor?', 'error');
+        });
     }
 
     function setText(id, val) {
@@ -442,9 +448,13 @@
     // ---------------------------------------------------------------------------
     function loadPlatforms() {
       fetch(window.API_BASE_URL + '/lti/config', { headers: { 'Authorization': 'Bearer ' + authToken } })
-        .then(function (r) { return r.json(); })
+        .then(function (r) {
+          if (!r.ok) throw new Error('Status ' + r.status);
+          return r.json();
+        })
         .then(function (d) {
           var list = document.getElementById('configList');
+          if (!list) return;
           list.innerHTML = '';
           var configs = d.configs || [];
           if (!configs.length) {
@@ -465,9 +475,10 @@
             list.appendChild(li);
           });
         })
-        .catch(function () {
-          document.getElementById('configList').innerHTML =
-            '<li class="empty-state">Failed to load platforms.</li>';
+        .catch(function (err) {
+          console.error("LTI Config Load Error:", err);
+          var list = document.getElementById('configList');
+          if (list) list.innerHTML = '<li class="empty-state">Failed to load platforms. Are you signed in?</li>';
         });
     }
 
@@ -565,6 +576,6 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="js/auth.js?v=2.3"></script>
-<script src="js/navigation.js?v=2.3"></script>
+<script src="js/auth.js?v=2.6"></script>
+<script src="js/navigation.js?v=2.6"></script>
 {% endblock %}
