@@ -36,7 +36,7 @@ def list_tenants():
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute("""
-            SELECT 
+            SELECT
                 t.tenant_id, t.name, t.lti_issuer, t.is_active, t.created_at,
                 (SELECT COUNT(*) FROM users u WHERE u.tenant_id = t.tenant_id) as total_users,
                 (SELECT COUNT(*) FROM classes c WHERE c.tenant_id = t.tenant_id) as total_classes
@@ -80,7 +80,7 @@ def create_tenant():
 
         conn = get_db_connection()
         cur = conn.cursor()
-        
+
         try:
             cur.execute(
                 """
@@ -91,10 +91,10 @@ def create_tenant():
                 (name, lti_issuer)
             )
             row = cur.fetchone()
-            
+
             audit(conn, "CREATE_TENANT", resource_type="tenant", resource_id=row[0], details={"name": name})
             conn.commit()
-            
+
             tenant = {
                 "tenant_id": row[0],
                 "name": row[1],
@@ -106,7 +106,7 @@ def create_tenant():
             }
             cur.close()
             return jsonify({"tenant": tenant}), 201
-            
+
         except psycopg2.IntegrityError:
             conn.rollback()
             return jsonify({"error": "Tenant with this LTI issuer already exists"}), 409
@@ -129,7 +129,7 @@ def update_tenant(tenant_id):
 
         conn = get_db_connection()
         cur = conn.cursor()
-        
+
         updates = []
         params = []
         if "is_active" in data:
@@ -138,14 +138,14 @@ def update_tenant(tenant_id):
         if "name" in data:
             updates.append("name = %s")
             params.append(data["name"])
-            
+
         params.append(tenant_id)
-        
+
         query = f"UPDATE tenants SET {', '.join(updates)}, updated_at = CURRENT_TIMESTAMP WHERE tenant_id = %s RETURNING tenant_id"
         cur.execute(query, params)
         if not cur.fetchone():
             return jsonify({"error": "Tenant not found"}), 404
-            
+
         audit(conn, "UPDATE_TENANT", resource_type="tenant", resource_id=tenant_id, details=data)
         conn.commit()
         cur.close()
@@ -169,42 +169,42 @@ def search_users():
         page = int(request.args.get("page", 1))
         limit = int(request.args.get("limit", 50))
         offset = (page - 1) * limit
-        
+
         search_query = request.args.get("q", "")
         tenant_id = request.args.get("tenant_id")
         role_filter = request.args.get("role", "")
         status_filter = request.args.get("status", "")
-        
+
         conn = get_db_connection()
         cur = conn.cursor()
-        
+
         base_query = """
             FROM users u
             LEFT JOIN tenants t ON u.tenant_id = t.tenant_id
             WHERE 1=1
         """
         params = []
-        
+
         if search_query:
             base_query += " AND (u.name ILIKE %s OR u.email ILIKE %s)"
             params.extend([f"%{search_query}%", f"%{search_query}%"])
-            
+
         if tenant_id:
             base_query += " AND u.tenant_id = %s"
             params.append(tenant_id)
-            
+
         if role_filter:
             base_query += " AND u.role = %s"
             params.append(role_filter)
-            
+
         if status_filter:
             base_query += " AND u.account_status = %s"
             params.append(status_filter)
-            
+
         # Count total filtered
         cur.execute(f"SELECT COUNT(*) {base_query}", params)
         total = cur.fetchone()[0]
-        
+
         # Get Global Role Distribution (unfiltered)
         cur.execute("SELECT role, COUNT(*) FROM users GROUP BY role")
         distribution_rows = cur.fetchall()
@@ -247,7 +247,7 @@ def search_users():
             "current_page": page,
             "role_distribution": role_distribution
         }), 200
-        
+
     except Exception as e:
         logger.error("Failed to search users: %s", e)
         return jsonify({"error": "Failed to search users"}), 500
@@ -267,14 +267,14 @@ def update_user_status(user_id):
 
         conn = get_db_connection()
         cur = conn.cursor()
-        
+
         cur.execute(
             "UPDATE users SET account_status = %s, updated_at = CURRENT_TIMESTAMP WHERE user_id = %s RETURNING user_id",
             (status, user_id)
         )
         if not cur.fetchone():
             return jsonify({"error": "User not found"}), 404
-            
+
         action = "DISABLE_USER" if status == "disabled" else "ENABLE_USER"
         audit(conn, action, resource_type="user", resource_id=user_id, details={"status": status})
         conn.commit()
@@ -299,29 +299,29 @@ def impersonate_user(user_id):
     try:
         conn = get_db_connection()
         cur = conn.cursor()
-        
+
         cur.execute("SELECT user_id, name, email, role, is_super_admin FROM users WHERE user_id = %s", (user_id,))
         target_user = cur.fetchone()
-        
+
         if not target_user:
             return jsonify({"error": "User not found"}), 404
-            
-        if target_user[4]: # is_super_admin
+
+        if target_user[4]:  # is_super_admin
             return jsonify({"error": "Cannot impersonate another Super Admin"}), 403
 
+
         impersonator_id = getattr(g, "user_id", None)
-        
         audit(conn, "IMPERSONATE_USER", resource_type="user", resource_id=user_id)
         conn.commit()
         cur.close()
 
         # Generate scoped token with impersonator_id baked in
         token = create_jwt_token(
-            user_id=target_user[0], 
-            role=target_user[3], 
-            name=target_user[1], 
-            email=target_user[2], 
-            is_super_admin=False, # Impersonated tokens are NEVER super admin
+            user_id=target_user[0],
+            role=target_user[3],
+            name=target_user[1],
+            email=target_user[2],
+            is_super_admin=False,  # Impersonated tokens are NEVER super admin
             impersonator_id=impersonator_id
         )
 
@@ -334,6 +334,7 @@ def impersonate_user(user_id):
     except Exception as e:
         logger.error("Failed to assume impersonation: %s", e)
         return jsonify({"error": "An unexpected error occurred"}), 500
+
 
 @bp.route("/api/superadmin/contact-submissions", methods=["GET"])
 @require_super_admin
@@ -375,7 +376,7 @@ def get_contact_submissions():
                 "created_at": r[6].isoformat() if r[6] else None,
                 "user_id": r[7]
             })
-            
+
         return jsonify({
             "submissions": submissions,
             "total": total_records,
