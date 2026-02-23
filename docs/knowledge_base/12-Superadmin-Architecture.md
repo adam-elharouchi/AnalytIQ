@@ -53,7 +53,7 @@ The system was refactored following this strict migration path:
 #### B. API & Backend Authorization
 *   **Signup Logic:** Anyone registering with an `@myanalytiq.org` email address automatically receives the `role = 'superadmin'` insertion in the database.
 *   **Token Payloads:** The `is_super_admin` claim was removed. Tokens simply carry `role: "superadmin"`.
-*   **Access Control:** The `@require_super_admin` decorator was rewritten to explicitly check: `token_payload.get("role") == "superadmin"`.
+*   **Access Control:** The `@require_super_admin` decorator was rewritten to explicitly check: `token_payload.get("role") == "superadmin"`. Standardized `verifyAccess` logic across all JS modules now reads roles directly from the `currentUser` object, ensuring standard login sessions are recognized without requiring explicit impersonation data.
 
 #### C. Dedicated Superadmin Landing Experience
 To resolve the UX clutter of the boolean era, the landing page (`index.html`) was completely overhauled to support role-based dynamic injection.
@@ -70,11 +70,18 @@ When a user successfully authenticates, `js/navigation.js` reads their primary r
 During the transition to the standalone Superadmin dashboard, several architectural hurdles were resolved to ensure secure and reliable interactions:
 
 *   **Global Layout Binding:** Dashboard interactions (like toggling users and impersonating) rely on inline HTML events triggering class functions. The main `SuperAdminDashboard` class must be bound directly to the global `window.adminApp` reference during initialization. Using local variables (e.g., `let adminApp`) fails because HTML handlers cannot resolve scoped Javascript imports.
+*   **Global UI Helpers:** Consistent feedback relies on a standard suite of UI helpers (e.g., `showError`, `showSuccess`) injected into `api-helper.js`. Without these globally available functions, frontend components crash with `ReferenceError` when attempting to notify the user of API results.
 *   **Asynchronous API Parsing:** The frontend relies on the `authFetch` utility wrapped around the native browser `fetch` API. It was identified that asynchronous promises from `authFetch` return raw HTTP `Response` objects by default. Fetching logic deeply nested in tenant mutation or user impersonation paths must strictly `await res.json()` before evaluating the payload properties (e.g., checking for new JWT `data.token`).
-*   **JWT Storage Strictness:** The core application natively manages user sessions via the `localStorage.getItem('authToken')` key. The initial Impersonation prototype mistakenly manipulated the string `"token"`. Standardizing all Impersonation swap and restoration functions to target `authToken` ensures that the hacked session is natively recognized by all site interceptors.
+*   **JWT Storage Strictness:** The core application natively manages user sessions via the `localStorage.getItem('authToken')` key. Standardizing all LTI management and Impersonation swap functions to target `authToken` (vs a generic `token` key) ensures that the session is natively recognized by all site interceptors.
 *   **SQL Account Disabling:** User "Disabling" is managed by triggering `UPDATE users SET account_status = 'disabled'` directly within the PostgreSQL `public.users` table schema. This status is natively intercepted at the login checkpoint, blocking access entirely without requiring complex session revocations.
+*   **Platform-Wide Cache Busting:** To ensure rapid deployment of these critical logic fixes, a platform-wide cache-busting versioning strategy (e.g., `?v=2.6`) is enforced across all primary HTML entry points (`base.html`, `index.html`, `login.html`), forcing browsers to bypass stale CDNs or local caches.
 
-## 6. Summary & Future Extensibility
+## 6. Continuous Quality & Compliance
+To maintain the stability of the Superadmin backend, the platform adopted automated linting and formatting enforcement:
+- **Black Formatter:** Every backend update is strictly formatted via the `black` library to ensure a unified style.
+- **Flake8 Compliance:** Strict adherence to `flake8` standards ensures zero trailing whitespaces, correct comment padding, and exact vertical spacing (E302/E303) between logic blocks, preventing CI pipeline regressions.
+
+## 7. Summary & Future Extensibility
 By unifying "Superadmin" under a strict RBAC `role` definition and providing them with a segregated, modular landing page, AnalytIQ achieved a cleaner codebase, inherently more secure authentication tokens, and a vastly improved user experience for platform administrators.
 
 This architecture paves the way for future extensions, such as introducing generic "Tenant Admin" roles that operate identically to Superadmins but are strictly scoped to a single `tenant_id`.

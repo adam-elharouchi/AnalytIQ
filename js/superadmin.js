@@ -434,41 +434,48 @@ class SuperAdminDashboard {
             if (res.ok) {
                 const data = await res.json();
                 if (data && data.token) {
-                    // Safety cache: store original super admin token
-                    const currentToken = localStorage.getItem('authToken');
+                    // Safety cache: store original super admin token and profile
                     if (!localStorage.getItem('original_token')) {
-                        // Only save original if we aren't already impersonating
-                        localStorage.setItem('original_token', currentToken);
+                        localStorage.setItem('original_token', localStorage.getItem('authToken'));
+                        localStorage.setItem('original_user', localStorage.getItem('currentUser'));
                     }
 
-                    // Swap auth securely
+                    // Swap auth securely in parent page (so the iframe loads with this token)
                     localStorage.setItem('authToken', data.token);
 
-                    // We don't have the full user profile, but we can decode the JWT to set localStorage roughly
+                    // Decode payload for convenience
+                    let targetName = 'Unknown User';
                     try {
-                        const payload = JSON.parse(atob(data.token.split('.')[1]));
-                        localStorage.setItem('user_id', payload.user_id);
-                        localStorage.setItem('user_role', payload.role);
-                        localStorage.setItem('user', JSON.stringify({
+                        const payload = JSON.parse(atob(data.token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+                        const targetUserObj = {
+                            user_id: payload.user_id,
                             name: payload.name,
                             email: payload.email,
                             role: payload.role
-                        }));
-                    } catch (e) { }
+                        };
+                        localStorage.setItem('currentUser', JSON.stringify(targetUserObj));
+                        targetName = payload.name || payload.email || 'User';
+                    } catch (e) { console.error("JWT Decode failed:", e); }
 
-                    showSuccess("Impersonation successful. Redirecting...");
+                    // Setup and show modal
+                    const modal = document.getElementById('impersonation-modal');
+                    const iframe = document.getElementById('impersonation-iframe');
+                    const targetLabel = document.getElementById('impersonation-target-name');
 
-                    // Redirect based on role
-                    setTimeout(() => {
-                        const role = localStorage.getItem('user_role');
-                        if (role === 'professor') {
-                            window.location.href = '/professor-dashboard.html';
-                        } else if (role === 'student') {
-                            window.location.href = '/student-dashboard.html';
-                        } else {
-                            window.location.href = '/';
-                        }
-                    }, 1000);
+                    if (modal && iframe) {
+                        targetLabel.textContent = `${targetName} (${userId})`;
+
+                        // Decide where to send the iframe
+                        const role = localStorage.getItem('user_role') || (JSON.parse(localStorage.getItem('currentUser') || '{}').role);
+                        const dest = (role === 'professor') ? '/professor-dashboard.html' : '/student-classes.html';
+
+                        iframe.src = dest;
+                        modal.classList.add('active');
+                        document.body.style.overflow = 'hidden'; // Prevent background scrolling
+                    } else {
+                        // Fallback if modal elements missing
+                        window.location.href = '/';
+                    }
                 }
             } else {
                 const err = await res.json();
@@ -478,6 +485,35 @@ class SuperAdminDashboard {
             console.error("Impersonation failed:", error);
             showError(error.message || "Failed to initiate impersonation context.");
         }
+    }
+
+    closeImpersonationModal() {
+        const modal = document.getElementById('impersonation-modal');
+        const iframe = document.getElementById('impersonation-iframe');
+
+        if (modal) {
+            modal.classList.remove('active');
+            if (iframe) iframe.src = 'about:blank';
+            document.body.style.overflow = '';
+        }
+
+        // Restore original session
+        const origToken = localStorage.getItem('original_token');
+        const origUser = localStorage.getItem('original_user');
+
+        if (origToken) {
+            localStorage.setItem('authToken', origToken);
+            localStorage.removeItem('original_token');
+        }
+        if (origUser) {
+            localStorage.setItem('currentUser', origUser);
+            localStorage.removeItem('original_user');
+        }
+
+        // Reload the dashboard data to ensure the Superadmin state is fresh
+        this.loadTenants();
+        this.loadUsers();
+        showSuccess("Returned to Superadmin session.");
     }
 
 }

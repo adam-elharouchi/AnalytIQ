@@ -205,6 +205,79 @@
             transform: translateY(0);
         }
     }
+
+    /* Impersonation Modal */
+    #impersonation-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(8px);
+        z-index: 10000;
+        flex-direction: column;
+        padding: 2rem;
+        box-sizing: border-box;
+    }
+
+    #impersonation-modal.active {
+        display: flex;
+    }
+
+    .impersonation-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        background: var(--bg-card);
+        padding: 1rem 1.5rem;
+        border-radius: 0.75rem;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    .impersonation-title {
+        font-weight: 600;
+        color: var(--text-color);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .impersonation-iframe-container {
+        flex: 1;
+        background: #fff;
+        border-radius: 0.75rem;
+        overflow: hidden;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+
+    #impersonation-iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+    }
+
+    .close-impersonation-btn {
+        background: var(--error-color);
+        color: white;
+        border: none;
+        padding: 0.5rem 1.25rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: filter 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .close-impersonation-btn:hover {
+        filter: brightness(1.1);
+    }
 </style>
 {% endblock %}
 
@@ -532,6 +605,26 @@
         </div>
     </div>
 </main>
+
+<!-- Impersonation Window Modal -->
+<div id="impersonation-modal">
+    <div class="impersonation-header">
+        <div class="impersonation-title">
+            <span style="font-size: 1.5rem;">🎭</span>
+            <div>
+                <div style="font-size: 1rem;">Impersonating User</div>
+                <div id="impersonation-target-name"
+                    style="font-size: 0.8rem; color: var(--text-muted); font-weight: 400;">Loading...</div>
+            </div>
+        </div>
+        <button class="close-impersonation-btn" onclick="window.adminApp.closeImpersonationModal()">
+            <span>✕</span> Exit Impersonation & Return to Dashboard
+        </button>
+    </div>
+    <div class="impersonation-iframe-container">
+        <iframe id="impersonation-iframe"></iframe>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
