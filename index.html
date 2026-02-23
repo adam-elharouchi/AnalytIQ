@@ -105,10 +105,32 @@
       // Generate navigation cards based on user role
       const currentUser = authManager.getCurrentUser();
       const isProfessor = currentUser && currentUser.role === 'professor';
+      const isSuperAdmin = currentUser && currentUser.role === 'superadmin';
 
       const navigationGrid = document.getElementById('pageNavigationGrid');
 
-      if (isProfessor) {
+      if (isSuperAdmin) {
+        // Superadmin navigation cards: Tenant Management, User Administration, System Health
+        navigationGrid.innerHTML = `
+          <a href="superadmin-dashboard.html" class="page-nav-card">
+            <div class="page-nav-icon">🏢</div>
+            <h2>Manage Tenants & LTI</h2>
+            <p>Configure LTI tool integrations, manage institutional tenants, and oversee global campus connectivity.</p>
+          </a>
+
+          <a href="superadmin-dashboard.html" class="page-nav-card" onclick="sessionStorage.setItem('sa_tab', 'users')">
+            <div class="page-nav-icon">👥</div>
+            <h2>User Administration</h2>
+            <p>Perform global user searches across all environments, manage account disabling, and utilize secure impersonation.</p>
+          </a>
+
+          <a href="superadmin-dashboard.html" class="page-nav-card" onclick="sessionStorage.setItem('sa_tab', 'health')">
+            <div class="page-nav-icon">⚙️</div>
+            <h2>System Settings</h2>
+            <p>Monitor platform health, API rate limits, audit logging streams, and global server configurations.</p>
+          </a>
+        `;
+      } else if (isProfessor) {
         // Professor navigation cards: Dashboard, Code, Profile
         navigationGrid.innerHTML = `
           <a href="professor-dashboard.html" class="page-nav-card">
@@ -161,7 +183,18 @@
       const footerRightLinks = document.getElementById('footerRightLinks');
 
       if (footerLeftLinks && footerRightLinks) {
-        if (isProfessor) {
+        if (isSuperAdmin) {
+          // Superadmin portal: Dashboard, Audit Logs, Health
+          footerLeftLinks.innerHTML = `
+            <a href="superadmin-dashboard.html">Dashboard</a>
+            <a href="superadmin-dashboard.html">System Health</a>
+          `;
+          footerRightLinks.innerHTML = `
+            <a href="contact.html">Support</a>
+            <a href="terms.html">Terms</a>
+            <a href="privacy.html">Privacy</a>
+          `;
+        } else if (isProfessor) {
           // Professor portal: Security, Dashboard, Code (left), Contact, Terms, Privacy (right)
           footerLeftLinks.innerHTML = `
             <a href="security-compliance.html">Security</a>
