@@ -80,7 +80,6 @@ def create_tenant():
 
         conn = get_db_connection()
         cur = conn.cursor()
-
         try:
             cur.execute(
                 """
@@ -308,7 +307,6 @@ def impersonate_user(user_id):
 
         if target_user[4]:  # is_super_admin
             return jsonify({"error": "Cannot impersonate another Super Admin"}), 403
-
 
         impersonator_id = getattr(g, "user_id", None)
         audit(conn, "IMPERSONATE_USER", resource_type="user", resource_id=user_id)
