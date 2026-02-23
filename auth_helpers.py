@@ -310,6 +310,7 @@ def require_super_admin(f):
     Decorator that checks g.user_role is 'superadmin'.
     Must be applied AFTER @require_auth.
     """
+
     @functools.wraps(f)
     def decorated(*args, **kwargs):
         user_role = getattr(g, "user_role", None)
