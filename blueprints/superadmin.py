@@ -27,6 +27,7 @@ bp = Blueprint("superadmin", __name__)
 # Tenants API
 # ---------------------------------------------------------------------------
 
+
 @bp.route("/api/superadmin/tenants", methods=["GET"])
 @require_auth
 @require_super_admin
@@ -35,28 +36,32 @@ def list_tenants():
     try:
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute("""
+        cur.execute(
+            """
             SELECT
                 t.tenant_id, t.name, t.lti_issuer, t.is_active, t.created_at,
                 (SELECT COUNT(*) FROM users u WHERE u.tenant_id = t.tenant_id) as total_users,
                 (SELECT COUNT(*) FROM classes c WHERE c.tenant_id = t.tenant_id) as total_classes
             FROM tenants t
             ORDER BY t.created_at DESC
-        """)
+        """
+        )
         rows = cur.fetchall()
         cur.close()
 
         tenants = []
         for r in rows:
-            tenants.append({
-                "tenant_id": r[0],
-                "name": r[1],
-                "lti_issuer": r[2],
-                "is_active": r[3],
-                "created_at": r[4].isoformat() if r[4] else None,
-                "total_users": r[5],
-                "total_classes": r[6]
-            })
+            tenants.append(
+                {
+                    "tenant_id": r[0],
+                    "name": r[1],
+                    "lti_issuer": r[2],
+                    "is_active": r[3],
+                    "created_at": r[4].isoformat() if r[4] else None,
+                    "total_users": r[5],
+                    "total_classes": r[6],
+                }
+            )
 
         return jsonify({"tenants": tenants}), 200
     except Exception as e:
@@ -87,11 +92,17 @@ def create_tenant():
                 VALUES (%s, %s)
                 RETURNING tenant_id, name, lti_issuer, is_active, created_at
                 """,
-                (name, lti_issuer)
+                (name, lti_issuer),
             )
             row = cur.fetchone()
 
-            audit(conn, "CREATE_TENANT", resource_type="tenant", resource_id=row[0], details={"name": name})
+            audit(
+                conn,
+                "CREATE_TENANT",
+                resource_type="tenant",
+                resource_id=row[0],
+                details={"name": name},
+            )
             conn.commit()
 
             tenant = {
@@ -101,7 +112,7 @@ def create_tenant():
                 "is_active": row[3],
                 "created_at": row[4].isoformat() if row[4] else None,
                 "total_users": 0,
-                "total_classes": 0
+                "total_classes": 0,
             }
             cur.close()
             return jsonify({"tenant": tenant}), 201
@@ -158,6 +169,7 @@ def update_tenant(tenant_id):
 # ---------------------------------------------------------------------------
 # Users API
 # ---------------------------------------------------------------------------
+
 
 @bp.route("/api/superadmin/users", methods=["GET"])
 @require_auth
@@ -227,25 +239,32 @@ def search_users():
 
         users = []
         for r in rows:
-            users.append({
-                "user_id": r[0],
-                "name": r[1],
-                "email": r[2],
-                "role": r[3],
-                "is_super_admin": r[3] == "superadmin",
-                "account_status": r[4] or "active",
-                "created_at": r[5].isoformat() if r[5] else None,
-                "tenant_name": r[6],
-                "tenant_id": r[7]
-            })
+            users.append(
+                {
+                    "user_id": r[0],
+                    "name": r[1],
+                    "email": r[2],
+                    "role": r[3],
+                    "is_super_admin": r[3] == "superadmin",
+                    "account_status": r[4] or "active",
+                    "created_at": r[5].isoformat() if r[5] else None,
+                    "tenant_name": r[6],
+                    "tenant_id": r[7],
+                }
+            )
 
-        return jsonify({
-            "users": users,
-            "total": total,
-            "pages": (total + limit - 1) // limit,
-            "current_page": page,
-            "role_distribution": role_distribution
-        }), 200
+        return (
+            jsonify(
+                {
+                    "users": users,
+                    "total": total,
+                    "pages": (total + limit - 1) // limit,
+                    "current_page": page,
+                    "role_distribution": role_distribution,
+                }
+            ),
+            200,
+        )
 
     except Exception as e:
         logger.error("Failed to search users: %s", e)
@@ -269,7 +288,7 @@ def update_user_status(user_id):
 
         cur.execute(
             "UPDATE users SET account_status = %s, updated_at = CURRENT_TIMESTAMP WHERE user_id = %s RETURNING user_id",
-            (status, user_id)
+            (status, user_id),
         )
         if not cur.fetchone():
             return jsonify({"error": "User not found"}), 404
@@ -289,6 +308,7 @@ def update_user_status(user_id):
 # Impersonation API
 # ---------------------------------------------------------------------------
 
+
 @bp.route("/api/superadmin/users/<user_id>/impersonate", methods=["POST"])
 @csrf_exempt
 @require_auth
@@ -299,7 +319,10 @@ def impersonate_user(user_id):
         conn = get_db_connection()
         cur = conn.cursor()
 
-        cur.execute("SELECT user_id, name, email, role, is_super_admin FROM users WHERE user_id = %s", (user_id,))
+        cur.execute(
+            "SELECT user_id, name, email, role, is_super_admin FROM users WHERE user_id = %s",
+            (user_id,),
+        )
         target_user = cur.fetchone()
 
         if not target_user:
@@ -320,14 +343,19 @@ def impersonate_user(user_id):
             name=target_user[1],
             email=target_user[2],
             is_super_admin=False,  # Impersonated tokens are NEVER super admin
-            impersonator_id=impersonator_id
+            impersonator_id=impersonator_id,
         )
 
-        return jsonify({
-            "success": True,
-            "token": token,
-            "message": f"You are now impersonating {target_user[1]}"
-        }), 200
+        return (
+            jsonify(
+                {
+                    "success": True,
+                    "token": token,
+                    "message": f"You are now impersonating {target_user[1]}",
+                }
+            ),
+            200,
+        )
 
     except Exception as e:
         logger.error("Failed to assume impersonation: %s", e)
@@ -359,29 +387,36 @@ def get_contact_submissions():
             ORDER BY created_at DESC
             LIMIT %s OFFSET %s
             """,
-            (limit, offset)
+            (limit, offset),
         )
 
         submissions = []
         for r in cur.fetchall():
-            submissions.append({
-                "id": r[0],
-                "name": r[1],
-                "email": r[2],
-                "subject": r[3],
-                "message": r[4],
-                "status": r[5],
-                "created_at": r[6].isoformat() if r[6] else None,
-                "user_id": r[7]
-            })
+            submissions.append(
+                {
+                    "id": r[0],
+                    "name": r[1],
+                    "email": r[2],
+                    "subject": r[3],
+                    "message": r[4],
+                    "status": r[5],
+                    "created_at": r[6].isoformat() if r[6] else None,
+                    "user_id": r[7],
+                }
+            )
 
-        return jsonify({
-            "submissions": submissions,
-            "total": total_records,
-            "page": page,
-            "pages": total_pages,
-            "success": True
-        }), 200
+        return (
+            jsonify(
+                {
+                    "submissions": submissions,
+                    "total": total_records,
+                    "page": page,
+                    "pages": total_pages,
+                    "success": True,
+                }
+            ),
+            200,
+        )
 
     except Exception as e:
         logger.error(f"Error fetching contact submissions: {e}", exc_info=True)
