@@ -5,17 +5,17 @@
   <meta charset="UTF-8" />
   <title>Sign In - AnalytIQ</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="css/styles.css" />
-  <script src="js/api-helper.js"></script>
-  <script src="js/constants.js"></script>
-  <script src="js/api-client.js"></script>
-  <script src="js/ui-states.js"></script>
-  <script src="js/offline-detector.js"></script>
+  <link rel="stylesheet" href="css/styles.css?v=2.6" />
+  <script src="js/api-helper.js?v=2.6"></script>
+  <script src="js/constants.js?v=2.6"></script>
+  <script src="js/api-client.js?v=2.6"></script>
+  <script src="js/ui-states.js?v=2.6"></script>
+  <script src="js/offline-detector.js?v=2.6"></script>
 
   <!-- LOCAL DEV ONLY: dark theme — remove before deploy -->
-  <link rel="stylesheet" href="css/local-dev-light-theme.css" />
-  <link rel="stylesheet" href="css/local-dev-dark-theme.css" />
-  <script src="js/local-dev-dark-theme.js" defer></script>
+  <link rel="stylesheet" href="css/local-dev-light-theme.css?v=2.6" />
+  <link rel="stylesheet" href="css/local-dev-dark-theme.css?v=2.6" />
+  <script src="js/local-dev-dark-theme.js?v=2.6" defer></script>
 </head>
 
 <body>
@@ -78,7 +78,9 @@
       </div>
 
       <div class="login-footer">
-        <p>By signing in, you agree to our <a href="terms.html" style="color: var(--color-primary); text-decoration: none;">Terms and Conditions</a> and <a href="privacy.html" style="color: var(--color-primary); text-decoration: none;">Privacy Policy</a>.</p>
+        <p>By signing in, you agree to our <a href="terms.html"
+            style="color: var(--color-primary); text-decoration: none;">Terms and Conditions</a> and <a
+            href="privacy.html" style="color: var(--color-primary); text-decoration: none;">Privacy Policy</a>.</p>
       </div>
     </div>
   </div>
@@ -86,7 +88,8 @@
 
   <!-- Forgot Password Modal -->
   <div id="forgotPasswordModal" class="modal" style="display: none;">
-    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="forgotPasswordModalTitle" style="max-width: 500px;">
+    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="forgotPasswordModalTitle"
+      style="max-width: 500px;">
       <div class="modal-header">
         <h2 id="forgotPasswordModalTitle">Reset Password</h2>
         <button class="modal-close" onclick="closeForgotPasswordModal()" aria-label="Close dialog">&times;</button>
@@ -113,7 +116,7 @@
   </div>
 
   <!-- JS load order: api-helper.js (head) → auth.js -->
-  <script src="js/auth.js"></script>
+  <script src="js/auth.js?v=2.6"></script>
 </body>
 
 </html>

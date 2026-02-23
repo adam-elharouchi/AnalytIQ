@@ -6,7 +6,10 @@
 class SuperAdminDashboard {
     constructor() {
         const _base = window.API_BASE_URL || '/api';
-        this.baseAdminUrl = _base.startsWith('http') ? `${_base}/superadmin` : `${window.location.origin}${_base}/superadmin`;
+        // Handle absolute or relative paths gracefully for production
+        this.baseAdminUrl = _base.startsWith('http')
+            ? `${_base}/superadmin`
+            : `${window.location.protocol}//${window.location.host}${_base}/superadmin`;
         this.init();
     }
 
@@ -32,18 +35,23 @@ class SuperAdminDashboard {
     }
 
     verifyAccess() {
-        const role = localStorage.getItem('user_role');
+        let currentUser = null;
+        try {
+            currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        } catch (e) {
+            console.error("Failed to parse currentUser:", e);
+        }
+
+        const role = currentUser.role || localStorage.getItem('user_role');
         const token = localStorage.getItem('authToken');
 
-        // Note: is_super_admin is stored in the JWT payload, 
-        // but as a frontend guard we can simply verify the token format or rely on the API returning 403.
-        // For a seamless UX, the API will reject standard users.
         if (!token) {
             window.location.href = '/login.html';
             return false;
         }
 
         if (role !== 'superadmin') {
+            console.warn("Access denied: User role is", role);
             window.location.href = '/';
             return false;
         }
