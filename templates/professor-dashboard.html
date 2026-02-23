@@ -101,17 +101,17 @@
 <script src="js/navigation.js"></script>
 <script src="js/professor-dashboard.js"></script>
 <script>
-  // Require authentication and professor role
+  // Require authentication and professor/superadmin role
   document.addEventListener('DOMContentLoaded', function () {
     const authManager = new AuthManager();
     if (!authManager.requireAuth()) {
       return; // Will redirect to login
     }
 
-    // Check if user is a professor
+    // Check if user is a professor or superadmin
     const currentUser = authManager.getCurrentUser();
-    if (!currentUser || currentUser.role !== 'professor') {
-      alert('Access denied. This page is for professors only.');
+    if (!currentUser || (currentUser.role !== 'professor' && currentUser.role !== 'superadmin')) {
+      alert('Access denied. This page is for professors or administrators only.');
       window.location.href = 'index.html';
       return;
     }

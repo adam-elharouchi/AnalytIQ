@@ -15,8 +15,9 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   const isAuthenticated = currentUser !== null;
-  const userRole = currentUser?.role || 'student';
+  const userRole = currentUser ? currentUser.role : null;
   const isProfessor = userRole === 'professor';
+  const isSuperAdmin = userRole === 'superadmin';
 
   // Build user menu
   let userMenu = '';
@@ -60,7 +61,11 @@ document.addEventListener('DOMContentLoaded', function () {
   let commonLinks = '';
 
   if (isAuthenticated) {
-    if (isProfessor) {
+    if (isSuperAdmin) {
+      // Superadmin: Management Portals
+      roleLinks = `<li><a href="superadmin-dashboard.html" ${currentPage === 'superadmin-dashboard.html' ? 'class="active"' : ''} style="color: #eab308; font-weight: bold;">Super Admin</a></li>`;
+      commonLinks = '';
+    } else if (isProfessor) {
       // Professors: Dashboard, Code
       roleLinks = `<li><a href="professor-dashboard.html" ${currentPage === 'professor-dashboard.html' || currentPage === 'professor-class.html' ? 'class="active"' : ''}>Dashboard</a></li>`;
       commonLinks = `
@@ -136,6 +141,11 @@ function updateNavProfilePicture() {
 
 // Handle sign out
 function handleSignOut() {
+  if (localStorage.getItem('original_token')) {
+    exitImpersonation();
+    return;
+  }
+
   if (typeof uiStates !== 'undefined' && uiStates.showConfirmModal) {
     uiStates.showConfirmModal('Are you sure you want to sign out?', function () {
       localStorage.removeItem('currentUser');
@@ -146,6 +156,67 @@ function handleSignOut() {
     window.location.href = 'login.html';
   }
 }
+
+// --- Impersonation Global Logic ---
+function exitImpersonation() {
+  const originalToken = localStorage.getItem('original_token');
+  if (originalToken) {
+    // Restore Super Admin session
+    localStorage.setItem('authToken', originalToken);
+    localStorage.removeItem('original_token');
+
+    try {
+      const payload = JSON.parse(atob(originalToken.split('.')[1]));
+      localStorage.setItem('user_id', payload.user_id);
+      localStorage.setItem('user_role', payload.role);
+      localStorage.setItem('user', JSON.stringify({
+        name: payload.name,
+        email: payload.email,
+        role: payload.role
+      }));
+      localStorage.setItem('currentUser', localStorage.getItem('user'));
+    } catch (e) { }
+
+    if (typeof showSuccess !== 'undefined') {
+      showSuccess("Exited impersonation. Restoring Super Admin session...");
+    } else {
+      alert("Exited impersonation. Restoring Super Admin session...");
+    }
+
+    setTimeout(() => {
+      window.location.href = 'superadmin-dashboard.html';
+    }, 1000);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  const originalToken = localStorage.getItem('original_token');
+  if (originalToken) {
+    let currentUser = {};
+    try {
+      currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+      // Sometimes stored as 'user' depending on the auth flow
+      if (!currentUser.name) {
+        currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+      }
+    } catch (e) { }
+
+    const userName = currentUser.name || currentUser.email || 'User';
+
+    const banner = document.createElement('div');
+    banner.id = 'global-impersonation-banner';
+    banner.style.cssText = 'background: linear-gradient(90deg, #f59e0b, #d97706); color: white; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3); text-align: center; padding: 12px; font-weight: 600; z-index: 9999; display: flex; justify-content: center; align-items: center; gap: 1rem; position: relative; width: 100%;';
+
+    banner.innerHTML = `
+            <span>⚠️ You are currently impersonating <span>${userName}</span>.</span>
+            <button onclick="exitImpersonation()" class="btn btn-secondary btn-sm"
+                style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: white; cursor: pointer; padding: 0.25rem 0.75rem; border-radius: 0.25rem;">Exit
+                Impersonation</button>
+        `;
+
+    document.body.prepend(banner);
+  }
+});
 
 function toggleMobileMenu() {
   const navLinks = document.getElementById('navLinks');

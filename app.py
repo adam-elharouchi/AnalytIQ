@@ -332,6 +332,7 @@ from blueprints.chapters import bp as chapters_bp  # noqa: E402
 from blueprints.exercises import bp as exercises_bp  # noqa: E402
 from blueprints.classes import bp as classes_bp  # noqa: E402
 from blueprints.lti import bp as lti_bp  # noqa: E402
+from blueprints.superadmin import bp as superadmin_bp  # noqa: E402
 
 app.register_blueprint(health_bp)
 app.register_blueprint(ai_bp)
@@ -341,6 +342,7 @@ app.register_blueprint(chapters_bp)
 app.register_blueprint(exercises_bp)
 app.register_blueprint(classes_bp)
 app.register_blueprint(lti_bp)
+app.register_blueprint(superadmin_bp)
 
 
 # Serve frontend (local development: open http://localhost:5001)

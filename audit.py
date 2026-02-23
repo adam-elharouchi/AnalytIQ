@@ -94,6 +94,11 @@ ACTIONS = {
     "CREATE_EXERCISE",
     "DELETE_EXERCISE",
     "EXERCISE_SUBMISSION",
+    # Super Admin
+    "IMPERSONATE_USER",
+    "UPDATE_TENANT",
+    "DISABLE_USER",
+    "ENABLE_USER",
 }
 
 
@@ -140,6 +145,17 @@ def audit(conn, action, *, resource_type=None, resource_id=None, details=None):
             from flask import request as flask_request
 
             ip_address = flask_request.remote_addr
+            
+            # Extract impersonator ID if present so we can trace real actor
+            try:
+                from flask import g as flask_g
+                impersonator_id = getattr(flask_g, "impersonator_id", None)
+                if impersonator_id:
+                    details = details or {}
+                    details["impersonator_id"] = impersonator_id
+            except RuntimeError:
+                pass
+                
         except RuntimeError:
             ip_address = None
 

@@ -439,7 +439,7 @@ def deep_link_return():
 
 @bp.route("/lti/setup", methods=["GET"])
 @require_auth
-@require_role("professor")
+@require_role("professor", "superadmin")
 def lti_setup():
     """Render the LTI setup UI for professors."""
     return render_template("lti-setup.html")
@@ -448,7 +448,7 @@ def lti_setup():
 @bp.route("/lti/config", methods=["GET"])
 @csrf_exempt
 @require_auth
-@require_role("professor")
+@require_role("professor", "superadmin")
 def list_lti_configs():
     """Return all LTI platform registrations."""
     conn = get_db_connection()
@@ -474,7 +474,7 @@ def list_lti_configs():
 @bp.route("/lti/config", methods=["POST"])
 @csrf_exempt
 @require_auth
-@require_role("professor")
+@require_role("professor", "superadmin")
 def create_lti_config():
     """Register a new LMS platform."""
     data = request.json or {}
@@ -528,7 +528,7 @@ def create_lti_config():
 @bp.route("/lti/config/<config_id>", methods=["DELETE"])
 @csrf_exempt
 @require_auth
-@require_role("professor")
+@require_role("professor", "superadmin")
 def delete_lti_config(config_id):
     """Delete an LTI platform registration (only the creating professor can delete)."""
     conn = get_db_connection()
@@ -547,7 +547,7 @@ def delete_lti_config(config_id):
 @bp.route("/api/lti/link-class/<class_id>", methods=["POST"])
 @csrf_exempt
 @require_auth
-@require_role("professor")
+@require_role("professor", "superadmin")
 def link_class(class_id):
     """Manually link an AnalytIQ class to an LMS course context."""
     data = request.json or {}
@@ -580,7 +580,7 @@ def link_class(class_id):
 @bp.route("/api/lti/ags-toggle/<class_id>", methods=["PUT"])
 @csrf_exempt
 @require_auth
-@require_role("professor")
+@require_role("professor", "superadmin")
 def toggle_ags(class_id):
     """Enable or disable AGS grade passback for a class."""
     data = request.json or {}
@@ -605,7 +605,7 @@ def toggle_ags(class_id):
 @bp.route("/api/lti/sync-roster/<class_id>", methods=["POST"])
 @csrf_exempt
 @require_auth
-@require_role("professor")
+@require_role("professor", "superadmin")
 def sync_roster(class_id):
     """Fetch students from LMS Names & Roles Provisioning Service and enroll them."""
     try:
@@ -796,7 +796,7 @@ def submit_grade(class_id, exercise_id):
 @bp.route("/api/lti/tool-info", methods=["GET"])
 @csrf_exempt
 @require_auth
-@require_role("professor")
+@require_role("professor", "superadmin")
 def tool_info():
     """Return the tool's LTI endpoints for pasting into the LMS registration form."""
     base = config.LTI_TOOL_URL.rstrip("/")

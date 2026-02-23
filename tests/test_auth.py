@@ -32,7 +32,7 @@ class TestSignup:
         cursor = mock_db.cursor()
         cursor.fetchone.side_effect = [
             None,  # email_exists check
-            ("new-user-id", "Alice", "alice@student.hult.edu", "student"),  # insert_user
+            ("new-user-id", "Alice", "alice@student.hult.edu", "student", False),  # insert_user
         ]
 
         resp = client.post(
@@ -54,7 +54,7 @@ class TestSignup:
         cursor = mock_db.cursor()
         cursor.fetchone.side_effect = [
             None,
-            ("prof-id", "Prof Bob", "bob@hult.edu", "professor"),
+            ("prof-id", "Prof Bob", "bob@hult.edu", "professor", False),
         ]
 
         resp = client.post(
@@ -62,6 +62,27 @@ class TestSignup:
             json={
                 "name": "Prof Bob",
                 "email": "bob@hult.edu",
+                "password": "securePass1",
+            },
+        )
+
+        assert resp.status_code == 201
+        data = resp.get_json()
+        assert data["role"] == "professor"
+
+    def test_signup_analytiq_org_role_detected_from_email(self, client, mock_db):
+        """@myanalytiq.org email gets professor role in the response."""
+        cursor = mock_db.cursor()
+        cursor.fetchone.side_effect = [
+            None,
+            ("admin-id", "Admin Sam", "sam@myanalytiq.org", "professor", True),
+        ]
+
+        resp = client.post(
+            "/api/users/signup",
+            json={
+                "name": "Admin Sam",
+                "email": "sam@myanalytiq.org",
                 "password": "securePass1",
             },
         )

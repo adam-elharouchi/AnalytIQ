@@ -82,6 +82,8 @@ def detect_role_from_email(email):
     if not email:
         return "student"
     email_lower = email.lower()
+    if email_lower.endswith("@myanalytiq.org"):
+        return "superadmin"
     if email_lower.endswith("@hult.edu") or email_lower.endswith("@faculty.hult.edu"):
         return "professor"
     elif email_lower.endswith("@student.hult.edu"):
@@ -94,15 +96,16 @@ def detect_role_from_email(email):
 # ---------------------------------------------------------------------------
 
 
-def create_jwt_token(user_id, role="student", name=None, email=None):
+def create_jwt_token(user_id, role="student", name=None, email=None, impersonator_id=None):
     """
     Create a JWT token for an authenticated user.
 
     Args:
         user_id: The user's ID
-        role: The user's role (student/professor)
+        role: The user's role (student/professor/superadmin)
         name: The user's name (optional, included in token for convenience)
         email: The user's email (optional, included in token for convenience)
+        impersonator_id: If impersonating, the user_id of the super admin
 
     Returns:
         str: Encoded JWT token
@@ -117,6 +120,8 @@ def create_jwt_token(user_id, role="student", name=None, email=None):
         payload["name"] = name
     if email:
         payload["email"] = email
+    if impersonator_id:
+        payload["impersonator_id"] = impersonator_id
 
     return jwt.encode(payload, config.JWT_SECRET_KEY, algorithm=config.JWT_ALGORITHM)
 
@@ -263,6 +268,7 @@ def require_auth(f):
             payload = decode_jwt_token(token)
             g.user_id = str(payload["user_id"])
             g.user_role = payload.get("role", "student")
+            g.impersonator_id = payload.get("impersonator_id")
         except jwt.ExpiredSignatureError:
             return jsonify({"error": "Token expired. Please sign in again."}), 401
         except jwt.InvalidTokenError:
@@ -297,3 +303,18 @@ def require_role(*roles):
         return decorated
 
     return decorator
+
+
+def require_super_admin(f):
+    """
+    Decorator that checks g.user_role is 'superadmin'.
+    Must be applied AFTER @require_auth.
+    """
+    @functools.wraps(f)
+    def decorated(*args, **kwargs):
+        user_role = getattr(g, "user_role", None)
+        if user_role != "superadmin":
+            return jsonify({"error": "Forbidden: super admin access required"}), 403
+        return f(*args, **kwargs)
+
+    return decorated
