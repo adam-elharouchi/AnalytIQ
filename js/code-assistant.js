@@ -161,9 +161,9 @@ function renderConversationHistory() {
 
   if (filteredConversations.length === 0) {
     if (currentConversationTab === 'archived') {
-      uiStates.showEmpty(list, '📦 No archived conversations', 'Archived conversations will appear here.');
+      uiStates.showEmpty(list, 'No archived conversations', 'Archived conversations will appear here.');
     } else {
-      uiStates.showEmpty(list, '💬 No conversations', 'Start a new conversation to get coding help.');
+      uiStates.showEmpty(list, 'No conversations', 'Start a new conversation to get coding help.');
     }
     return;
   }
@@ -180,12 +180,12 @@ function renderConversationHistory() {
         <button class="conversation-action-btn archive-btn" 
                 onclick="event.stopPropagation(); archiveConversation('${conv.id}')" 
                 title="${conv.archived ? 'Unarchive' : 'Archive'}">
-          ${conv.archived ? '📤' : '📦'}
+          ${conv.archived ? 'Unarchive' : 'Archive'}
         </button>
-        <button class="conversation-action-btn delete-btn" 
-                onclick="event.stopPropagation(); deleteConversation('${conv.id}')" 
+        <button class="conversation-action-btn delete-btn"
+                onclick="event.stopPropagation(); deleteConversation('${conv.id}')"
                 title="Delete">
-          🗑️
+          Delete
         </button>
       </div>
     </div>
@@ -505,38 +505,38 @@ function handleFileUpload(event) {
     // Handle different file types
     if (isImage) {
       uploadedData = { type: 'image', dataUrl: content, fileName: file.name, extension: extension };
-      addMessage('user', `📎 Uploaded image: ${file.name}`);
+      addMessage('user', `Uploaded image: ${file.name}`);
       addMessage('assistant', `Image uploaded successfully! I can help you:\n- Analyze the image\n- Generate code to work with image data\n- Create visualizations or image processing code\n\nWhat would you like to do with this image?`);
     } else if (['.xlsx', '.xls'].includes(extension)) {
       uploadedData = { type: 'excel', fileName: file.name, extension: extension, size: file.size };
-      addMessage('user', `📎 Uploaded Excel file: ${file.name}`);
+      addMessage('user', `Uploaded Excel file: ${file.name}`);
       addMessage('assistant', `Excel file uploaded successfully! I can help you:\n- Generate code to read and process Excel files (using pandas, openpyxl, etc.)\n- Analyze the data structure\n- Create data analysis code\n\nWhat would you like to do with this Excel file?`);
     } else if (extension === '.ipynb') {
       try {
         const notebook = typeof content === 'string' ? JSON.parse(content) : content;
         uploadedData = { type: 'notebook', content: notebook, fileName: file.name };
-        addMessage('user', `📎 Uploaded Jupyter notebook: ${file.name}`);
+        addMessage('user', `Uploaded Jupyter notebook: ${file.name}`);
         addMessage('assistant', `Jupyter notebook uploaded successfully! I can help you:\n- Analyze the notebook structure\n- Review and improve the code\n- Debug issues\n- Optimize the code\n\nWhat would you like to do with this notebook?`);
       } catch (error) {
         uploadedData = { type: 'notebook', fileName: file.name, extension: extension, size: file.size };
-        addMessage('user', `📎 Uploaded file: ${file.name}`);
+        addMessage('user', `Uploaded file: ${file.name}`);
         addMessage('assistant', `File uploaded. I can help you work with this Jupyter notebook. What would you like to do with it?`);
       }
     } else if (['.csv', '.json', '.txt'].includes(extension)) {
       uploadedData = parseDataFile(content, extension);
-      addMessage('user', `📎 Uploaded file: ${file.name}`);
+      addMessage('user', `Uploaded file: ${file.name}`);
       addMessage('assistant', `File uploaded successfully! I can help you:\n- Generate code to work with this data\n- Visualize the data (boxplots, histograms, etc.)\n- Analyze the data\n\nWhat would you like to do with this data?`);
     } else if (isBinary && !['.ipynb'].includes(extension)) {
       uploadedData = { type: 'binary', fileName: file.name, extension: extension, size: file.size };
-      addMessage('user', `📎 Uploaded file: ${file.name}`);
+      addMessage('user', `Uploaded file: ${file.name}`);
       addMessage('assistant', `File uploaded successfully! I can help you:\n- Generate code to work with this file type\n- Analyze the file structure\n- Create processing scripts\n\nWhat would you like to do with this file?`);
     } else {
       if (content instanceof ArrayBuffer) {
         uploadedData = { type: 'binary', fileName: file.name, extension: extension, size: file.size };
-        addMessage('user', `📎 Uploaded file: ${file.name}`);
+        addMessage('user', `Uploaded file: ${file.name}`);
         addMessage('assistant', `File uploaded successfully! I can help you generate code to work with this file. What would you like to do?`);
       } else {
-        addMessage('user', `📎 Uploaded file: ${file.name}`);
+        addMessage('user', `Uploaded file: ${file.name}`);
         addMessage('assistant', processCodeFile(content, extension));
       }
     }
@@ -549,7 +549,7 @@ function handleFileUpload(event) {
     reader.readAsText(file);
   } else if (['.xlsx', '.xls', '.pdf', '.zip', '.tar', '.gz'].includes(extension)) {
     uploadedData = { type: 'binary', fileName: file.name, extension: extension, size: file.size };
-    addMessage('user', `📎 Uploaded file: ${file.name}`);
+    addMessage('user', `Uploaded file: ${file.name}`);
     addMessage('assistant', `File uploaded successfully! I can help you:\n- Generate code to read and process this file\n- Analyze the file structure\n- Create data processing scripts\n\nWhat would you like to do with this file?`);
     return;
   } else {
@@ -622,7 +622,7 @@ function processCodeFile(content, extension) {
   }
 
   if (analysis.errors.length === 0 && analysis.warnings.length === 0 && analysis.suggestions.length === 0) {
-    response += `✅ Your code looks good! No errors or warnings detected.`;
+    response += `Your code looks good! No errors or warnings detected.`;
   }
 
   return response;
@@ -902,11 +902,11 @@ async function sendMessage() {
     }, 1000);
   } catch (error) {
     removeLoadingMessage(loadingId);
-    let errorMessage = `❌ Error: ${error.message}`;
+    let errorMessage = `Error: ${error.message}`;
 
     // Provide specific guidance for API not enabled error
     if (error.message.includes('not enabled') || error.message.includes('Enable it')) {
-      errorMessage += `\n\n🔧 Setup Required:\nThe Generative Language API needs to be enabled for your API key's Google Cloud project.\n\n1. Go to: https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com\n2. Select the project associated with your API key\n3. Click "Enable"\n4. Wait a few minutes for changes to propagate\n5. Refresh this page and try again`;
+      errorMessage += `\n\nSetup Required:\nThe Generative Language API needs to be enabled for your API key's Google Cloud project.\n\n1. Go to: https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com\n2. Select the project associated with your API key\n3. Click "Enable"\n4. Wait a few minutes for changes to propagate\n5. Refresh this page and try again`;
     } else {
       errorMessage += `\n\nPlease ensure the API key is configured correctly and has the necessary permissions.`;
     }
@@ -1253,7 +1253,7 @@ function processCodeMessage(message) {
   let response = `**Code Analysis:**\n\n`;
 
   if (analysis.errors.length > 0) {
-    response += `**❌ Errors:**\n`;
+    response += `**Errors:**\n`;
     analysis.errors.forEach(err => {
       response += `- ${err}\n`;
     });
@@ -1261,7 +1261,7 @@ function processCodeMessage(message) {
   }
 
   if (analysis.warnings.length > 0) {
-    response += `**⚠️ Warnings:**\n`;
+    response += `**Warnings:**\n`;
     analysis.warnings.forEach(warn => {
       response += `- ${warn}\n`;
     });
@@ -1269,7 +1269,7 @@ function processCodeMessage(message) {
   }
 
   if (analysis.suggestions.length > 0) {
-    response += `**💡 Suggestions:**\n`;
+    response += `**Suggestions:**\n`;
     analysis.suggestions.forEach(sugg => {
       response += `- ${sugg}\n`;
     });
@@ -1277,12 +1277,12 @@ function processCodeMessage(message) {
   }
 
   if (analysis.fixedCode) {
-    response += `**✅ Fixed Code:**\n\n`;
+    response += `**Fixed Code:**\n\n`;
     response += formatCodeBlock(analysis.fixedCode, currentLanguage);
   }
 
   if (analysis.errors.length === 0 && analysis.warnings.length === 0) {
-    response += `✅ Your code looks good!`;
+    response += `Your code looks good!`;
   }
 
   return response;
@@ -2016,7 +2016,7 @@ function copyCodeFromFooter(button) {
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(cleanCode).then(() => {
       const originalText = button.textContent;
-      button.textContent = '✅ Copied!';
+      button.textContent = 'Copied!';
       button.style.background = '#10b981';
       setTimeout(() => {
         button.textContent = originalText;
@@ -2056,22 +2056,22 @@ function copyToClipboardFallback(text, button) {
   try {
     const successful = document.execCommand('copy');
     if (successful) {
-      button.textContent = '✅ Copied!';
+      button.textContent = 'Copied!';
       button.style.background = '#10b981';
       setTimeout(() => {
-        button.textContent = '📋 Copy Code';
+        button.textContent = 'Copy Code';
         button.style.background = '';
       }, 2000);
     } else {
-      button.textContent = '❌ Failed';
+      button.textContent = 'Failed';
       setTimeout(() => {
-        button.textContent = '📋 Copy Code';
+        button.textContent = 'Copy Code';
       }, 2000);
     }
   } catch (err) {
-    button.textContent = '❌ Failed';
+    button.textContent = 'Failed';
     setTimeout(() => {
-      button.textContent = '📋 Copy Code';
+      button.textContent = 'Copy Code';
     }, 2000);
   }
 

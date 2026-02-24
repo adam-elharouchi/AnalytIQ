@@ -96,19 +96,16 @@
       // Superadmin navigation cards: Tenant Management, User Administration, System Health
       navigationGrid.innerHTML = `
         <a href="superadmin-dashboard.html" class="page-nav-card">
-          <div class="page-nav-icon">🏢</div>
           <h2>Manage Tenants & LTI</h2>
           <p>Configure LTI tool integrations, manage institutional tenants, and oversee global campus connectivity.</p>
         </a>
 
         <a href="superadmin-dashboard.html" class="page-nav-card" onclick="sessionStorage.setItem('sa_tab', 'users')">
-          <div class="page-nav-icon">👥</div>
           <h2>User Administration</h2>
           <p>Perform global user searches across all environments, manage account disabling, and utilize secure impersonation.</p>
         </a>
 
         <a href="superadmin-dashboard.html" class="page-nav-card" onclick="sessionStorage.setItem('sa_tab', 'health')">
-          <div class="page-nav-icon">⚙️</div>
           <h2>System Settings</h2>
           <p>Monitor platform health, API rate limits, audit logging streams, and global server configurations.</p>
         </a>
@@ -117,19 +114,16 @@
       // Professor navigation cards: Dashboard, Code, Profile
       navigationGrid.innerHTML = `
           <a href="professor-dashboard.html" class="page-nav-card">
-            <div class="page-nav-icon">📊</div>
             <h2>Dashboard</h2>
             <p>Manage your classes, upload modules, create exercises, and track student progress.</p>
           </a>
 
           <a href="code-assistant.html" class="page-nav-card">
-            <div class="page-nav-icon">🔧</div>
             <h2>Code</h2>
             <p>AI-powered assistant that helps you write code, analyze data, derive insights, and create visualizations.</p>
           </a>
 
           <a href="profile.html" class="page-nav-card">
-            <div class="page-nav-icon">👤</div>
             <h2>Profile</h2>
             <p>Manage your profile information, update your account settings, and customize your preferences.</p>
           </a>
@@ -138,19 +132,16 @@
       // Student navigation cards: My Classes, Code, Profile
       navigationGrid.innerHTML = `
           <a href="student-classes.html" class="page-nav-card">
-            <div class="page-nav-icon">📚</div>
             <h2>My Classes</h2>
             <p>Access your enrolled classes, view modules, practice exercises, and resources for each course.</p>
           </a>
 
           <a href="code-assistant.html" class="page-nav-card">
-            <div class="page-nav-icon">🔧</div>
             <h2>Code</h2>
             <p>AI-powered assistant that helps you write code, analyze data, derive insights, and create visualizations.</p>
           </a>
 
           <a href="profile.html" class="page-nav-card">
-            <div class="page-nav-icon">👤</div>
             <h2>Profile</h2>
             <p>Manage your profile information, update your account settings, and customize your preferences.</p>
           </a>

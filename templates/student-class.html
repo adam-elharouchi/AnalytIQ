@@ -37,7 +37,7 @@
         </div>
       </div>
       <div style="display: flex; gap: 0.5rem;">
-        <button class="btn btn-secondary" onclick="copyClassCodeToClipboard()" id="copyCodeBtn">📋 Copy Code</button>
+        <button class="btn btn-secondary" onclick="copyClassCodeToClipboard()" id="copyCodeBtn">Copy Code</button>
       </div>
     </div>
 
@@ -62,10 +62,10 @@
   <!-- Tabs -->
   <div id="tabsContainer" style="display: none; margin-bottom: 2rem;">
     <div style="display: flex; gap: 0.5rem; border-bottom: 2px solid #e2e8f0;">
-      <button class="tab-button active" onclick="switchTab('chapters')" id="tabChapters">📚 Chapters</button>
-      <button class="tab-button" onclick="switchTab('exercises')" id="tabExercises">💪 Exercises</button>
-      <button class="tab-button" onclick="switchTab('resources')" id="tabResources">📖 Resources</button>
-      <button class="tab-button" onclick="switchTab('progress')" id="tabProgress">🏆 Leaderboards</button>
+      <button class="tab-button active" onclick="switchTab('chapters')" id="tabChapters">Chapters</button>
+      <button class="tab-button" onclick="switchTab('exercises')" id="tabExercises">Exercises</button>
+      <button class="tab-button" onclick="switchTab('resources')" id="tabResources">Resources</button>
+      <button class="tab-button" onclick="switchTab('progress')" id="tabProgress">Leaderboards</button>
     </div>
   </div>
 
@@ -78,7 +78,6 @@
     <div id="chaptersList">
       <div
         style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem;">
-        <div style="font-size: 3rem; margin-bottom: 1rem;">📄</div>
         <p style="color: #64748b;">No chapters available yet.</p>
       </div>
     </div>
@@ -93,7 +92,6 @@
     <div id="exercisesList">
       <div
         style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem;">
-        <div style="font-size: 3rem; margin-bottom: 1rem;">💪</div>
         <p style="color: #64748b;">Loading exercises...</p>
       </div>
     </div>
@@ -108,7 +106,6 @@
     <div id="resourcesList">
       <div
         style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem;">
-        <div style="font-size: 3rem; margin-bottom: 1rem;">📖</div>
         <p style="color: #64748b;">Loading resources...</p>
       </div>
     </div>
@@ -126,7 +123,6 @@
     <div id="studentsList">
       <div
         style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem;">
-        <div style="font-size: 3rem; margin-bottom: 1rem;">👥</div>
         <p style="color: #64748b;">Loading students...</p>
       </div>
     </div>
@@ -141,9 +137,9 @@
 
     <!-- Leaderboard View Tabs -->
     <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 2px solid #e2e8f0;">
-      <button class="sub-tab-button active" onclick="switchLeaderboardView('avg')" id="lbTabAvg">🏆 Average
+      <button class="sub-tab-button active" onclick="switchLeaderboardView('avg')" id="lbTabAvg">Average
         Score</button>
-      <button class="sub-tab-button" onclick="switchLeaderboardView('exercise')" id="lbTabEx">🎯 By Exercise</button>
+      <button class="sub-tab-button" onclick="switchLeaderboardView('exercise')" id="lbTabEx">By Exercise</button>
     </div>
 
     <div id="leaderboardContainer">

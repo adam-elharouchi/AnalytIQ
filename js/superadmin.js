@@ -227,8 +227,8 @@ class SuperAdminDashboard {
             card.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                     <div style="display: flex; gap: 1rem; align-items: center;">
-                        <div style="width: 48px; height: 48px; border-radius: 0.5rem; background: var(--bg-dark); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; border: 1px solid var(--border-color);">
-                            🏢
+                        <div style="width: 48px; height: 48px; border-radius: 0.5rem; background: var(--bg-dark); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); letter-spacing: 0.05em; border: 1px solid var(--border-color);">
+                            ORG
                         </div>
                         <div>
                             <h3 style="margin: 0 0 0.25rem 0; font-size: 1.1rem; color: var(--text-color);">${escapeHtml(t.name)}</h3>
@@ -256,11 +256,11 @@ class SuperAdminDashboard {
                     <button class="btn btn-sm ${t.is_active ? 'btn-danger' : 'btn-success'}" style="flex: 1; padding: 0.5rem;" onclick="window.adminApp.toggleTenantStatus('${t.tenant_id}', ${!t.is_active})">
                         ${t.is_active ? 'Disable' : 'Enable'}
                     </button>
-                    <button class="btn btn-sm btn-secondary" style="flex: 1; padding: 0.5rem; display: flex; justify-content: center; align-items: center; gap: 0.25rem;" onclick="document.getElementById('user-search-input').value = ''; window.adminApp.loadUsers(1, '${t.tenant_id}'); document.querySelector('[data-target=users-section]').click();">
-                        <span>👥</span> Users
+                    <button class="btn btn-sm btn-secondary" style="flex: 1; padding: 0.5rem;" onclick="document.getElementById('user-search-input').value = ''; window.adminApp.loadUsers(1, '${t.tenant_id}'); document.querySelector('[data-target=users-section]').click();">
+                        Users
                     </button>
                     <button class="btn btn-sm btn-danger" style="padding: 0.5rem 0.75rem;" onclick="window.adminApp.deleteTenant('${t.tenant_id}', '${escapeHtml(t.name).replace(/'/g,"\\'")}')">
-                        🗑 Delete
+                        Delete
                     </button>
                 </div>
             `;
@@ -304,14 +304,14 @@ class SuperAdminDashboard {
                 </td>
                 <td style="padding: 1rem;">
                     <div style="display:flex;gap:0.4rem;justify-content:flex-end;flex-wrap:wrap;">
-                        ${!u.is_super_admin ? `<button class="btn btn-sm btn-primary" style="background:linear-gradient(135deg,#10b981,#059669);border:none;" onclick="window.adminApp.impersonateUser('${u.user_id}')" title="Impersonate">🎭</button>` : ''}
-                        <button class="btn btn-sm btn-secondary" onclick="window.adminApp.changeUserRole('${u.user_id}','${escapeHtml(u.role)}')" title="Change Role">👤 Role</button>
-                        <button class="btn btn-sm ${u.account_status === 'disabled' ? 'btn-success' : 'btn-secondary'}" onclick="window.adminApp.toggleUserStatus('${u.user_id}','${u.account_status === 'disabled' ? 'active' : 'disabled'}')" title="${u.account_status === 'disabled' ? 'Enable' : 'Disable'}">
-                            ${u.account_status === 'disabled' ? '✅' : '⏸'}
+                        ${!u.is_super_admin ? `<button class="btn btn-sm" style="background:#059669;color:#fff;border:none;font-size:0.8rem;" onclick="window.adminApp.impersonateUser('${u.user_id}')">Impersonate</button>` : ''}
+                        <button class="btn btn-sm btn-secondary" style="font-size:0.8rem;" onclick="window.adminApp.changeUserRole('${u.user_id}','${escapeHtml(u.role)}')">Role</button>
+                        <button class="btn btn-sm ${u.account_status === 'disabled' ? 'btn-success' : 'btn-secondary'}" style="font-size:0.8rem;" onclick="window.adminApp.toggleUserStatus('${u.user_id}','${u.account_status === 'disabled' ? 'active' : 'disabled'}')">
+                            ${u.account_status === 'disabled' ? 'Enable' : 'Disable'}
                         </button>
-                        <button class="btn btn-sm btn-secondary" onclick="window.adminApp.forcePasswordReset('${u.user_id}','${safeName}')" title="Force password reset">🔑</button>
-                        <button class="btn btn-sm btn-secondary" onclick="window.adminApp.exportUserData('${u.user_id}')" title="Export data">⬇️</button>
-                        <button class="btn btn-sm btn-danger" onclick="window.adminApp.deleteUser('${u.user_id}','${safeName}')" title="Delete user">🗑</button>
+                        <button class="btn btn-sm btn-secondary" style="font-size:0.8rem;" onclick="window.adminApp.forcePasswordReset('${u.user_id}','${safeName}')">Reset PW</button>
+                        <button class="btn btn-sm btn-secondary" style="font-size:0.8rem;" onclick="window.adminApp.exportUserData('${u.user_id}')">Export</button>
+                        <button class="btn btn-sm btn-danger" style="font-size:0.8rem;" onclick="window.adminApp.deleteUser('${u.user_id}','${safeName}')">Delete</button>
                     </div>
                 </td>
             `;
@@ -345,7 +345,6 @@ class SuperAdminDashboard {
             tr.style.borderBottom = '1px solid var(--border-color)';
 
             const date = new Date(t.created_at).toLocaleDateString();
-            const badgeClass = t.status === 'new' ? 'status-badge active' : 'status-badge role';
 
             tr.innerHTML = `
                 <td style="padding: 1rem; font-weight: 500;">
@@ -656,11 +655,11 @@ class SuperAdminDashboard {
                         <button class="btn btn-sm btn-success"
                             style="background:#10b981;color:#fff;border:none;"
                             onclick="window.adminApp.approveAdmin('${u.user_id}', '${escapeHtml(u.name)}')">
-                            ✅ Approve
+                            Approve
                         </button>
                         <button class="btn btn-sm btn-danger"
                             onclick="window.adminApp.denyAdmin('${u.user_id}', '${escapeHtml(u.name)}')">
-                            ✗ Deny
+                            Deny
                         </button>
                     </td>
                 </tr>`;
@@ -825,10 +824,10 @@ class SuperAdminDashboard {
             }
 
             tbody.innerHTML = classes.map(c => {
-                const safeName = escapeHtml(c.class_name).replace(/'/g, "\\'");
+                const safeName = escapeHtml(c.name).replace(/'/g, "\\'");
                 return `<tr style="border-bottom:1px solid var(--border-color);">
                     <td style="padding:1rem;">
-                        <div style="font-weight:500;">${escapeHtml(c.class_name)}</div>
+                        <div style="font-weight:500;">${escapeHtml(c.name)}</div>
                         <div style="font-size:0.8rem;color:var(--text-muted);">${escapeHtml(c.class_id)}</div>
                     </td>
                     <td style="padding:1rem;">
@@ -838,8 +837,8 @@ class SuperAdminDashboard {
                     <td style="padding:1rem;text-align:center;">${c.student_count || 0}</td>
                     <td style="padding:1rem;text-align:center;">${c.chapter_count || 0}</td>
                     <td style="padding:1rem;text-align:right;display:flex;gap:0.4rem;justify-content:flex-end;">
-                        <button class="btn btn-sm btn-secondary" onclick="window.adminApp.transferClass('${c.class_id}','${safeName}')">🔄 Transfer</button>
-                        <button class="btn btn-sm btn-danger" onclick="window.adminApp.deleteClass('${c.class_id}','${safeName}')">🗑 Delete</button>
+                        <button class="btn btn-sm btn-secondary" onclick="window.adminApp.transferClass('${c.class_id}','${safeName}')">Transfer</button>
+                        <button class="btn btn-sm btn-danger" onclick="window.adminApp.deleteClass('${c.class_id}','${safeName}')">Delete</button>
                     </td>
                 </tr>`;
             }).join('');
@@ -892,21 +891,22 @@ class SuperAdminDashboard {
             if (!res.ok) throw new Error(data.error || 'Failed to load analytics');
 
             const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val ?? '—'; };
-            set('an-total-users',  data.total_users);
-            set('an-new-7d',       data.new_users_7d);
-            set('an-new-30d',      data.new_users_30d);
-            set('an-active-7d',    data.active_users_7d);
-            set('an-active-30d',   data.active_users_30d);
-            set('an-classes',      data.total_classes);
-            set('an-chapters',     data.total_chapters);
-            set('an-exercises',    data.total_exercises);
-            set('an-completions',  data.total_completions);
+            set('an-total-users',  data.users?.total);
+            set('an-new-7d',       data.users?.new_7d);
+            set('an-new-30d',      data.users?.new_30d);
+            set('an-active-7d',    data.users?.active_7d);
+            set('an-active-30d',   data.users?.active_30d);
+            set('an-classes',      data.content?.classes);
+            set('an-chapters',     data.content?.chapters);
+            set('an-exercises',    data.content?.exercises);
+            set('an-completions',  data.content?.completions);
 
             // Role breakdown
             const rolesEl = document.getElementById('an-roles');
-            if (rolesEl && data.roles_breakdown) {
-                const total = Object.values(data.roles_breakdown).reduce((a, b) => a + b, 0) || 1;
-                rolesEl.innerHTML = Object.entries(data.roles_breakdown).map(([role, count]) => {
+            if (rolesEl && data.users?.by_role) {
+                const roles_breakdown = data.users.by_role;
+                const total = Object.values(roles_breakdown).reduce((a, b) => a + b, 0) || 1;
+                rolesEl.innerHTML = Object.entries(roles_breakdown).map(([role, count]) => {
                     const pct = Math.round((count / total) * 100);
                     return `<div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem;">
                         <span style="min-width:80px;font-size:0.85rem;text-transform:capitalize;">${role}</span>
@@ -972,7 +972,7 @@ class SuperAdminDashboard {
                     <td style="padding:1rem;color:var(--text-muted);font-size:0.9rem;">${exp}</td>
                     <td style="padding:1rem;text-align:right;display:flex;gap:0.4rem;justify-content:flex-end;">
                         <button class="btn btn-sm btn-secondary" onclick="window.adminApp.toggleAnnouncement('${a.announcement_id}',${!a.is_active})">${a.is_active ? 'Deactivate' : 'Activate'}</button>
-                        <button class="btn btn-sm btn-danger" onclick="window.adminApp.deleteAnnouncement('${a.announcement_id}')">🗑</button>
+                        <button class="btn btn-sm btn-danger" onclick="window.adminApp.deleteAnnouncement('${a.announcement_id}')">Delete</button>
                     </td>
                 </tr>`;
             }).join('');
@@ -1103,7 +1103,7 @@ class SuperAdminDashboard {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Failed to load IP blocklist');
 
-            const items = data.blocklist || [];
+            const items = data.blocked || [];
             if (!tbody) return;
             if (!items.length) {
                 tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);">No blocked IPs.</td></tr>';
