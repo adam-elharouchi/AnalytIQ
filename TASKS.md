@@ -1,7 +1,7 @@
 # AnalytIQ — Master Task List
 
-> Generated: 2026-02-17 | Last updated: 2026-02-19
-> Total: 87 tasks (80 completed, 7 pending)
+> Generated: 2026-02-17 | Last updated: 2026-02-23
+> Total: 93 tasks (86 completed, 7 pending)
 
 ---
 
@@ -89,6 +89,12 @@
 | LMS-4 | Deep linking — `GET /lti/launch` deep link handler renders chapter picker (`lti-deep-link.html`); `POST /lti/deep-link/return` returns signed `DeepLinkResource` JWT auto-submitting back to LMS |
 | LMS-5 | Professor LTI setup UI (`templates/lti-setup.html`) — 3-tab: Tool Info (copy JWKS/login/launch URLs), LMS Platforms list, Register Platform form; "LMS Setup" button added to professor dashboard header |
 | LMS-6 | `lti_sessions` table + user upsert — LTI-only accounts with `password_hash = NULL`; `lti_sub`+`lti_issuer` columns on `users`; LTI context columns on `classes` (`lti_context_id`, `nrps_context_url`, `ags_enabled`, `ags_lineitems_url`); AGS grade passback (`POST /api/lti/ags/<class_id>/<exercise_id>`) with per-class toggle |
+| SA-1 | `blueprints/superadmin.py` — `@require_super_admin` decorator; role `"superadmin"` auto-assigned to `@myanalytiq.org` emails at signup; `role` column replaces deprecated `is_super_admin` boolean |
+| SA-2 | Tenant management API — `GET/POST /api/superadmin/tenants`, `PATCH /api/superadmin/tenants/<id>`; `CREATE_TENANT`/`UPDATE_TENANT` audit events; tenant stats (user + class counts) returned inline |
+| SA-3 | Global user management — `GET /api/superadmin/users` with paginated search (name/email/role/status/tenant filters) + role distribution counts; `PATCH /api/superadmin/users/<id>/status` to enable/disable accounts; `DISABLE_USER`/`ENABLE_USER` audit events |
+| SA-4 | User impersonation — `POST /api/superadmin/users/<id>/impersonate` issues scoped JWT with `impersonator_id` claim; dashboard uses `<iframe>` modal (windowed impersonation); `authToken` swapped before iframe loads; original token saved to `localStorage`; one-click exit restores superadmin session; `IMPERSONATE_USER` audit event |
+| SA-5 | Contact submissions viewer — `GET /api/superadmin/contact-submissions` paginated list exposed in dashboard |
+| SA-6 | `templates/superadmin-dashboard.html` + `js/superadmin.js` — data-density dashboard; tenant list + create/toggle; global user search with filter pills; impersonation iframe modal; window-bound `SuperAdminDashboard` class for inline HTML event handlers |
 
 ---
 
@@ -201,6 +207,12 @@
 
 ---
 
+## Superadmin
+
+**All tasks complete.** Full superadmin role shipped: `@myanalytiq.org` accounts auto-assigned `role="superadmin"` at signup; `@require_super_admin` decorator guards all admin routes; tenant CRUD + aggregate stats; global user search with role/status/tenant filters + enable/disable; windowed iframe impersonation with `impersonator_id` JWT claim and one-click exit; contact-submission viewer. Full audit trail via `audit.py`. **Section complete.**
+
+---
+
 ## External Content Import
 
 > Sources: file uploads, package docs, arbitrary URLs, OpenStax, LibreTexts, OER Commons
@@ -232,8 +244,10 @@
 
 7. ~~**LMS Integration** — LTI 1.3 + roster sync~~ **DONE** (tasks LMS-1 through LMS-6)
 
-8. **External Content Import** — multi-format + OER platforms *(skipped — out of current scope)*:
+8. ~~**Superadmin** — role-based admin, tenant management, impersonation~~ **DONE** (tasks SA-1 through SA-6)
+
+9. **External Content Import** — multi-format + OER platforms *(skipped — out of current scope)*:
    Tasks LIB-2 through LIB-7
 
-9. **Deferred** — PostHog analytics *(pending FERPA legal review)*:
-   Task 41
+10. **Deferred** — PostHog analytics *(pending FERPA legal review)*:
+    Task 41

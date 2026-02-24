@@ -21,12 +21,14 @@ The first iteration of the Superadmin system was implemented as a simple boolean
 *   **Frontend:** The `navigation.js` script checked the JWT for the boolean flag and simply appended a "Super Admin" link to the professor or student navigation bar. Clicking it opened a prototype dashboard (`superadmin-dashboard.html`) built for data density.
 
 ### Impersonation Design
-A critical feature was Impersonation. To implement this safely:
+A critical feature was Impersonation. To implement this safely and efficiently:
 1.  The Superadmin navigated to the dashboard and clicked "Impersonate" on a target user.
 2.  The backend (`POST /api/superadmin/users/<id>/impersonate`) verified the Superadmin's identity and created a new JWT for the *target* user.
-3.  Crucially, this new JWT contained an `impersonator_id` claim pointing back to the Superadmin's ID.
-4.  The frontend stored the Superadmin's original token in `localStorage`, swapped in the new target token, and presented a persistent, brightly colored "Exit Impersonation" banner.
-5.  All actions taken by the impersonated account were tracked by the backend `audit.py` module, which logged the `impersonator_id` into the `details` JSONB column of the `audit_log` table for strict accountability.
+3.  **Modernization (v2):** In-page "Windowed" Impersonation. Rather than a full-page redirect, the dashboard now uses an `<iframe>` modal (`#impersonation-modal`).
+4.  **Session Cache:** Before swapping the token, the Superadmin's original identity is saved to `original_token` and `original_user` in `localStorage`.
+5.  **Secure Swap:** The `authToken` is updated to the impersonated user's JWT, and the `<iframe>` source is set to the corresponding role's dashboard (e.g., `/student-classes.html`).
+6.  **Audit Trail:** All actions taken by the impersonated account are tracked by the backend `audit.py` module, which logs the `impersonator_id` into the `details` JSONB column for strict accountability.
+7.  **One-Click Restoration:** An "Exit Impersonation" button in the modal restores the `original_` keys to the live session instantly, returning the Superadmin exactly where they left off.
 
 ### Limitations of the Boolean Approach
 While functional, treating Superadmin as an add-on boolean flag rather than a fundamental role presented challenges:
@@ -53,7 +55,8 @@ The system was refactored following this strict migration path:
 #### B. API & Backend Authorization
 *   **Signup Logic:** Anyone registering with an `@myanalytiq.org` email address automatically receives the `role = 'superadmin'` insertion in the database.
 *   **Token Payloads:** The `is_super_admin` claim was removed. Tokens simply carry `role: "superadmin"`.
-*   **Access Control:** The `@require_super_admin` decorator was rewritten to explicitly check: `token_payload.get("role") == "superadmin"`. Standardized `verifyAccess` logic across all JS modules now reads roles directly from the `currentUser` object, ensuring standard login sessions are recognized without requiring explicit impersonation data.
+*   **Access Control:** The `@require_super_admin` decorator was rewritten to explicitly check: `token_payload.get("role") == "superadmin"`. 
+*   **Refinement:** Backend queries were hardened to remove lingering references to the deprecated `is_super_admin` column when checking for admin status, relying strictly on the unified `role` column.
 
 #### C. Dedicated Superadmin Landing Experience
 To resolve the UX clutter of the boolean era, the landing page (`index.html`) was completely overhauled to support role-based dynamic injection.
@@ -72,6 +75,7 @@ During the transition to the standalone Superadmin dashboard, several architectu
 *   **Global Layout Binding:** Dashboard interactions (like toggling users and impersonating) rely on inline HTML events triggering class functions. The main `SuperAdminDashboard` class must be bound directly to the global `window.adminApp` reference during initialization. Using local variables (e.g., `let adminApp`) fails because HTML handlers cannot resolve scoped Javascript imports.
 *   **Global UI Helpers:** Consistent feedback relies on a standard suite of UI helpers (e.g., `showError`, `showSuccess`) injected into `api-helper.js`. Without these globally available functions, frontend components crash with `ReferenceError` when attempting to notify the user of API results.
 *   **Asynchronous API Parsing:** The frontend relies on the `authFetch` utility wrapped around the native browser `fetch` API. It was identified that asynchronous promises from `authFetch` return raw HTTP `Response` objects by default. Fetching logic deeply nested in tenant mutation or user impersonation paths must strictly `await res.json()` before evaluating the payload properties (e.g., checking for new JWT `data.token`).
+*   **Non-Destructive Token Swapping:** The modern impersonation system leverages an `<iframe>` architecture. This requires the parent page to swap the `authToken` *before* the iframe loads its source, ensuring the child frame inherits the authenticated context of the target user without losing the Superadmin's background state.
 *   **JWT Storage Strictness:** The core application natively manages user sessions via the `localStorage.getItem('authToken')` key. Standardizing all LTI management and Impersonation swap functions to target `authToken` (vs a generic `token` key) ensures that the session is natively recognized by all site interceptors.
 *   **SQL Account Disabling:** User "Disabling" is managed by triggering `UPDATE users SET account_status = 'disabled'` directly within the PostgreSQL `public.users` table schema. This status is natively intercepted at the login checkpoint, blocking access entirely without requiring complex session revocations.
 *   **Platform-Wide Cache Busting:** To ensure rapid deployment of these critical logic fixes, a platform-wide cache-busting versioning strategy (e.g., `?v=2.6`) is enforced across all primary HTML entry points (`base.html`, `index.html`, `login.html`), forcing browsers to bypass stale CDNs or local caches.
