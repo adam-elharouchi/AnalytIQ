@@ -522,7 +522,7 @@ def get_audit_log():
 
         cur.execute(
             f"""
-            SELECT al.log_id, al.action, al.resource_type, al.resource_id,
+            SELECT al.id, al.action, al.resource_type, al.resource_id,
                    al.user_id, u.name AS actor_name, u.email AS actor_email,
                    al.ip_address, al.details, al.created_at
             {base}
@@ -1053,7 +1053,7 @@ def list_all_classes():
             f"""
             SELECT c.class_id, c.name, c.description, c.created_at,
                    u.user_id AS prof_id, u.name AS prof_name, u.email AS prof_email,
-                   COUNT(DISTINCT ce.user_id) AS student_count,
+                   COUNT(DISTINCT ce.student_id) AS student_count,
                    COUNT(DISTINCT cc.chapter_id) AS chapter_count,
                    COUNT(*) OVER() AS total_count
             FROM classes c

@@ -146,7 +146,7 @@ class ContentImporter {
       const exMsg = data.exercises_generated
         ? ` ${data.exercises_generated} exercise(s) auto-generated.`
         : '';
-      alert(`✅ "${title}" imported successfully.${exMsg}`);
+      alert(`"${title}" imported successfully.${exMsg}`);
     } catch (err) {
       this._showError(err.message);
     } finally {

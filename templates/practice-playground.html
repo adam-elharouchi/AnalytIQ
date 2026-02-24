@@ -25,15 +25,16 @@
     }
 
     .exercise-info {
-      background: var(--color-dark);
+      background: #ffffff;
       border: 1px solid #e2e8f0;
       border-radius: 0.5rem;
       padding: 1.5rem;
       margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
     }
 
     .exercise-info h2 {
-      color: #ffffff;
+      color: var(--color-dark);
       margin-bottom: 0.5rem;
     }
 
@@ -62,7 +63,7 @@
     }
 
     .exercise-description {
-      color: #ffffff;
+      color: var(--text-primary);
       line-height: 1.6;
       margin-top: 1rem;
     }
@@ -230,7 +231,7 @@
       gap: 2rem;
       margin-bottom: 1.5rem;
       padding: 1rem;
-      background: var(--color-dark);
+      background: #f8fafc;
       border: 1px solid #e2e8f0;
       border-radius: 0.5rem;
       align-items: center;
@@ -244,7 +245,7 @@
 
     .stat-label {
       font-size: 0.75rem;
-      color: #ffffff;
+      color: var(--text-secondary);
       font-weight: 500;
       text-transform: uppercase;
       letter-spacing: 0.5px;
@@ -253,20 +254,20 @@
     .stat-value {
       font-size: 1.5rem;
       font-weight: 700;
-      color: #ffffff;
+      color: var(--color-primary);
     }
 
     .stat-value.timer {
-      color: #ffffff;
+      color: var(--color-primary);
       font-family: 'Courier New', monospace;
     }
 
     .stat-value.score {
-      color: #ffffff;
+      color: var(--color-primary);
     }
 
     .stat-value.accuracy {
-      color: #ffffff;
+      color: var(--color-primary);
     }
 
     .playground-actions {
@@ -380,7 +381,7 @@
       width: 60px;
       height: 60px;
       border-radius: 50%;
-      background-color: var(--color-dark);
+      background-color: var(--color-primary);
       color: white;
       border: none;
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
@@ -395,7 +396,7 @@
     }
 
     .chat-widget-button .logo-iq {
-      color: var(--color-primary);
+      color: #ffffff;
     }
 
     .chat-widget-button:hover {
@@ -442,8 +443,8 @@
     }
 
     .chat-modal-header {
-      background: var(--color-dark);
-      color: #ffffff;
+      background: var(--bg-secondary);
+      color: var(--color-dark);
       padding: 1rem;
       display: flex;
       justify-content: space-between;
@@ -456,17 +457,15 @@
       margin: 0;
       font-size: 1rem;
       font-weight: 600;
-      color: #ffffff;
+      color: var(--color-dark);
     }
-
-
 
 
 
     .chat-modal-close {
       background: none;
       border: none;
-      color: white;
+      color: var(--text-secondary);
       font-size: 1.5rem;
       cursor: pointer;
       padding: 0;
@@ -481,7 +480,7 @@
     }
 
     .chat-modal-close:hover {
-      background-color: rgba(255, 255, 255, 0.2);
+      background-color: rgba(0, 0, 0, 0.05);
     }
 
     .chat-modal-body {
@@ -683,7 +682,7 @@
         <h1>Practice Playground</h1>
         <button id="backButton" class="btn btn-primary"
           style="text-decoration: none; display: inline-block; margin-top: 0.5rem; color: #ffffff; border: none; cursor: pointer; padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-size: 1rem; font-weight: 600;">←
-          Back to Exercise</button>
+          Back to Exercises</button>
       </div>
 
       <div class="exercise-info" id="exerciseInfo">
@@ -1671,7 +1670,7 @@
         </div>
         <div class="exercise-info">
           <p style="color: #dc2626;">${message}</p>
-          <a href="student-classes.html" class="btn btn-primary" style="margin-top: 1rem; text-decoration: none; display: inline-block;">Go Back to Practice</a>
+          <a href="student-classes.html" class="btn btn-primary" style="margin-top: 1rem; text-decoration: none; display: inline-block;">Back to My Classes</a>
         </div>
       `;
     }
@@ -1838,11 +1837,11 @@
         playgroundChatHistory.push({ role: 'assistant', content: response });
       } catch (error) {
         removePlaygroundLoadingMessage(loadingId);
-        let errorMessage = `❌ Error: ${error.message}`;
+        let errorMessage = `Error: ${error.message}`;
 
         // Provide specific guidance for API not enabled error
         if (error.message.includes('not enabled') || error.message.includes('Enable it')) {
-          errorMessage += `\n\n🔧 Setup Required:\nThe Generative Language API needs to be enabled for your API key's Google Cloud project.\n\n1. Go to: https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com\n2. Select the project associated with your API key\n3. Click "Enable"\n4. Wait a few minutes for changes to propagate\n5. Refresh this page and try again`;
+          errorMessage += `\n\nSetup Required:\nThe Generative Language API needs to be enabled for your API key's Google Cloud project.\n\n1. Go to: https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com\n2. Select the project associated with your API key\n3. Click "Enable"\n4. Wait a few minutes for changes to propagate\n5. Refresh this page and try again`;
         } else {
           errorMessage += `\n\nPlease ensure the API key is configured correctly and has the necessary permissions.`;
         }

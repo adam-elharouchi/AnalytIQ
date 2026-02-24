@@ -81,15 +81,15 @@ function renderClasses(classes) {
           onclick="copyClassCode('${escapeHtml(classItem.class_id)}')"
           title="Copy Class Code"
         >
-          📋
+          Copy
         </button>
-        <button 
-          class="btn btn-secondary" 
+        <button
+          class="btn btn-secondary"
           onclick="deleteClass('${escapeHtml(classItem.class_id)}', '${escapeHtml(classItem.name)}')"
           title="Delete Class"
           style="color: #dc2626;"
         >
-          🗑️
+          Delete
         </button>
       </div>
     </div>
@@ -206,7 +206,7 @@ function copyClassCode(classId) {
     // Show temporary feedback
     const button = event.target.closest('button');
     const originalText = button.innerHTML;
-    button.innerHTML = '✓';
+    button.innerHTML = 'Copied';
     button.style.background = '#10b981';
     setTimeout(() => {
       button.innerHTML = originalText;

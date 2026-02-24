@@ -197,7 +197,7 @@
             <input type="radio" name="chapterSource" value="existing" onchange="toggleChapterSource('existing')"
               style="cursor: pointer;">
             <span>
-              <strong style="display: block; color: #1e293b;">📚 Existing Chapter</strong>
+              <strong style="display: block; color: #1e293b;">Existing Chapter</strong>
               <span style="font-size: 0.875rem; color: #64748b;">Select from uploaded chapters</span>
             </span>
           </label>
@@ -207,7 +207,7 @@
             <input type="radio" name="chapterSource" value="new" checked onchange="toggleChapterSource('new')"
               style="cursor: pointer;">
             <span>
-              <strong style="display: block; color: #1e293b;">📄 New Chapter</strong>
+              <strong style="display: block; color: #1e293b;">New Chapter</strong>
               <span style="font-size: 0.875rem; color: #64748b;">Upload a new PDF</span>
             </span>
           </label>
@@ -232,7 +232,7 @@
         </div>
 
         <div class="upload-zone" id="dropZone">
-          <div style="font-size: 3rem; margin-bottom: 1rem;">📄</div>
+          <div style="font-size: 3rem; margin-bottom: 1rem;"></div>
           <h3 style="margin-bottom: 0.5rem; color: #1e293b;">Upload Chapter PDF</h3>
           <p style="color: #64748b; margin-bottom: 1.5rem;">Drag and drop your PDF here, or click to browse</p>
           <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">Select PDF
@@ -245,7 +245,7 @@
       <div id="existingChapterActions" style="display: none; margin-top: 2rem;">
         <button class="btn btn-primary" onclick="generateFromExisting()"
           style="width: 100%; padding: 1rem; font-size: 1.1rem;">
-          ✨ Generate Exercises from Selected Chapter
+          Generate Exercises from Selected Chapter
         </button>
       </div>
     </div>

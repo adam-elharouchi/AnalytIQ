@@ -53,7 +53,6 @@ async function loadClassData(classId) {
     console.error('Error loading class:', error);
     loadingState.style.display = 'none';
     loadingState.innerHTML = `
-      <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
       <h2 style="margin-bottom: 0.5rem;">Error Loading Class</h2>
       <p style="color: #64748b; margin-bottom: 1.5rem;">${error.message}</p>
       <button class="btn btn-primary" onclick="window.location.href='student-classes.html'">Back to Classes</button>
@@ -85,7 +84,7 @@ function copyClassCodeToClipboard() {
       const button = document.getElementById('copyCodeBtn');
       const originalText = button?.textContent || '';
       if (button) {
-        button.textContent = '✓ Copied!';
+        button.textContent = 'Copied!';
         setTimeout(() => {
           button.textContent = originalText;
         }, 2000);
@@ -123,7 +122,7 @@ function fallbackCopyTextToClipboard(text) {
     const button = document.getElementById('copyCodeBtn');
     if (successful && button) {
       const originalText = button.textContent || '';
-      button.textContent = '✓ Copied!';
+      button.textContent = 'Copied!';
       setTimeout(() => {
         button.textContent = originalText;
       }, 2000);
@@ -221,7 +220,7 @@ async function loadChapters() {
     const chapters = data.chapters || [];
 
     if (chapters.length === 0) {
-      uiStates.showEmpty(chaptersList, '📄 No chapters yet', 'No chapters have been uploaded for this class yet.');
+      uiStates.showEmpty(chaptersList, 'No chapters yet', 'No chapters have been uploaded for this class yet.');
       return;
     }
 
@@ -231,7 +230,6 @@ async function loadChapters() {
     console.error('Error loading chapters:', error);
     chaptersList.innerHTML = `
       <div style="text-align: center; padding: 3rem; background: #fee2e2; border: 1px solid #ef4444; border-radius: 0.5rem; color: #991b1b;">
-        <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
         <p>Error loading chapters: ${error.message}</p>
         <button class="btn btn-primary" onclick="loadChapters()" style="margin-top: 1rem;">Retry</button>
       </div>
@@ -262,7 +260,7 @@ async function loadExercises() {
     const chapters = chaptersData.chapters || [];
 
     if (chapters.length === 0) {
-      uiStates.showEmpty(exercisesList, '✏️ No exercises yet', 'Exercises will appear here once chapters are uploaded.');
+      uiStates.showEmpty(exercisesList, 'No exercises yet', 'Exercises will appear here once chapters are uploaded.');
       return;
     }
 
@@ -290,7 +288,7 @@ async function loadExercises() {
     const allExercises = exercisesArrays.flat();
 
     if (allExercises.length === 0) {
-      uiStates.showEmpty(exercisesList, '✏️ No exercises yet', 'No exercises have been generated for this class yet.');
+      uiStates.showEmpty(exercisesList, 'No exercises yet', 'No exercises have been generated for this class yet.');
       return;
     }
 
@@ -346,7 +344,6 @@ async function loadExercises() {
     console.error('Error loading exercises:', error);
     exercisesList.innerHTML = `
       <div style="text-align: center; padding: 3rem; background: #fee2e2; border: 1px solid #ef4444; border-radius: 0.5rem; color: #991b1b;">
-        <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
         <p>Error loading exercises: ${error.message}</p>
         <button class="btn btn-primary" onclick="loadExercises()" style="margin-top: 1rem;">Retry</button>
       </div>
@@ -359,7 +356,7 @@ async function renderChapters(chapters) {
   const chaptersList = document.getElementById('chaptersList');
 
   if (!chapters || chapters.length === 0) {
-    uiStates.showEmpty(chaptersList, '📄 No chapters yet', 'No chapters have been uploaded for this class yet.');
+    uiStates.showEmpty(chaptersList, 'No chapters yet', 'No chapters have been uploaded for this class yet.');
     return;
   }
 
@@ -509,8 +506,7 @@ async function loadResources() {
     if (combinedResources.length === 0) {
       resourcesList.innerHTML = `
         <div style="text-align: center; padding: 3rem; background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-color); border-radius: 0.5rem;">
-          <div style="font-size: 3rem; margin-bottom: 1rem;">📖</div>
-          <p style="color: #64748b;">No resources available yet.</p>
+            <p style="color: #64748b;">No resources available yet.</p>
         </div>
       `;
     } else {
@@ -524,30 +520,29 @@ async function loadResources() {
         groupedByType[type].push(resource);
       });
 
-      // Type icons and labels
+      // Type labels
       const typeLabels = {
-        'pdf': { icon: '📄', label: 'PDFs & Documents' },
-        'tool': { icon: '🛠️', label: 'Tools' },
-        'dataset': { icon: '💾', label: 'Datasets' },
-        'video': { icon: '🎥', label: 'Videos' },
-        'article': { icon: '📝', label: 'Articles' },
-        'link': { icon: '🔗', label: 'Links' },
-        'csv': { icon: '📊', label: 'Data Files (CSV)' },
-        'excel': { icon: '📊', label: 'Excel Worksheets' },
-        'ipynb': { icon: '📓', label: 'Jupyter Notebooks' },
-        'json': { icon: '⚙️', label: 'JSON Data' },
-        'txt': { icon: '📝', label: 'Text Files' }
+        'pdf': { label: 'PDFs & Documents' },
+        'tool': { label: 'Tools' },
+        'dataset': { label: 'Datasets' },
+        'video': { label: 'Videos' },
+        'article': { label: 'Articles' },
+        'link': { label: 'Links' },
+        'csv': { label: 'Data Files (CSV)' },
+        'excel': { label: 'Excel Worksheets' },
+        'ipynb': { label: 'Jupyter Notebooks' },
+        'json': { label: 'JSON Data' },
+        'txt': { label: 'Text Files' }
       };
 
       resourcesList.innerHTML = Object.keys(groupedByType).map(type => {
-        const typeInfo = typeLabels[type] || { icon: '🔗', label: 'Other Resources' };
+        const typeInfo = typeLabels[type] || { label: 'Other Resources' };
         const resources = groupedByType[type];
 
         return `
           <div style="margin-bottom: 2.5rem;">
-            <h3 style="margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border-color); display: flex; align-items: center; gap: 0.5rem;">
-              <span>${typeInfo.icon}</span>
-              <span>${typeInfo.label}</span>
+            <h3 style="margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border-color);">
+              ${typeInfo.label}
             </h3>
             <div class="resources-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
               ${resources.map(resource => {
@@ -555,11 +550,8 @@ async function loadResources() {
           if (['csv', 'ipynb', 'excel'].includes(resource.resource_type)) {
             console.log('Rendering Resource:', resource.title, resource);
           }
-          // Determine Icon
-          let icon = '🔗';
-          if (typeLabels[resource.resource_type]) {
-            icon = typeLabels[resource.resource_type].icon;
-          }
+          // Determine type label
+          const typeLabel = (typeLabels[resource.resource_type] || { label: resource.resource_type || 'Resource' }).label;
 
           let url = resource.resource_url || resource.url || '#';
           // Server-relative resource paths (e.g. /api/resources/files/...) are used as-is
@@ -626,12 +618,12 @@ async function loadResources() {
 
           return `
                   <div class="resource-card" style="background: var(--bg-card, #fff); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.1)';">
-                    <div style="font-size: 2rem; margin-bottom: 0.75rem;">${icon}</div>
+                    <div style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 0.75rem;">${typeLabel}</div>
                     <h3 style="margin: 0 0 0.5rem 0; font-size: 1.125rem;">${escapeHtml(resource.title)}</h3>
                     <p style="color: #64748b; margin: 0 0 1rem 0; font-size: 0.875rem; line-height: 1.5;">${escapeHtml(resource.description || '')}</p>
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                       <a href="${escapeHtml(url)}" ${linkTarget} class="resource-link" style="color: var(--color-primary); text-decoration: none; font-weight: 500; font-size: 0.875rem; display: inline-flex; align-items: center; gap: 0.25rem;">
-                        ${isDownload ? '⬇️' : ''} ${linkText} ${!isDownload ? '→' : ''}
+                        ${linkText} ${!isDownload ? '→' : ''}
                       </a>
                     </div>
                   </div>
@@ -647,7 +639,6 @@ async function loadResources() {
     console.error('Error loading resources:', error);
     resourcesList.innerHTML = `
       <div style="text-align: center; padding: 3rem; background: #fee2e2; border: 1px solid #ef4444; border-radius: 0.5rem; color: #991b1b;">
-        <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
         <p>Error loading resources: ${error.message}</p>
         <button class="btn btn-primary" onclick="loadResources()" style="margin-top: 1rem;">Retry</button>
       </div>
@@ -680,7 +671,6 @@ async function loadStudents() {
     if (students.length === 0) {
       studentsList.innerHTML = `
         <div style="text-align: center; padding: 3rem; background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-color); border-radius: 0.5rem;">
-          <div style="font-size: 3rem; margin-bottom: 1rem;">👥</div>
           <p style="color: #64748b;">No students enrolled yet.</p>
         </div>
       `;
@@ -704,7 +694,6 @@ async function loadStudents() {
     console.error('Error loading students:', error);
     studentsList.innerHTML = `
       <div style="text-align: center; padding: 3rem; background: #fee2e2; border: 1px solid #ef4444; border-radius: 0.5rem; color: #991b1b;">
-        <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
         <p>Error loading students: ${error.message}</p>
         <button class="btn btn-primary" onclick="loadStudents()" style="margin-top: 1rem;">Retry</button>
       </div>
@@ -816,7 +805,7 @@ async function loadAvgLeaderboard() {
                         ${leaderboard.map(student => `
                             <tr style="border-bottom: 1px solid var(--border-color); ${student.student_id === currentUser.user_id ? 'background-color: var(--color-primary-light, rgba(37, 105, 244, 0.1));' : ''}">
                                 <td style="padding: 1rem; text-align: center; font-weight: bold; color: ${student.rank <= 3 ? '#eab308' : '#64748b'};">
-                                    ${student.rank === 1 ? '🥇' : student.rank === 2 ? '🥈' : student.rank === 3 ? '🥉' : student.rank}
+                                    ${student.rank === 1 ? '#1' : student.rank === 2 ? '#2' : student.rank === 3 ? '#3' : student.rank}
                                 </td>
                                 <td style="padding: 1rem; font-weight: 500;">
                                     ${escapeHtml(student.name)}
@@ -876,7 +865,7 @@ async function loadStudentExerciseLeaderboard(exerciseId) {
                         ${leaderboard.map(student => `
                             <tr style="border-bottom: 1px solid var(--border-color); ${student.student_id === currentUser.user_id ? 'background-color: var(--color-primary-light, rgba(37, 105, 244, 0.1));' : ''}">
                                 <td style="padding: 1rem; text-align: center; font-weight: bold; color: ${student.rank <= 3 ? '#eab308' : '#64748b'};">
-                                    ${student.rank === 1 ? '🥇' : student.rank === 2 ? '🥈' : student.rank === 3 ? '🥉' : student.rank}
+                                    ${student.rank === 1 ? '#1' : student.rank === 2 ? '#2' : student.rank === 3 ? '#3' : student.rank}
                                 </td>
                                 <td style="padding: 1rem; font-weight: 500;">
                                     ${escapeHtml(student.name)}

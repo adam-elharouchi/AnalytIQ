@@ -40,11 +40,9 @@ document.addEventListener('DOMContentLoaded', function () {
           </div>
           <div class="user-menu-divider"></div>
           <button class="user-menu-item" onclick="handleManageProfile()">
-            <span>👤</span>
             <span>Manage Profile</span>
           </button>
           <button class="user-menu-item" onclick="handleSignOut()">
-            <span>🚪</span>
             <span>Sign Out</span>
           </button>
         </div>
@@ -92,7 +90,7 @@ document.addEventListener('DOMContentLoaded', function () {
       <a href="index.html" class="nav-brand" aria-label="AnalytIQ home">
         <span class="logo-analyt" aria-hidden="true">Analyt</span><span class="logo-iq" aria-hidden="true">IQ</span>
       </a>
-      <button class="mobile-menu-toggle" onclick="toggleMobileMenu()" aria-label="Open navigation menu" aria-expanded="false" aria-controls="navLinks">☰</button>
+      <button class="mobile-menu-toggle" onclick="toggleMobileMenu()" aria-label="Open navigation menu" aria-expanded="false" aria-controls="navLinks">Menu</button>
       <ul class="nav-links" id="navLinks">
         <li><a href="index.html" ${currentPage === 'index.html' ? 'class="active"' : ''}>Home</a></li>
         ${roleLinks}
@@ -208,7 +206,7 @@ document.addEventListener('DOMContentLoaded', function () {
     banner.style.cssText = 'background: linear-gradient(90deg, #f59e0b, #d97706); color: white; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3); text-align: center; padding: 12px; font-weight: 600; z-index: 9999; display: flex; justify-content: center; align-items: center; gap: 1rem; position: relative; width: 100%;';
 
     banner.innerHTML = `
-            <span>⚠️ You are currently impersonating <span>${userName}</span>.</span>
+            <span>You are currently impersonating <span>${userName}</span>.</span>
             <button onclick="exitImpersonation()" class="btn btn-secondary btn-sm"
                 style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: white; cursor: pointer; padding: 0.25rem 0.75rem; border-radius: 0.25rem;">Exit
                 Impersonation</button>

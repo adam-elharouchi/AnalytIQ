@@ -88,7 +88,6 @@ async function loadClassData(classId) {
     console.error('Error loading class:', error);
     loadingState.innerHTML = `
       <div style="text-align: center; padding: 3rem;">
-        <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
         <h2 style="margin-bottom: 0.5rem;">Error Loading Class</h2>
         <p style="color: #64748b; margin-bottom: 1.5rem;">${error.message}</p>
         <button class="btn btn-primary" onclick="window.location.href='professor-dashboard.html'">Back to Dashboard</button>
@@ -120,7 +119,7 @@ async function syncLmsRoster() {
   const btn = document.getElementById('syncLmsBtn');
   const originalText = btn.innerHTML;
   btn.disabled = true;
-  btn.innerHTML = '⏳ Syncing…';
+  btn.innerHTML = 'Syncing…';
 
   try {
     const response = await authFetch(`${window.API_BASE_URL.replace('/api', '')}/api/lti/sync-roster/${encodeURIComponent(classId)}`, {
@@ -201,7 +200,7 @@ async function loadChapters() {
     const chapters = data.chapters || [];
 
     if (chapters.length === 0) {
-      uiStates.showEmpty(chaptersList, '📄 No chapters yet', 'Upload your first chapter to get started.');
+      uiStates.showEmpty(chaptersList, 'No chapters yet', 'Upload your first chapter to get started.');
     } else {
       chaptersList.innerHTML = chapters.map(chapter => `
         <div class="chapter-card" style="background: var(--bg-card, #fff); border: 1px solid var(--border-color); border-radius: 0.5rem; padding: 1.5rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: start;">
@@ -217,8 +216,8 @@ async function loadChapters() {
           </div>
           <div style="display: flex; gap: 0.5rem;">
             ${chapter.pdf_url || chapter.pdf_filename ? `<a href="chapter-view.html?chapter_id=${encodeURIComponent(chapter.chapter_id)}&class_id=${encodeURIComponent(currentClassId)}" class="btn btn-primary" style="text-decoration: none;">View PDF</a>` : ''}
-            <button class="btn btn-secondary" onclick="showEditChapterModal('${chapter.chapter_id}')" style="background: var(--bg-card, #fff);border: 1px solid #cbd5e1; padding: 0.5rem 0.75rem;">✏️</button>
-            <button class="btn btn-secondary" onclick="showDeleteChapterModal('${chapter.chapter_id}')" style="background: var(--bg-card, #fff); color: #ef4444; border: 1px solid #fca5a5; padding: 0.5rem 0.75rem;">🗑️</button>
+            <button class="btn btn-secondary" onclick="showEditChapterModal('${chapter.chapter_id}')" style="background: var(--bg-card, #fff);border: 1px solid #cbd5e1; padding: 0.5rem 0.75rem;">Edit</button>
+            <button class="btn btn-secondary" onclick="showDeleteChapterModal('${chapter.chapter_id}')" style="background: var(--bg-card, #fff); color: #ef4444; border: 1px solid #fca5a5; padding: 0.5rem 0.75rem;">Delete</button>
           </div>
         </div>
       `).join('');
@@ -227,7 +226,6 @@ async function loadChapters() {
     console.error('Error loading chapters:', error);
     chaptersList.innerHTML = `
       <div style="text-align: center; padding: 3rem; background: #fee2e2; border: 1px solid #ef4444; border-radius: 0.5rem;">
-        <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
         <p style="color: #991b1b;">Error loading chapters: ${escapeHtml(error.message)}</p>
         <button class="btn btn-primary" onclick="loadChapters()" style="margin-top: 1rem;">Retry</button>
       </div>
@@ -301,7 +299,7 @@ async function loadStudents() {
     }
 
     if (students.length === 0) {
-      uiStates.showEmpty(studentsList, '👥 No students enrolled yet', 'Students will appear here once they join using your class code.');
+      uiStates.showEmpty(studentsList, 'No students enrolled yet', 'Students will appear here once they join using your class code.');
     } else {
       studentsList.innerHTML = `
         <div style="overflow-x: auto;">
@@ -367,7 +365,6 @@ async function loadProgress() {
     if (students.length === 0) {
       progressOverview.innerHTML = `
         <div style="text-align: center; padding: 3rem; background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-color); border-radius: 0.5rem;">
-          <div style="font-size: 3rem; margin-bottom: 1rem;">📊</div>
           <p style="color: #64748b;">No student data available yet.</p>
         </div>
       `;
@@ -500,7 +497,7 @@ async function loadAvgLeaderboard() {
                         ${leaderboard.map(student => `
                             <tr style="border-bottom: 1px solid var(--border-color);">
                                 <td style="padding: 1rem; text-align: center; font-weight: bold; color: ${student.rank <= 3 ? '#eab308' : '#64748b'};">
-                                    ${student.rank === 1 ? '🥇' : student.rank === 2 ? '🥈' : student.rank === 3 ? '🥉' : student.rank}
+                                    ${student.rank === 1 ? '#1' : student.rank === 2 ? '#2' : student.rank === 3 ? '#3' : student.rank}
                                 </td>
                                 <td style="padding: 1rem; font-weight: 500;">${escapeHtml(student.name)}</td>
                                 <td style="padding: 1rem; text-align: center;">${student.exercises_completed}</td>
@@ -559,7 +556,7 @@ async function loadExerciseLeaderboard(exerciseId) {
                         ${leaderboard.map(student => `
                             <tr style="border-bottom: 1px solid var(--border-color);">
                                 <td style="padding: 1rem; text-align: center; font-weight: bold; color: ${student.rank <= 3 ? '#eab308' : '#64748b'};">
-                                    ${student.rank === 1 ? '🥇' : student.rank === 2 ? '🥈' : student.rank === 3 ? '🥉' : student.rank}
+                                    ${student.rank === 1 ? '#1' : student.rank === 2 ? '#2' : student.rank === 3 ? '#3' : student.rank}
                                 </td>
                                 <td style="padding: 1rem; font-weight: 500;">${escapeHtml(student.name)}</td>
                                 <td style="padding: 1rem; text-align: right; font-weight: 600; color: var(--color-primary);">${student.score}%</td>
@@ -600,7 +597,7 @@ async function loadExercises() {
     const chapters = chaptersData.chapters || [];
 
     if (chapters.length === 0) {
-      uiStates.showEmpty(exercisesList, '✏️ No exercises yet', 'Upload chapters first to generate exercises.');
+      uiStates.showEmpty(exercisesList, 'No exercises yet', 'Upload chapters first to generate exercises.');
       return;
     }
 
@@ -624,7 +621,7 @@ async function loadExercises() {
     }
 
     if (allExercises.length === 0) {
-      uiStates.showEmpty(exercisesList, '✏️ No exercises yet', 'Exercises will be generated when you upload chapters, or create them manually.');
+      uiStates.showEmpty(exercisesList, 'No exercises yet', 'Exercises will be generated when you upload chapters, or create them manually.');
     } else {
       // Group by chapter
       const exercisesByChapter = {};
@@ -661,8 +658,8 @@ async function loadExercises() {
                   </div>
                   <div class="practice-actions">
                     <button class="btn btn-primary" onclick="startExerciseFromClass('${escapeHtml(exercise.exercise_id)}', '${escapeHtml(exercise.chapter_id)}', '${escapeHtml(exercise.title)}')">Start Exercise</button>
-                    <button class="btn btn-secondary" onclick="editExercise('${escapeHtml(exercise.exercise_id)}')" style="margin-left: 0.5rem;">✏️ Edit</button>
-                    <button class="btn btn-secondary" onclick="deleteExercise('${escapeHtml(exercise.exercise_id)}', '${escapeHtml(exercise.title)}')" style="margin-left: 0.5rem; color: #dc2626;">🗑️ Delete</button>
+                    <button class="btn btn-secondary" onclick="editExercise('${escapeHtml(exercise.exercise_id)}')" style="margin-left: 0.5rem;">Edit</button>
+                    <button class="btn btn-secondary" onclick="deleteExercise('${escapeHtml(exercise.exercise_id)}', '${escapeHtml(exercise.title)}')" style="margin-left: 0.5rem; color: #dc2626;">Delete</button>
                   </div>
                 </div>
               `).join('')}
@@ -675,7 +672,6 @@ async function loadExercises() {
     console.error('Error loading exercises:', error);
     exercisesList.innerHTML = `
       <div style="text-align: center; padding: 3rem; background: #fee2e2; border: 1px solid #ef4444; border-radius: 0.5rem;">
-        <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
         <p style="color: #991b1b;">Error loading exercises: ${escapeHtml(error.message)}</p>
         <button class="btn btn-primary" onclick="loadExercises()" style="margin-top: 1rem;">Retry</button>
       </div>
@@ -812,7 +808,7 @@ async function handleCreateExercise(event) {
     const exercisesList = document.getElementById('exercisesList');
     const successMsg = document.createElement('div');
     successMsg.style.cssText = 'padding: 1rem; margin-bottom: 1rem; background: #d1fae5; color: #065f46; border-radius: 0.5rem; border: 1px solid #10b981;';
-    successMsg.textContent = isEdit ? '✓ Exercise updated successfully!' : '✓ Exercise created successfully!';
+    successMsg.textContent = isEdit ? 'Exercise updated successfully!' : 'Exercise created successfully!';
     exercisesList.insertBefore(successMsg, exercisesList.firstChild);
 
     setTimeout(() => {
@@ -1021,7 +1017,6 @@ async function loadResources() {
     if (combinedResources.length === 0) {
       resourcesList.innerHTML = `
         <div style="text-align: center; padding: 3rem; background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-color); border-radius: 0.5rem;">
-          <div style="font-size: 3rem; margin-bottom: 1rem;">📖</div>
           <p style="color: #64748b;">No resources added yet. Add helpful links, documents, or external resources for your students.</p>
         </div>
       `;
@@ -1036,44 +1031,34 @@ async function loadResources() {
         groupedByType[type].push(resource);
       });
 
-      // Type icons and labels
+      // Type labels
       const typeLabels = {
-        'pdf': { icon: '📄', label: 'PDFs & Documents' },
-        'chapter': { icon: '📖', label: 'Chapter PDFs' },
-        'tool': { icon: '🛠️', label: 'Tools' },
-        'dataset': { icon: '💾', label: 'Datasets' },
-        'video': { icon: '🎥', label: 'Videos' },
-        'article': { icon: '📝', label: 'Articles' },
-        'link': { icon: '🔗', label: 'Links' },
-        'csv': { icon: '📊', label: 'Data Files (CSV)' },
-        'excel': { icon: '📊', label: 'Excel Worksheets' },
-        'ipynb': { icon: '📓', label: 'Jupyter Notebooks' },
-        'json': { icon: '⚙️', label: 'JSON Data' },
-        'txt': { icon: '📝', label: 'Text Files' }
+        'pdf': { label: 'PDFs & Documents' },
+        'chapter': { label: 'Chapter PDFs' },
+        'tool': { label: 'Tools' },
+        'dataset': { label: 'Datasets' },
+        'video': { label: 'Videos' },
+        'article': { label: 'Articles' },
+        'link': { label: 'Links' },
+        'csv': { label: 'Data Files (CSV)' },
+        'excel': { label: 'Excel Worksheets' },
+        'ipynb': { label: 'Jupyter Notebooks' },
+        'json': { label: 'JSON Data' },
+        'txt': { label: 'Text Files' }
       };
 
       resourcesList.innerHTML = Object.keys(groupedByType).map(type => {
-        const typeInfo = typeLabels[type] || { icon: '🔗', label: 'Resources' };
+        const typeInfo = typeLabels[type] || { label: 'Resources' };
         const resources = groupedByType[type];
 
         return `
           <div style="margin-bottom: 2.5rem;">
-            <h3 style="margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border-color); display: flex; align-items: center; gap: 0.5rem;">
-              <span>${typeInfo.icon}</span>
-              <span>${typeInfo.label}</span>
+            <h3 style="margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border-color);">
+              ${typeInfo.label}
             </h3>
             <div class="resources-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
               ${resources.map(resource => {
-          const icon = resource.resource_type === 'pdf' ? '📄' :
-            resource.resource_type === 'chapter' ? '📖' :
-              resource.resource_type === 'tool' ? '🛠️' :
-                resource.resource_type === 'dataset' ? '💾' :
-                  resource.resource_type === 'video' ? '🎥' :
-                    resource.resource_type === 'article' ? '📝' :
-                      resource.resource_type === 'ipynb' ? '📓' :
-                        resource.resource_type === 'csv' || resource.resource_type === 'excel' ? '📊' :
-                          resource.resource_type === 'json' ? '⚙️' :
-                            resource.resource_type === 'txt' ? '📝' : '🔗';
+          const typeLabel = (typeLabels[resource.resource_type] || { label: resource.resource_type || 'Resource' }).label;
 
           let url = resource.resource_url || resource.url || '#';
           // Server-relative resource paths (e.g. /api/resources/files/...) are used as-is
@@ -1110,7 +1095,7 @@ async function loadResources() {
 
           return `
                   <div class="resource-card" style="background: var(--bg-card, #fff); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.1)';">
-                    <div style="font-size: 2rem; margin-bottom: 0.75rem;">${icon}</div>
+                    <div style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 0.75rem;">${typeLabel}</div>
                     <h3 style="margin: 0 0 0.5rem 0;font-size: 1.125rem;">${escapeHtml(resource.title)}</h3>
                     <p style="color: #64748b; margin: 0 0 1rem 0; font-size: 0.875rem; line-height: 1.5;">${escapeHtml(resource.description || '')}</p>
                     <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -1119,8 +1104,8 @@ async function loadResources() {
                       </a>
                       ${!resource.is_default ? `
                         <div style="display: flex; gap: 0.25rem;">
-                          ${!resource.is_chapter ? `<button class="btn btn-secondary edit-resource-btn" data-resource-id="${resource.resource_id}" style="padding: 0.375rem 0.75rem; font-size: 0.75rem;">✏️</button>` : ''}
-                          <button class="btn btn-secondary delete-resource-btn" data-resource-id="${resource.resource_id}" ${resource.is_chapter ? `data-chapter-id="${resource.chapter_id}"` : ''} style="padding: 0.375rem 0.75rem; font-size: 0.75rem; color: #dc2626;">🗑️</button>
+                          ${!resource.is_chapter ? `<button class="btn btn-secondary edit-resource-btn" data-resource-id="${resource.resource_id}" style="padding: 0.375rem 0.75rem; font-size: 0.75rem;">Edit</button>` : ''}
+                          <button class="btn btn-secondary delete-resource-btn" data-resource-id="${resource.resource_id}" ${resource.is_chapter ? `data-chapter-id="${resource.chapter_id}"` : ''} style="padding: 0.375rem 0.75rem; font-size: 0.75rem; color: #dc2626;">Delete</button>
                         </div>
                       ` : ''}
                     </div>
@@ -1136,7 +1121,6 @@ async function loadResources() {
     console.error('Error loading resources:', error);
     resourcesList.innerHTML = `
       <div style="text-align: center; padding: 3rem; background: #fee2e2; border: 1px solid #ef4444; border-radius: 0.5rem;">
-        <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
         <p style="color: #991b1b;">Error loading resources: ${escapeHtml(error.message)}</p>
         <button class="btn btn-primary" onclick="loadResources()" style="margin-top: 1rem;">Retry</button>
       </div>
@@ -1446,7 +1430,7 @@ async function finishResourceAction(message) {
   const resourcesList = document.getElementById('resourcesList');
   const successMsg = document.createElement('div');
   successMsg.style.cssText = 'padding: 1rem; margin-bottom: 1rem; background: #d1fae5; color: #065f46; border-radius: 0.5rem; border: 1px solid #10b981;';
-  successMsg.textContent = `✓ ${message}`;
+  successMsg.textContent = message;
   if (resourcesList.firstChild) resourcesList.insertBefore(successMsg, resourcesList.firstChild);
   else resourcesList.appendChild(successMsg);
   setTimeout(() => successMsg.remove(), 3000);
@@ -1662,7 +1646,6 @@ async function loadDetailedProgress() {
     if (!data.students || data.students.length === 0) {
       container.innerHTML = `
         <div style="text-align: center; padding: 3rem; background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-color); border-radius: 0.5rem;">
-          <div style="font-size: 3rem; margin-bottom: 1rem;">👥</div>
           <p style="color: #64748b;">No students enrolled yet.</p>
         </div>
       `;
@@ -1675,7 +1658,6 @@ async function loadDetailedProgress() {
     if (exercises.length === 0) {
       container.innerHTML = `
         <div style="text-align: center; padding: 3rem; background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-color); border-radius: 0.5rem;">
-          <div style="font-size: 3rem; margin-bottom: 1rem;">📝</div>
           <p style="color: #64748b;">No exercises created yet.</p>
         </div>
       `;
@@ -1802,9 +1784,9 @@ async function loadAvgLeaderboard() {
 
     data.leaderboard.forEach(entry => {
       let rankIcon = entry.rank;
-      if (entry.rank === 1) rankIcon = '🥇';
-      else if (entry.rank === 2) rankIcon = '🥈';
-      else if (entry.rank === 3) rankIcon = '🥉';
+      if (entry.rank === 1) rankIcon = '#1';
+      else if (entry.rank === 2) rankIcon = '#2';
+      else if (entry.rank === 3) rankIcon = '#3';
 
       html += `
         <tr style="border-bottom: 1px solid var(--border-color); background: var(--bg-card, #fff);">
@@ -1914,9 +1896,9 @@ async function loadExerciseLeaderboard(exerciseId) {
 
     data.leaderboard.forEach(entry => {
       let rankIcon = entry.rank;
-      if (entry.rank === 1) rankIcon = '🥇';
-      else if (entry.rank === 2) rankIcon = '🥈';
-      else if (entry.rank === 3) rankIcon = '🥉';
+      if (entry.rank === 1) rankIcon = '#1';
+      else if (entry.rank === 2) rankIcon = '#2';
+      else if (entry.rank === 3) rankIcon = '#3';
 
       const date = entry.submitted_at ? new Date(entry.submitted_at).toLocaleDateString() : '-';
 
