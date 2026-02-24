@@ -353,6 +353,21 @@ app.register_blueprint(platform_bp)
 app.before_request(check_ip_blocklist)
 app.before_request(check_maintenance_mode)
 
+# ---------------------------------------------------------------------------
+# Auto-apply pending SQL migrations at startup (idempotent).
+# Ensures production DB schema is always in sync with the codebase.
+# ---------------------------------------------------------------------------
+try:
+    from db import get_db_connection
+    from db_migrate import run_migrations
+
+    with app.app_context():
+        run_migrations(get_db_connection())
+except Exception as _mig_exc:
+    import logging as _logging
+
+    _logging.getLogger(__name__).warning("Startup migration runner failed: %s", _mig_exc)
+
 
 # Serve frontend (local development: open http://localhost:5001)
 _ROOT = os.path.dirname(os.path.abspath(__file__))

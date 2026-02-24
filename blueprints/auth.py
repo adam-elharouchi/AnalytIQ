@@ -210,14 +210,31 @@ def signin():
                 )
                 conn.rollback()
 
-        # Check account status before issuing a token
-        cur2 = conn.cursor()
-        cur2.execute(
-            "SELECT account_status, requires_password_reset FROM users WHERE user_id = %s",
-            (user_id,),
-        )
-        status_row = cur2.fetchone()
-        cur2.close()
+        # Check account status before issuing a token.
+        # Gracefully fall back if new columns don't exist yet (pre-migration).
+        status_row = None
+        try:
+            cur2 = conn.cursor()
+            cur2.execute(
+                "SELECT account_status, requires_password_reset FROM users WHERE user_id = %s",
+                (user_id,),
+            )
+            status_row = cur2.fetchone()
+            cur2.close()
+        except Exception:
+            conn.rollback()
+            # columns not yet added — fetch only account_status
+            try:
+                cur2b = conn.cursor()
+                cur2b.execute(
+                    "SELECT account_status FROM users WHERE user_id = %s", (user_id,)
+                )
+                row = cur2b.fetchone()
+                cur2b.close()
+                status_row = (row[0], False) if row else None
+            except Exception:
+                conn.rollback()
+
         if status_row:
             if status_row[0] == "disabled":
                 return jsonify({"error": "Account is disabled. Contact support."}), 403
