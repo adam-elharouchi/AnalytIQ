@@ -30,6 +30,7 @@ def _rate_limit(rate: str):
 
     return decorator
 
+
 logger = logging.getLogger(__name__)
 bp = Blueprint("superadmin", __name__)
 
@@ -589,21 +590,24 @@ def get_pending_approvals():
         rows = cur.fetchall()
         cur.close()
 
-        return jsonify(
-            {
-                "pending": [
-                    {
-                        "user_id":    r[0],
-                        "name":       r[1],
-                        "email":      r[2],
-                        "role":       r[3],
-                        "created_at": r[4].isoformat() if r[4] else None,
-                    }
-                    for r in rows
-                ],
-                "count": len(rows),
-            }
-        ), 200
+        return (
+            jsonify(
+                {
+                    "pending": [
+                        {
+                            "user_id": r[0],
+                            "name": r[1],
+                            "email": r[2],
+                            "role": r[3],
+                            "created_at": r[4].isoformat() if r[4] else None,
+                        }
+                        for r in rows
+                    ],
+                    "count": len(rows),
+                }
+            ),
+            200,
+        )
     except Exception as e:
         logger.error("Failed to fetch pending approvals: %s", e)
         return jsonify({"error": "Failed to fetch pending approvals"}), 500
@@ -631,8 +635,7 @@ def approve_admin(user_id):
         if not row:
             return jsonify({"error": "User not found or not pending approval"}), 404
 
-        audit(conn, "ENABLE_USER", resource_type="user", resource_id=user_id,
-              details={"action": "approved_admin"})
+        audit(conn, "ENABLE_USER", resource_type="user", resource_id=user_id, details={"action": "approved_admin"})
         conn.commit()
         cur.close()
 
@@ -664,8 +667,7 @@ def deny_admin(user_id):
         if not row:
             return jsonify({"error": "User not found or not pending approval"}), 404
 
-        audit(conn, "DISABLE_USER", resource_type="user", resource_id=user_id,
-              details={"action": "denied_admin"})
+        audit(conn, "DISABLE_USER", resource_type="user", resource_id=user_id, details={"action": "denied_admin"})
         conn.commit()
         cur.close()
 
@@ -705,8 +707,13 @@ def delete_user(user_id):
         cur.execute("DELETE FROM user_preferences  WHERE user_id = %s", (user_id,))
         cur.execute("DELETE FROM users             WHERE user_id = %s", (user_id,))
 
-        audit(conn, "DELETE_USER", resource_type="user", resource_id=user_id,
-              details={"name": target[0], "email": target[1]})
+        audit(
+            conn,
+            "DELETE_USER",
+            resource_type="user",
+            resource_id=user_id,
+            details={"name": target[0], "email": target[1]},
+        )
         conn.commit()
         cur.close()
 
@@ -743,8 +750,7 @@ def delete_class_admin(class_id):
         cur.execute("DELETE FROM class_enrollments WHERE class_id = %s", (class_id,))
         cur.execute("DELETE FROM classes           WHERE class_id = %s", (class_id,))
 
-        audit(conn, "DELETE_CLASS", resource_type="class", resource_id=class_id,
-              details={"name": row[0]})
+        audit(conn, "DELETE_CLASS", resource_type="class", resource_id=class_id, details={"name": row[0]})
         conn.commit()
         cur.close()
 
@@ -770,16 +776,11 @@ def delete_tenant(tenant_id):
             return jsonify({"error": "Tenant not found"}), 404
 
         # Detach users and classes rather than deleting them
-        cur.execute(
-            "UPDATE users   SET tenant_id = NULL WHERE tenant_id = %s", (tenant_id,)
-        )
-        cur.execute(
-            "UPDATE classes SET tenant_id = NULL WHERE tenant_id = %s", (tenant_id,)
-        )
+        cur.execute("UPDATE users   SET tenant_id = NULL WHERE tenant_id = %s", (tenant_id,))
+        cur.execute("UPDATE classes SET tenant_id = NULL WHERE tenant_id = %s", (tenant_id,))
         cur.execute("DELETE FROM tenants WHERE tenant_id = %s", (tenant_id,))
 
-        audit(conn, "DELETE_TENANT", resource_type="tenant", resource_id=tenant_id,
-              details={"name": row[0]})
+        audit(conn, "DELETE_TENANT", resource_type="tenant", resource_id=tenant_id, details={"name": row[0]})
         conn.commit()
         cur.close()
 
@@ -825,8 +826,7 @@ def change_user_role(user_id):
         if not row:
             return jsonify({"error": "User not found"}), 404
 
-        audit(conn, "UPDATE_USER_ROLE", resource_type="user", resource_id=user_id,
-              details={"new_role": new_role})
+        audit(conn, "UPDATE_USER_ROLE", resource_type="user", resource_id=user_id, details={"new_role": new_role})
         conn.commit()
         cur.close()
 
@@ -901,8 +901,11 @@ def export_user_data(user_id):
             return jsonify({"error": "User not found"}), 404
 
         user_data = {
-            "user_id": u[0], "name": u[1], "email": u[2],
-            "role": u[3], "account_status": u[4],
+            "user_id": u[0],
+            "name": u[1],
+            "email": u[2],
+            "role": u[3],
+            "account_status": u[4],
             "created_at": u[5].isoformat() if u[5] else None,
             "last_login": u[6].isoformat() if u[6] else None,
         }
@@ -919,8 +922,7 @@ def export_user_data(user_id):
             (user_id,),
         )
         user_data["owned_classes"] = [
-            {"class_id": r[0], "name": r[1], "description": r[2],
-             "created_at": r[3].isoformat() if r[3] else None}
+            {"class_id": r[0], "name": r[1], "description": r[2], "created_at": r[3].isoformat() if r[3] else None}
             for r in cur.fetchall()
         ]
 
@@ -948,9 +950,13 @@ def export_user_data(user_id):
             (user_id,),
         )
         user_data["exercise_attempts"] = [
-            {"exercise_id": r[0], "score": r[1], "accuracy": r[2],
-             "time_spent": r[3],
-             "attempted_at": r[4].isoformat() if r[4] else None}
+            {
+                "exercise_id": r[0],
+                "score": r[1],
+                "accuracy": r[2],
+                "time_spent": r[3],
+                "attempted_at": r[4].isoformat() if r[4] else None,
+            }
             for r in cur.fetchall()
         ]
 
@@ -979,9 +985,9 @@ def export_user_data(user_id):
 def list_all_classes():
     """List all classes across all professors with pagination."""
     try:
-        page  = request.args.get("page", 1, type=int)
+        page = request.args.get("page", 1, type=int)
         limit = request.args.get("limit", 50, type=int)
-        q     = request.args.get("q", "")
+        q = request.args.get("q", "")
         offset = (page - 1) * limit
 
         conn = get_db_connection()
@@ -1017,16 +1023,23 @@ def list_all_classes():
         total = rows[0][9] if rows else 0
         classes = [
             {
-                "class_id":      r[0], "name": r[1], "description": r[2],
-                "created_at":    r[3].isoformat() if r[3] else None,
-                "professor_id":  r[4], "professor_name": r[5], "professor_email": r[6],
-                "student_count": r[7], "chapter_count": r[8],
+                "class_id": r[0],
+                "name": r[1],
+                "description": r[2],
+                "created_at": r[3].isoformat() if r[3] else None,
+                "professor_id": r[4],
+                "professor_name": r[5],
+                "professor_email": r[6],
+                "student_count": r[7],
+                "chapter_count": r[8],
             }
             for r in rows
         ]
 
-        return jsonify({"classes": classes, "total": total, "page": page,
-                        "pages": max(1, (total + limit - 1) // limit)}), 200
+        return (
+            jsonify({"classes": classes, "total": total, "page": page, "pages": max(1, (total + limit - 1) // limit)}),
+            200,
+        )
     except Exception as e:
         logger.error("Failed to list classes: %s", e)
         return jsonify({"error": "Failed to list classes"}), 500
@@ -1055,9 +1068,7 @@ def transfer_class(class_id):
         if new_prof[1] not in ("professor", "superadmin"):
             return jsonify({"error": "Target user must be a professor or superadmin"}), 400
 
-        cur.execute(
-            "SELECT name FROM classes WHERE class_id = %s", (class_id,)
-        )
+        cur.execute("SELECT name FROM classes WHERE class_id = %s", (class_id,))
         cls = cur.fetchone()
         if not cls:
             return jsonify({"error": "Class not found"}), 404
@@ -1070,13 +1081,17 @@ def transfer_class(class_id):
             """,
             (new_professor_id, class_id),
         )
-        audit(conn, "TRANSFER_CLASS", resource_type="class", resource_id=class_id,
-              details={"new_professor": new_professor_id, "professor_name": new_prof[0]})
+        audit(
+            conn,
+            "TRANSFER_CLASS",
+            resource_type="class",
+            resource_id=class_id,
+            details={"new_professor": new_professor_id, "professor_name": new_prof[0]},
+        )
         conn.commit()
         cur.close()
 
-        return jsonify({"success": True,
-                        "message": f"Class '{cls[0]}' transferred to {new_prof[0]}."}), 200
+        return jsonify({"success": True, "message": f"Class '{cls[0]}' transferred to {new_prof[0]}."}), 200
     except Exception as e:
         logger.error("Failed to transfer class: %s", e)
         return jsonify({"error": "Failed to transfer class"}), 500
@@ -1160,26 +1175,29 @@ def get_analytics():
         top_actions = [{"action": r[0], "count": r[1]} for r in cur.fetchall()]
 
         cur.close()
-        return jsonify(
-            {
-                "users": {
-                    "total":      sum(roles.values()),
-                    "by_role":    roles,
-                    "new_7d":     new_users[0] if new_users else 0,
-                    "new_30d":    new_users[1] if new_users else 0,
-                    "active_7d":  active[0] if active else 0,
-                    "active_30d": active[1] if active else 0,
-                },
-                "content": {
-                    "classes":     content[0] if content else 0,
-                    "chapters":    content[1] if content else 0,
-                    "exercises":   content[2] if content else 0,
-                    "completions": content[3] if content else 0,
-                },
-                "daily_registrations": daily_regs,
-                "top_actions":         top_actions,
-            }
-        ), 200
+        return (
+            jsonify(
+                {
+                    "users": {
+                        "total": sum(roles.values()),
+                        "by_role": roles,
+                        "new_7d": new_users[0] if new_users else 0,
+                        "new_30d": new_users[1] if new_users else 0,
+                        "active_7d": active[0] if active else 0,
+                        "active_30d": active[1] if active else 0,
+                    },
+                    "content": {
+                        "classes": content[0] if content else 0,
+                        "chapters": content[1] if content else 0,
+                        "exercises": content[2] if content else 0,
+                        "completions": content[3] if content else 0,
+                    },
+                    "daily_registrations": daily_regs,
+                    "top_actions": top_actions,
+                }
+            ),
+            200,
+        )
     except Exception as e:
         logger.error("Failed to fetch analytics: %s", e)
         return jsonify({"error": "Failed to fetch analytics"}), 500
@@ -1208,21 +1226,27 @@ def list_announcements():
         )
         rows = cur.fetchall()
         cur.close()
-        return jsonify(
-            {
-                "announcements": [
-                    {
-                        "id":              r[0], "title": r[1], "message": r[2],
-                        "type":            r[3], "target_roles": r[4] or [],
-                        "is_active":       r[5],
-                        "expires_at":      r[6].isoformat() if r[6] else None,
-                        "created_at":      r[7].isoformat() if r[7] else None,
-                        "created_by_name": r[8],
-                    }
-                    for r in rows
-                ]
-            }
-        ), 200
+        return (
+            jsonify(
+                {
+                    "announcements": [
+                        {
+                            "id": r[0],
+                            "title": r[1],
+                            "message": r[2],
+                            "type": r[3],
+                            "target_roles": r[4] or [],
+                            "is_active": r[5],
+                            "expires_at": r[6].isoformat() if r[6] else None,
+                            "created_at": r[7].isoformat() if r[7] else None,
+                            "created_by_name": r[8],
+                        }
+                        for r in rows
+                    ]
+                }
+            ),
+            200,
+        )
     except Exception as e:
         logger.error("Failed to list announcements: %s", e)
         return jsonify({"error": "Failed to list announcements"}), 500
@@ -1234,10 +1258,10 @@ def list_announcements():
 @require_super_admin
 def create_announcement():
     data = request.json or {}
-    title   = (data.get("title") or "").strip()
+    title = (data.get("title") or "").strip()
     message = (data.get("message") or "").strip()
-    atype   = data.get("type", "info")
-    target  = data.get("target_roles", [])
+    atype = data.get("type", "info")
+    target = data.get("target_roles", [])
     expires = data.get("expires_at")
 
     if not title or not message:
@@ -1396,18 +1420,23 @@ def list_ip_blocklist():
         )
         rows = cur.fetchall()
         cur.close()
-        return jsonify(
-            {
-                "blocked": [
-                    {
-                        "id": r[0], "ip_address": r[1], "reason": r[2],
-                        "created_at": r[3].isoformat() if r[3] else None,
-                        "blocked_by_name": r[4],
-                    }
-                    for r in rows
-                ]
-            }
-        ), 200
+        return (
+            jsonify(
+                {
+                    "blocked": [
+                        {
+                            "id": r[0],
+                            "ip_address": r[1],
+                            "reason": r[2],
+                            "created_at": r[3].isoformat() if r[3] else None,
+                            "blocked_by_name": r[4],
+                        }
+                        for r in rows
+                    ]
+                }
+            ),
+            200,
+        )
     except Exception as e:
         logger.error("Failed to list IP blocklist: %s", e)
         return jsonify({"error": "Failed to fetch IP blocklist"}), 500
@@ -1418,8 +1447,8 @@ def list_ip_blocklist():
 @require_auth
 @require_super_admin
 def add_ip_to_blocklist():
-    data   = request.json or {}
-    ip     = (data.get("ip_address") or "").strip()
+    data = request.json or {}
+    ip = (data.get("ip_address") or "").strip()
     reason = (data.get("reason") or "").strip()
     if not ip:
         return jsonify({"error": "ip_address is required"}), 400
@@ -1450,9 +1479,7 @@ def remove_ip_from_blocklist(entry_id):
     try:
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute(
-            "DELETE FROM ip_blocklist WHERE id = %s RETURNING ip_address", (entry_id,)
-        )
+        cur.execute("DELETE FROM ip_blocklist WHERE id = %s RETURNING ip_address", (entry_id,))
         row = cur.fetchone()
         if not row:
             return jsonify({"error": "Entry not found"}), 404

@@ -25,9 +25,7 @@ def platform_status():
         cur = conn.cursor()
 
         # Maintenance mode + message
-        cur.execute(
-            "SELECT key, value FROM platform_config WHERE key IN ('maintenance_mode', 'maintenance_message')"
-        )
+        cur.execute("SELECT key, value FROM platform_config WHERE key IN ('maintenance_mode', 'maintenance_message')")
         config = {r[0]: r[1] for r in cur.fetchall()}
         maintenance = config.get("maintenance_mode", "false") == "true"
         maintenance_msg = config.get("maintenance_message", "")
@@ -56,10 +54,10 @@ def platform_status():
                 continue
             announcements.append(
                 {
-                    "id":      r[0],
-                    "title":   r[1],
+                    "id": r[0],
+                    "title": r[1],
                     "message": r[2],
-                    "type":    r[3],
+                    "type": r[3],
                 }
             )
 
