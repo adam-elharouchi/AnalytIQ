@@ -10,9 +10,8 @@ class SuperAdminDashboard {
         this.baseAdminUrl = _base.startsWith('http')
             ? `${_base}/superadmin`
             : `${window.location.protocol}//${window.location.host}${_base}/superadmin`;
-        this._impersonationTimer = null;
-        this._impersonationWarnTimer = null;
         this._auditPage = 1;
+        this._maintenanceActive = false;
         this.init();
     }
 
@@ -80,6 +79,16 @@ class SuperAdminDashboard {
                 sections.forEach(s => {
                     s.style.display = s.id === targetId ? 'block' : 'none';
                 });
+
+                // Lazy-load data for sections that need it
+                switch (targetId) {
+                    case 'analytics-section':      this.loadAnalytics(); break;
+                    case 'classes-admin-section':  this.loadAllClasses(); break;
+                    case 'announcements-section':  this.loadAnnouncements(); break;
+                    case 'platform-settings-section': this.loadPlatformSettings(); break;
+                    case 'audit-section':          this.loadAuditLog(1); break;
+                    case 'approvals-section':      this.loadPendingApprovals(true); break;
+                }
             });
         });
     }
@@ -243,12 +252,15 @@ class SuperAdminDashboard {
                     </div>
                 </div>
 
-                <div style="display: flex; gap: 0.75rem; margin-top: auto; padding-top: 0.5rem;">
+                <div style="display: flex; gap: 0.75rem; margin-top: auto; padding-top: 0.5rem; flex-wrap:wrap;">
                     <button class="btn btn-sm ${t.is_active ? 'btn-danger' : 'btn-success'}" style="flex: 1; padding: 0.5rem;" onclick="window.adminApp.toggleTenantStatus('${t.tenant_id}', ${!t.is_active})">
                         ${t.is_active ? 'Disable' : 'Enable'}
                     </button>
                     <button class="btn btn-sm btn-secondary" style="flex: 1; padding: 0.5rem; display: flex; justify-content: center; align-items: center; gap: 0.25rem;" onclick="document.getElementById('user-search-input').value = ''; window.adminApp.loadUsers(1, '${t.tenant_id}'); document.querySelector('[data-target=users-section]').click();">
                         <span>👥</span> Users
+                    </button>
+                    <button class="btn btn-sm btn-danger" style="padding: 0.5rem 0.75rem;" onclick="window.adminApp.deleteTenant('${t.tenant_id}', '${escapeHtml(t.name).replace(/'/g,"\\'")}')">
+                        🗑 Delete
                     </button>
                 </div>
             `;
@@ -279,6 +291,7 @@ class SuperAdminDashboard {
             if (u.account_status === 'disabled') statusColor = 'var(--error-color)';
             if (u.account_status === 'flagged') statusColor = '#eab308';
 
+            const safeName = escapeHtml(u.name).replace(/'/g, "\\'");
             tr.innerHTML = `
                 <td style="padding: 1rem;">
                     <div style="font-weight: 500;">${escapeHtml(u.name)}</div>
@@ -289,13 +302,17 @@ class SuperAdminDashboard {
                 <td style="padding: 1rem; text-transform: capitalize; color: ${statusColor}; font-weight: 500;">
                     <span class="${u.account_status === 'disabled' ? 'status-badge disabled' : 'status-badge active'}">${escapeHtml(u.account_status)}</span>
                 </td>
-                <td style="padding: 1rem; text-align: right; display: flex; gap: 0.5rem; justify-content: flex-end;">
-                    ${!u.is_super_admin ? `<button class="btn btn-sm btn-primary" style="background: linear-gradient(135deg, #10b981, #059669); border: none; box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);" onclick="window.adminApp.impersonateUser('${u.user_id}')" title="Sign in as this user">
-                        <span>🎭</span> Impersonate
-                    </button>` : ''}
-                    <button class="btn btn-sm ${u.account_status === 'disabled' ? 'btn-success' : 'btn-danger'}" onclick="window.adminApp.toggleUserStatus('${u.user_id}', '${u.account_status === 'disabled' ? 'active' : 'disabled'}')">
-                        ${u.account_status === 'disabled' ? 'Enable' : 'Disable'}
-                    </button>
+                <td style="padding: 1rem;">
+                    <div style="display:flex;gap:0.4rem;justify-content:flex-end;flex-wrap:wrap;">
+                        ${!u.is_super_admin ? `<button class="btn btn-sm btn-primary" style="background:linear-gradient(135deg,#10b981,#059669);border:none;" onclick="window.adminApp.impersonateUser('${u.user_id}')" title="Impersonate">🎭</button>` : ''}
+                        <button class="btn btn-sm btn-secondary" onclick="window.adminApp.changeUserRole('${u.user_id}','${escapeHtml(u.role)}')" title="Change Role">👤 Role</button>
+                        <button class="btn btn-sm ${u.account_status === 'disabled' ? 'btn-success' : 'btn-secondary'}" onclick="window.adminApp.toggleUserStatus('${u.user_id}','${u.account_status === 'disabled' ? 'active' : 'disabled'}')" title="${u.account_status === 'disabled' ? 'Enable' : 'Disable'}">
+                            ${u.account_status === 'disabled' ? '✅' : '⏸'}
+                        </button>
+                        <button class="btn btn-sm btn-secondary" onclick="window.adminApp.forcePasswordReset('${u.user_id}','${safeName}')" title="Force password reset">🔑</button>
+                        <button class="btn btn-sm btn-secondary" onclick="window.adminApp.exportUserData('${u.user_id}')" title="Export data">⬇️</button>
+                        <button class="btn btn-sm btn-danger" onclick="window.adminApp.deleteUser('${u.user_id}','${safeName}')" title="Delete user">🗑</button>
+                    </div>
                 </td>
             `;
             tbody.appendChild(tr);
@@ -674,6 +691,476 @@ class SuperAdminDashboard {
             if (!res.ok) throw new Error(data.error || 'Denial failed');
             showSuccess(data.message || `${name}'s account has been denied.`);
             this.loadPendingApprovals(true);
+        } catch (err) {
+            showError(err.message);
+        }
+    }
+
+    // ==========================================
+    // Delete Actions
+    // ==========================================
+
+    async deleteUser(userId, name) {
+        if (!confirm(`Permanently delete account for "${name}"?\n\nThis removes the user and all associated data. This action cannot be undone.`)) return;
+        try {
+            const res = await authFetch(`${this.baseAdminUrl}/users/${userId}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Delete failed');
+            showSuccess(data.message || `${name} deleted.`);
+            this.loadUsers();
+        } catch (err) {
+            showError(err.message);
+        }
+    }
+
+    async deleteClass(classId, name) {
+        if (!confirm(`Permanently delete class "${name}"?\n\nThis removes all chapters, exercises, and enrollments. This action cannot be undone.`)) return;
+        try {
+            const res = await authFetch(`${this.baseAdminUrl}/classes/${classId}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Delete failed');
+            showSuccess(data.message || `Class "${name}" deleted.`);
+            this.loadAllClasses();
+        } catch (err) {
+            showError(err.message);
+        }
+    }
+
+    async deleteTenant(tenantId, name) {
+        if (!confirm(`Permanently delete tenant "${name}"?\n\nUsers and classes will be detached (not deleted). This action cannot be undone.`)) return;
+        try {
+            const res = await authFetch(`${this.baseAdminUrl}/tenants/${tenantId}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Delete failed');
+            showSuccess(data.message || `Tenant "${name}" deleted.`);
+            this.loadTenants();
+        } catch (err) {
+            showError(err.message);
+        }
+    }
+
+    // ==========================================
+    // User Role & Admin Management
+    // ==========================================
+
+    async changeUserRole(userId, currentRole) {
+        const roles = ['student', 'professor', 'superadmin'];
+        const roleLabels = { student: 'Student', professor: 'Professor', superadmin: 'Super Admin' };
+        const options = roles.map(r => `${r === currentRole ? '● ' : '○ '}${roleLabels[r]}`).join('\n');
+        const input = prompt(`Select new role for user:\n\n${options}\n\nType role name (student / professor / superadmin):`);
+        if (!input) return;
+        const newRole = input.trim().toLowerCase();
+        if (!roles.includes(newRole)) { showError('Invalid role. Must be student, professor, or superadmin.'); return; }
+        if (newRole === currentRole) { showError('User already has that role.'); return; }
+        try {
+            const res = await authFetch(`${this.baseAdminUrl}/users/${userId}/role`, {
+                method: 'PATCH',
+                body: JSON.stringify({ role: newRole })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Role update failed');
+            showSuccess(data.message || `Role updated to ${newRole}.`);
+            this.loadUsers();
+        } catch (err) {
+            showError(err.message);
+        }
+    }
+
+    async forcePasswordReset(userId, name) {
+        if (!confirm(`Force password reset for "${name}"?\n\nThey will be redirected to change their password on next login.`)) return;
+        try {
+            const res = await authFetch(`${this.baseAdminUrl}/users/${userId}/force-reset`, { method: 'POST' });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Force reset failed');
+            showSuccess(data.message || `Password reset flagged for ${name}.`);
+        } catch (err) {
+            showError(err.message);
+        }
+    }
+
+    async exportUserData(userId) {
+        try {
+            const token = localStorage.getItem('authToken');
+            const res = await fetch(`${this.baseAdminUrl}/users/${userId}/export`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) {
+                const d = await res.json();
+                throw new Error(d.error || 'Export failed');
+            }
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `user-export-${userId}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            showError(err.message);
+        }
+    }
+
+    // ==========================================
+    // Classes Admin
+    // ==========================================
+
+    async loadAllClasses(page = 1) {
+        const tbody = document.getElementById('classes-admin-table-body');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);">Loading…</td></tr>';
+
+        try {
+            const q = document.getElementById('class-admin-search')?.value || '';
+            const params = new URLSearchParams({ page, limit: 50 });
+            if (q) params.set('q', q);
+            const res = await authFetch(`${this.baseAdminUrl}/classes?${params}`);
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to load classes');
+
+            const classes = data.classes || [];
+            if (!tbody) return;
+
+            if (!classes.length) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);">No classes found.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = classes.map(c => {
+                const safeName = escapeHtml(c.class_name).replace(/'/g, "\\'");
+                return `<tr style="border-bottom:1px solid var(--border-color);">
+                    <td style="padding:1rem;">
+                        <div style="font-weight:500;">${escapeHtml(c.class_name)}</div>
+                        <div style="font-size:0.8rem;color:var(--text-muted);">${escapeHtml(c.class_id)}</div>
+                    </td>
+                    <td style="padding:1rem;">
+                        <div>${escapeHtml(c.professor_name || '—')}</div>
+                        <div style="font-size:0.8rem;color:var(--text-muted);">${escapeHtml(c.professor_email || '')}</div>
+                    </td>
+                    <td style="padding:1rem;text-align:center;">${c.student_count || 0}</td>
+                    <td style="padding:1rem;text-align:center;">${c.chapter_count || 0}</td>
+                    <td style="padding:1rem;text-align:right;display:flex;gap:0.4rem;justify-content:flex-end;">
+                        <button class="btn btn-sm btn-secondary" onclick="window.adminApp.transferClass('${c.class_id}','${safeName}')">🔄 Transfer</button>
+                        <button class="btn btn-sm btn-danger" onclick="window.adminApp.deleteClass('${c.class_id}','${safeName}')">🗑 Delete</button>
+                    </td>
+                </tr>`;
+            }).join('');
+
+            // Pagination
+            const pager = document.getElementById('classes-admin-pagination');
+            if (pager) {
+                const prev = page > 1 ? `<button class="btn btn-secondary" onclick="window.adminApp.loadAllClasses(${page-1})">← Prev</button>` : '';
+                const next = page < (data.pages || 1) ? `<button class="btn btn-secondary" onclick="window.adminApp.loadAllClasses(${page+1})">Next →</button>` : '';
+                const info = `<span style="display:flex;align-items:center;color:var(--text-muted);font-size:0.85rem;">Page ${page} of ${data.pages || 1} (${data.total || classes.length} classes)</span>`;
+                pager.innerHTML = `${prev}${info}${next}`;
+            }
+        } catch (err) {
+            if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="color:#ef4444;text-align:center;">${err.message}</td></tr>`;
+        }
+    }
+
+    async transferClass(classId, className) {
+        const newProfessor = prompt(`Transfer class "${className}" to a different professor.\n\nEnter the new professor's email address:`);
+        if (!newProfessor) return;
+        try {
+            const res = await authFetch(`${this.baseAdminUrl}/classes/${classId}/transfer`, {
+                method: 'PATCH',
+                body: JSON.stringify({ professor_email: newProfessor.trim() })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Transfer failed');
+            showSuccess(data.message || `Class transferred successfully.`);
+            this.loadAllClasses();
+        } catch (err) {
+            showError(err.message);
+        }
+    }
+
+    // ==========================================
+    // Analytics
+    // ==========================================
+
+    async loadAnalytics() {
+        // Reset stat values
+        ['an-total-users','an-new-7d','an-new-30d','an-active-7d','an-active-30d',
+         'an-classes','an-chapters','an-exercises','an-completions'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = '…';
+        });
+
+        try {
+            const res = await authFetch(`${this.baseAdminUrl}/analytics`);
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to load analytics');
+
+            const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val ?? '—'; };
+            set('an-total-users',  data.total_users);
+            set('an-new-7d',       data.new_users_7d);
+            set('an-new-30d',      data.new_users_30d);
+            set('an-active-7d',    data.active_users_7d);
+            set('an-active-30d',   data.active_users_30d);
+            set('an-classes',      data.total_classes);
+            set('an-chapters',     data.total_chapters);
+            set('an-exercises',    data.total_exercises);
+            set('an-completions',  data.total_completions);
+
+            // Role breakdown
+            const rolesEl = document.getElementById('an-roles');
+            if (rolesEl && data.roles_breakdown) {
+                const total = Object.values(data.roles_breakdown).reduce((a, b) => a + b, 0) || 1;
+                rolesEl.innerHTML = Object.entries(data.roles_breakdown).map(([role, count]) => {
+                    const pct = Math.round((count / total) * 100);
+                    return `<div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem;">
+                        <span style="min-width:80px;font-size:0.85rem;text-transform:capitalize;">${role}</span>
+                        <div style="flex:1;height:8px;background:var(--bg-dark);border-radius:4px;overflow:hidden;">
+                            <div style="width:${pct}%;height:100%;background:var(--primary-color);border-radius:4px;"></div>
+                        </div>
+                        <span style="font-size:0.85rem;color:var(--text-muted);min-width:40px;text-align:right;">${count}</span>
+                    </div>`;
+                }).join('');
+            }
+
+            // Top actions
+            const actionsEl = document.getElementById('an-actions');
+            if (actionsEl && data.top_actions) {
+                const maxCount = data.top_actions[0]?.count || 1;
+                actionsEl.innerHTML = data.top_actions.slice(0, 8).map(a => {
+                    const pct = Math.round((a.count / maxCount) * 100);
+                    return `<div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem;">
+                        <span style="min-width:160px;font-size:0.8rem;font-family:monospace;color:var(--text-muted);">${escapeHtml(a.action)}</span>
+                        <div style="flex:1;height:8px;background:var(--bg-dark);border-radius:4px;overflow:hidden;">
+                            <div style="width:${pct}%;height:100%;background:#10b981;border-radius:4px;"></div>
+                        </div>
+                        <span style="font-size:0.85rem;color:var(--text-muted);min-width:30px;text-align:right;">${a.count}</span>
+                    </div>`;
+                }).join('');
+            }
+        } catch (err) {
+            console.error('Failed to load analytics:', err);
+            showError(err.message);
+        }
+    }
+
+    // ==========================================
+    // Announcements
+    // ==========================================
+
+    async loadAnnouncements() {
+        const tbody = document.getElementById('announcements-table-body');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);">Loading…</td></tr>';
+        try {
+            const res = await authFetch(`${this.baseAdminUrl}/announcements`);
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to load announcements');
+
+            const items = data.announcements || [];
+            if (!tbody) return;
+            if (!items.length) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);">No announcements yet.</td></tr>';
+                return;
+            }
+
+            const typeColor = { info:'#3b82f6', warning:'#eab308', danger:'#ef4444', success:'#10b981' };
+            tbody.innerHTML = items.map(a => {
+                const exp = a.expires_at ? new Date(a.expires_at).toLocaleDateString() : 'Never';
+                const color = typeColor[a.type] || 'var(--text-color)';
+                const activeBadge = a.is_active
+                    ? '<span class="status-badge active">Active</span>'
+                    : '<span class="status-badge disabled">Inactive</span>';
+                return `<tr style="border-bottom:1px solid var(--border-color);">
+                    <td style="padding:1rem;font-weight:500;">${escapeHtml(a.title)}</td>
+                    <td style="padding:1rem;"><span style="color:${color};font-weight:600;text-transform:capitalize;">${escapeHtml(a.type)}</span></td>
+                    <td style="padding:1rem;">${activeBadge}</td>
+                    <td style="padding:1rem;color:var(--text-muted);font-size:0.9rem;">${exp}</td>
+                    <td style="padding:1rem;text-align:right;display:flex;gap:0.4rem;justify-content:flex-end;">
+                        <button class="btn btn-sm btn-secondary" onclick="window.adminApp.toggleAnnouncement('${a.announcement_id}',${!a.is_active})">${a.is_active ? 'Deactivate' : 'Activate'}</button>
+                        <button class="btn btn-sm btn-danger" onclick="window.adminApp.deleteAnnouncement('${a.announcement_id}')">🗑</button>
+                    </td>
+                </tr>`;
+            }).join('');
+        } catch (err) {
+            if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="color:#ef4444;text-align:center;">${err.message}</td></tr>`;
+        }
+    }
+
+    async createAnnouncement() {
+        const title   = document.getElementById('ann-title')?.value.trim();
+        const type    = document.getElementById('ann-type')?.value || 'info';
+        const message = document.getElementById('ann-message')?.value.trim();
+        const expires = document.getElementById('ann-expires')?.value || null;
+        const rolesEl = document.getElementById('ann-roles');
+        const roles   = rolesEl ? Array.from(rolesEl.selectedOptions).map(o => o.value) : [];
+
+        if (!title || !message) { showError('Title and message are required.'); return; }
+
+        try {
+            const res = await authFetch(`${this.baseAdminUrl}/announcements`, {
+                method: 'POST',
+                body: JSON.stringify({ title, type, message, target_roles: roles, expires_at: expires || null })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to create announcement');
+            showSuccess('Announcement posted.');
+            // Clear form
+            ['ann-title','ann-message','ann-expires'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+            if (rolesEl) Array.from(rolesEl.options).forEach(o => o.selected = false);
+            this.loadAnnouncements();
+        } catch (err) {
+            showError(err.message);
+        }
+    }
+
+    async toggleAnnouncement(id, active) {
+        try {
+            const res = await authFetch(`${this.baseAdminUrl}/announcements/${id}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ is_active: active })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Update failed');
+            this.loadAnnouncements();
+        } catch (err) {
+            showError(err.message);
+        }
+    }
+
+    async deleteAnnouncement(id) {
+        if (!confirm('Delete this announcement?')) return;
+        try {
+            const res = await authFetch(`${this.baseAdminUrl}/announcements/${id}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Delete failed');
+            showSuccess('Announcement deleted.');
+            this.loadAnnouncements();
+        } catch (err) {
+            showError(err.message);
+        }
+    }
+
+    // ==========================================
+    // Platform Settings & IP Blocklist
+    // ==========================================
+
+    async loadPlatformSettings() {
+        try {
+            const res = await authFetch(`${this.baseAdminUrl}/platform-config`);
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to load settings');
+
+            this._maintenanceActive = data.maintenance_mode === 'true' || data.maintenance_mode === true;
+            const badge = document.getElementById('maint-status-badge');
+            const btn   = document.getElementById('maint-toggle-btn');
+            if (badge) {
+                badge.className = `status-badge ${this._maintenanceActive ? 'disabled' : 'active'}`;
+                badge.textContent = this._maintenanceActive ? 'ON — Maintenance Active' : 'OFF — Platform Running';
+            }
+            if (btn) btn.textContent = this._maintenanceActive ? 'Disable Maintenance' : 'Enable Maintenance';
+
+            const msgEl = document.getElementById('maint-message');
+            if (msgEl) msgEl.value = data.maintenance_message || '';
+        } catch (err) {
+            showError(err.message);
+        }
+        this.loadIpBlocklist();
+    }
+
+    async toggleMaintenanceMode() {
+        const newState = !this._maintenanceActive;
+        const action = newState ? 'enable' : 'disable';
+        if (!confirm(`${action.charAt(0).toUpperCase() + action.slice(1)} maintenance mode?\n${newState ? 'All non-superadmin API requests will return 503.' : 'The platform will resume normal operation.'}`)) return;
+        try {
+            const res = await authFetch(`${this.baseAdminUrl}/platform-config`, {
+                method: 'PATCH',
+                body: JSON.stringify({ maintenance_mode: newState ? 'true' : 'false' })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Update failed');
+            showSuccess(`Maintenance mode ${newState ? 'enabled' : 'disabled'}.`);
+            this.loadPlatformSettings();
+        } catch (err) {
+            showError(err.message);
+        }
+    }
+
+    async savePlatformSettings() {
+        const msg = document.getElementById('maint-message')?.value.trim() || '';
+        try {
+            const res = await authFetch(`${this.baseAdminUrl}/platform-config`, {
+                method: 'PATCH',
+                body: JSON.stringify({ maintenance_message: msg })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Save failed');
+            showSuccess('Maintenance message saved.');
+        } catch (err) {
+            showError(err.message);
+        }
+    }
+
+    async loadIpBlocklist() {
+        const tbody = document.getElementById('ip-blocklist-body');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);">Loading…</td></tr>';
+        try {
+            const res = await authFetch(`${this.baseAdminUrl}/ip-blocklist`);
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to load IP blocklist');
+
+            const items = data.blocklist || [];
+            if (!tbody) return;
+            if (!items.length) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);">No blocked IPs.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = items.map(ip => {
+                const date = ip.created_at ? new Date(ip.created_at).toLocaleDateString() : '—';
+                return `<tr style="border-bottom:1px solid var(--border-color);">
+                    <td style="padding:0.75rem;font-family:monospace;">${escapeHtml(ip.ip_address)}</td>
+                    <td style="padding:0.75rem;color:var(--text-muted);">${escapeHtml(ip.reason || '—')}</td>
+                    <td style="padding:0.75rem;color:var(--text-muted);">${escapeHtml(ip.blocked_by_name || ip.blocked_by || '—')}</td>
+                    <td style="padding:0.75rem;color:var(--text-muted);">${date}</td>
+                    <td style="padding:0.75rem;text-align:right;">
+                        <button class="btn btn-sm btn-danger" onclick="window.adminApp.removeIpBlock('${ip.id}','${escapeHtml(ip.ip_address)}')">Remove</button>
+                    </td>
+                </tr>`;
+            }).join('');
+        } catch (err) {
+            if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="color:#ef4444;text-align:center;">${err.message}</td></tr>`;
+        }
+    }
+
+    async addIpBlock() {
+        const ip     = document.getElementById('ip-input')?.value.trim();
+        const reason = document.getElementById('ip-reason')?.value.trim() || '';
+        if (!ip) { showError('Enter an IP address to block.'); return; }
+        // Basic validation
+        const ipv4 = /^(\d{1,3}\.){3}\d{1,3}$/.test(ip);
+        const ipv6 = ip.includes(':');
+        if (!ipv4 && !ipv6) { showError('Enter a valid IPv4 or IPv6 address.'); return; }
+
+        try {
+            const res = await authFetch(`${this.baseAdminUrl}/ip-blocklist`, {
+                method: 'POST',
+                body: JSON.stringify({ ip_address: ip, reason })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to block IP');
+            showSuccess(`IP ${ip} blocked.`);
+            const ipEl = document.getElementById('ip-input');
+            const reasonEl = document.getElementById('ip-reason');
+            if (ipEl) ipEl.value = '';
+            if (reasonEl) reasonEl.value = '';
+            this.loadIpBlocklist();
+        } catch (err) {
+            showError(err.message);
+        }
+    }
+
+    async removeIpBlock(id, ip) {
+        if (!confirm(`Remove block for IP ${ip}?`)) return;
+        try {
+            const res = await authFetch(`${this.baseAdminUrl}/ip-blocklist/${id}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Remove failed');
+            showSuccess(`IP ${ip} unblocked.`);
+            this.loadIpBlocklist();
         } catch (err) {
             showError(err.message);
         }

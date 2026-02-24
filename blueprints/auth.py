@@ -141,6 +141,26 @@ def signup():
                 "Your account has been created and is pending approval by an administrator. "
                 "You will be able to access the platform once approved."
             )
+            # Notify aelharouchi@myanalytiq.org so they can approve from the dashboard
+            try:
+                from utils.email_service import send_email
+                send_email(
+                    to_email="aelharouchi@myanalytiq.org",
+                    subject="[AnalytIQ] New Admin Account Pending Approval",
+                    html_content=(
+                        f"<p>A new superadmin account requires your approval.</p>"
+                        f"<ul>"
+                        f"<li><strong>Name:</strong> {user[1]}</li>"
+                        f"<li><strong>Email:</strong> {user[2]}</li>"
+                        f"<li><strong>Role:</strong> {user_role}</li>"
+                        f"</ul>"
+                        f"<p>Log in to the <a href='https://myanalytiq.org/superadmin-dashboard.html'>"
+                        f"Superadmin Dashboard</a> → Pending Approvals to review.</p>"
+                    ),
+                )
+            except Exception as email_err:
+                logger.warning("Failed to send admin approval notification: %s", email_err)
+
         return jsonify(resp), 201
 
     except Exception as e:
@@ -189,20 +209,47 @@ def signin():
                 )
                 conn.rollback()
 
-        token = create_jwt_token(user_id, role=role, name=name, email=user_email)
-        return (
-            jsonify(
-                {
-                    "id": user_id,
-                    "user_id": user_id,
-                    "name": name,
-                    "email": user_email,
-                    "role": role,
-                    "token": token,
-                }
-            ),
-            200,
+        # Check account status before issuing a token
+        cur2 = conn.cursor()
+        cur2.execute(
+            "SELECT account_status, requires_password_reset FROM users WHERE user_id = %s",
+            (user_id,),
         )
+        status_row = cur2.fetchone()
+        cur2.close()
+        if status_row:
+            if status_row[0] == "disabled":
+                return jsonify({"error": "Account is disabled. Contact support."}), 403
+            if status_row[0] == "pending_approval":
+                return jsonify({"error": "Account pending approval by an administrator."}), 403
+            if status_row[0] == "denied":
+                return jsonify({"error": "Account registration was denied. Contact support."}), 403
+
+        requires_reset = bool(status_row and status_row[1])
+
+        # Record last login timestamp
+        try:
+            cur3 = conn.cursor()
+            cur3.execute(
+                "UPDATE users SET last_login = NOW() WHERE user_id = %s", (user_id,)
+            )
+            cur3.close()
+            conn.commit()
+        except Exception:
+            conn.rollback()
+
+        token = create_jwt_token(user_id, role=role, name=name, email=user_email)
+        resp = {
+            "id": user_id,
+            "user_id": user_id,
+            "name": name,
+            "email": user_email,
+            "role": role,
+            "token": token,
+        }
+        if requires_reset:
+            resp["requires_password_reset"] = True
+        return jsonify(resp), 200
 
     except Exception as e:
         if conn:

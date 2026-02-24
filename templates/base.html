@@ -108,6 +108,75 @@
     }());
   </script>
 
+  <!-- ===== Announcement Banners =====
+       Loaded from /api/platform/status on every page. -->
+  <div id="announcement-banners" style="position:fixed; bottom:1rem; right:1rem;
+       z-index:8000; display:flex; flex-direction:column; gap:0.5rem; max-width:420px;">
+  </div>
+
+  <script>
+    /* Fetch active announcements and render dismissible toast banners */
+    (function () {
+      var role = '';
+      try {
+        role = (JSON.parse(localStorage.getItem('currentUser') || '{}').role) || '';
+      } catch (e) {}
+
+      var url = '/api/platform/status' + (role ? '?role=' + encodeURIComponent(role) : '');
+      fetch(url)
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          // --- Maintenance redirect ---
+          if (data.maintenance) {
+            // Superadmins may stay; everyone else sees a maintenance page
+            var isSuperAdmin = (role === 'superadmin');
+            if (!isSuperAdmin && !window.location.pathname.includes('login')) {
+              document.body.innerHTML =
+                '<div style="display:flex;align-items:center;justify-content:center;height:100vh;'
+                + 'font-family:sans-serif;text-align:center;padding:2rem;">'
+                + '<div><h1 style="font-size:2rem;margin-bottom:1rem;">🔧 Maintenance</h1>'
+                + '<p style="color:#64748b;">' + (data.maintenance_message || 'Platform under maintenance.') + '</p></div></div>';
+              return;
+            }
+          }
+
+          // --- Announcements ---
+          var container = document.getElementById('announcement-banners');
+          if (!container || !data.announcements || !data.announcements.length) return;
+
+          var bgMap = {
+            info:    { bg: '#dbeafe', color: '#1e40af', border: '#93c5fd' },
+            warning: { bg: '#fef9c3', color: '#854d0e', border: '#fde047' },
+            danger:  { bg: '#fee2e2', color: '#991b1b', border: '#fca5a5' },
+            success: { bg: '#dcfce7', color: '#166534', border: '#86efac' },
+          };
+
+          data.announcements.forEach(function (ann) {
+            var style = bgMap[ann.type] || bgMap.info;
+            var el = document.createElement('div');
+            el.setAttribute('data-ann-id', ann.id);
+            el.style.cssText =
+              'background:' + style.bg + ';color:' + style.color
+              + ';border:1px solid ' + style.border
+              + ';border-radius:0.5rem;padding:0.75rem 1rem;font-size:0.875rem;'
+              + 'box-shadow:0 4px 12px rgba(0,0,0,0.15);position:relative;';
+            el.innerHTML =
+              '<button onclick="this.parentElement.remove()" '
+              + 'style="position:absolute;top:0.4rem;right:0.6rem;background:none;border:none;'
+              + 'cursor:pointer;font-size:1rem;color:inherit;line-height:1;" aria-label="Dismiss">×</button>'
+              + '<strong>' + escapeAnnHtml(ann.title) + '</strong>'
+              + '<div style="margin-top:0.25rem;">' + escapeAnnHtml(ann.message) + '</div>';
+            container.appendChild(el);
+          });
+        })
+        .catch(function () { /* fail silently */ });
+
+      function escapeAnnHtml(s) {
+        return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      }
+    }());
+  </script>
+
   {% block content %}{% endblock %}
   {% block scripts %}{% endblock %}
   </body>
