@@ -366,7 +366,12 @@ def oer_search():
     try:
         resp = requests.get(
             "https://www.oercommons.org/api/v1/materials/",
-            params={"search": query, "limit": limit, "offset": (page - 1) * limit, "format": "json"},
+            params={
+                "search": query,
+                "limit": limit,
+                "offset": (page - 1) * limit,
+                "format": "json",
+            },
             timeout=_HTTP_TIMEOUT,
         )
         resp.raise_for_status()
@@ -375,8 +380,7 @@ def oer_search():
             {
                 "id": item.get("id"),
                 "title": item.get("title", ""),
-                "url": item.get("url")
-                or f"https://www.oercommons.org/courses/{item.get('id')}",
+                "url": item.get("url") or f"https://www.oercommons.org/courses/{item.get('id')}",
                 "description": (item.get("description") or "")[:400],
                 "license": item.get("license_name", ""),
             }

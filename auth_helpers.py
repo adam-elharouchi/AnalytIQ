@@ -286,15 +286,20 @@ def require_auth(f):
 
             _conn = get_db_connection()
             _cur = _conn.cursor()
-            _cur.execute(
-                "SELECT account_status FROM users WHERE user_id = %s", (g.user_id,)
-            )
+            _cur.execute("SELECT account_status FROM users WHERE user_id = %s", (g.user_id,))
             _row = _cur.fetchone()
             _cur.close()
             if _row and _row[0] == "disabled":
                 return jsonify({"error": "Account is disabled. Contact support."}), 403
             if _row and _row[0] == "pending_approval":
-                return jsonify({"error": "Account pending approval. An administrator will review your request shortly."}), 403
+                return (
+                    jsonify(
+                        {
+                            "error": "Account pending approval. An administrator will review your request shortly."
+                        }
+                    ),
+                    403,
+                )
         except Exception:
             pass  # fail open
 

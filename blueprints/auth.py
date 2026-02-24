@@ -144,6 +144,7 @@ def signup():
             # Notify aelharouchi@myanalytiq.org so they can approve from the dashboard
             try:
                 from utils.email_service import send_email
+
                 send_email(
                     to_email="aelharouchi@myanalytiq.org",
                     subject="[AnalytIQ] New Admin Account Pending Approval",
@@ -230,9 +231,7 @@ def signin():
         # Record last login timestamp
         try:
             cur3 = conn.cursor()
-            cur3.execute(
-                "UPDATE users SET last_login = NOW() WHERE user_id = %s", (user_id,)
-            )
+            cur3.execute("UPDATE users SET last_login = NOW() WHERE user_id = %s", (user_id,))
             cur3.close()
             conn.commit()
         except Exception:
