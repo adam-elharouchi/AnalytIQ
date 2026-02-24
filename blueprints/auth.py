@@ -226,9 +226,7 @@ def signin():
             # columns not yet added — fetch only account_status
             try:
                 cur2b = conn.cursor()
-                cur2b.execute(
-                    "SELECT account_status FROM users WHERE user_id = %s", (user_id,)
-                )
+                cur2b.execute("SELECT account_status FROM users WHERE user_id = %s", (user_id,))
                 row = cur2b.fetchone()
                 cur2b.close()
                 status_row = (row[0], False) if row else None
