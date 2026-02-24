@@ -15,7 +15,7 @@
   <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
   <style>
     body {
-      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      background-color: var(--bg-secondary);
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
 
@@ -29,22 +29,22 @@
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
-      color: #64748b;
+      color: var(--text-secondary);
       text-decoration: none;
       margin-bottom: 2rem;
       font-weight: 500;
       font-size: 0.9375rem;
       padding: 0.75rem 1.25rem;
       border-radius: 0.5rem;
-      background: white;
-      border: 1px solid #e2e8f0;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
       transition: all 0.2s ease;
       cursor: pointer;
     }
 
     .back-button:hover {
-      background: #f8fafc;
+      background: var(--bg-secondary);
       color: var(--color-primary);
       border-color: #cbd5e1;
       transform: translateX(-2px);
@@ -65,7 +65,7 @@
     }
 
     .chapter-header {
-      background: white;
+      background: var(--bg-card);
       padding: 2.5rem;
       border-radius: 1rem;
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
@@ -76,18 +76,18 @@
     .chapter-title {
       font-size: 2.75rem;
       font-weight: 800;
-      color: #0f172a;
+      color: var(--text-primary);
       margin: 0 0 0.75rem 0;
     }
 
     .chapter-description {
-      color: #64748b;
+      color: var(--text-secondary);
       font-size: 1rem;
       font-style: italic;
     }
 
     .pdf-pages-container {
-      background: white;
+      background: var(--bg-card);
       padding: 2rem;
       border-radius: 1rem;
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
@@ -206,7 +206,7 @@
 
     .page-number {
       margin-top: 0.35rem;
-      color: #64748b;
+      color: var(--text-secondary);
       font-size: 0.875rem;
       font-weight: 600;
     }
@@ -218,8 +218,8 @@
       align-self: flex-start;
       width: 80px;
       flex-shrink: 0;
-      background: white;
-      border: 1px solid #e2e8f0;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
       border-radius: 0.75rem;
       padding: 0.75rem 0.5rem;
       box-shadow: 0 2px 8px rgba(0,0,0,0.06);
@@ -233,7 +233,7 @@
     .study-toolbar-sidebar .study-toolbar-label {
       font-size: 0.625rem;
       font-weight: 600;
-      color: #64748b;
+      color: var(--text-secondary);
       text-transform: uppercase;
       letter-spacing: 0.03em;
     }
@@ -242,7 +242,7 @@
       width: 32px;
       height: 32px;
       border-radius: 8px;
-      border: 2px solid #e2e8f0;
+      border: 2px solid var(--border-color);
       cursor: pointer;
       transition: transform 0.15s, box-shadow 0.15s;
     }
@@ -265,7 +265,7 @@
     .study-toolbar-sidebar .toolbar-divider {
       width: 32px;
       height: 1px;
-      background: #e2e8f0;
+      background: var(--border-color);
     }
 
     .study-toolbar-sidebar .btn-bookmark,
@@ -279,9 +279,9 @@
       padding: 0;
       font-size: 1.125rem;
       border-radius: 0.5rem;
-      border: 1px solid #e2e8f0;
-      background: white;
-      color: #475569;
+      border: 1px solid var(--border-color);
+      background: var(--bg-card);
+      color: var(--text-secondary);
       cursor: pointer;
       transition: background 0.2s, color 0.2s;
       flex-shrink: 0;
@@ -290,7 +290,7 @@
     .study-toolbar-sidebar .btn-bookmark:hover,
     .study-toolbar-sidebar .btn-notes-panel:hover,
     .study-toolbar-sidebar .btn-add-note:hover {
-      background: #f1f5f9;
+      background: var(--bg-secondary);
       color: var(--color-primary);
     }
 
@@ -313,9 +313,9 @@
       width: 32px;
       height: 32px;
       border-radius: 999px;
-      border: 1px solid #e2e8f0;
-      background: #f8fafc;
-      color: #475569;
+      border: 1px solid var(--border-color);
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -325,7 +325,7 @@
     }
 
     .marker-mode-btn:hover {
-      background: #e5edff;
+      background: var(--color-primary-light-hover);
       border-color: var(--color-primary);
       color: var(--color-primary);
       transform: translateY(-1px);
@@ -342,8 +342,8 @@
     .selection-popup {
       position: fixed;
       z-index: 1000;
-      background: white;
-      border: 1px solid #e2e8f0;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
       border-radius: 0.5rem;
       box-shadow: 0 4px 12px rgba(0,0,0,0.15);
       padding: 0.25rem;
@@ -364,8 +364,8 @@
       font-size: 0.8125rem;
       border: none;
       border-radius: 0.375rem;
-      background: #f1f5f9;
-      color: #334155;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
       cursor: pointer;
       display: inline-flex;
       align-items: center;
@@ -400,8 +400,8 @@
     .study-side-panel {
       width: 300px;
       flex-shrink: 0;
-      background: white;
-      border: 1px solid #e2e8f0;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
       border-radius: 0.75rem;
       box-shadow: 0 2px 8px rgba(0,0,0,0.06);
       overflow: hidden;
@@ -419,9 +419,9 @@
 
     .study-side-panel-header {
       padding: 1rem;
-      border-bottom: 1px solid #e2e8f0;
+      border-bottom: 1px solid var(--border-color);
       font-weight: 600;
-      color: #0f172a;
+      color: var(--text-primary);
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -431,14 +431,14 @@
       background: none;
       border: none;
       font-size: 1.25rem;
-      color: #64748b;
+      color: var(--text-secondary);
       cursor: pointer;
       padding: 0 0.25rem;
       line-height: 1;
     }
 
     .study-side-panel-header button:hover {
-      color: #0f172a;
+      color: var(--text-primary);
     }
 
     .study-side-panel-content {
@@ -459,7 +459,7 @@
       font-size: 0.75rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      color: #64748b;
+      color: var(--text-secondary);
       margin: 0 0 0.5rem 0;
       padding-bottom: 0.25rem;
     }
@@ -468,9 +468,9 @@
     .note-item {
       padding: 0.5rem 0.75rem;
       margin-bottom: 0.5rem;
-      background: #f8fafc;
+      background: var(--bg-secondary);
       border-radius: 0.5rem;
-      border: 1px solid #e2e8f0;
+      border: 1px solid var(--border-color);
       cursor: pointer;
       font-size: 0.875rem;
       transition: background 0.2s;
@@ -478,7 +478,7 @@
 
     .bookmark-item:hover,
     .note-item:hover {
-      background: #eff6ff;
+      background: var(--color-primary-light);
       border-color: var(--color-primary);
     }
 
@@ -498,7 +498,7 @@
     }
 
     .note-item .note-text {
-      color: #475569;
+      color: var(--text-secondary);
       margin-top: 0.25rem;
       display: -webkit-box;
       -webkit-line-clamp: 3;
@@ -522,8 +522,8 @@
       padding: 0;
       border: none;
       border-radius: 0.25rem;
-      background: #f1f5f9;
-      color: #64748b;
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
       cursor: pointer;
       font-size: 0.875rem;
       line-height: 1;
@@ -534,8 +534,8 @@
     }
 
     .note-item-actions button:hover {
-      background: #e2e8f0;
-      color: #0f172a;
+      background: var(--border-color);
+      color: var(--text-primary);
     }
 
     .note-item-actions button.delete-btn:hover {
@@ -551,7 +551,7 @@
       width: 100%;
       min-height: 80px;
       padding: 0.5rem 0.75rem;
-      border: 1px solid #e2e8f0;
+      border: 1px solid var(--border-color);
       border-radius: 0.5rem;
       font-size: 0.875rem;
       font-family: inherit;
@@ -569,9 +569,9 @@
       padding: 0.35rem 0.75rem;
       font-size: 0.8125rem;
       border-radius: 0.375rem;
-      border: 1px solid #e2e8f0;
-      background: white;
-      color: #475569;
+      border: 1px solid var(--border-color);
+      background: var(--bg-card);
+      color: var(--text-secondary);
       cursor: pointer;
     }
 
@@ -582,7 +582,7 @@
     }
 
     .study-empty {
-      color: #94a3b8;
+      color: var(--text-secondary);
       font-size: 0.875rem;
       padding: 0.75rem;
       text-align: center;
@@ -592,8 +592,8 @@
     .add-note-panel-popup {
       padding: 1rem;
       margin-bottom: 1rem;
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
       border-radius: 0.5rem;
     }
 
@@ -609,14 +609,14 @@
       margin: 0 0 0.5rem 0;
       font-size: 0.875rem;
       font-weight: 600;
-      color: #0f172a;
+      color: var(--text-primary);
     }
 
     .add-note-panel-popup textarea {
       width: 100%;
       min-height: 72px;
       padding: 0.5rem 0.75rem;
-      border: 1px solid #e2e8f0;
+      border: 1px solid var(--border-color);
       border-radius: 0.375rem;
       font-size: 0.875rem;
       font-family: inherit;
@@ -645,9 +645,9 @@
     }
 
     .add-note-panel-actions .btn-cancel-note-panel {
-      border: 1px solid #e2e8f0;
-      background: white;
-      color: #475569;
+      border: 1px solid var(--border-color);
+      background: var(--bg-card);
+      color: var(--text-secondary);
     }
 
     .add-note-panel-actions .btn-save-note-panel {
@@ -665,8 +665,8 @@
       transform: translate(-50%, -50%);
       width: 90%;
       max-width: 420px;
-      background: white;
-      border: 1px solid #e2e8f0;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
       border-radius: 0.75rem;
       box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
       padding: 1.25rem;
@@ -685,14 +685,14 @@
       margin: 0 0 0.75rem 0;
       font-size: 0.9375rem;
       font-weight: 600;
-      color: #0f172a;
+      color: var(--text-primary);
     }
 
     .add-note-card textarea {
       width: 100%;
       min-height: 88px;
       padding: 0.75rem;
-      border: 1px solid #e2e8f0;
+      border: 1px solid var(--border-color);
       border-radius: 0.5rem;
       font-size: 0.9375rem;
       font-family: inherit;
@@ -716,16 +716,16 @@
     .add-note-actions .btn-cancel-note {
       padding: 0.5rem 1rem;
       font-size: 0.875rem;
-      border: 1px solid #e2e8f0;
+      border: 1px solid var(--border-color);
       border-radius: 0.5rem;
-      background: white;
-      color: #475569;
+      background: var(--bg-card);
+      color: var(--text-secondary);
       cursor: pointer;
     }
 
     .add-note-actions .btn-cancel-note:hover {
-      background: #f8fafc;
-      color: #0f172a;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
     }
 
     .add-note-actions .btn-save-note {
@@ -784,14 +784,14 @@
     .loading-state {
       text-align: center;
       padding: 6rem 2rem;
-      color: #64748b;
+      color: var(--text-secondary);
     }
 
     .loading-spinner {
       display: inline-block;
       width: 50px;
       height: 50px;
-      border: 5px solid #e2e8f0;
+      border: 5px solid var(--border-color);
       border-top-color: var(--color-primary);
       border-radius: 50%;
       animation: spin 0.8s linear infinite;

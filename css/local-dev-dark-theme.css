@@ -728,3 +728,130 @@ footer a:hover,
     background: var(--bg-card) !important;
     border-color: var(--border-color) !important;
 }
+
+/* ── 30. Chapter View page ── */
+.chapter-header,
+.pdf-pages-container,
+.study-toolbar-sidebar,
+.study-side-panel,
+.selection-popup,
+.add-note-card,
+.add-note-panel-popup {
+    background: var(--bg-card) !important;
+    backdrop-filter: blur(14px) !important;
+    -webkit-backdrop-filter: blur(14px) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+.back-button {
+    background: var(--bg-card) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-secondary) !important;
+}
+
+.back-button:hover {
+    background: rgba(37, 105, 244, 0.08) !important;
+    color: var(--color-primary) !important;
+}
+
+.study-side-panel-header {
+    border-bottom-color: var(--border-color) !important;
+}
+
+.bookmark-item,
+.note-item {
+    background: rgba(17, 24, 39, 0.5) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+.bookmark-item:hover,
+.note-item:hover {
+    background: rgba(37, 105, 244, 0.12) !important;
+    border-color: rgba(37, 105, 244, 0.35) !important;
+}
+
+/* Bookmarked state stays amber — just soften the bg */
+.study-toolbar-sidebar .btn-bookmark.bookmarked {
+    background: rgba(245, 158, 11, 0.2) !important;
+    border-color: #f59e0b !important;
+    color: #fcd34d !important;
+}
+
+.note-item .note-text {
+    color: var(--text-secondary) !important;
+}
+
+.note-item-actions button {
+    background: rgba(255, 255, 255, 0.06) !important;
+    color: var(--text-secondary) !important;
+    border-color: transparent !important;
+}
+
+.note-item-actions button:hover {
+    background: rgba(37, 105, 244, 0.15) !important;
+    color: var(--text-primary) !important;
+}
+
+.study-toolbar-sidebar .toolbar-divider {
+    background: var(--border-color) !important;
+}
+
+.study-toolbar-sidebar .btn-bookmark,
+.study-toolbar-sidebar .btn-notes-panel,
+.study-toolbar-sidebar .btn-add-note {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-secondary) !important;
+}
+
+.study-toolbar-sidebar .btn-bookmark:hover,
+.study-toolbar-sidebar .btn-notes-panel:hover,
+.study-toolbar-sidebar .btn-add-note:hover {
+    background: rgba(37, 105, 244, 0.12) !important;
+    color: var(--color-primary) !important;
+}
+
+.marker-mode-btn {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-secondary) !important;
+}
+
+.marker-mode-btn:hover {
+    background: rgba(37, 105, 244, 0.12) !important;
+    border-color: var(--color-primary) !important;
+    color: var(--color-primary) !important;
+}
+
+.selection-popup button {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: var(--text-primary) !important;
+}
+
+/* ── 31. Practice Playground page ── */
+.exercise-info,
+.playground-stats {
+    background: var(--bg-card) !important;
+    backdrop-filter: blur(14px) !important;
+    -webkit-backdrop-filter: blur(14px) !important;
+    border-color: var(--border-color) !important;
+}
+
+.solution-code {
+    background: rgba(17, 24, 39, 0.6) !important;
+    border-color: var(--border-color) !important;
+}
+
+.chat-widget-container {
+    background: var(--bg-card) !important;
+    backdrop-filter: blur(14px) !important;
+    -webkit-backdrop-filter: blur(14px) !important;
+    border: 1px solid var(--border-color) !important;
+}
+
+.chat-loading {
+    background: var(--bg-card) !important;
+    border-color: var(--border-color) !important;
+}
