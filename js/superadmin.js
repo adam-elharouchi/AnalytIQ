@@ -10,6 +10,9 @@ class SuperAdminDashboard {
         this.baseAdminUrl = _base.startsWith('http')
             ? `${_base}/superadmin`
             : `${window.location.protocol}//${window.location.host}${_base}/superadmin`;
+        this._impersonationTimer = null;
+        this._impersonationWarnTimer = null;
+        this._auditPage = 1;
         this.init();
     }
 
@@ -24,6 +27,7 @@ class SuperAdminDashboard {
         await this.loadTenants(); // Loads stats and populates the tenants table
         await this.loadUsers();   // Loads the first page of global users
         await this.loadSupportTickets(); // Loads contact forms
+        await this.loadPendingApprovals(false); // Silently refresh badge count
 
         // Open requested tab from landing page routing
         const targetTab = sessionStorage.getItem('sa_tab');
@@ -334,8 +338,13 @@ class SuperAdminDashboard {
                 <td style="padding: 1rem; color: var(--text-muted); font-size: 0.9rem;">${escapeHtml(t.email)}</td>
                 <td style="padding: 1rem;"><div style="font-weight: 500; margin-bottom: 0.25rem;">${escapeHtml(t.subject)}</div><div style="font-size: 0.85rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 300px;">${escapeHtml(t.message)}</div></td>
                 <td style="padding: 1rem; color: var(--text-muted);">${date}</td>
-                <td style="padding: 1rem; text-align: right; text-transform: capitalize;">
-                    <span class="${badgeClass}">${escapeHtml(t.status || 'new')}</span>
+                <td style="padding: 1rem; text-align: right;">
+                    <select onchange="window.adminApp.updateTicketStatus('${t.id}', this.value)"
+                        style="padding:0.3rem 0.5rem;border:1px solid var(--border-color);border-radius:0.375rem;background:var(--bg-card);color:var(--text-color);font-size:0.85rem;cursor:pointer;">
+                        ${['new','read','resolved','archived'].map(s =>
+                            `<option value="${s}" ${(t.status||'new')===s ? 'selected' : ''}>${s}</option>`
+                        ).join('')}
+                    </select>
                 </td>
             `;
             tbody.appendChild(tr);
@@ -424,7 +433,7 @@ class SuperAdminDashboard {
     // ==========================================
 
     async impersonateUser(userId) {
-        if (!confirm("You are about to securely hijack this user's session without their password. All actions will be logged. Continue?")) return;
+        if (!confirm("You are about to impersonate this user's session. All actions will be logged. Continue?")) return;
 
         try {
             const res = await authFetch(`${this.baseAdminUrl}/users/${userId}/impersonate`, {
@@ -434,48 +443,37 @@ class SuperAdminDashboard {
             if (res.ok) {
                 const data = await res.json();
                 if (data && data.token) {
-                    // Safety cache: store original super admin token and profile
+                    // Cache original superadmin credentials so the floating bar can restore them.
                     if (!localStorage.getItem('original_token')) {
                         localStorage.setItem('original_token', localStorage.getItem('authToken'));
                         localStorage.setItem('original_user', localStorage.getItem('currentUser'));
                     }
 
-                    // Swap auth securely in parent page (so the iframe loads with this token)
+                    // Swap to the impersonated user's token.
                     localStorage.setItem('authToken', data.token);
 
-                    // Decode payload for convenience
-                    let targetName = 'Unknown User';
+                    // Decode payload to determine the destination page.
+                    let dest = '/student-classes.html';
                     try {
-                        const payload = JSON.parse(atob(data.token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+                        const payload = JSON.parse(
+                            atob(data.token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))
+                        );
                         const targetUserObj = {
                             user_id: payload.user_id,
-                            name: payload.name,
-                            email: payload.email,
-                            role: payload.role
+                            name:    payload.name,
+                            email:   payload.email,
+                            role:    payload.role
                         };
                         localStorage.setItem('currentUser', JSON.stringify(targetUserObj));
-                        targetName = payload.name || payload.email || 'User';
-                    } catch (e) { console.error("JWT Decode failed:", e); }
+                        dest = (payload.role === 'professor') ? '/professor-dashboard.html' : '/student-classes.html';
+                    } catch (e) { console.error("JWT decode failed:", e); }
 
-                    // Setup and show modal
-                    const modal = document.getElementById('impersonation-modal');
-                    const iframe = document.getElementById('impersonation-iframe');
-                    const targetLabel = document.getElementById('impersonation-target-name');
+                    // Record when the session started so the floating bar can enforce
+                    // the 60-minute TTL across page navigations.
+                    localStorage.setItem('impersonation_started_at', Date.now().toString());
 
-                    if (modal && iframe) {
-                        targetLabel.textContent = `${targetName} (${userId})`;
-
-                        // Decide where to send the iframe
-                        const role = localStorage.getItem('user_role') || (JSON.parse(localStorage.getItem('currentUser') || '{}').role);
-                        const dest = (role === 'professor') ? '/professor-dashboard.html' : '/student-classes.html';
-
-                        iframe.src = dest;
-                        modal.classList.add('active');
-                        document.body.style.overflow = 'hidden'; // Prevent background scrolling
-                    } else {
-                        // Fallback if modal elements missing
-                        window.location.href = '/';
-                    }
+                    // Navigate the current window to the target user's dashboard.
+                    window.location.href = dest;
                 }
             } else {
                 const err = await res.json();
@@ -487,33 +485,198 @@ class SuperAdminDashboard {
         }
     }
 
+    // ==========================================
+    // Audit Log
+    // ==========================================
+
+    async loadAuditLog(page = 1) {
+        this._auditPage = page;
+        const action = document.getElementById('audit-action-filter')?.value || '';
+        const resource = document.getElementById('audit-resource-filter')?.value || '';
+        const from = document.getElementById('audit-from')?.value || '';
+        const to = document.getElementById('audit-to')?.value || '';
+
+        const tbody = document.getElementById('audit-table-body');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);">Loading…</td></tr>';
+
+        try {
+            const params = new URLSearchParams({ page, limit: 50 });
+            if (action) params.set('action', action);
+            if (resource) params.set('resource_type', resource);
+            if (from) params.set('from', from);
+            if (to) params.set('to', to);
+
+            const res = await authFetch(`${this.baseAdminUrl}/audit?${params}`);
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to load audit log');
+            this.renderAuditLog(data.entries || [], data.total, data.pages, page);
+        } catch (err) {
+            if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="color:#ef4444;text-align:center;">${err.message}</td></tr>`;
+        }
+    }
+
+    renderAuditLog(entries, total, pages, currentPage) {
+        const tbody = document.getElementById('audit-table-body');
+        const pager = document.getElementById('audit-pagination');
+        if (!tbody) return;
+
+        if (!entries.length) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);">No audit entries found.</td></tr>';
+            if (pager) pager.innerHTML = '';
+            return;
+        }
+
+        const actionColors = {
+            IMPERSONATE_USER: '#f59e0b', DISABLE_USER: '#ef4444', ENABLE_USER: '#10b981',
+            DELETE_USER: '#ef4444', DELETE_CLASS: '#ef4444', DELETE_CHAPTER: '#ef4444',
+        };
+
+        tbody.innerHTML = entries.map(e => {
+            const ts = e.created_at ? new Date(e.created_at).toLocaleString() : '—';
+            const actor = e.actor_name ? `${escapeHtml(e.actor_name)}<br><span style="font-size:0.75rem;color:var(--text-muted)">${escapeHtml(e.actor_email || '')}</span>` : escapeHtml(e.actor_id || '—');
+            const color = actionColors[e.action] || 'var(--text-color)';
+            const resource = [e.resource_type, e.resource_id].filter(Boolean).join(' / ');
+            return `<tr>
+              <td style="padding:0.75rem;font-size:0.85rem;color:var(--text-muted);white-space:nowrap;">${ts}</td>
+              <td style="padding:0.75rem;font-weight:600;color:${color};white-space:nowrap;">${escapeHtml(e.action)}</td>
+              <td style="padding:0.75rem;font-size:0.85rem;">${actor}</td>
+              <td style="padding:0.75rem;font-size:0.85rem;color:var(--text-muted);">${escapeHtml(resource)}</td>
+              <td style="padding:0.75rem;font-size:0.8rem;color:var(--text-muted);">${escapeHtml(e.ip_address || '—')}</td>
+            </tr>`;
+        }).join('');
+
+        // Pagination
+        if (pager) {
+            const totalStr = `<span style="color:var(--text-muted);font-size:0.85rem;">${total.toLocaleString()} entries</span>`;
+            const prev = currentPage > 1
+                ? `<button class="btn btn-secondary" style="padding:0.3rem 0.75rem" onclick="window.adminApp.loadAuditLog(${currentPage - 1})">← Prev</button>`
+                : '';
+            const next = currentPage < pages
+                ? `<button class="btn btn-secondary" style="padding:0.3rem 0.75rem" onclick="window.adminApp.loadAuditLog(${currentPage + 1})">Next →</button>`
+                : '';
+            pager.innerHTML = `${prev} ${totalStr} ${next}`;
+        }
+    }
+
+    // ==========================================
+    // Support Ticket Status Update
+    // ==========================================
+
+    async updateTicketStatus(submissionId, status) {
+        try {
+            const res = await authFetch(
+                `${this.baseAdminUrl}/contact-submissions/${submissionId}`,
+                { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) }
+            );
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Update failed');
+            await this.loadSupportTickets();
+            showSuccess(`Ticket marked as ${status}.`);
+        } catch (err) {
+            showError(err.message);
+        }
+    }
+
     closeImpersonationModal() {
-        const modal = document.getElementById('impersonation-modal');
-        const iframe = document.getElementById('impersonation-iframe');
-
-        if (modal) {
-            modal.classList.remove('active');
-            if (iframe) iframe.src = 'about:blank';
-            document.body.style.overflow = '';
+        // Impersonation now runs in the main window (no iframe modal).
+        // Delegate to the global exit function defined in base.html.
+        if (typeof window._exitImpersonation === 'function') {
+            window._exitImpersonation();
         }
+    }
 
-        // Restore original session
-        const origToken = localStorage.getItem('original_token');
-        const origUser = localStorage.getItem('original_user');
+    // ==========================================
+    // Pending Admin Approvals
+    // ==========================================
 
-        if (origToken) {
-            localStorage.setItem('authToken', origToken);
-            localStorage.removeItem('original_token');
+    /**
+     * Load pending approvals.
+     * @param {boolean} renderTable – if true, update the approvals table;
+     *                                if false, only refresh the badge/stat counter.
+     */
+    async loadPendingApprovals(renderTable = true) {
+        try {
+            const res = await authFetch(`${this.baseAdminUrl}/pending-approvals`);
+            if (!res.ok) return;
+            const data = await res.json();
+
+            const count = data.count || 0;
+
+            // Always update the badge and stat counter
+            const badge = document.getElementById('approvals-badge');
+            const stat  = document.getElementById('stat-pending-approvals');
+            if (badge) { badge.textContent = count; badge.style.display = count > 0 ? 'inline' : 'none'; }
+            if (stat)  stat.textContent = count;
+
+            if (!renderTable) return;
+
+            const tbody    = document.getElementById('approvals-table-body');
+            const empty    = document.getElementById('approvals-empty');
+            const wrapper  = document.getElementById('approvals-table-wrapper');
+            if (!tbody) return;
+
+            if (!count) {
+                if (wrapper) wrapper.style.display = 'none';
+                if (empty)   empty.style.display = 'block';
+                return;
+            }
+
+            if (wrapper) wrapper.style.display = '';
+            if (empty)   empty.style.display = 'none';
+
+            tbody.innerHTML = (data.pending || []).map(u => {
+                const date = u.created_at ? new Date(u.created_at).toLocaleDateString() : '—';
+                return `<tr style="border-bottom:1px solid var(--border-color);">
+                    <td style="padding:1rem;">
+                        <div style="font-weight:500;">${escapeHtml(u.name)}</div>
+                        <div style="font-size:0.85rem;color:var(--text-muted);">${escapeHtml(u.email)}</div>
+                    </td>
+                    <td style="padding:1rem;">
+                        <span style="background:rgba(234,179,8,0.2);color:#facc15;padding:2px 8px;border-radius:4px;font-size:0.8rem;font-weight:bold;text-transform:capitalize;">${escapeHtml(u.role)}</span>
+                    </td>
+                    <td style="padding:1rem;color:var(--text-muted);font-size:0.9rem;">${date}</td>
+                    <td style="padding:1rem;text-align:right;display:flex;gap:0.5rem;justify-content:flex-end;">
+                        <button class="btn btn-sm btn-success"
+                            style="background:#10b981;color:#fff;border:none;"
+                            onclick="window.adminApp.approveAdmin('${u.user_id}', '${escapeHtml(u.name)}')">
+                            ✅ Approve
+                        </button>
+                        <button class="btn btn-sm btn-danger"
+                            onclick="window.adminApp.denyAdmin('${u.user_id}', '${escapeHtml(u.name)}')">
+                            ✗ Deny
+                        </button>
+                    </td>
+                </tr>`;
+            }).join('');
+        } catch (err) {
+            console.error('Failed to load pending approvals:', err);
         }
-        if (origUser) {
-            localStorage.setItem('currentUser', origUser);
-            localStorage.removeItem('original_user');
-        }
+    }
 
-        // Reload the dashboard data to ensure the Superadmin state is fresh
-        this.loadTenants();
-        this.loadUsers();
-        showSuccess("Returned to Superadmin session.");
+    async approveAdmin(userId, name) {
+        if (!confirm(`Approve account for ${name}? They will gain immediate access to the platform.`)) return;
+        try {
+            const res = await authFetch(`${this.baseAdminUrl}/users/${userId}/approve`, { method: 'PATCH' });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Approval failed');
+            showSuccess(data.message || `${name} approved successfully.`);
+            this.loadPendingApprovals(true);
+        } catch (err) {
+            showError(err.message);
+        }
+    }
+
+    async denyAdmin(userId, name) {
+        if (!confirm(`Deny account for ${name}? Their account will be set to denied status.`)) return;
+        try {
+            const res = await authFetch(`${this.baseAdminUrl}/users/${userId}/deny`, { method: 'PATCH' });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Denial failed');
+            showSuccess(data.message || `${name}'s account has been denied.`);
+            this.loadPendingApprovals(true);
+        } catch (err) {
+            showError(err.message);
+        }
     }
 
 }

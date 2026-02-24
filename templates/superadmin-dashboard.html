@@ -206,78 +206,7 @@
         }
     }
 
-    /* Impersonation Modal */
-    #impersonation-modal {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.85);
-        backdrop-filter: blur(8px);
-        z-index: 10000;
-        flex-direction: column;
-        padding: 2rem;
-        box-sizing: border-box;
-    }
-
-    #impersonation-modal.active {
-        display: flex;
-    }
-
-    .impersonation-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1rem;
-        background: var(--bg-card);
-        padding: 1rem 1.5rem;
-        border-radius: 0.75rem;
-        border: 1px solid var(--border-color);
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    }
-
-    .impersonation-title {
-        font-weight: 600;
-        color: var(--text-color);
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-    }
-
-    .impersonation-iframe-container {
-        flex: 1;
-        background: #fff;
-        border-radius: 0.75rem;
-        overflow: hidden;
-        border: 1px solid var(--border-color);
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-    }
-
-    #impersonation-iframe {
-        width: 100%;
-        height: 100%;
-        border: none;
-    }
-
-    .close-impersonation-btn {
-        background: var(--error-color);
-        color: white;
-        border: none;
-        padding: 0.5rem 1.25rem;
-        border-radius: 0.5rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: filter 0.2s;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .close-impersonation-btn:hover {
-        filter: brightness(1.1);
-    }
+    /* Impersonation is now full-window (floating bar in base.html). No modal CSS needed. */
 </style>
 {% endblock %}
 
@@ -318,6 +247,21 @@
                         <span>⚙️</span> System Settings
                     </a>
                 </li>
+                <li>
+                    <a href="#approvals" class="admin-nav-link" data-target="approvals-section"
+                        onclick="window.adminApp && window.adminApp.loadPendingApprovals()">
+                        <span>✅</span> Pending Approvals
+                        <span id="approvals-badge" style="display:none; background:#ef4444; color:#fff;
+                            font-size:0.7rem; font-weight:700; padding:1px 6px; border-radius:9999px;
+                            margin-left:auto;">0</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#audit" class="admin-nav-link" data-target="audit-section"
+                        onclick="window.adminApp && window.adminApp.loadAuditLog()">
+                        <span>📋</span> Audit Log
+                    </a>
+                </li>
             </ul>
         </aside>
 
@@ -343,6 +287,11 @@
                     <div class="stat-card">
                         <h3>Total Classes</h3>
                         <div class="stat-value purple" id="stat-total-classes">0</div>
+                    </div>
+                    <div class="stat-card" style="cursor:pointer; border-left:4px solid #ef4444;"
+                        onclick="document.querySelector('[data-target=approvals-section]').click(); window.adminApp && window.adminApp.loadPendingApprovals();">
+                        <h3 style="color:#ef4444;">Pending Approvals</h3>
+                        <div class="stat-value" style="color:#ef4444;" id="stat-pending-approvals">0</div>
                     </div>
                 </div>
             </section>
@@ -444,6 +393,7 @@
                         <option value="active">Active</option>
                         <option value="disabled">Disabled</option>
                         <option value="flagged">Flagged</option>
+                        <option value="pending_approval">Pending Approval</option>
                     </select>
 
                     <button class="btn btn-primary"
@@ -602,29 +552,106 @@
                 </div>
             </section>
 
+            <!-- Section: Pending Approvals -->
+            <section id="approvals-section" class="admin-section">
+                <div class="dashboard-header">
+                    <h1>Pending Account Approvals</h1>
+                    <p>New superadmin accounts require your approval before they can access the platform.</p>
+                </div>
+
+                <div id="approvals-empty"
+                    style="display:none; text-align:center; padding:3rem; background:var(--bg-card);
+                           border:1px solid var(--border-color); border-radius:0.75rem; color:var(--text-muted);">
+                    <div style="font-size:2.5rem; margin-bottom:1rem;">✅</div>
+                    <p style="font-size:1.1rem;">No pending approvals. You're all caught up!</p>
+                </div>
+
+                <div class="table-container" id="approvals-table-wrapper">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Applicant</th>
+                                <th>Role</th>
+                                <th>Requested</th>
+                                <th style="text-align:right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="approvals-table-body">
+                            <tr>
+                                <td colspan="4" style="text-align:center; color:var(--text-muted);">
+                                    Click "Pending Approvals" to load.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Section: Audit Log -->
+            <section id="audit-section" class="admin-section">
+                <div class="dashboard-header">
+                    <h1>Audit Log</h1>
+                    <p>Full event history across all users, tenants, and admin actions.</p>
+                </div>
+
+                <!-- Filters -->
+                <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-bottom:1.5rem;align-items:flex-end;">
+                    <div>
+                        <label style="display:block;font-size:0.8rem;color:var(--text-muted);margin-bottom:0.25rem;">Action</label>
+                        <select id="audit-action-filter" style="padding:0.5rem;border:1px solid var(--border-color);border-radius:0.375rem;background:var(--bg-card);color:var(--text-color);">
+                            <option value="">All Actions</option>
+                            <option>CREATE_USER</option><option>RESET_PASSWORD</option>
+                            <option>UPDATE_PROFILE</option><option>UPDATE_PASSWORD</option><option>DELETE_USER</option>
+                            <option>CREATE_CLASS</option><option>DELETE_CLASS</option><option>ENROLL_CLASS</option>
+                            <option>CREATE_CHAPTER</option><option>DELETE_CHAPTER</option><option>IMPORT_CHAPTER</option>
+                            <option>CREATE_EXERCISE</option><option>DELETE_EXERCISE</option><option>EXERCISE_SUBMISSION</option>
+                            <option>IMPERSONATE_USER</option><option>CREATE_TENANT</option><option>UPDATE_TENANT</option>
+                            <option>DISABLE_USER</option><option>ENABLE_USER</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:0.8rem;color:var(--text-muted);margin-bottom:0.25rem;">Resource Type</label>
+                        <select id="audit-resource-filter" style="padding:0.5rem;border:1px solid var(--border-color);border-radius:0.375rem;background:var(--bg-card);color:var(--text-color);">
+                            <option value="">All</option>
+                            <option value="user">user</option><option value="chapter">chapter</option>
+                            <option value="class">class</option><option value="exercise">exercise</option>
+                            <option value="tenant">tenant</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:0.8rem;color:var(--text-muted);margin-bottom:0.25rem;">From</label>
+                        <input type="date" id="audit-from" style="padding:0.5rem;border:1px solid var(--border-color);border-radius:0.375rem;background:var(--bg-card);color:var(--text-color);" />
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:0.8rem;color:var(--text-muted);margin-bottom:0.25rem;">To</label>
+                        <input type="date" id="audit-to" style="padding:0.5rem;border:1px solid var(--border-color);border-radius:0.375rem;background:var(--bg-card);color:var(--text-color);" />
+                    </div>
+                    <button class="btn btn-secondary" onclick="window.adminApp && window.adminApp.loadAuditLog(1)">Apply</button>
+                </div>
+
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>When</th>
+                                <th>Action</th>
+                                <th>Actor</th>
+                                <th>Resource</th>
+                                <th>IP</th>
+                            </tr>
+                        </thead>
+                        <tbody id="audit-table-body">
+                            <tr><td colspan="5" style="text-align:center;color:var(--text-muted);">Click "Audit Log" to load entries.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div id="audit-pagination" style="margin-top:1rem;display:flex;gap:0.5rem;align-items:center;"></div>
+            </section>
+
         </div>
     </div>
 </main>
 
-<!-- Impersonation Window Modal -->
-<div id="impersonation-modal">
-    <div class="impersonation-header">
-        <div class="impersonation-title">
-            <span style="font-size: 1.5rem;">🎭</span>
-            <div>
-                <div style="font-size: 1rem;">Impersonating User</div>
-                <div id="impersonation-target-name"
-                    style="font-size: 0.8rem; color: var(--text-muted); font-weight: 400;">Loading...</div>
-            </div>
-        </div>
-        <button class="close-impersonation-btn" onclick="window.adminApp.closeImpersonationModal()">
-            <span>✕</span> Exit Impersonation & Return to Dashboard
-        </button>
-    </div>
-    <div class="impersonation-iframe-container">
-        <iframe id="impersonation-iframe"></iframe>
-    </div>
-</div>
 {% endblock %}
 
 {% block scripts %}

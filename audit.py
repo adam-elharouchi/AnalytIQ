@@ -96,9 +96,12 @@ ACTIONS = {
     "EXERCISE_SUBMISSION",
     # Super Admin
     "IMPERSONATE_USER",
+    "CREATE_TENANT",
     "UPDATE_TENANT",
     "DISABLE_USER",
     "ENABLE_USER",
+    # Content Import
+    "IMPORT_CHAPTER",
 }
 
 

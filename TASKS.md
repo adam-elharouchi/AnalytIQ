@@ -1,7 +1,7 @@
 # AnalytIQ — Master Task List
 
 > Generated: 2026-02-17 | Last updated: 2026-02-23
-> Total: 93 tasks (86 completed, 7 pending)
+> Total: 99 tasks (92 completed, 7 pending)
 
 ---
 
@@ -95,6 +95,12 @@
 | SA-4 | User impersonation — `POST /api/superadmin/users/<id>/impersonate` issues scoped JWT with `impersonator_id` claim; dashboard uses `<iframe>` modal (windowed impersonation); `authToken` swapped before iframe loads; original token saved to `localStorage`; one-click exit restores superadmin session; `IMPERSONATE_USER` audit event |
 | SA-5 | Contact submissions viewer — `GET /api/superadmin/contact-submissions` paginated list exposed in dashboard |
 | SA-6 | `templates/superadmin-dashboard.html` + `js/superadmin.js` — data-density dashboard; tenant list + create/toggle; global user search with filter pills; impersonation iframe modal; window-bound `SuperAdminDashboard` class for inline HTML event handlers |
+| LIB-2 | PyPI doc importer — `POST /api/import/preview` + `POST /api/classes/<id>/chapters/import` with `source=pypi`; fetches PyPI JSON API, renders Markdown/RST README as styled HTML; stores as `.html` in `pdf_data` |
+| LIB-3 | URL importer — any public http/https URL; BeautifulSoup strips nav/ads, isolates main content, wraps in clean standalone HTML document; text extracted for exercise auto-generation |
+| LIB-4 | OpenStax browser — `GET /api/import/openstax/books` (CMS API, ~250 books), `GET /api/import/openstax/books/<slug>/toc` (scrapes chapter links); professor drills book → chapter → imports URL |
+| LIB-5 | LibreTexts search — `GET /api/import/libretexts/libraries` (12 subject domains), `GET /api/import/libretexts/search?q=&library=` (scrapes search results); professor picks a result then imports URL |
+| LIB-6 | OER Commons search — `GET /api/import/oer/search?q=` via OER Commons public API; graceful fallback to search link if API is unavailable |
+| LIB-7 | Unified Import UI (`js/content-import.js` + modal in `professor-class.html`) — 5-tab modal: Paste URL / PyPI Docs / OpenStax / LibreTexts / OER Commons; shared preview section with title/description/exercise-mode; `ContentImporter` class bound to `window.contentImporter`; "Import from Web" button next to "Upload Chapter" |
 
 ---
 
@@ -215,16 +221,7 @@
 
 ## External Content Import
 
-> Sources: file uploads, package docs, arbitrary URLs, OpenStax, LibreTexts, OER Commons
-
-| # | Task |
-|---|------|
-| LIB-2 | PyPI package doc importer — professor enters package name, system fetches official docs, converts to chapter |
-| LIB-3 | URL content importer — paste any URL (GitHub README, article, blog post), system scrapes + converts to chapter |
-| LIB-4 | OpenStax importer — browse OpenStax catalog via API, pick book + chapter, import directly |
-| LIB-5 | LibreTexts importer — browse by subject/book via API, import chapter content |
-| LIB-6 | OER Commons importer — search by keyword/subject, preview, import |
-| LIB-7 | Unified Import UI — single modal with tabs: Upload File / Paste URL / Package Docs / Browse OER / OpenStax & LibreTexts |
+**All tasks complete.** `blueprints/content_import.py` + `js/content-import.js` ship a unified "Import from Web" flow accessible via a new button in the Chapters tab. Backend: 7 routes covering PyPI, arbitrary URL, OpenStax catalog, LibreTexts search, and OER Commons search. Frontend: `ContentImporter` class with 5-tab modal and shared preview+import panel. HTML chapters stored in `pdf_data` with `.html` extension; `serve_chapter_pdf` updated to serve `text/html` MIME type. All auto-exercise generation reused from the existing Gemini pipeline. **Section complete.**
 
 ---
 
@@ -246,8 +243,7 @@
 
 8. ~~**Superadmin** — role-based admin, tenant management, impersonation~~ **DONE** (tasks SA-1 through SA-6)
 
-9. **External Content Import** — multi-format + OER platforms *(skipped — out of current scope)*:
-   Tasks LIB-2 through LIB-7
+9. ~~**External Content Import** — PyPI, URL, OpenStax, LibreTexts, OER Commons~~ **DONE** (tasks LIB-2 through LIB-7)
 
 10. **Deferred** — PostHog analytics *(pending FERPA legal review)*:
     Task 41

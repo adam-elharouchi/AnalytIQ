@@ -96,7 +96,9 @@ def detect_role_from_email(email):
 # ---------------------------------------------------------------------------
 
 
-def create_jwt_token(user_id, role="student", name=None, email=None, impersonator_id=None):
+def create_jwt_token(
+    user_id, role="student", name=None, email=None, impersonator_id=None, expires_hours=None
+):
     """
     Create a JWT token for an authenticated user.
 
@@ -106,15 +108,17 @@ def create_jwt_token(user_id, role="student", name=None, email=None, impersonato
         name: The user's name (optional, included in token for convenience)
         email: The user's email (optional, included in token for convenience)
         impersonator_id: If impersonating, the user_id of the super admin
+        expires_hours: Override default expiry (e.g. 1 for short-lived impersonation tokens)
 
     Returns:
         str: Encoded JWT token
     """
+    ttl = expires_hours if expires_hours is not None else config.JWT_ACCESS_TOKEN_EXPIRES_HOURS
     payload = {
         "user_id": user_id,
         "role": role,
         "iat": datetime.utcnow(),
-        "exp": datetime.utcnow() + timedelta(hours=config.JWT_ACCESS_TOKEN_EXPIRES_HOURS),
+        "exp": datetime.utcnow() + timedelta(hours=ttl),
     }
     if name:
         payload["name"] = name
@@ -273,6 +277,26 @@ def require_auth(f):
             return jsonify({"error": "Token expired. Please sign in again."}), 401
         except jwt.InvalidTokenError:
             return jsonify({"error": "Invalid token. Please sign in again."}), 401
+
+        # Reject disabled accounts even when they hold a valid JWT.
+        # Fail open (pass through) if the DB check itself errors, so a DB
+        # hiccup does not lock out all users.
+        try:
+            from db import get_db_connection
+
+            _conn = get_db_connection()
+            _cur = _conn.cursor()
+            _cur.execute(
+                "SELECT account_status FROM users WHERE user_id = %s", (g.user_id,)
+            )
+            _row = _cur.fetchone()
+            _cur.close()
+            if _row and _row[0] == "disabled":
+                return jsonify({"error": "Account is disabled. Contact support."}), 403
+            if _row and _row[0] == "pending_approval":
+                return jsonify({"error": "Account pending approval. An administrator will review your request shortly."}), 403
+        except Exception:
+            pass  # fail open
 
         return f(*args, **kwargs)
 

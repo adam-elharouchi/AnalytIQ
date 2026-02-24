@@ -79,7 +79,8 @@ class AuthManager {
 
       this.saveUser(userData);
 
-      return { ...data, user: userData };
+      // Flag pending accounts so the caller can show the appropriate message.
+      return { ...data, user: userData, pending_approval: !!data.pending_approval };
     } catch (error) {
       throw error;
     }
@@ -256,9 +257,21 @@ async function handleSignUp(event) {
     submitButton.disabled = true;
     submitButton.textContent = 'Creating account...';
 
-    await authManager.signUp(name, email, password);
+    const result = await authManager.signUp(name, email, password);
 
-    // Always redirect to home page
+    if (result && result.pending_approval) {
+      // Account created but needs admin approval — show message, do not redirect yet.
+      errorDiv.style.color = '#10b981';
+      errorDiv.textContent = result.message ||
+        'Account created! Your account is pending approval by an administrator. ' +
+        'You will be notified once approved.';
+      errorDiv.style.display = 'block';
+      submitButton.disabled = false;
+      submitButton.textContent = 'Sign Up';
+      return;
+    }
+
+    // Normal path — redirect to home page
     window.location.href = 'index.html';
   } catch (error) {
     errorDiv.textContent = error.message;
