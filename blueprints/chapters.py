@@ -656,7 +656,12 @@ def serve_chapter_pdf(chapter_id):
 
         if pdf_data:
             pdf_bytes = bytes(pdf_data)
-            response = Response(pdf_bytes, mimetype="application/pdf")
+            # Imported HTML chapters are stored with a .html extension
+            if pdf_filename and pdf_filename.lower().endswith(".html"):
+                mimetype = "text/html; charset=utf-8"
+            else:
+                mimetype = "application/pdf"
+            response = Response(pdf_bytes, mimetype=mimetype)
             response.headers["Content-Disposition"] = f'inline; filename="{pdf_filename}"'
             cors_origin = _get_cors_origin(request)
             if cors_origin:

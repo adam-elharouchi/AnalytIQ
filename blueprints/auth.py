@@ -79,6 +79,21 @@ def signup():
 
         created_user_id = user[0]
 
+        # New superadmin accounts (myanalytiq.org domain) require manual approval
+        # by aelharouchi@myanalytiq.org before they can access the platform.
+        pending_approval = False
+        if role == "superadmin":
+            try:
+                cur = conn.cursor()
+                cur.execute(
+                    "UPDATE users SET account_status = 'pending_approval' WHERE user_id = %s",
+                    (created_user_id,),
+                )
+                cur.close()
+                pending_approval = True
+            except Exception as e:
+                logger.warning("Failed to set pending_approval status: %s", e)
+
         try:
             auth_repo.create_default_profile(conn, created_user_id)
         except Exception as e:
@@ -110,20 +125,23 @@ def signup():
 
         user_role = user[3] if len(user) > 3 else role
         token = create_jwt_token(created_user_id, role=user_role, name=user[1], email=user[2])
-        return (
-            jsonify(
-                {
-                    "id": created_user_id,
-                    "user_id": created_user_id,
-                    "name": user[1],
-                    "email": user[2],
-                    "role": user_role,
-                    "token": token,
-                    "success": True,
-                }
-            ),
-            201,
-        )
+
+        resp = {
+            "id": created_user_id,
+            "user_id": created_user_id,
+            "name": user[1],
+            "email": user[2],
+            "role": user_role,
+            "token": token,
+            "success": True,
+        }
+        if pending_approval:
+            resp["pending_approval"] = True
+            resp["message"] = (
+                "Your account has been created and is pending approval by an administrator. "
+                "You will be able to access the platform once approved."
+            )
+        return jsonify(resp), 201
 
     except Exception as e:
         logger.error("Unexpected error: %s", e, exc_info=True)

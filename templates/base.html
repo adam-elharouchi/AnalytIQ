@@ -16,6 +16,98 @@
   {% block extra_head %}{% endblock %}
 </head>
 <body{% block body_attrs %}{% endblock %}>
+
+  <!-- ===== Impersonation Bar =====
+       Shown on every page when a superadmin is impersonating another user.
+       Persists across navigation because original_token is in localStorage.  -->
+  <div id="impersonation-bar"
+       style="display:none; position:fixed; top:0; left:0; right:0; z-index:9999;
+              background:#d97706; color:#fff; padding:0.55rem 1.5rem;
+              font-size:0.875rem; align-items:center; gap:1rem;
+              box-shadow:0 2px 8px rgba(0,0,0,0.35);">
+    <span style="flex:1;">🎭 Impersonating: <strong id="impersonation-bar-name"></strong></span>
+    <span id="impersonation-bar-warn"
+          style="display:none; background:rgba(255,255,255,0.25);
+                 padding:0.15rem 0.6rem; border-radius:4px; font-size:0.8rem;">
+      ⚠️ Session expires in &lt;5 min
+    </span>
+    <button onclick="window._exitImpersonation()"
+            style="background:rgba(255,255,255,0.15); color:#fff;
+                   border:1px solid rgba(255,255,255,0.45); padding:0.3rem 0.9rem;
+                   border-radius:0.375rem; cursor:pointer; font-weight:600;
+                   white-space:nowrap;">
+      Exit Impersonation
+    </button>
+  </div>
+
+  <script>
+    /* ------------------------------------------------------------------
+       Impersonation exit — callable from any page.
+       Restores the original superadmin session and returns to the dashboard.
+    ------------------------------------------------------------------ */
+    window._exitImpersonation = function () {
+      var orig = localStorage.getItem('original_token');
+      var origUser = localStorage.getItem('original_user');
+      if (orig) {
+        localStorage.setItem('authToken', orig);
+        localStorage.removeItem('original_token');
+      }
+      if (origUser) {
+        localStorage.setItem('currentUser', origUser);
+        localStorage.removeItem('original_user');
+      }
+      localStorage.removeItem('impersonation_started_at');
+      window.location.href = '/superadmin-dashboard.html';
+    };
+
+    /* Activate the bar if an impersonation session is in progress */
+    (function () {
+      if (!localStorage.getItem('original_token')) return;
+
+      var bar = document.getElementById('impersonation-bar');
+      if (bar) {
+        bar.style.display = 'flex';
+        /* Push page content below the bar (44 px height) */
+        document.body.style.paddingTop =
+          (parseInt(document.body.style.paddingTop || '0', 10) + 44) + 'px';
+      }
+
+      try {
+        var u = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        var el = document.getElementById('impersonation-bar-name');
+        if (el) el.textContent = u.name || u.email || 'Unknown User';
+      } catch (e) { /* ignore */ }
+
+      /* Expiry timers (based on when impersonation started) */
+      var startedAt = parseInt(localStorage.getItem('impersonation_started_at') || '0', 10);
+      if (!startedAt) return;
+
+      var elapsed  = Date.now() - startedAt;
+      var _55min   = 55 * 60 * 1000;
+      var _60min   = 60 * 60 * 1000;
+
+      if (elapsed >= _60min) { window._exitImpersonation(); return; }
+
+      var warnIn   = Math.max(0, _55min - elapsed);
+      var expireIn = _60min - elapsed;
+
+      if (warnIn === 0) {
+        var wEl = document.getElementById('impersonation-bar-warn');
+        if (wEl) wEl.style.display = 'inline';
+      } else {
+        setTimeout(function () {
+          var wEl = document.getElementById('impersonation-bar-warn');
+          if (wEl) wEl.style.display = 'inline';
+        }, warnIn);
+      }
+
+      setTimeout(function () {
+        window._exitImpersonation();
+        alert('Impersonation session expired after 60 minutes.');
+      }, expireIn);
+    }());
+  </script>
+
   {% block content %}{% endblock %}
   {% block scripts %}{% endblock %}
   </body>

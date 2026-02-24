@@ -72,7 +72,10 @@
   <div id="tabContentChapters" class="tab-content" style="display: none;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
       <h2 style="margin: 0; color: var(--color-dark);">Chapters</h2>
-      <button class="btn btn-primary" onclick="showUploadChapterModal()">➕ Upload Chapter</button>
+      <div style="display:flex;gap:0.5rem;">
+        <button class="btn btn-secondary" onclick="window.contentImporter && window.contentImporter.show()">🌐 Import from Web</button>
+        <button class="btn btn-primary" onclick="showUploadChapterModal()">➕ Upload Chapter</button>
+      </div>
     </div>
 
     <div id="chaptersList">
@@ -569,4 +572,167 @@
     </div>
   </div>
 </div>
+
+<!-- Import Chapter Modal (LIB-7 unified import UI) -->
+<style>
+  .imp-tab-btn {
+    padding: 0.5rem 1rem; border: none; background: none; cursor: pointer;
+    font-size: 0.9rem; color: #64748b; border-bottom: 2px solid transparent; white-space: nowrap;
+  }
+  .imp-tab-active { color: var(--color-primary); border-bottom-color: var(--color-primary); font-weight: 600; }
+  .imp-tab-content { display: none; }
+  .imp-card {
+    padding: 0.75rem 1rem; border: 1px solid #e2e8f0; border-radius: 0.375rem;
+    margin-bottom: 0.5rem; cursor: pointer; transition: background 0.15s;
+  }
+  .imp-card:hover { background: #f1f5f9; }
+  .imp-card-desc { font-size: 0.82em; color: #64748b; margin: 0.25rem 0 0; }
+  .imp-badge { font-size: 0.75em; background: #e0e7ff; color: #4338ca; padding: 0.1em 0.4em; border-radius: 0.25rem; }
+  .imp-scroll { max-height: 300px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 0.375rem; padding: 0.5rem; }
+</style>
+
+<div id="importChapterModal"
+  style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.55); z-index: 1100; align-items: center; justify-content: center;">
+  <div role="dialog" aria-modal="true" aria-labelledby="importChapterModalTitle"
+    style="background: white; border-radius: 0.5rem; padding: 2rem; max-width: 780px; width: 95%; max-height: 92vh; overflow-y: auto;">
+
+    <!-- Header -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+      <h2 id="importChapterModalTitle" style="margin:0; color:var(--color-dark);">🌐 Import Chapter from Web</h2>
+      <button onclick="window.contentImporter && window.contentImporter.hide()" aria-label="Close"
+        style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#64748b;">&times;</button>
+    </div>
+
+    <!-- Source tabs -->
+    <div style="display:flex; gap:0; border-bottom:2px solid #e2e8f0; margin-bottom:1.5rem; overflow-x:auto;">
+      <button class="imp-tab-btn imp-tab-active" data-tab="url"
+        onclick="window.contentImporter && window.contentImporter.switchTab('url')">🔗 Paste URL</button>
+      <button class="imp-tab-btn" data-tab="pypi"
+        onclick="window.contentImporter && window.contentImporter.switchTab('pypi')">📦 PyPI Docs</button>
+      <button class="imp-tab-btn" data-tab="openstax"
+        onclick="window.contentImporter && window.contentImporter.switchTab('openstax')">📚 OpenStax</button>
+      <button class="imp-tab-btn" data-tab="libretexts"
+        onclick="window.contentImporter && window.contentImporter.switchTab('libretexts')">📖 LibreTexts</button>
+      <button class="imp-tab-btn" data-tab="oer"
+        onclick="window.contentImporter && window.contentImporter.switchTab('oer')">🌐 OER Commons</button>
+    </div>
+
+    <!-- URL tab -->
+    <div id="impTab-url" class="imp-tab-content" style="display:block;">
+      <p style="color:#64748b;font-size:0.9em;margin-top:0;">Paste any public URL — GitHub README, blog post, article, OpenStax page, LibreTexts chapter, etc.</p>
+      <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;">
+        <input type="url" id="impUrlInput" placeholder="https://..."
+          style="flex:1;padding:0.65rem;border:1px solid #e2e8f0;border-radius:0.375rem;font-size:0.95rem;"
+          onkeydown="if(event.key==='Enter') window.contentImporter && window.contentImporter.previewUrl()" />
+        <button class="btn btn-secondary"
+          onclick="window.contentImporter && window.contentImporter.previewUrl()">Preview</button>
+      </div>
+      <span id="impPreviewLoading" style="display:none;font-size:0.85em;color:#64748b;">Fetching…</span>
+    </div>
+
+    <!-- PyPI tab -->
+    <div id="impTab-pypi" class="imp-tab-content">
+      <p style="color:#64748b;font-size:0.9em;margin-top:0;">Enter a PyPI package name to import its documentation as a chapter.</p>
+      <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;">
+        <input type="text" id="impPypiPackage" placeholder="e.g. pandas, numpy, scikit-learn"
+          style="flex:1;padding:0.65rem;border:1px solid #e2e8f0;border-radius:0.375rem;font-size:0.95rem;"
+          onkeydown="if(event.key==='Enter') window.contentImporter && window.contentImporter.previewPypi()" />
+        <button class="btn btn-secondary"
+          onclick="window.contentImporter && window.contentImporter.previewPypi()">Fetch Docs</button>
+      </div>
+      <span id="impPreviewLoading" style="display:none;font-size:0.85em;color:#64748b;">Fetching…</span>
+    </div>
+
+    <!-- OpenStax tab -->
+    <div id="impTab-openstax" class="imp-tab-content">
+      <p style="color:#64748b;font-size:0.9em;margin-top:0;">Browse the OpenStax catalog. Click a book to see its chapters, then click a chapter to select it for import.</p>
+      <div id="impOpenstaxToc" style="display:none; margin-bottom:1rem;"></div>
+      <div id="impOpenstaxBooks" class="imp-scroll">
+        <p style="color:#64748b;font-size:0.85em;">Loading…</p>
+      </div>
+    </div>
+
+    <!-- LibreTexts tab -->
+    <div id="impTab-libretexts" class="imp-tab-content">
+      <p style="color:#64748b;font-size:0.9em;margin-top:0;">Search LibreTexts open textbooks by keyword and subject library.</p>
+      <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem;flex-wrap:wrap;">
+        <select id="impLtLibrary"
+          style="padding:0.65rem;border:1px solid #e2e8f0;border-radius:0.375rem;font-size:0.9rem;">
+          <option value="">All Libraries</option>
+        </select>
+        <input type="text" id="impLtQuery" placeholder="e.g. machine learning, statistics"
+          style="flex:1;min-width:160px;padding:0.65rem;border:1px solid #e2e8f0;border-radius:0.375rem;font-size:0.9rem;"
+          onkeydown="if(event.key==='Enter') window.contentImporter && window.contentImporter.searchLibretexts()" />
+        <button class="btn btn-secondary"
+          onclick="window.contentImporter && window.contentImporter.searchLibretexts()">Search</button>
+      </div>
+      <div id="impLtResults" class="imp-scroll"></div>
+    </div>
+
+    <!-- OER Commons tab -->
+    <div id="impTab-oer" class="imp-tab-content">
+      <p style="color:#64748b;font-size:0.9em;margin-top:0;">Search OER Commons for open educational resources.</p>
+      <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem;">
+        <input type="text" id="impOerQuery" placeholder="e.g. data science, business analytics"
+          style="flex:1;padding:0.65rem;border:1px solid #e2e8f0;border-radius:0.375rem;font-size:0.9rem;"
+          onkeydown="if(event.key==='Enter') window.contentImporter && window.contentImporter.searchOer()" />
+        <button class="btn btn-secondary"
+          onclick="window.contentImporter && window.contentImporter.searchOer()">Search</button>
+      </div>
+      <div id="impOerResults" class="imp-scroll"></div>
+    </div>
+
+    <!-- Error -->
+    <div id="impError" class="error-message" style="display:none;margin:1rem 0;"></div>
+
+    <!-- Preview & chapter settings (shared) -->
+    <div id="impPreviewSection" style="display:none;border-top:1px solid #e2e8f0;margin-top:1.5rem;padding-top:1.5rem;">
+      <h3 style="margin:0 0 0.5rem;color:var(--color-dark);font-size:1rem;">Selected Content</h3>
+      <div id="impPreviewTitle" style="font-weight:600;color:#0f172a;margin-bottom:0.25rem;"></div>
+      <div id="impPreviewSnippet"
+        style="font-size:0.82em;color:#64748b;max-height:80px;overflow:hidden;margin-bottom:1rem;"></div>
+
+      <div style="margin-bottom:1rem;">
+        <label style="display:block;margin-bottom:0.4rem;font-weight:500;">Chapter Title *</label>
+        <input type="text" id="impChapterTitle"
+          style="width:100%;padding:0.65rem;border:1px solid #e2e8f0;border-radius:0.375rem;font-size:0.95rem;" />
+      </div>
+      <div style="margin-bottom:1rem;">
+        <label style="display:block;margin-bottom:0.4rem;font-weight:500;">Description</label>
+        <textarea id="impChapterDesc" rows="2"
+          style="width:100%;padding:0.65rem;border:1px solid #e2e8f0;border-radius:0.375rem;font-size:0.95rem;resize:vertical;"></textarea>
+      </div>
+      <div style="margin-bottom:1.5rem;">
+        <label style="display:block;margin-bottom:0.4rem;font-weight:500;">Exercise Generation</label>
+        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;margin-bottom:0.4rem;">
+          <input type="radio" name="impExerciseMode" value="auto" checked /> Auto-generate (AI-powered)
+        </label>
+        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
+          <input type="radio" name="impExerciseMode" value="manual" /> Manual (I'll create exercises later)
+        </label>
+      </div>
+
+      <div style="display:flex;gap:1rem;justify-content:flex-end;align-items:center;">
+        <span id="impImportLoading" style="display:none;font-size:0.85em;color:#64748b;">Importing…</span>
+        <button class="btn btn-secondary"
+          onclick="window.contentImporter && window.contentImporter.hide()">Cancel</button>
+        <button id="impImportBtn" class="btn btn-primary"
+          onclick="window.contentImporter && window.contentImporter.importChapter()">Import Chapter</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="js/content-import.js"></script>
+<script>
+  // Initialize ContentImporter once classId is available
+  document.addEventListener('DOMContentLoaded', function () {
+    const urlParams = new URLSearchParams(window.location.search);
+    const classId = urlParams.get('class_id');
+    if (classId) {
+      window.contentImporter = new ContentImporter(classId);
+    }
+  });
+</script>
 {% endblock %}

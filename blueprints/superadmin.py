@@ -17,7 +17,18 @@ from flask import Blueprint, jsonify, request, g
 from auth_helpers import require_auth, require_super_admin, create_jwt_token
 from audit import audit
 from db import get_db_connection
-from extensions import csrf_exempt
+from extensions import csrf_exempt, limiter
+
+
+def _rate_limit(rate: str):
+    """Apply a Flask-Limiter rate limit only when the limiter is available."""
+
+    def decorator(f):
+        if limiter is not None:
+            return limiter.limit(rate)(f)
+        return f
+
+    return decorator
 
 logger = logging.getLogger(__name__)
 bp = Blueprint("superadmin", __name__)
@@ -212,11 +223,7 @@ def search_users():
             base_query += " AND u.account_status = %s"
             params.append(status_filter)
 
-        # Count total filtered
-        cur.execute(f"SELECT COUNT(*) {base_query}", params)
-        total = cur.fetchone()[0]
-
-        # Get Global Role Distribution (unfiltered)
+        # Global role distribution (unfiltered, always shows platform-wide counts)
         cur.execute("SELECT role, COUNT(*) FROM users GROUP BY role")
         distribution_rows = cur.fetchall()
         role_distribution = {"superadmin": 0, "professor": 0, "student": 0, "other": 0}
@@ -226,9 +233,12 @@ def search_users():
                 role_distribution[r_name] = dr[1]
             else:
                 role_distribution["other"] += dr[1]
+
+        # Single query: paginated rows + filtered total via window function (avoids 2 round-trips)
         query = f"""
             SELECT u.user_id, u.name, u.email, u.role, u.account_status, u.created_at,
-                   t.name as tenant_name, t.tenant_id
+                   t.name as tenant_name, t.tenant_id,
+                   COUNT(*) OVER() AS total_count
             {base_query}
             ORDER BY u.created_at DESC
             LIMIT %s OFFSET %s
@@ -236,6 +246,8 @@ def search_users():
         cur.execute(query, params + [limit, offset])
         rows = cur.fetchall()
         cur.close()
+
+        total = rows[0][8] if rows else 0
 
         users = []
         for r in rows:
@@ -313,6 +325,7 @@ def update_user_status(user_id):
 @csrf_exempt
 @require_auth
 @require_super_admin
+@_rate_limit("10 per minute")
 def impersonate_user(user_id):
     """Generate a short-lived token to impersonate another user."""
     try:
@@ -336,13 +349,15 @@ def impersonate_user(user_id):
         conn.commit()
         cur.close()
 
-        # Generate scoped token with impersonator_id baked in
+        # Generate scoped token with impersonator_id baked in.
+        # Short 1-hour TTL so abandoned impersonation sessions expire promptly.
         token = create_jwt_token(
             user_id=target_user[0],
             role=target_user[3],
             name=target_user[1],
             email=target_user[2],
             impersonator_id=impersonator_id,
+            expires_hours=1,
         )
 
         return (
@@ -424,3 +439,237 @@ def get_contact_submissions():
     finally:
         if conn:
             conn.close()
+
+
+@bp.route("/api/superadmin/contact-submissions/<submission_id>", methods=["PATCH"])
+@csrf_exempt
+@require_auth
+@require_super_admin
+def update_contact_submission(submission_id):
+    """Update the status of a contact form submission."""
+    data = request.json or {}
+    status = data.get("status")
+    _valid_statuses = {"new", "read", "resolved", "archived"}
+    if status not in _valid_statuses:
+        return jsonify({"error": f"Status must be one of: {', '.join(sorted(_valid_statuses))}"}), 400
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(
+            "UPDATE contact_submissions SET status = %s WHERE submission_id = %s RETURNING submission_id",
+            (status, submission_id),
+        )
+        if not cur.fetchone():
+            return jsonify({"error": "Submission not found"}), 404
+        conn.commit()
+        cur.close()
+        return jsonify({"success": True}), 200
+    except Exception as e:
+        logger.error("Failed to update contact submission: %s", e)
+        return jsonify({"error": "Failed to update submission"}), 500
+
+
+# ---------------------------------------------------------------------------
+# Audit Log API
+# ---------------------------------------------------------------------------
+
+
+@bp.route("/api/superadmin/audit", methods=["GET"])
+@require_auth
+@require_super_admin
+def get_audit_log():
+    """Paginated, filterable read of the audit_log table."""
+    try:
+        page = request.args.get("page", 1, type=int)
+        limit = min(request.args.get("limit", 50, type=int), 100)
+        offset = (page - 1) * limit
+        action_filter = request.args.get("action", "")
+        actor_id = request.args.get("actor_id", "")
+        resource_type = request.args.get("resource_type", "")
+        from_date = request.args.get("from", "")
+        to_date = request.args.get("to", "")
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        base = """
+            FROM audit_log al
+            LEFT JOIN users u ON al.user_id = u.user_id
+            WHERE 1=1
+        """
+        params = []
+
+        if action_filter:
+            base += " AND al.action = %s"
+            params.append(action_filter)
+        if actor_id:
+            base += " AND al.user_id = %s"
+            params.append(actor_id)
+        if resource_type:
+            base += " AND al.resource_type = %s"
+            params.append(resource_type)
+        if from_date:
+            base += " AND al.created_at >= %s"
+            params.append(from_date)
+        if to_date:
+            base += " AND al.created_at <= %s"
+            params.append(to_date)
+
+        cur.execute(
+            f"""
+            SELECT al.log_id, al.action, al.resource_type, al.resource_id,
+                   al.user_id, u.name AS actor_name, u.email AS actor_email,
+                   al.ip_address, al.details, al.created_at
+            {base}
+            ORDER BY al.created_at DESC
+            LIMIT %s OFFSET %s
+            """,
+            params + [limit, offset],
+        )
+        rows = cur.fetchall()
+
+        cur.execute(f"SELECT COUNT(*) {base}", params)
+        total = cur.fetchone()[0]
+        cur.close()
+
+        entries = [
+            {
+                "log_id": r[0],
+                "action": r[1],
+                "resource_type": r[2],
+                "resource_id": r[3],
+                "actor_id": r[4],
+                "actor_name": r[5],
+                "actor_email": r[6],
+                "ip_address": r[7],
+                "details": r[8],
+                "created_at": r[9].isoformat() if r[9] else None,
+            }
+            for r in rows
+        ]
+
+        return (
+            jsonify(
+                {
+                    "entries": entries,
+                    "total": total,
+                    "page": page,
+                    "pages": (total + limit - 1) // limit,
+                }
+            ),
+            200,
+        )
+    except Exception as e:
+        logger.error("Failed to fetch audit log: %s", e)
+        return jsonify({"error": "Failed to fetch audit log"}), 500
+
+
+# ---------------------------------------------------------------------------
+# Admin Account Approval API
+# ---------------------------------------------------------------------------
+
+
+@bp.route("/api/superadmin/pending-approvals", methods=["GET"])
+@require_auth
+@require_super_admin
+def get_pending_approvals():
+    """List accounts waiting for manual approval (account_status = 'pending_approval')."""
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(
+            """
+            SELECT user_id, name, email, role, created_at
+            FROM users
+            WHERE account_status = 'pending_approval'
+            ORDER BY created_at DESC
+            """
+        )
+        rows = cur.fetchall()
+        cur.close()
+
+        return jsonify(
+            {
+                "pending": [
+                    {
+                        "user_id":    r[0],
+                        "name":       r[1],
+                        "email":      r[2],
+                        "role":       r[3],
+                        "created_at": r[4].isoformat() if r[4] else None,
+                    }
+                    for r in rows
+                ],
+                "count": len(rows),
+            }
+        ), 200
+    except Exception as e:
+        logger.error("Failed to fetch pending approvals: %s", e)
+        return jsonify({"error": "Failed to fetch pending approvals"}), 500
+
+
+@bp.route("/api/superadmin/users/<user_id>/approve", methods=["PATCH"])
+@csrf_exempt
+@require_auth
+@require_super_admin
+def approve_admin(user_id):
+    """Approve a pending admin/superadmin account (set account_status = 'active')."""
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(
+            """
+            UPDATE users
+            SET account_status = 'active', updated_at = CURRENT_TIMESTAMP
+            WHERE user_id = %s AND account_status = 'pending_approval'
+            RETURNING user_id, name, email
+            """,
+            (user_id,),
+        )
+        row = cur.fetchone()
+        if not row:
+            return jsonify({"error": "User not found or not pending approval"}), 404
+
+        audit(conn, "ENABLE_USER", resource_type="user", resource_id=user_id,
+              details={"action": "approved_admin"})
+        conn.commit()
+        cur.close()
+
+        return jsonify({"success": True, "message": f"Account for {row[1]} ({row[2]}) approved."}), 200
+    except Exception as e:
+        logger.error("Failed to approve admin: %s", e)
+        return jsonify({"error": "Failed to approve account"}), 500
+
+
+@bp.route("/api/superadmin/users/<user_id>/deny", methods=["PATCH"])
+@csrf_exempt
+@require_auth
+@require_super_admin
+def deny_admin(user_id):
+    """Deny a pending admin/superadmin account (set account_status = 'denied')."""
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(
+            """
+            UPDATE users
+            SET account_status = 'denied', updated_at = CURRENT_TIMESTAMP
+            WHERE user_id = %s AND account_status = 'pending_approval'
+            RETURNING user_id, name, email
+            """,
+            (user_id,),
+        )
+        row = cur.fetchone()
+        if not row:
+            return jsonify({"error": "User not found or not pending approval"}), 404
+
+        audit(conn, "DISABLE_USER", resource_type="user", resource_id=user_id,
+              details={"action": "denied_admin"})
+        conn.commit()
+        cur.close()
+
+        return jsonify({"success": True, "message": f"Account for {row[1]} ({row[2]}) denied."}), 200
+    except Exception as e:
+        logger.error("Failed to deny admin: %s", e)
+        return jsonify({"error": "Failed to deny account"}), 500

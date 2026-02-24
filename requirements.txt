@@ -20,6 +20,9 @@ python-json-logger==2.0.7
 sentry-sdk[flask]>=1.40.0
 PyLTI1p3>=2.0.0
 cryptography>=41.0.0
+beautifulsoup4>=4.12.0
+lxml>=5.0.0
+markdown>=3.5.0
 
 # Testing
 pytest==7.4.3
