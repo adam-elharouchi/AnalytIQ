@@ -142,7 +142,8 @@ class AuthManager {
 
       this.saveUser(userData);
 
-      return this.currentUser;
+      // Pass requires_password_reset flag to callers
+      return { ...this.currentUser, requires_password_reset: !!data.requires_password_reset };
     } catch (error) {
       throw error;
     }
@@ -194,7 +195,12 @@ async function handleSignIn(event) {
   errorDiv.style.display = 'none';
 
   try {
-    await authManager.signIn(email, password);
+    const signInResult = await authManager.signIn(email, password);
+    // Force password reset if flagged by admin
+    if (signInResult && signInResult.requires_password_reset) {
+      window.location.href = 'change-password.html?forced=true';
+      return;
+    }
     // Always redirect to home page
     window.location.href = 'index.html';
   } catch (error) {
