@@ -189,7 +189,7 @@ def signin():
         if not user:
             return jsonify({"error": "Invalid email or password"}), 401
 
-        user_id, name, user_email, stored_hash, role = user
+        user_id, name, user_email, stored_hash, role, tenant_id = user
 
         is_valid, needs_rehash = verify_password(password, stored_hash)
         if not is_valid:
@@ -252,7 +252,7 @@ def signin():
         except Exception:
             conn.rollback()
 
-        token = create_jwt_token(user_id, role=role, name=name, email=user_email)
+        token = create_jwt_token(user_id, role=role, name=name, email=user_email, tenant_id=tenant_id)
         resp = {
             "id": user_id,
             "user_id": user_id,

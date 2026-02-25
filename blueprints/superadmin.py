@@ -836,12 +836,22 @@ def delete_tenant(tenant_id):
 @require_auth
 @require_super_admin
 def change_user_role(user_id):
-    """Change a user's role (student / professor / superadmin) and is_super_admin flag."""
+    """
+    Change a user's role and optionally their tenant_id.
+
+    Body:
+      role (required): student | professor | tenant_admin | superadmin
+      tenant_id (optional): required when promoting to tenant_admin
+    """
     data = request.json or {}
     new_role = data.get("role")
-    valid_roles = {"student", "professor", "superadmin"}
+    new_tenant_id = data.get("tenant_id")  # required for tenant_admin
+    valid_roles = {"student", "professor", "tenant_admin", "superadmin"}
     if new_role not in valid_roles:
         return jsonify({"error": f"Role must be one of: {', '.join(sorted(valid_roles))}"}), 400
+
+    if new_role == "tenant_admin" and not new_tenant_id:
+        return jsonify({"error": "tenant_id is required when assigning the tenant_admin role"}), 400
 
     try:
         conn = get_db_connection()
@@ -852,11 +862,12 @@ def change_user_role(user_id):
             UPDATE users
             SET role = %s,
                 is_super_admin = %s,
+                tenant_id = CASE WHEN %s IS NOT NULL THEN %s ELSE tenant_id END,
                 updated_at = CURRENT_TIMESTAMP
             WHERE user_id = %s
             RETURNING user_id, name, email
             """,
-            (new_role, new_role == "superadmin", user_id),
+            (new_role, new_role == "superadmin", new_tenant_id, new_tenant_id, user_id),
         )
         row = cur.fetchone()
         if not row:
@@ -867,7 +878,7 @@ def change_user_role(user_id):
             "UPDATE_USER_ROLE",
             resource_type="user",
             resource_id=user_id,
-            details={"new_role": new_role},
+            details={"new_role": new_role, "tenant_id": new_tenant_id},
         )
         conn.commit()
         cur.close()

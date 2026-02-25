@@ -1,0 +1,709 @@
+{% extends "base.html" %}
+
+{% block title %}Tenant Admin Dashboard{% endblock %}
+
+{% block extra_head %}
+<!-- Tenant Admin — same style conventions as superadmin-dashboard.html -->
+<style>
+    .admin-dashboard-container {
+        display: flex;
+        gap: 2rem;
+        padding-top: 1rem;
+        min-height: calc(100vh - 200px);
+    }
+
+    /* Vertical Tabs Sidebar */
+    .admin-sidebar {
+        width: 250px;
+        flex-shrink: 0;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        position: sticky;
+        top: 100px;
+        height: fit-content;
+    }
+
+    .admin-nav-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .admin-nav-link {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        color: var(--text-color);
+        text-decoration: none;
+        border-radius: 0.5rem;
+        transition: all 0.2s;
+        font-weight: 500;
+    }
+
+    .admin-nav-link:hover {
+        background: var(--bg-dark);
+        color: var(--primary-color);
+    }
+
+    .admin-nav-link.active {
+        background: rgba(59, 130, 246, 0.1);
+        color: var(--primary-color);
+        border-left: 4px solid var(--primary-color);
+    }
+
+    /* Main Content Area */
+    .admin-content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .admin-section {
+        display: none;
+        animation: fadeIn 0.3s ease-in-out;
+    }
+
+    .admin-section.active {
+        display: block;
+    }
+
+    .dashboard-header {
+        margin-bottom: 2rem;
+    }
+
+    .dashboard-header h1 {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .dashboard-header p {
+        color: var(--text-muted);
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: var(--bg-card);
+        padding: 1.5rem;
+        border-radius: 0.75rem;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-card h3 {
+        font-size: 0.875rem;
+        color: var(--text-muted);
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+    }
+
+    .stat-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+    }
+
+    .stat-value.primary {
+        color: var(--primary-color);
+    }
+
+    .stat-value.success {
+        color: var(--accent-green);
+    }
+
+    .stat-value.purple {
+        color: var(--accent-purple);
+    }
+
+    /* Tables */
+    .table-container {
+        background: var(--bg-card);
+        border-radius: 0.75rem;
+        border: 1px solid var(--border-color);
+        overflow-x: auto;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .admin-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+
+    .admin-table th {
+        padding: 1.25rem 1rem;
+        background: rgba(255, 255, 255, 0.03);
+        border-bottom: 1px solid var(--border-color);
+        font-weight: 600;
+        color: var(--text-color);
+    }
+
+    .admin-table td {
+        padding: 1rem;
+        border-bottom: 1px solid var(--border-color);
+        vertical-align: middle;
+    }
+
+    .admin-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .admin-table tbody tr:hover {
+        background: rgba(255, 255, 255, 0.02);
+    }
+
+    /* Badges */
+    .status-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .status-badge.active {
+        background: rgba(16, 185, 129, 0.2);
+        color: #34d399;
+    }
+
+    .status-badge.disabled {
+        background: rgba(239, 68, 68, 0.2);
+        color: #f87171;
+    }
+
+    .status-badge.pending {
+        background: rgba(234, 179, 8, 0.2);
+        color: #facc15;
+    }
+
+    .status-badge.role {
+        background: var(--bg-dark);
+        border: 1px solid var(--border-color);
+        color: var(--text-color);
+    }
+
+    .status-badge.enabled {
+        background: rgba(16, 185, 129, 0.2);
+        color: #34d399;
+    }
+
+    .status-badge.disabled-sso {
+        background: rgba(100, 116, 139, 0.2);
+        color: #94a3b8;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(5px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<nav class="navbar" id="navbar"></nav>
+
+<main class="container">
+    <div class="admin-dashboard-container">
+
+        <!-- Sidebar Navigation -->
+        <aside class="admin-sidebar">
+            <h2
+                style="font-size: 0.875rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 1rem; letter-spacing: 0.05em; padding-left: 0.5rem;">
+                Tenant Admin</h2>
+            <ul class="admin-nav-list">
+                <li>
+                    <a href="#overview" class="admin-nav-link active" data-target="overview-section">
+                        Overview
+                    </a>
+                </li>
+                <li>
+                    <a href="#analytics" class="admin-nav-link" data-target="analytics-section"
+                        onclick="window.tenantAdminApp && window.tenantAdminApp.loadAnalytics()">
+                        Analytics
+                    </a>
+                </li>
+                <li>
+                    <a href="#users" class="admin-nav-link" data-target="users-section">
+                        Users
+                    </a>
+                </li>
+                <li>
+                    <a href="#classes-admin" class="admin-nav-link" data-target="classes-admin-section"
+                        onclick="window.tenantAdminApp && window.tenantAdminApp.loadAllClasses()">
+                        Classes
+                    </a>
+                </li>
+                <li>
+                    <a href="#sso-config" class="admin-nav-link" data-target="sso-config-section"
+                        onclick="window.tenantAdminApp && window.tenantAdminApp.loadSSOProviders()">
+                        SSO Config
+                    </a>
+                </li>
+                <li>
+                    <a href="#approvals" class="admin-nav-link" data-target="approvals-section"
+                        onclick="window.tenantAdminApp && window.tenantAdminApp.loadPendingApprovals()">
+                        Pending Approvals
+                        <span id="approvals-badge" style="display:none; background:#ef4444; color:#fff;
+                            font-size:0.7rem; font-weight:700; padding:1px 6px; border-radius:9999px;
+                            margin-left:auto;">0</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#audit" class="admin-nav-link" data-target="audit-section"
+                        onclick="window.tenantAdminApp && window.tenantAdminApp.loadAuditLog()">
+                        Audit Log
+                    </a>
+                </li>
+            </ul>
+        </aside>
+
+        <!-- Main Content Area -->
+        <div class="admin-content">
+
+            <!-- Section: Overview -->
+            <section id="overview-section" class="admin-section active">
+                <div class="dashboard-header">
+                    <h1>Tenant Overview</h1>
+                    <p>Metrics and activity for your organization.</p>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>Total Users</h3>
+                        <div class="stat-value primary" id="stat-total-users">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Active (30d)</h3>
+                        <div class="stat-value success" id="stat-active-30d">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Total Classes</h3>
+                        <div class="stat-value purple" id="stat-total-classes">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>SSO Providers</h3>
+                        <div class="stat-value" id="stat-sso-providers">0</div>
+                    </div>
+                    <div class="stat-card" style="cursor:pointer; border-left:4px solid #ef4444;"
+                        onclick="document.querySelector('[data-target=approvals-section]').click(); window.tenantAdminApp && window.tenantAdminApp.loadPendingApprovals();">
+                        <h3 style="color:#ef4444;">Pending Approvals</h3>
+                        <div class="stat-value" style="color:#ef4444;" id="stat-pending-approvals">0</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Analytics -->
+            <section id="analytics-section" class="admin-section">
+                <div class="dashboard-header">
+                    <h1>Tenant Analytics</h1>
+                    <p>Usage metrics, growth trends, and content statistics for your organization.</p>
+                </div>
+
+                <div id="analytics-stats-grid" class="stats-grid" style="margin-bottom:2rem;">
+                    <div class="stat-card"><h3>Total Users</h3><div class="stat-value primary" id="an-total-users">—</div></div>
+                    <div class="stat-card"><h3>New (7d)</h3><div class="stat-value success" id="an-new-7d">—</div></div>
+                    <div class="stat-card"><h3>New (30d)</h3><div class="stat-value success" id="an-new-30d">—</div></div>
+                    <div class="stat-card"><h3>Active (7d)</h3><div class="stat-value purple" id="an-active-7d">—</div></div>
+                    <div class="stat-card"><h3>Active (30d)</h3><div class="stat-value purple" id="an-active-30d">—</div></div>
+                </div>
+
+                <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:1.5rem; margin-bottom:2rem;">
+                    <div class="stat-card"><h3>Classes</h3><div class="stat-value" id="an-classes">—</div></div>
+                    <div class="stat-card"><h3>Chapters</h3><div class="stat-value" id="an-chapters">—</div></div>
+                    <div class="stat-card"><h3>Exercises</h3><div class="stat-value" id="an-exercises">—</div></div>
+                    <div class="stat-card"><h3>Completions</h3><div class="stat-value success" id="an-completions">—</div></div>
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; flex-wrap:wrap;">
+                    <div class="table-container" style="padding:1.5rem;">
+                        <h3 style="margin:0 0 1rem;font-size:1rem;">Users by Role</h3>
+                        <div id="an-roles" style="display:flex;flex-direction:column;gap:0.5rem;"></div>
+                    </div>
+                    <div class="table-container" style="padding:1.5rem;">
+                        <h3 style="margin:0 0 1rem;font-size:1rem;">Top Actions (7d)</h3>
+                        <div id="an-actions" style="display:flex;flex-direction:column;gap:0.5rem;"></div>
+                    </div>
+                </div>
+
+                <div style="margin-top:1.5rem; text-align:right;">
+                    <button class="btn btn-secondary" onclick="window.tenantAdminApp && window.tenantAdminApp.loadAnalytics()">Refresh</button>
+                </div>
+            </section>
+
+            <!-- Section: Users -->
+            <section id="users-section" class="admin-section">
+                <div class="dashboard-header">
+                    <h1>Users</h1>
+                    <p>Search and manage users in your organization.</p>
+                </div>
+
+                <!-- Role distribution mini-cards -->
+                <div id="role-distribution-grid"
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+                    <div class="stat-card"
+                        style="padding: 1.25rem; border-left: 4px solid #3b82f6;">
+                        <h3 style="font-size: 0.85rem; color: var(--text-muted); margin: 0 0 0.5rem 0; text-transform: uppercase;">Tenant Admins</h3>
+                        <div style="font-size: 1.75rem; font-weight: 700; color: #3b82f6; line-height: 1;" id="dist-tenant-admin">-</div>
+                    </div>
+                    <div class="stat-card"
+                        style="padding: 1.25rem; border-left: 4px solid #8b5cf6;">
+                        <h3 style="font-size: 0.85rem; color: var(--text-muted); margin: 0 0 0.5rem 0; text-transform: uppercase;">Professors</h3>
+                        <div style="font-size: 1.75rem; font-weight: 700; color: #8b5cf6; line-height: 1;" id="dist-professor">-</div>
+                    </div>
+                    <div class="stat-card"
+                        style="padding: 1.25rem; border-left: 4px solid #10b981;">
+                        <h3 style="font-size: 0.85rem; color: var(--text-muted); margin: 0 0 0.5rem 0; text-transform: uppercase;">Students</h3>
+                        <div style="font-size: 1.75rem; font-weight: 700; color: #10b981; line-height: 1;" id="dist-student">-</div>
+                    </div>
+                </div>
+
+                <!-- Filters -->
+                <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 0.75rem; border: 1px solid var(--border-color);">
+                    <input type="text" id="user-search-input" placeholder="Search name or email…"
+                        class="form-control"
+                        style="flex: 2; min-width: 250px; padding: 0.75rem 1rem; border-radius: 0.5rem; background: var(--bg-dark); border: 1px solid var(--border-color); color: var(--text-color);">
+
+                    <select id="user-filter-role" class="form-control"
+                        style="flex: 1; min-width: 150px; padding: 0.75rem 1rem; border-radius: 0.5rem; background: var(--bg-dark); border: 1px solid var(--border-color); color: var(--text-color);">
+                        <option value="">All Roles</option>
+                        <option value="student">Student</option>
+                        <option value="professor">Professor</option>
+                        <option value="tenant_admin">Tenant Admin</option>
+                    </select>
+
+                    <select id="user-filter-status" class="form-control"
+                        style="flex: 1; min-width: 150px; padding: 0.75rem 1rem; border-radius: 0.5rem; background: var(--bg-dark); border: 1px solid var(--border-color); color: var(--text-color);">
+                        <option value="">All Statuses</option>
+                        <option value="active">Active</option>
+                        <option value="disabled">Disabled</option>
+                        <option value="pending_approval">Pending Approval</option>
+                    </select>
+
+                    <button class="btn btn-primary" style="white-space: nowrap;"
+                        onclick="window.tenantAdminApp.loadUsers()">Search</button>
+                    <button class="btn btn-secondary" style="white-space: nowrap;"
+                        onclick="document.getElementById('user-search-input').value = ''; document.getElementById('user-filter-role').value = ''; document.getElementById('user-filter-status').value = ''; window.tenantAdminApp.loadUsers(1);">Clear</button>
+                </div>
+
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th style="text-align: right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-table-body">
+                            <tr>
+                                <td colspan="4" style="text-align: center; color: var(--text-muted);">Loading users…</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="users-pagination" style="display: flex; justify-content: center; gap: 1rem; margin-top: 2rem;"></div>
+            </section>
+
+            <!-- Section: Classes Admin -->
+            <section id="classes-admin-section" class="admin-section">
+                <div class="dashboard-header" style="display:flex;justify-content:space-between;align-items:flex-end;">
+                    <div>
+                        <h1>Classes</h1>
+                        <p>View, transfer ownership, and delete classes in your organization.</p>
+                    </div>
+                </div>
+
+                <div style="display:flex;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap;">
+                    <input type="text" id="class-admin-search" placeholder="Search class or professor…"
+                        class="form-control"
+                        style="flex:2;min-width:220px;padding:0.75rem 1rem;border-radius:0.5rem;background:var(--bg-dark);border:1px solid var(--border-color);color:var(--text-color);">
+                    <button class="btn btn-primary" style="white-space:nowrap;"
+                        onclick="window.tenantAdminApp && window.tenantAdminApp.loadAllClasses()">Search</button>
+                </div>
+
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Class</th>
+                                <th>Professor</th>
+                                <th>Students</th>
+                                <th>Chapters</th>
+                                <th style="text-align:right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="classes-admin-table-body">
+                            <tr><td colspan="5" style="text-align:center;color:var(--text-muted);">Click "Classes" to load.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div id="classes-admin-pagination" style="display:flex;justify-content:center;gap:1rem;margin-top:1.5rem;"></div>
+            </section>
+
+            <!-- Section: SSO Config -->
+            <section id="sso-config-section" class="admin-section">
+                <div class="dashboard-header" style="display:flex;justify-content:space-between;align-items:flex-end;">
+                    <div>
+                        <h1>SSO Configuration</h1>
+                        <p>Manage Single Sign-On providers for your organization.</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="window.tenantAdminApp && window.tenantAdminApp.showSSOProviderModal()">
+                        Add Provider
+                    </button>
+                </div>
+
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Discovery URL</th>
+                                <th>Status</th>
+                                <th style="text-align:right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sso-providers-table-body">
+                            <tr><td colspan="5" style="text-align:center;color:var(--text-muted);">Click "SSO Config" to load.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Section: Pending Approvals -->
+            <section id="approvals-section" class="admin-section">
+                <div class="dashboard-header">
+                    <h1>Pending Account Approvals</h1>
+                    <p>New accounts in your organization awaiting approval.</p>
+                </div>
+
+                <div id="approvals-empty"
+                    style="display:none; text-align:center; padding:3rem; background:var(--bg-card);
+                           border:1px solid var(--border-color); border-radius:0.75rem; color:var(--text-muted);">
+                    <p style="font-size:1.1rem;">No pending approvals.</p>
+                </div>
+
+                <div class="table-container" id="approvals-table-wrapper">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Applicant</th>
+                                <th>Role</th>
+                                <th>Requested</th>
+                                <th style="text-align:right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="approvals-table-body">
+                            <tr>
+                                <td colspan="4" style="text-align:center; color:var(--text-muted);">
+                                    Click "Pending Approvals" to load.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Section: Audit Log -->
+            <section id="audit-section" class="admin-section">
+                <div class="dashboard-header">
+                    <h1>Audit Log</h1>
+                    <p>Event history for all users in your organization.</p>
+                </div>
+
+                <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-bottom:1.5rem;align-items:flex-end;">
+                    <div>
+                        <label style="display:block;font-size:0.8rem;color:var(--text-muted);margin-bottom:0.25rem;">Action</label>
+                        <select id="audit-action-filter" style="padding:0.5rem;border:1px solid var(--border-color);border-radius:0.375rem;background:var(--bg-card);color:var(--text-color);">
+                            <option value="">All Actions</option>
+                            <option>CREATE_USER</option><option>RESET_PASSWORD</option>
+                            <option>UPDATE_PROFILE</option><option>UPDATE_PASSWORD</option><option>DELETE_USER</option>
+                            <option>CREATE_CLASS</option><option>DELETE_CLASS</option><option>ENROLL_CLASS</option>
+                            <option>CREATE_CHAPTER</option><option>DELETE_CHAPTER</option><option>IMPORT_CHAPTER</option>
+                            <option>CREATE_EXERCISE</option><option>DELETE_EXERCISE</option><option>EXERCISE_SUBMISSION</option>
+                            <option>IMPERSONATE_USER</option><option>DISABLE_USER</option><option>ENABLE_USER</option>
+                            <option>UPDATE_USER_ROLE</option><option>FORCE_PASSWORD_RESET</option><option>TRANSFER_CLASS</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:0.8rem;color:var(--text-muted);margin-bottom:0.25rem;">From</label>
+                        <input type="date" id="audit-from" style="padding:0.5rem;border:1px solid var(--border-color);border-radius:0.375rem;background:var(--bg-card);color:var(--text-color);" />
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:0.8rem;color:var(--text-muted);margin-bottom:0.25rem;">To</label>
+                        <input type="date" id="audit-to" style="padding:0.5rem;border:1px solid var(--border-color);border-radius:0.375rem;background:var(--bg-card);color:var(--text-color);" />
+                    </div>
+                    <button class="btn btn-secondary" onclick="window.tenantAdminApp && window.tenantAdminApp.loadAuditLog(1)">Apply</button>
+                </div>
+
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>When</th>
+                                <th>Action</th>
+                                <th>Actor</th>
+                                <th>Resource</th>
+                            </tr>
+                        </thead>
+                        <tbody id="audit-table-body">
+                            <tr><td colspan="4" style="text-align:center;color:var(--text-muted);">Click "Audit Log" to load entries.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div id="audit-pagination" style="margin-top:1rem;display:flex;gap:0.5rem;align-items:center;"></div>
+            </section>
+
+        </div>
+    </div>
+</main>
+
+<!-- SSO Provider Modal -->
+<div id="sso-provider-modal" class="modal" style="display:none;">
+    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="sso-modal-title" style="max-width:560px;">
+        <div class="modal-header">
+            <h2 id="sso-modal-title">SSO Provider</h2>
+            <button class="modal-close" onclick="window.tenantAdminApp && window.tenantAdminApp.closeSSOProviderModal()" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="sso-provider-id" value="">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                <div style="grid-column:1/-1;">
+                    <label style="display:block;font-size:0.8rem;color:var(--text-muted);margin-bottom:0.25rem;">Provider Name *</label>
+                    <input id="sso-provider-name" type="text" placeholder="e.g. Hult Google Workspace"
+                        style="width:100%;padding:0.6rem;border:1px solid var(--border-color);border-radius:0.375rem;background:var(--bg-dark);color:var(--text-color);">
+                </div>
+                <div>
+                    <label style="display:block;font-size:0.8rem;color:var(--text-muted);margin-bottom:0.25rem;">Provider Type *</label>
+                    <select id="sso-provider-type"
+                        style="width:100%;padding:0.6rem;border:1px solid var(--border-color);border-radius:0.375rem;background:var(--bg-dark);color:var(--text-color);">
+                        <option value="oidc">Generic OIDC</option>
+                        <option value="google">Google</option>
+                        <option value="microsoft">Microsoft</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display:block;font-size:0.8rem;color:var(--text-muted);margin-bottom:0.25rem;">Client ID *</label>
+                    <input id="sso-client-id" type="text" placeholder="OAuth2 Client ID"
+                        style="width:100%;padding:0.6rem;border:1px solid var(--border-color);border-radius:0.375rem;background:var(--bg-dark);color:var(--text-color);">
+                </div>
+                <div>
+                    <label style="display:block;font-size:0.8rem;color:var(--text-muted);margin-bottom:0.25rem;">Client Secret *</label>
+                    <input id="sso-client-secret" type="password" placeholder="Leave blank to keep existing"
+                        style="width:100%;padding:0.6rem;border:1px solid var(--border-color);border-radius:0.375rem;background:var(--bg-dark);color:var(--text-color);">
+                </div>
+                <div style="grid-column:1/-1;">
+                    <label style="display:block;font-size:0.8rem;color:var(--text-muted);margin-bottom:0.25rem;">Discovery URL *</label>
+                    <input id="sso-discovery-url" type="url" placeholder="https://accounts.google.com/.well-known/openid-configuration"
+                        style="width:100%;padding:0.6rem;border:1px solid var(--border-color);border-radius:0.375rem;background:var(--bg-dark);color:var(--text-color);">
+                </div>
+                <div style="grid-column:1/-1;">
+                    <label style="display:block;font-size:0.8rem;color:var(--text-muted);margin-bottom:0.25rem;">Allowed Domains (comma-separated, optional)</label>
+                    <input id="sso-allowed-domains" type="text" placeholder="hult.edu, student.hult.edu"
+                        style="width:100%;padding:0.6rem;border:1px solid var(--border-color);border-radius:0.375rem;background:var(--bg-dark);color:var(--text-color);">
+                </div>
+                <div>
+                    <label style="display:block;font-size:0.8rem;color:var(--text-muted);margin-bottom:0.25rem;">Default Role</label>
+                    <select id="sso-default-role"
+                        style="width:100%;padding:0.6rem;border:1px solid var(--border-color);border-radius:0.375rem;background:var(--bg-dark);color:var(--text-color);">
+                        <option value="student">Student</option>
+                        <option value="professor">Professor</option>
+                        <option value="tenant_admin">Tenant Admin</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display:block;font-size:0.8rem;color:var(--text-muted);margin-bottom:0.25rem;">Role Mapping Attribute (optional)</label>
+                    <input id="sso-role-attr" type="text" placeholder="e.g. groups"
+                        style="width:100%;padding:0.6rem;border:1px solid var(--border-color);border-radius:0.375rem;background:var(--bg-dark);color:var(--text-color);">
+                </div>
+            </div>
+            <div id="sso-modal-error" class="error-message" style="display:none;margin-top:1rem;"></div>
+            <div style="display:flex;gap:1rem;justify-content:flex-end;margin-top:1.5rem;">
+                <button class="btn btn-secondary" onclick="window.tenantAdminApp && window.tenantAdminApp.closeSSOProviderModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="window.tenantAdminApp && window.tenantAdminApp.saveSSOProvider()">Save Provider</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- User Detail Modal -->
+<div id="user-detail-modal" class="modal" style="display:none;">
+    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="user-modal-title" style="max-width:480px;">
+        <div class="modal-header">
+            <h2 id="user-modal-title">User Actions</h2>
+            <button class="modal-close" onclick="window.tenantAdminApp && window.tenantAdminApp.closeUserModal()" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p id="user-modal-name" style="font-weight:600;font-size:1.1rem;margin-bottom:0.25rem;"></p>
+            <p id="user-modal-email" style="color:var(--text-muted);margin-bottom:1.5rem;font-size:0.9rem;"></p>
+
+            <div style="display:flex;flex-direction:column;gap:0.75rem;">
+                <div style="display:flex;align-items:center;gap:0.75rem;">
+                    <select id="user-modal-role-select"
+                        style="flex:1;padding:0.5rem;border:1px solid var(--border-color);border-radius:0.375rem;background:var(--bg-dark);color:var(--text-color);">
+                        <option value="student">Student</option>
+                        <option value="professor">Professor</option>
+                        <option value="tenant_admin">Tenant Admin</option>
+                    </select>
+                    <button class="btn btn-sm btn-secondary"
+                        onclick="window.tenantAdminApp && window.tenantAdminApp.changeRole()">Change Role</button>
+                </div>
+
+                <hr style="border-color:var(--border-color);opacity:0.4;">
+
+                <button class="btn btn-secondary"
+                    onclick="window.tenantAdminApp && window.tenantAdminApp.toggleStatus()">
+                    <span id="user-modal-status-btn-label">Toggle Status</span>
+                </button>
+                <button class="btn btn-secondary"
+                    onclick="window.tenantAdminApp && window.tenantAdminApp.forcePasswordReset()">
+                    Force Password Reset
+                </button>
+                <button class="btn btn-secondary"
+                    onclick="window.tenantAdminApp && window.tenantAdminApp.impersonateUser()">
+                    Impersonate
+                </button>
+                <button class="btn btn-secondary"
+                    onclick="window.tenantAdminApp && window.tenantAdminApp.exportUser()">
+                    Export Data (GDPR)
+                </button>
+                <hr style="border-color:var(--border-color);opacity:0.4;">
+                <button class="btn btn-danger"
+                    onclick="window.tenantAdminApp && window.tenantAdminApp.deleteUser()">
+                    Delete User
+                </button>
+            </div>
+            <div id="user-modal-error" class="error-message" style="display:none;margin-top:1rem;"></div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<!-- JS load order: api-helper.js (head) → auth.js → navigation.js → tenant-admin.js -->
+<script src="js/auth.js?v=2.6"></script>
+<script src="js/navigation.js?v=2.6"></script>
+<script src="js/tenant-admin.js?v=1.0"></script>
+{% endblock %}

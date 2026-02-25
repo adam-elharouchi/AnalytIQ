@@ -173,12 +173,3 @@ These were also shipped but are mostly invisible — they just make the platform
 | Anything else | Student |
 
 Superadmins can manually change any user's role via the dashboard at any time.
-
----
-
-## Checklist: Things You May Need to Do
-
-- [ ] Sign up (or convert an existing account) with an `@myanalytiq.org` email to get superadmin access
-- [ ] Run `python scripts/generate_lti_keys.py` and add `LTI_PRIVATE_KEY` / `LTI_PUBLIC_KEY` env vars if you plan to use LMS integration
-- [ ] On Render, trigger a redeploy so the migration runner creates the new DB tables (`tenants`, `audit_log`, `announcements`, `platform_config`, `ip_blocklist`, `lti_*`)
-- [ ] Visit `/api/superadmin/analytics` or the superadmin dashboard to confirm it works after deploy
