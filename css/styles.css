@@ -4703,3 +4703,457 @@ body.hero-bg-active .nav-links a.active {
 /* ═══════════════════════════════════════════════════════════════
    END LOCAL DEV ONLY
    ═══════════════════════════════════════════════════════════════ */
+
+/* ================================================================
+   DESIGN SYSTEM v3 — Workspace Identity Components
+   Shared across Professor Dashboard, My Classes, Super Admin
+   Matches home page design language and aesthetic
+   ================================================================ */
+
+/* ── Workspace Header Bento (split 8/4, shared by portal pages) ── */
+.workspace-header-bento {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+
+.workspace-header-main {
+  grid-column: span 8;
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  padding: 2rem 2.5rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.workspace-header-action {
+  grid-column: span 4;
+  background: rgba(37, 105, 244, 0.08);
+  border: 1px solid rgba(37, 105, 244, 0.25);
+  border-radius: 1rem;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  transition: all 0.25s ease;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.workspace-header-action:hover {
+  background: rgba(37, 105, 244, 0.15);
+  border-color: rgba(37, 105, 244, 0.5);
+  box-shadow:
+    0 0 0 1px var(--color-primary),
+    0 0 14px 3px rgba(37, 105, 244, 0.3);
+  transform: translateY(-2px);
+}
+
+/* ── Status indicator dot + label ── */
+.workspace-status-line {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.workspace-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-success);
+  box-shadow: 0 0 8px var(--color-success);
+  flex-shrink: 0;
+}
+
+.workspace-status-dot.warning {
+  background: var(--color-warning);
+  box-shadow: 0 0 8px var(--color-warning);
+}
+
+.workspace-status-dot.error {
+  background: var(--color-error);
+  box-shadow: 0 0 8px var(--color-error);
+}
+
+.workspace-status-label {
+  font-family: var(--font-mono);
+  color: var(--color-success);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.workspace-status-label.warning { color: var(--color-warning); }
+.workspace-status-label.error { color: var(--color-error); }
+
+/* ── Workspace header typography ── */
+.workspace-header-title {
+  margin: 0 0 0.35rem 0;
+  color: #f8fafc;
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.workspace-header-desc {
+  color: #94a3b8;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  margin: 0;
+  max-width: 80%;
+}
+
+/* ── System health status items (for admin header right panel) ── */
+.system-status-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  width: 100%;
+}
+
+.system-status-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.45rem 0.75rem;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 0.45rem;
+}
+
+.system-status-item-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.system-status-item-dot.healthy {
+  background: #10b981;
+  box-shadow: 0 0 6px #10b981;
+}
+
+.system-status-item-dot.degraded {
+  background: var(--color-warning);
+  box-shadow: 0 0 6px var(--color-warning);
+}
+
+.system-status-item-dot.down {
+  background: var(--color-error);
+  box-shadow: 0 0 6px var(--color-error);
+}
+
+.system-status-item-name {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: #e2e8f0;
+  flex: 1;
+}
+
+.system-status-item-value {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: #10b981;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.system-status-item-value.degraded { color: var(--color-warning); }
+.system-status-item-value.down { color: var(--color-error); }
+
+/* ── Breadcrumb / terminal path indicator ── */
+.breadcrumb-mono {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.breadcrumb-mono .bm-prompt { color: var(--color-success); }
+.breadcrumb-mono .bm-path { color: var(--color-primary); }
+.breadcrumb-mono .bm-sep { color: #334155; }
+.breadcrumb-mono .bm-active { color: #94a3b8; }
+.breadcrumb-mono .bm-count { color: #475569; }
+
+/* ── Terminal-style chip tab navigation ── */
+.terminal-tab-nav {
+  display: flex;
+  gap: 0.35rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 1.75rem;
+  padding-bottom: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.terminal-tab-nav::-webkit-scrollbar { display: none; }
+
+.terminal-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.85rem;
+  background: transparent;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 0.375rem 0.375rem 0 0;
+  color: #64748b;
+  font-size: 0.85rem;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: all 0.2s;
+  margin-bottom: -1px;
+  position: relative;
+}
+
+.terminal-tab-btn:hover {
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.terminal-tab-btn.active {
+  color: var(--color-primary);
+  background: rgba(37, 105, 244, 0.1);
+  border-color: rgba(37, 105, 244, 0.3);
+  border-bottom-color: rgba(30, 41, 59, 1);
+  box-shadow: 0 0 10px rgba(37, 105, 244, 0.2);
+}
+
+.terminal-tab-num {
+  font-size: 0.68rem;
+  color: #475569;
+  letter-spacing: 0.02em;
+}
+
+.terminal-tab-btn.active .terminal-tab-num {
+  color: rgba(37, 105, 244, 0.65);
+}
+
+/* ── Neon blue hover (apply .neon-hover to any card) ── */
+.neon-hover {
+  transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease !important;
+}
+
+.neon-hover:hover {
+  transform: translateY(-4px) !important;
+  border-color: var(--color-primary) !important;
+  box-shadow:
+    0 0 0 1px var(--color-primary),
+    0 0 14px 3px rgba(37, 105, 244, 0.4),
+    0 0 36px 8px rgba(37, 105, 244, 0.15) !important;
+}
+
+/* ── Admin table with accent hover ── */
+.admin-table-accent tbody tr {
+  transition: background 0.15s, border-left 0.15s;
+  border-left: 3px solid transparent;
+}
+
+.admin-table-accent tbody tr:hover {
+  background: rgba(37, 105, 244, 0.04) !important;
+  border-left-color: var(--color-primary) !important;
+}
+
+.admin-table-accent td.mono-cell {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: #94a3b8;
+}
+
+/* ── Terminal loading animation ── */
+.terminal-loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  gap: 1rem;
+}
+
+.terminal-loading-dots {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.terminal-loading-dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  animation: terminal-dot-pulse 1.4s ease-in-out infinite;
+}
+
+.terminal-loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+.terminal-loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes terminal-dot-pulse {
+  0%, 60%, 100% { opacity: 0.2; transform: scale(0.8); }
+  30% { opacity: 1; transform: scale(1); }
+}
+
+.terminal-loading-text {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+/* ── Student join drawer (dark, right-side, matching professor) ── */
+.student-drawer-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.student-drawer-overlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.student-join-drawer {
+  position: fixed;
+  top: 0; right: 0; bottom: 0;
+  width: 100%;
+  max-width: 480px;
+  background: var(--color-dark);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: -20px 0 60px rgba(0, 0, 0, 0.5);
+  z-index: 1001;
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+.student-join-drawer.visible {
+  transform: translateX(0);
+}
+
+.student-join-drawer .drawer-header {
+  padding: 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.student-join-drawer .drawer-header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #f8fafc;
+  font-family: var(--font-mono);
+}
+
+.student-join-drawer .drawer-body {
+  padding: 2rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.student-join-drawer .drawer-body label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #e2e8f0;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.student-join-drawer .drawer-body input {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 1rem;
+  background: rgba(0, 0, 0, 0.25) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #f8fafc !important;
+  font-family: var(--font-mono);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.student-join-drawer .drawer-body input:focus {
+  border-color: var(--color-primary) !important;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(37, 105, 244, 0.2);
+}
+
+.student-join-drawer .drawer-hint {
+  margin-top: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: #64748b;
+  line-height: 1.6;
+}
+
+/* ── Terminal CTA block (action panel text style) ── */
+.terminal-cta-block {
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+  color: #94a3b8;
+  line-height: 2;
+  text-align: left;
+  width: 100%;
+}
+
+.terminal-cta-block .tc-prompt { color: var(--color-success); }
+.terminal-cta-block .tc-path { color: var(--color-primary); }
+.terminal-cta-block .tc-cmd { color: #f8fafc; }
+.terminal-cta-block .tc-cursor {
+  display: inline-block;
+  width: 9px;
+  height: 1em;
+  background: rgba(255, 255, 255, 0.75);
+  animation: blink 1s step-end infinite;
+  vertical-align: middle;
+  margin-left: 2px;
+}
+
+/* ── Workspace header responsive ── */
+@media (max-width: 900px) {
+  .workspace-header-bento {
+    grid-template-columns: 1fr;
+  }
+  .workspace-header-main,
+  .workspace-header-action {
+    grid-column: span 1;
+  }
+  .workspace-header-title { font-size: 1.75rem; }
+  .workspace-header-desc { max-width: 100%; }
+  .workspace-header-action { min-height: 120px; }
+}
+
+@media (max-width: 640px) {
+  .terminal-tab-nav { gap: 0.2rem; }
+  .terminal-tab-btn { padding: 0.35rem 0.55rem; font-size: 0.78rem; }
+  .terminal-tab-num { display: none; }
+}
+
+/* ================================================================
+   END DESIGN SYSTEM v3
+   ================================================================ */

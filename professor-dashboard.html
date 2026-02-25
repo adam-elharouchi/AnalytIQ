@@ -20,112 +20,343 @@
 <body>
   <nav class="navbar" id="navbar"></nav>
 
-  <main class="container">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-      <div>
-        <h1>Professor Dashboard</h1>
-        <p class="subtitle">Manage your classes, upload chapters, and track student progress</p>
-      </div>
-      <button class="btn btn-primary" onclick="showCreateClassModal()"
-        style="display: flex; align-items: center; gap: 0.5rem;">
-        <span>➕</span>
-        <span>Create New Class</span>
-      </button>
-    </div>
+  <style>
+    /* Professor Dashboard Specific Styles - Port to styles.css later if needed */
+    .creator-header-bento {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 1.5rem;
+      margin-bottom: 3rem;
+    }
 
-    <!-- Loading State -->
-    <div id="loadingState" style="text-align: center; padding: 3rem;">
-      <p style="color: #64748b;">Loading classes...</p>
-    </div>
+    .creator-header-main {
+      grid-column: span 8;
+      background: rgba(30, 41, 59, 0.6);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 1rem;
+      padding: 2.5rem;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
 
-    <!-- Empty State -->
-    <div id="emptyState"
-      style="display: none; text-align: center; padding: 3rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 0.5rem;">
-      <div style="font-size: 3rem; margin-bottom: 1rem;">📚</div>
-      <h2 style="color: var(--text-primary); margin-bottom: 0.5rem;">No Classes Yet</h2>
-      <p style="color: #64748b; margin-bottom: 1.5rem;">Create your first class to get started</p>
-      <button class="btn btn-primary" onclick="showCreateClassModal()">Create Your First Class</button>
-    </div>
+    .creator-header-action {
+      grid-column: span 4;
+      background: rgba(37, 105, 244, 0.1);
+      border: 1px solid rgba(37, 105, 244, 0.3);
+      border-radius: 1rem;
+      padding: 2.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
 
-    <!-- Classes Grid -->
-    <div id="classesGrid"
-      style="display: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem;">
-      <!-- Classes will be dynamically inserted here -->
-    </div>
+    .creator-header-action:hover {
+      background: rgba(37, 105, 244, 0.2);
+      border-color: rgba(37, 105, 244, 0.5);
+      transform: translateY(-4px);
+    }
 
-    <!-- Create Class Modal -->
-    <div id="createClassModal"
-      style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center;">
-      <div role="dialog" aria-modal="true" aria-labelledby="createClassModalTitle"
-        style="background: var(--bg-card); border-radius: 0.5rem; padding: 2rem; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; border: 1px solid var(--border-color);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-          <h2 id="createClassModalTitle" style="margin: 0;">Create New Class</h2>
-          <button onclick="hideCreateClassModal()" aria-label="Close dialog"
-            style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b;">&times;</button>
+    .creator-header-action svg {
+      margin-bottom: 1rem;
+      color: var(--color-primary-light);
+    }
+
+    /* Terminal Empty State */
+    .terminal-empty-state {
+      background: var(--color-dark);
+      border-radius: 1rem;
+      padding: 3rem;
+      position: relative;
+      overflow: hidden;
+      color: var(--color-white);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      font-family: var(--font-mono);
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .terminal-empty-state::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 32px;
+      background: rgba(255, 255, 255, 0.05);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .terminal-empty-state-dots {
+      position: absolute;
+      top: 10px;
+      left: 1rem;
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .terminal-empty-state-dot {
+      height: 12px;
+      width: 12px;
+      border-radius: 50%;
+    }
+
+    .dot-red {
+      background: #ef4444;
+    }
+
+    .dot-yellow {
+      background: #eab308;
+    }
+
+    .dot-green {
+      background: #22c55e;
+    }
+
+    /* Floating Side Drawer (Modal Replacement) */
+    .drawer-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .drawer-overlay.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .floating-action-drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 100%;
+      max-width: 500px;
+      background: var(--color-dark);
+      border-left: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: -20px 0 60px rgba(0, 0, 0, 0.5);
+      z-index: 1001;
+      transform: translateX(100%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .floating-action-drawer.visible {
+      transform: translateX(0);
+    }
+
+    .drawer-header {
+      padding: 2rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    .drawer-header h2 {
+      margin: 0;
+      font-size: 1.25rem;
+      color: #f8fafc;
+      font-family: var(--font-mono);
+    }
+
+    .drawer-body {
+      padding: 2rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    /* Override input styles for drawer to match dark tech theme */
+    .drawer-body input,
+    .drawer-body textarea {
+      background: rgba(0, 0, 0, 0.2) !important;
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      color: #f8fafc !important;
+    }
+
+    .drawer-body input:focus,
+    .drawer-body textarea:focus {
+      border-color: var(--color-primary) !important;
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(37, 105, 244, 0.2);
+    }
+
+    .drawer-body label {
+      color: #e2e8f0;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+  </style>
+  </head>
+
+  <body>
+    <nav class="navbar" id="navbar"></nav>
+
+    <main class="container">
+      <!-- Creator Workspace Header -->
+      <div class="creator-header-bento">
+        <div class="creator-header-main">
+          <div>
+            <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem;">
+              <span
+                style="width: 8px; height: 8px; border-radius: 50%; background: var(--color-success); box-shadow: 0 0 8px var(--color-success);"></span>
+              <span
+                style="font-family: var(--font-mono); color: var(--color-success); font-size: 0.8rem; letter-spacing: 0.05em; text-transform: uppercase;">Creator
+                Workspace Active</span>
+            </div>
+            <h1 style="margin: 0 0 0.5rem 0; color: #f8fafc; font-size: 2.5rem; font-weight: 700;">Professor Dashboard
+            </h1>
+            <p style="color: #94a3b8; font-size: 1.1rem; line-height: 1.6; max-width: 80%;">Manage your active nodes,
+              upload learning modules, and monitor cluster engagement metrics.</p>
+          </div>
         </div>
 
+        <div class="creator-header-action" onclick="showCreateClassModal()">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="12" y1="8" x2="12" y2="16"></line>
+            <line x1="8" y1="12" x2="16" y2="12"></line>
+          </svg>
+          <h3 style="margin: 0 0 0.5rem 0; color: #f8fafc; font-family: var(--font-mono); font-size: 1.1rem;">Initialize
+            New Class</h3>
+          <p style="margin: 0; color: #94a3b8; font-size: 0.9rem;">Deploy a new learning environment</p>
+        </div>
+      </div>
+
+      <!-- Loading State (terminal style) -->
+      <div id="loadingState" class="terminal-loading-state">
+        <div class="terminal-loading-dots">
+          <span></span><span></span><span></span>
+        </div>
+        <p class="terminal-loading-text">Scanning class nodes<span style="animation: blink 1s step-end infinite; display: inline-block;">_</span></p>
+      </div>
+
+      <!-- Terminal Empty State -->
+      <div id="emptyState" class="terminal-empty-state" style="display: none;">
+        <div class="terminal-empty-state-dots">
+          <div class="terminal-empty-state-dot dot-red"></div>
+          <div class="terminal-empty-state-dot dot-yellow"></div>
+          <div class="terminal-empty-state-dot dot-green"></div>
+        </div>
+        <div style="margin-top: 1rem; color: #64748b;">
+          <p style="margin: 0 0 0.5rem 0;">Analytics Platform v2.0.4</p>
+          <p style="margin: 0 0 1.5rem 0;">Checking active class nodes...</p>
+        </div>
+        <div style="color: #ef4444; margin-bottom: 1.5rem;">
+          > ERROR: No active classes found in current workspace.
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span style="color: var(--color-primary);">~</span>
+          <span>$</span>
+          <button class="btn btn-primary" onclick="showCreateClassModal()"
+            style="margin-left: 0.5rem; font-family: var(--font-mono); display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(37, 105, 244, 0.2); border: 1px solid var(--color-primary); transition: all 0.2s;">
+            init new_class
+            <span
+              style="display: inline-block; width: 8px; height: 1.2em; background: rgba(255,255,255,0.7); animation: blink 1s step-end infinite; margin-left: 2px; vertical-align: middle;"></span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Classes Grid (Bento Style overrides via JS) -->
+      <div id="classesGrid" style="display: none; display: grid; grid-template-columns: repeat(12, 1fr); gap: 1.5rem;">
+        <!-- Classes will be dynamically inserted here by JS -->
+      </div>
+    </main>
+
+    <!-- Side Drawer Create Class Modal -->
+    <div class="drawer-overlay" id="drawerOverlay" onclick="hideCreateClassModal()"></div>
+    <div class="floating-action-drawer" id="createClassModal">
+      <div class="drawer-header">
+        <h2>Initialize Class</h2>
+        <button onclick="hideCreateClassModal()" aria-label="Close dialog"
+          style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b; transition: color 0.2s;">&times;</button>
+      </div>
+
+      <div class="drawer-body">
         <form id="createClassForm" onsubmit="handleCreateClass(event)">
           <div style="margin-bottom: 1.5rem;">
-            <label for="className"
-              style="display: block; margin-bottom: 0.5rem;font-weight: 500;">Class Name
-              *</label>
+            <label for="className" style="display: block; margin-bottom: 0.5rem;">Class Name *</label>
             <input type="text" id="className" required placeholder="e.g., Business Analytics 101"
-              style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;" />
+              style="width: 100%; padding: 0.75rem; border-radius: 0.375rem; font-size: 1rem;" />
           </div>
 
           <div style="margin-bottom: 1.5rem;">
-            <label for="classCode"
-              style="display: block; margin-bottom: 0.5rem;font-weight: 500;">Class Code/ID
-              *</label>
-            <input type="text" id="classCode" required placeholder="e.g., BA101, ANALYTICS2024"
-              pattern="[A-Za-z0-9\-_]{3,20}" title="3-20 characters (letters, numbers, hyphens, underscores only)"
-              style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;" />
-            <small style="display: block; margin-top: 0.25rem; color: #64748b; font-size: 0.875rem;">3-20 characters.
-              Students will use this code to enroll in your class.</small>
+            <label for="classCode" style="display: block; margin-bottom: 0.5rem;">Class Target ID *</label>
+            <input type="text" id="classCode" required placeholder="e.g., BA101" pattern="[A-Za-z0-9\-_]{3,20}"
+              title="3-20 characters (letters, numbers, hyphens, underscores only)"
+              style="width: 100%; padding: 0.75rem; border-radius: 0.375rem; font-size: 1rem; font-family: var(--font-mono);" />
+            <small
+              style="display: block; margin-top: 0.5rem; color: #64748b; font-size: 0.8rem; font-family: var(--font-mono);">
+              > Expected format: 3-20 chars [A-Z, 0-9, -, _]<br>
+              > Students will use this ID to bridge to your node.
+            </small>
           </div>
 
-          <div style="margin-bottom: 1.5rem;">
-            <label for="classDescription"
-              style="display: block; margin-bottom: 0.5rem;font-weight: 500;">Description</label>
-            <textarea id="classDescription" rows="4" placeholder="Optional: Add a description for your class..."
-              style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem; resize: vertical;"></textarea>
+          <div style="margin-bottom: 2rem;">
+            <label for="classDescription" style="display: block; margin-bottom: 0.5rem;">Node Description</label>
+            <textarea id="classDescription" rows="5" placeholder="Declare environment variables and syllabus goals..."
+              style="width: 100%; padding: 0.75rem; border-radius: 0.375rem; font-size: 0.95rem; resize: vertical; line-height: 1.5;"></textarea>
           </div>
 
-          <div id="createClassError" class="error-message" style="display: none; margin-bottom: 1rem;"></div>
+          <div id="createClassError" class="error-message"
+            style="display: none; margin-bottom: 1.5rem; background: rgba(220, 38, 38, 0.1); border: 1px solid rgba(220, 38, 38, 0.3); color: #f87171; padding: 1rem; border-radius: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;">
+          </div>
 
-          <div style="display: flex; gap: 1rem; justify-content: flex-end;">
-            <button type="button" class="btn btn-secondary" onclick="hideCreateClassModal()">Cancel</button>
-            <button type="submit" class="btn btn-primary">Create Class</button>
+          <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: auto;">
+            <button type="button" class="btn btn-secondary" onclick="hideCreateClassModal()"
+              style="background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #94a3b8;">Abort</button>
+            <button type="submit" class="btn btn-primary" style="font-family: var(--font-mono);">Compile &
+              Deploy</button>
           </div>
         </form>
       </div>
     </div>
-  </main>
 
-  <!-- JS load order: api-helper.js (head) → auth.js → navigation.js → professor-dashboard.js -->
-  <script src="js/auth.js"></script>
-  <script src="js/navigation.js"></script>
-  <script src="js/professor-dashboard.js"></script>
-  <script>
-    // Require authentication and professor role
-    document.addEventListener('DOMContentLoaded', function () {
-      const authManager = new AuthManager();
-      if (!authManager.requireAuth()) {
-        return; // Will redirect to login
-      }
+    <!-- JS load order: api-helper.js (head) → auth.js → navigation.js → professor-dashboard.js -->
+    <script src="js/auth.js"></script>
+    <script src="js/navigation.js"></script>
+    <script src="js/professor-dashboard.js"></script>
+    <script>
+      // Require authentication and professor role
+      document.addEventListener('DOMContentLoaded', function () {
+        const authManager = new AuthManager();
+        if (!authManager.requireAuth()) {
+          return; // Will redirect to login
+        }
 
-      // Check if user is a professor
-      const currentUser = authManager.getCurrentUser();
-      if (!currentUser || currentUser.role !== 'professor') {
-        alert('Access denied. This page is for professors only.');
-        window.location.href = 'index.html';
-        return;
-      }
+        // Check if user is a professor
+        const currentUser = authManager.getCurrentUser();
+        if (!currentUser || currentUser.role !== 'professor') {
+          alert('Access denied. This page is for professors only.');
+          window.location.href = 'index.html';
+          return;
+        }
 
-      // Load classes
-      loadClasses();
-    });
-  </script>
-</body>
+        // Load classes
+        loadClasses();
+      });
+    </script>
+  </body>
 
 </html>

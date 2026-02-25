@@ -63,31 +63,33 @@ class SuperAdminDashboard {
     }
 
     setupNavigation() {
-        const links = document.querySelectorAll('.admin-nav-link');
+        // Support both old .admin-nav-link and new .terminal-tab-btn
+        const links = document.querySelectorAll('.admin-nav-link, .terminal-tab-btn');
         const sections = document.querySelectorAll('.admin-section');
 
         links.forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
 
-                // Active states
+                // Active states — update whichever group the clicked element belongs to
                 links.forEach(l => l.classList.remove('active'));
                 e.currentTarget.classList.add('active');
 
                 // Show section
                 const targetId = e.currentTarget.getAttribute('data-target');
+                if (!targetId) return;
                 sections.forEach(s => {
                     s.style.display = s.id === targetId ? 'block' : 'none';
                 });
 
                 // Lazy-load data for sections that need it
                 switch (targetId) {
-                    case 'analytics-section':      this.loadAnalytics(); break;
-                    case 'classes-admin-section':  this.loadAllClasses(); break;
-                    case 'announcements-section':  this.loadAnnouncements(); break;
+                    case 'analytics-section':         this.loadAnalytics(); break;
+                    case 'classes-admin-section':     this.loadAllClasses(); break;
+                    case 'announcements-section':     this.loadAnnouncements(); break;
                     case 'platform-settings-section': this.loadPlatformSettings(); break;
-                    case 'audit-section':          this.loadAuditLog(1); break;
-                    case 'approvals-section':      this.loadPendingApprovals(true); break;
+                    case 'audit-section':             this.loadAuditLog(1); break;
+                    case 'approvals-section':         this.loadPendingApprovals(true); break;
                 }
             });
         });
@@ -192,6 +194,44 @@ class SuperAdminDashboard {
         document.getElementById('stat-total-tenants').textContent = tenants.length;
         document.getElementById('stat-total-users').textContent = totalUsers;
         document.getElementById('stat-total-classes').textContent = totalClasses;
+
+        // Populate header health status panel
+        this.refreshHeaderHealth();
+    }
+
+    // Update the header "Node Health" panel using the /api/health endpoint
+    async refreshHeaderHealth() {
+        const setDot = (id, status) => {
+            const dot = document.getElementById(`health-dot-${id}`);
+            const val = document.getElementById(`health-val-${id}`);
+            if (!dot || !val) return;
+            const healthy = status === true || status === 'ok' || status === 'healthy' || status === 'connected';
+            dot.className = `system-status-item-dot ${healthy ? 'healthy' : 'down'}`;
+            val.className = `system-status-item-value ${healthy ? '' : 'down'}`;
+            val.textContent = healthy ? 'operational' : 'degraded';
+        };
+
+        try {
+            const _base = window.API_BASE_URL || '/api';
+            const healthUrl = _base.startsWith('http')
+                ? `${_base}/health`
+                : `${window.location.protocol}//${window.location.host}${_base}/health`;
+            const res = await fetch(healthUrl);
+            if (!res.ok) throw new Error('Health check failed');
+            const data = await res.json();
+
+            // data.services: { database, redis, storage }
+            const svc = data.services || {};
+            setDot('postgres', svc.database);
+            setDot('redis', svc.redis);
+            setDot('storage', svc.storage);
+        } catch (_e) {
+            // Network failure — mark all as unknown/degraded quietly
+            ['postgres', 'redis', 'storage'].forEach(id => {
+                const val = document.getElementById(`health-val-${id}`);
+                if (val) val.textContent = 'unknown';
+            });
+        }
     }
 
     renderTenants(tenants) {
