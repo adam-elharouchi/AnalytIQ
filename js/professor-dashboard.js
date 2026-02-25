@@ -29,12 +29,22 @@ async function loadClasses() {
 
     loadingState.style.display = 'none';
 
+    const dot = document.getElementById('wsStatusDot');
+    const label = document.getElementById('wsStatusLabel');
+
     if (!data.classes || data.classes.length === 0) {
       emptyState.style.display = 'block';
       classesGrid.style.display = 'none';
+      const countLabel = document.getElementById('classCountLabel');
+      if (countLabel) countLabel.textContent = '· 0 classes';
+      if (dot) { dot.style.background = '#64748b'; dot.style.boxShadow = 'none'; }
+      if (label) { label.textContent = 'No Classes Yet'; label.style.color = '#64748b'; }
     } else {
       emptyState.style.display = 'none';
       classesGrid.style.display = 'grid';
+      const count = data.classes.length;
+      const countLabel = document.getElementById('classCountLabel');
+      if (countLabel) countLabel.textContent = `· ${count} class${count !== 1 ? 'es' : ''}`;
       renderClasses(data.classes);
     }
   } catch (error) {
@@ -100,42 +110,43 @@ function renderClasses(classes) {
           ? `<p style="color: #94a3b8; margin-bottom: ${isFeatured ? '1.5rem' : '1rem'}; line-height: 1.55; font-size: ${isFeatured ? '0.95rem' : '0.875rem'}; flex: 1;">${escapeHtml(classItem.description)}</p>`
           : '<div style="flex: 1;"></div>'}
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; margin-bottom: ${isFeatured ? '1.5rem' : '1rem'}; padding: 0.85rem; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.04); border-radius: 0.5rem;">
-          <div>
-            <div style="font-size: ${isFeatured ? '1.85rem' : '1.35rem'}; font-family: var(--font-mono); color: #f8fafc; font-weight: 700; line-height: 1;">${classItem.student_count || 0}</div>
-            <div style="font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 0.25rem;">Enrolled</div>
+        <div style="display: flex; margin-bottom: ${isFeatured ? '1.5rem' : '1rem'}; border: 1px solid rgba(255,255,255,0.06); border-radius: 0.5rem; overflow: hidden; background: rgba(0,0,0,0.15);">
+          <div style="flex: 1; text-align: center; padding: 0.75rem 0.5rem; border-right: 1px solid rgba(255,255,255,0.06);">
+            <div style="font-size: ${isFeatured ? '1.75rem' : '1.25rem'}; font-family: var(--font-mono); color: #f8fafc; font-weight: 700; line-height: 1;">${classItem.student_count || 0}</div>
+            <div style="font-size: 0.65rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 0.25rem;">Enrolled</div>
           </div>
-          <div>
-            <div style="font-size: ${isFeatured ? '1.85rem' : '1.35rem'}; font-family: var(--font-mono); color: #f8fafc; font-weight: 700; line-height: 1;">${classItem.chapter_count || 0}</div>
-            <div style="font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 0.25rem;">Modules</div>
+          <div style="flex: 1; text-align: center; padding: 0.75rem 0.5rem;">
+            <div style="font-size: ${isFeatured ? '1.75rem' : '1.25rem'}; font-family: var(--font-mono); color: #f8fafc; font-weight: 700; line-height: 1;">${classItem.chapter_count || 0}</div>
+            <div style="font-size: 0.65rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 0.25rem;">Modules</div>
           </div>
         </div>
 
         <div style="display: flex; gap: 0.5rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: ${isFeatured ? '1.25rem' : '0.85rem'};">
           <button
             class="btn btn-primary"
-            style="flex: 1; font-family: var(--font-mono); font-size: 0.82rem;"
+            style="flex: 1; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 0.4rem;"
             onclick="viewClass('${escapeHtml(classItem.class_id)}')"
           >
-            &gt; run class_manager
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="pointer-events:none;"><polyline points="9 18 15 12 9 6"/></svg>
+            Open Class
           </button>
           <button
             class="btn btn-secondary"
-            style="background: transparent; border-color: rgba(255,255,255,0.1); color: #94a3b8; font-family: var(--font-mono); font-size: 0.82rem; padding: 0.5rem 0.65rem; flex-shrink: 0;"
+            style="background: transparent; border-color: rgba(255,255,255,0.1); color: #94a3b8; font-size: 0.82rem; padding: 0.5rem 0.65rem; flex-shrink: 0;"
             onclick="copyClassCode('${escapeHtml(classItem.class_id)}')"
-            title="Copy Target ID"
+            title="Copy class code"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="pointer-events:none;">
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
             </svg>
           </button>
           <button
             class="btn btn-secondary"
             onclick="deleteClass('${escapeHtml(classItem.class_id)}', '${escapeHtml(classItem.name)}')"
-            title="Delete Node"
-            style="background: transparent; border-color: rgba(239,68,68,0.3); color: #ef4444; font-family: var(--font-mono); font-size: 0.82rem; flex-shrink: 0;"
+            title="Delete class"
+            style="background: transparent; border-color: rgba(239,68,68,0.3); color: #ef4444; font-size: 0.82rem; padding: 0.5rem 0.65rem; flex-shrink: 0;"
           >
-            rm -rf
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="pointer-events:none;"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
           </button>
         </div>
       </div>
