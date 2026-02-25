@@ -16,31 +16,21 @@
           <span class="workspace-status-label" id="wsStatusLabel">Learning Environment Active</span>
         </div>
         <h1 class="workspace-header-title">My Classes</h1>
-        <p class="workspace-header-desc">Access your enrolled learning workspaces, modules, and practice exercises.</p>
+        <p class="workspace-header-desc">Access your enrolled classes, modules, and practice exercises.</p>
       </div>
-      <div class="breadcrumb-mono" id="workspaceBreadcrumb" style="margin-top: 1.25rem; margin-bottom: 0;">
-        <span class="bm-prompt">➜</span>
-        <span class="bm-path">~</span>
-        <span class="bm-sep">/</span>
-        <span class="bm-active">classes</span>
-        <span class="bm-sep">/</span>
-        <span class="bm-active">enrolled</span>
-        <span class="bm-count" id="classCountLabel" style="margin-left: 0.75rem;">· loading...</span>
+      <div style="margin-top: 1rem; display: flex; align-items: center; gap: 0.5rem; font-family: var(--font-mono); font-size: 0.8rem; color: #475569;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        <span>enrolled</span>
+        <span id="classCountLabel" style="color: var(--color-primary);">· loading...</span>
       </div>
     </div>
 
-    <div class="workspace-header-action" id="joinClassHeaderBtn" onclick="showJoinClassDrawer()">
-      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(37,105,244,0.8)" stroke-width="1.5" style="margin-bottom: 0.75rem;">
+    <div class="workspace-header-action" id="joinClassHeaderBtn" onclick="showJoinClassDrawer()" style="cursor: pointer;">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(37,105,244,0.8)" stroke-width="1.5" style="margin-bottom: 0.5rem;">
         <path d="M12 5v14M5 12h14"/>
       </svg>
-      <div class="terminal-cta-block" style="text-align: center;">
-        <div><span class="tc-prompt">➜</span> <span class="tc-path">~</span></div>
-        <div>
-          <span class="tc-cmd">&gt;_ execute: join_class</span>
-          <span class="tc-cursor"></span>
-        </div>
-      </div>
-      <p style="margin: 0.75rem 0 0 0; color: #64748b; font-size: 0.8rem; font-family: var(--font-mono);">Enter access token</p>
+      <div style="font-size: 0.95rem; font-weight: 600; color: #f8fafc; margin-bottom: 0.25rem;">Join a Class</div>
+      <p style="margin: 0; color: #64748b; font-size: 0.8rem;">Enter your class access code</p>
     </div>
   </div>
 
@@ -108,42 +98,32 @@
 <div class="student-join-drawer" id="joinClassDrawer" role="dialog" aria-modal="true" aria-labelledby="joinDrawerTitle">
 
   <div class="drawer-header">
-    <h2 id="joinDrawerTitle">Initialize Connection</h2>
+    <h2 id="joinDrawerTitle">Join a Class</h2>
     <button onclick="hideJoinClassDrawer()" aria-label="Close dialog"
       style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b; transition: color 0.2s; line-height: 1;">&times;</button>
   </div>
 
   <div class="drawer-body">
-    <div style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 0.5rem; font-family: var(--font-mono); font-size: 0.8rem; color: #64748b; line-height: 1.7;">
-      <span style="color: var(--color-success);">➜</span>
-      <span style="color: var(--color-primary); margin: 0 0.35rem;">~</span>
-      <span>./join_class.sh --token &lt;ACCESS_TOKEN&gt;</span>
-    </div>
-
     <form id="joinClassForm" onsubmit="handleJoinClass(event)">
       <div style="margin-bottom: 1.5rem;">
-        <label for="classCode">Class Access Token *</label>
+        <label for="classCode">Class Access Code *</label>
         <input type="text" id="classCode" required placeholder="e.g., BA101"
           maxlength="20" autocomplete="off" />
         <div class="drawer-hint">
-          &gt; Expected format: 3-20 chars [A-Z, 0-9, -, _]<br>
-          &gt; Provided by your professor at class initialization.
+          Enter the access code provided by your professor. Format: 3–20 characters (letters, numbers, dashes, underscores).
         </div>
       </div>
 
       <div id="joinClassError"
-        style="display: none; margin-bottom: 1.5rem; background: rgba(220,38,38,0.1); border: 1px solid rgba(220,38,38,0.3); color: #f87171; padding: 1rem; border-radius: 0.5rem; font-family: var(--font-mono); font-size: 0.82rem;">
+        style="display: none; margin-bottom: 1.5rem; background: rgba(220,38,38,0.1); border: 1px solid rgba(220,38,38,0.3); color: #f87171; padding: 1rem; border-radius: 0.5rem; font-size: 0.875rem;">
       </div>
 
       <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 2rem;">
         <button type="button" onclick="hideJoinClassDrawer()"
-          style="background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; padding: 0.65rem 1.25rem; border-radius: 0.375rem; cursor: pointer; font-family: var(--font-mono); font-size: 0.85rem; transition: all 0.2s;">
-          Abort
+          style="background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; padding: 0.65rem 1.25rem; border-radius: 0.375rem; cursor: pointer; font-size: 0.875rem; transition: all 0.2s;">
+          Cancel
         </button>
-        <button type="submit" class="btn btn-primary"
-          style="font-family: var(--font-mono);">
-          &gt;_ execute: join
-        </button>
+        <button type="submit" class="btn btn-primary">Join Class</button>
       </div>
     </form>
   </div>

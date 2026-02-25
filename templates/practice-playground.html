@@ -7,31 +7,39 @@
     .playground-container {
       max-width: 1200px;
       margin: 2rem auto;
-      padding: 0 2rem;
+      padding: 0 1rem;
     }
 
     .playground-header {
       margin-bottom: 2rem;
       padding-bottom: 1rem;
-      border-bottom: 2px solid var(--color-primary);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
     }
 
     .playground-header h1 {
-      color: var(--color-dark);
-      margin-bottom: 0.5rem;
+      color: #f8fafc;
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 700;
     }
 
     .exercise-info {
-      background: #ffffff;
-      border: 1px solid #e2e8f0;
-      border-radius: 0.5rem;
+      background: rgba(30, 41, 59, 0.6);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 0.75rem;
       padding: 1.5rem;
       margin-bottom: 2rem;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
     }
 
     .exercise-info h2 {
-      color: var(--color-dark);
+      color: #f8fafc;
       margin-bottom: 0.5rem;
     }
 
@@ -45,22 +53,25 @@
     }
 
     .exercise-info .difficulty-badge.easy {
-      background-color: #d1fae5;
-      color: #065f46;
+      background: rgba(16, 185, 129, 0.15);
+      color: #6ee7b7;
+      border: 1px solid rgba(16, 185, 129, 0.3);
     }
 
     .exercise-info .difficulty-badge.medium {
-      background-color: #fef3c7;
-      color: #92400e;
+      background: rgba(245, 158, 11, 0.15);
+      color: #fcd34d;
+      border: 1px solid rgba(245, 158, 11, 0.3);
     }
 
     .exercise-info .difficulty-badge.hard {
-      background-color: #fee2e2;
-      color: #991b1b;
+      background: rgba(239, 68, 68, 0.15);
+      color: #fca5a5;
+      border: 1px solid rgba(239, 68, 68, 0.3);
     }
 
     .exercise-description {
-      color: var(--text-primary);
+      color: #94a3b8;
       line-height: 1.6;
       margin-top: 1rem;
     }
@@ -70,8 +81,12 @@
     }
 
     .code-editor-section h3 {
-      color: var(--color-dark);
+      color: #e2e8f0;
       margin-bottom: 0.75rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
 
     .code-editor-wrapper {
@@ -227,10 +242,10 @@
       display: flex;
       gap: 2rem;
       margin-bottom: 1.5rem;
-      padding: 1rem;
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 0.5rem;
+      padding: 1rem 1.5rem;
+      background: rgba(30, 41, 59, 0.5);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 0.75rem;
       align-items: center;
     }
 
@@ -241,11 +256,11 @@
     }
 
     .stat-label {
-      font-size: 0.75rem;
-      color: var(--text-secondary);
+      font-size: 0.7rem;
+      color: #64748b;
       font-weight: 500;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.06em;
     }
 
     .stat-value {
@@ -317,7 +332,7 @@
       display: none;
       margin-top: 2rem;
       padding-top: 2rem;
-      border-top: 2px solid #e2e8f0;
+      border-top: 1px solid rgba(255,255,255,0.08);
     }
 
     .solution-section.show {
@@ -325,13 +340,13 @@
     }
 
     .solution-section h3 {
-      color: var(--color-dark);
+      color: #e2e8f0;
       margin-bottom: 1rem;
     }
 
     .solution-code {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(255,255,255,0.08);
       border-radius: 0.5rem;
       padding: 1.5rem;
       overflow-x: auto;
@@ -342,7 +357,7 @@
       font-family: 'Courier New', monospace;
       font-size: 0.875rem;
       line-height: 1.6;
-      color: #1e293b;
+      color: #e2e8f0;
       white-space: pre-wrap;
       word-wrap: break-word;
     }
@@ -352,6 +367,7 @@
       padding: 1rem;
       border-radius: 0.5rem;
       margin-bottom: 1rem;
+      font-size: 0.9rem;
     }
 
     .submission-message.show {
@@ -359,15 +375,15 @@
     }
 
     .submission-message.success {
-      background-color: #d1fae5;
-      color: #065f46;
-      border: 1px solid #86efac;
+      background: rgba(16, 185, 129, 0.12);
+      color: #6ee7b7;
+      border: 1px solid rgba(16, 185, 129, 0.3);
     }
 
     .submission-message.info {
-      background-color: #dbeafe;
-      color: #1e40af;
-      border: 1px solid #93c5fd;
+      background: rgba(37, 105, 244, 0.12);
+      color: #93c5fd;
+      border: 1px solid rgba(37, 105, 244, 0.3);
     }
 
     /* Code Assistant Popup */
@@ -677,9 +693,13 @@
     <div class="playground-container">
       <div class="playground-header">
         <h1>Practice Playground</h1>
-        <button id="backButton" class="btn btn-primary"
-          style="text-decoration: none; display: inline-block; margin-top: 0.5rem; color: #ffffff; border: none; cursor: pointer; padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-size: 1rem; font-weight: 600;">←
-          Back to Exercises</button>
+        <button id="backButton"
+          style="display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); color: #94a3b8; cursor: pointer; padding: 0.5rem 0.875rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 500; transition: all 0.2s;"
+          onmouseover="this.style.background='rgba(255,255,255,0.08)'; this.style.color='#f8fafc';"
+          onmouseout="this.style.background='rgba(255,255,255,0.05)'; this.style.color='#94a3b8';">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          Back to Exercises
+        </button>
       </div>
 
       <div class="exercise-info" id="exerciseInfo">

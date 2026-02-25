@@ -264,7 +264,6 @@
       width: 36px;
       height: 36px;
       padding: 0;
-      font-size: 1.125rem;
       border-radius: 0.5rem;
       border: 1px solid #e2e8f0;
       background: white;
@@ -272,6 +271,11 @@
       cursor: pointer;
       transition: background 0.2s, color 0.2s;
       flex-shrink: 0;
+    }
+    .study-toolbar-sidebar .btn-bookmark svg,
+    .study-toolbar-sidebar .btn-notes-panel svg,
+    .study-toolbar-sidebar .btn-add-note svg {
+      pointer-events: none;
     }
 
     .study-toolbar-sidebar .btn-bookmark:hover,
@@ -811,18 +815,43 @@
       <!-- Left sidebar: highlight bar (scrolls alongside pages) -->
       <div class="study-toolbar-sidebar" id="studyToolbar" style="display: none;">
         <span class="study-toolbar-label">Highlight</span>
-        <button type="button" class="highlight-btn yellow active" data-color="yellow" title="Yellow" aria-label="Yellow"></button>
-        <button type="button" class="highlight-btn blue" data-color="blue" title="Blue" aria-label="Blue"></button>
-        <button type="button" class="highlight-btn pink" data-color="pink" title="Pink" aria-label="Pink"></button>
-        <button type="button" class="highlight-btn green" data-color="green" title="Green" aria-label="Green"></button>
+        <button type="button" class="highlight-btn yellow active" data-color="yellow" title="Yellow highlight" aria-label="Yellow highlight"></button>
+        <button type="button" class="highlight-btn blue" data-color="blue" title="Blue highlight" aria-label="Blue highlight"></button>
+        <button type="button" class="highlight-btn pink" data-color="pink" title="Pink highlight" aria-label="Pink highlight"></button>
+        <button type="button" class="highlight-btn green" data-color="green" title="Green highlight" aria-label="Green highlight"></button>
         <div class="marker-mode-toggle" aria-label="Highlighter tools">
-          <button type="button" class="marker-mode-btn active" id="btnMarkerMode" title="Marker mode" aria-label="Marker mode">🖍️</button>
-          <button type="button" class="marker-mode-btn" id="btnEraserMode" title="Eraser mode" aria-label="Eraser mode">🧽</button>
+          <!-- Marker mode: pencil/highlighter icon -->
+          <button type="button" class="marker-mode-btn active" id="btnMarkerMode" title="Marker mode" aria-label="Marker mode">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+            </svg>
+          </button>
+          <!-- Eraser mode: eraser icon -->
+          <button type="button" class="marker-mode-btn" id="btnEraserMode" title="Eraser mode" aria-label="Eraser mode">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 20H7L3 16l10-10 7 7-3 3"/><path d="M6.0001 20l3-3"/>
+            </svg>
+          </button>
         </div>
         <span class="toolbar-divider"></span>
-        <button type="button" class="btn-bookmark" id="btnBookmark" title="Bookmark current page" aria-label="Bookmark page"><span aria-hidden="true">🔖</span></button>
-        <button type="button" class="btn-notes-panel" id="btnNotesPanel" title="My study panel" aria-label="Study panel">📋</button>
-        <button type="button" class="btn-add-note" id="btnAddNote" title="Add note" aria-label="Add note">📝</button>
+        <!-- Bookmark -->
+        <button type="button" class="btn-bookmark" id="btnBookmark" title="Bookmark this page" aria-label="Bookmark page">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+          </svg>
+        </button>
+        <!-- Study panel -->
+        <button type="button" class="btn-notes-panel" id="btnNotesPanel" title="Study panel" aria-label="Study panel">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/>
+          </svg>
+        </button>
+        <!-- Add note -->
+        <button type="button" class="btn-add-note" id="btnAddNote" title="Add a note" aria-label="Add note">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+        </button>
       </div>
 
       <div class="study-main">
@@ -1420,6 +1449,9 @@
       const existingIndex = studyData.bookmarks.findIndex(function (b) { return b.pageIndex === pageIndex; });
       const btn = document.getElementById('btnBookmark');
 
+      const BOOKMARK_SVG = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>';
+      const CHECK_SVG = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+
       // If this page is already bookmarked, unbookmark it
       if (existingIndex !== -1) {
         studyData.bookmarks.splice(existingIndex, 1);
@@ -1427,7 +1459,7 @@
         renderStudyPanel();
         if (btn) {
           btn.classList.remove('bookmarked');
-          btn.innerHTML = '<span aria-hidden="true">🔖</span>';
+          btn.innerHTML = BOOKMARK_SVG;
         }
         showToast('Bookmark removed', 'success');
         return;
@@ -1444,10 +1476,10 @@
       renderStudyPanel();
       if (btn) {
         btn.classList.add('bookmarked');
-        btn.innerHTML = '<span aria-hidden="true">✓</span>';
+        btn.innerHTML = CHECK_SVG;
         setTimeout(function () {
           btn.classList.remove('bookmarked');
-          btn.innerHTML = '<span aria-hidden="true">🔖</span>';
+          btn.innerHTML = BOOKMARK_SVG;
         }, 1500);
       }
       showToast('Page bookmarked', 'success');
@@ -1501,7 +1533,7 @@
       const notesList = document.getElementById('notesList');
 
       if (!data.bookmarks || data.bookmarks.length === 0) {
-        bookmarksList.innerHTML = '<div class="study-empty">No bookmarks yet. Use the 🔖 button on a page to add one.</div>';
+        bookmarksList.innerHTML = '<div class="study-empty">No bookmarks yet. Use the bookmark button in the toolbar to save a page.</div>';
       } else {
         bookmarksList.innerHTML = data.bookmarks
           .sort(function (a, b) { return a.pageIndex - b.pageIndex; })
@@ -1517,7 +1549,7 @@
       }
 
       if (!data.notes || data.notes.length === 0) {
-        notesList.innerHTML = '<div class="study-empty">No notes yet. Click the 📝 button in the toolbar to add a note for the current page.</div>';
+        notesList.innerHTML = '<div class="study-empty">No notes yet. Click the note button in the toolbar to add one for the current page.</div>';
       } else {
         notesList.innerHTML = data.notes
           .slice()
