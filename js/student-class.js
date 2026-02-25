@@ -546,7 +546,7 @@ async function loadResources() {
 
     if (combinedResources.length === 0) {
       resourcesList.innerHTML = `
-        <div style="text-align: center; padding: 3rem; background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-color); border-radius: 0.5rem;">
+        <div style="text-align: center; padding: 3rem; background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.5rem;">
             <p style="color: #64748b;">No resources available yet.</p>
         </div>
       `;
@@ -658,10 +658,10 @@ async function loadResources() {
           }
 
           return `
-                  <div class="resource-card" style="background: var(--bg-card, #fff); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.1)';">
+                  <div class="resource-card" style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 4px 16px rgba(0,0,0,0.2); transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 24px rgba(0,0,0,0.3)'; this.style.borderColor='rgba(255,255,255,0.15)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 16px rgba(0,0,0,0.2)'; this.style.borderColor='rgba(255,255,255,0.08)';">
                     <div style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 0.75rem;">${typeLabel}</div>
-                    <h3 style="margin: 0 0 0.5rem 0; font-size: 1.125rem;">${escapeHtml(resource.title)}</h3>
-                    <p style="color: #64748b; margin: 0 0 1rem 0; font-size: 0.875rem; line-height: 1.5;">${escapeHtml(resource.description || '')}</p>
+                    <h3 style="margin: 0 0 0.5rem 0; font-size: 1.125rem; color: #f8fafc;">${escapeHtml(resource.title)}</h3>
+                    <p style="color: #94a3b8; margin: 0 0 1rem 0; font-size: 0.875rem; line-height: 1.5;">${escapeHtml(resource.description || '')}</p>
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                       <a href="${escapeHtml(url)}" ${linkTarget} class="resource-link" style="color: var(--color-primary); text-decoration: none; font-weight: 500; font-size: 0.875rem; display: inline-flex; align-items: center; gap: 0.25rem;">
                         ${linkText} ${!isDownload ? '→' : ''}
@@ -679,8 +679,8 @@ async function loadResources() {
   } catch (error) {
     console.error('Error loading resources:', error);
     resourcesList.innerHTML = `
-      <div style="text-align: center; padding: 3rem; background: #fee2e2; border: 1px solid #ef4444; border-radius: 0.5rem; color: #991b1b;">
-        <p>Error loading resources: ${error.message}</p>
+      <div style="text-align: center; padding: 3rem; background: rgba(220,38,38,0.1); border: 1px solid rgba(220,38,38,0.3); border-radius: 0.5rem; color: #f87171;">
+        <p>Error loading resources: ${escapeHtml(error.message)}</p>
         <button class="btn btn-primary" onclick="loadResources()" style="margin-top: 1rem;">Retry</button>
       </div>
     `;
@@ -711,7 +711,7 @@ async function loadStudents() {
 
     if (students.length === 0) {
       studentsList.innerHTML = `
-        <div style="text-align: center; padding: 3rem; background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-color); border-radius: 0.5rem;">
+        <div style="text-align: center; padding: 3rem; background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.5rem;">
           <p style="color: #64748b;">No students enrolled yet.</p>
         </div>
       `;
@@ -722,8 +722,8 @@ async function loadStudents() {
       studentsList.innerHTML = `
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem;">
           ${students.map(student => `
-            <div style="background: var(--bg-card, #fff); border: 1px solid var(--border-color); border-radius: 0.5rem; padding: 1rem;">
-              <div style="font-weight: 600; margin-bottom: 0.25rem;">${escapeHtml(student.name || student.email || 'Unknown')}</div>
+            <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 0.5rem; padding: 1rem;">
+              <div style="font-weight: 600; margin-bottom: 0.25rem; color: #f8fafc;">${escapeHtml(student.name || student.email || 'Unknown')}</div>
               <div style="font-size: 0.875rem; color: #64748b;">${escapeHtml(student.email || '')}</div>
             </div>
           `).join('')}
@@ -833,26 +833,26 @@ async function loadAvgLeaderboard() {
     }
 
     container.innerHTML = `
-            <div style="background: var(--bg-card, #fff); border-radius: 0.5rem; border: 1px solid var(--border-color); overflow: hidden; max-width: 800px; margin: 0 auto;">
+            <div style="background: rgba(30, 41, 59, 0.6); border-radius: 0.5rem; border: 1px solid rgba(255,255,255,0.08); overflow: hidden; max-width: 800px; margin: 0 auto;">
                 <table style="width: 100%; border-collapse: collapse;">
-                    <thead style="background: var(--bg-secondary, #f8fafc); border-bottom: 2px solid var(--border-color);">
+                    <thead style="background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(255,255,255,0.08);">
                          <tr>
-                            <th style="padding: 1rem; text-align: center; width: 60px;">Rank</th>
-                            <th style="padding: 1rem; text-align: left;">Student</th>
-                            <th style="padding: 1rem; text-align: right;">Average Score</th>
+                            <th style="padding: 1rem; text-align: center; width: 60px; color: #64748b; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Rank</th>
+                            <th style="padding: 1rem; text-align: left; color: #64748b; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Student</th>
+                            <th style="padding: 1rem; text-align: right; color: #64748b; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Average Score</th>
                          </tr>
                     </thead>
                     <tbody>
                         ${leaderboard.map(student => `
-                            <tr style="border-bottom: 1px solid var(--border-color); ${student.student_id === currentUser.user_id ? 'background-color: var(--color-primary-light, rgba(37, 105, 244, 0.1));' : ''}">
-                                <td style="padding: 1rem; text-align: center; font-weight: bold; color: ${student.rank <= 3 ? '#eab308' : '#64748b'};">
-                                    ${student.rank === 1 ? '#1' : student.rank === 2 ? '#2' : student.rank === 3 ? '#3' : student.rank}
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); ${student.student_id === currentUser.user_id ? 'background-color: rgba(37, 105, 244, 0.1);' : ''}">
+                                <td style="padding: 1rem; text-align: center; font-weight: bold; font-family: var(--font-mono); color: ${student.rank <= 3 ? '#eab308' : '#64748b'};">
+                                    ${student.rank === 1 ? '🥇' : student.rank === 2 ? '🥈' : student.rank === 3 ? '🥉' : '#' + student.rank}
                                 </td>
-                                <td style="padding: 1rem; font-weight: 500;">
+                                <td style="padding: 1rem; font-weight: 500; color: #e2e8f0;">
                                     ${escapeHtml(student.name)}
-                                    ${student.student_id === currentUser.user_id ? '<span style="font-size: 0.75rem; background: var(--color-primary); color: white; padding: 2px 6px; border-radius: 4px; margin-left: 0.5rem;">YOU</span>' : ''}
+                                    ${student.student_id === currentUser.user_id ? '<span style="font-size: 0.7rem; background: var(--color-primary); color: white; padding: 2px 6px; border-radius: 4px; margin-left: 0.5rem; font-weight: 600;">YOU</span>' : ''}
                                 </td>
-                                <td style="padding: 1rem; text-align: right; font-weight: 600; color: var(--color-primary);">${student.average_score}%</td>
+                                <td style="padding: 1rem; text-align: right; font-weight: 600; color: var(--color-primary); font-family: var(--font-mono);">${student.average_score}%</td>
                             </tr>
                         `).join('')}
                     </tbody>
@@ -870,7 +870,7 @@ async function loadAvgLeaderboard() {
 async function loadStudentExerciseLeaderboard(exerciseId) {
   const container = document.getElementById('lbExContent');
   if (!exerciseId) {
-    container.innerHTML = '<div style="text-align: center; padding: 3rem; background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-color); border-radius: 0.5rem;"><p style="color: #64748b;">Select an exercise above to see rankings.</p></div>';
+    container.innerHTML = '<div style="text-align: center; padding: 3rem; background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.5rem;"><p style="color: #64748b;">Select an exercise above to see rankings.</p></div>';
     return;
   }
 
@@ -893,26 +893,26 @@ async function loadStudentExerciseLeaderboard(exerciseId) {
     }
 
     container.innerHTML = `
-            <div style="background: var(--bg-card, #fff); border-radius: 0.5rem; border: 1px solid var(--border-color); overflow: hidden; max-width: 800px; margin: 0 auto;">
+            <div style="background: rgba(30, 41, 59, 0.6); border-radius: 0.5rem; border: 1px solid rgba(255,255,255,0.08); overflow: hidden; max-width: 800px; margin: 0 auto;">
                 <table style="width: 100%; border-collapse: collapse;">
-                    <thead style="background: var(--bg-secondary, #f8fafc); border-bottom: 2px solid var(--border-color);">
+                    <thead style="background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(255,255,255,0.08);">
                          <tr>
-                            <th style="padding: 1rem; text-align: center; width: 60px;">Rank</th>
-                            <th style="padding: 1rem; text-align: left;">Student</th>
-                            <th style="padding: 1rem; text-align: right;">Best Score</th>
+                            <th style="padding: 1rem; text-align: center; width: 60px; color: #64748b; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Rank</th>
+                            <th style="padding: 1rem; text-align: left; color: #64748b; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Student</th>
+                            <th style="padding: 1rem; text-align: right; color: #64748b; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Best Score</th>
                          </tr>
                     </thead>
                     <tbody>
                         ${leaderboard.map(student => `
-                            <tr style="border-bottom: 1px solid var(--border-color); ${student.student_id === currentUser.user_id ? 'background-color: var(--color-primary-light, rgba(37, 105, 244, 0.1));' : ''}">
-                                <td style="padding: 1rem; text-align: center; font-weight: bold; color: ${student.rank <= 3 ? '#eab308' : '#64748b'};">
-                                    ${student.rank === 1 ? '#1' : student.rank === 2 ? '#2' : student.rank === 3 ? '#3' : student.rank}
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); ${student.student_id === currentUser.user_id ? 'background-color: rgba(37, 105, 244, 0.1);' : ''}">
+                                <td style="padding: 1rem; text-align: center; font-weight: bold; font-family: var(--font-mono); color: ${student.rank <= 3 ? '#eab308' : '#64748b'};">
+                                    ${student.rank === 1 ? '🥇' : student.rank === 2 ? '🥈' : student.rank === 3 ? '🥉' : '#' + student.rank}
                                 </td>
-                                <td style="padding: 1rem; font-weight: 500;">
+                                <td style="padding: 1rem; font-weight: 500; color: #e2e8f0;">
                                     ${escapeHtml(student.name)}
-                                    ${student.student_id === currentUser.user_id ? '<span style="font-size: 0.75rem; background: var(--color-primary); color: white; padding: 2px 6px; border-radius: 4px; margin-left: 0.5rem;">YOU</span>' : ''}
+                                    ${student.student_id === currentUser.user_id ? '<span style="font-size: 0.7rem; background: var(--color-primary); color: white; padding: 2px 6px; border-radius: 4px; margin-left: 0.5rem; font-weight: 600;">YOU</span>' : ''}
                                 </td>
-                                <td style="padding: 1rem; text-align: right; font-weight: 600; color: var(--color-primary);">${student.score}%</td>
+                                <td style="padding: 1rem; text-align: right; font-weight: 600; color: var(--color-primary); font-family: var(--font-mono);">${student.score}%</td>
                             </tr>
                         `).join('')}
                     </tbody>
@@ -942,4 +942,15 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
   });
+
+  // Close embedded playground
+  const closeBtn = document.getElementById('closePlaygroundBtn');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      const container = document.getElementById('embeddedPlaygroundContainer');
+      const iframe = document.getElementById('playgroundIframe');
+      if (container) container.style.display = 'none';
+      if (iframe) iframe.src = '';
+    });
+  }
 });

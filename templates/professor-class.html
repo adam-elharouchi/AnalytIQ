@@ -98,6 +98,7 @@
   </div>
 
   <style>
+    /* ── Pill tabs ── */
     .tab-button.active {
       background: var(--color-primary) !important;
       color: white !important;
@@ -120,6 +121,67 @@
       color: var(--color-primary);
       border-bottom-color: var(--color-primary);
     }
+
+    /* ── Dark-theme all modal dialogs ── */
+    [id$="Modal"] > [role="dialog"] {
+      background: rgba(15, 23, 42, 0.97) !important;
+      border: 1px solid rgba(255,255,255,0.1) !important;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6) !important;
+    }
+    [id$="Modal"] h2 { color: #f8fafc !important; }
+    [id$="Modal"] label { color: #e2e8f0 !important; }
+    [id$="Modal"] small { color: #94a3b8 !important; }
+    [id$="Modal"] > [role="dialog"] p { color: #94a3b8 !important; }
+    [id$="Modal"] input:not([type="radio"]):not([type="checkbox"]):not([type="file"]),
+    [id$="Modal"] textarea,
+    [id$="Modal"] select {
+      background: rgba(30, 41, 59, 0.8) !important;
+      border: 1px solid rgba(255,255,255,0.1) !important;
+      color: #e2e8f0 !important;
+    }
+    [id$="Modal"] input:not([type="radio"]):not([type="checkbox"]):not([type="file"]):focus,
+    [id$="Modal"] textarea:focus,
+    [id$="Modal"] select:focus {
+      border-color: var(--color-primary) !important;
+      outline: none !important;
+      box-shadow: 0 0 0 3px rgba(37, 105, 244, 0.2) !important;
+    }
+    [id$="Modal"] option {
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+    [id$="Modal"] .error-message {
+      background: rgba(220,38,38,0.1) !important;
+      border: 1px solid rgba(220,38,38,0.3) !important;
+      color: #f87171 !important;
+    }
+    /* Radio-button wrapper labels (resource type, exercise mode) */
+    [id$="Modal"] label[id$="Label"],
+    #resourceInputTypeSection label {
+      border-color: rgba(255,255,255,0.1) !important;
+      color: #e2e8f0 !important;
+    }
+    /* File input styling */
+    [id$="Modal"] input[type="file"] {
+      background: rgba(30,41,59,0.5) !important;
+      border: 1px dashed rgba(255,255,255,0.15) !important;
+      color: #94a3b8 !important;
+      border-radius: 0.375rem !important;
+      padding: 0.5rem !important;
+    }
+    /* Delete/danger confirmation dialogs */
+    #deleteChapterModal > [role="dialog"] p { color: #94a3b8 !important; }
+
+    /* Import chapter modal specifics */
+    #importChapterModal .imp-tab-btn { color: #64748b !important; }
+    #importChapterModal .imp-tab-active { color: var(--color-primary) !important; }
+    #importChapterModal #impPreviewSection {
+      border-top-color: rgba(255,255,255,0.08) !important;
+    }
+    #importChapterModal #impPreviewTitle { color: #f8fafc !important; font-weight: 600; }
+    #importChapterModal #impPreviewSnippet { color: #94a3b8 !important; }
+    #importChapterModal h3 { color: #f8fafc !important; }
+    #importChapterModal p { color: #94a3b8 !important; }
   </style>
 
   <!-- Chapters Tab -->
@@ -636,13 +698,13 @@
   .imp-tab-active { color: var(--color-primary); border-bottom-color: var(--color-primary); font-weight: 600; }
   .imp-tab-content { display: none; }
   .imp-card {
-    padding: 0.75rem 1rem; border: 1px solid #e2e8f0; border-radius: 0.375rem;
-    margin-bottom: 0.5rem; cursor: pointer; transition: background 0.15s;
+    padding: 0.75rem 1rem; border: 1px solid rgba(255,255,255,0.08); border-radius: 0.375rem;
+    margin-bottom: 0.5rem; cursor: pointer; transition: background 0.15s; color: #e2e8f0;
   }
-  .imp-card:hover { background: #f1f5f9; }
+  .imp-card:hover { background: rgba(37,105,244,0.1); border-color: rgba(37,105,244,0.3); }
   .imp-card-desc { font-size: 0.82em; color: #64748b; margin: 0.25rem 0 0; }
-  .imp-badge { font-size: 0.75em; background: #e0e7ff; color: #4338ca; padding: 0.1em 0.4em; border-radius: 0.25rem; }
-  .imp-scroll { max-height: 300px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 0.375rem; padding: 0.5rem; }
+  .imp-badge { font-size: 0.75em; background: rgba(37,105,244,0.15); color: var(--color-primary); padding: 0.1em 0.4em; border-radius: 0.25rem; border: 1px solid rgba(37,105,244,0.25); }
+  .imp-scroll { max-height: 300px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.08); border-radius: 0.375rem; padding: 0.5rem; }
 </style>
 
 <div id="importChapterModal"
@@ -658,7 +720,7 @@
     </div>
 
     <!-- Source tabs -->
-    <div style="display:flex; gap:0; border-bottom:2px solid #e2e8f0; margin-bottom:1.5rem; overflow-x:auto;">
+    <div style="display:flex; gap:0; border-bottom:1px solid rgba(255,255,255,0.08); margin-bottom:1.5rem; overflow-x:auto;">
       <button class="imp-tab-btn imp-tab-active" data-tab="url"
         onclick="window.contentImporter && window.contentImporter.switchTab('url')">Paste URL</button>
       <button class="imp-tab-btn" data-tab="pypi"
@@ -740,11 +802,11 @@
     <div id="impError" class="error-message" style="display:none;margin:1rem 0;"></div>
 
     <!-- Preview & chapter settings (shared) -->
-    <div id="impPreviewSection" style="display:none;border-top:1px solid #e2e8f0;margin-top:1.5rem;padding-top:1.5rem;">
-      <h3 style="margin:0 0 0.5rem;color:var(--color-dark);font-size:1rem;">Selected Content</h3>
-      <div id="impPreviewTitle" style="font-weight:600;color:#0f172a;margin-bottom:0.25rem;"></div>
+    <div id="impPreviewSection" style="display:none;border-top:1px solid rgba(255,255,255,0.08);margin-top:1.5rem;padding-top:1.5rem;">
+      <h3 style="margin:0 0 0.5rem;color:#f8fafc;font-size:1rem;">Selected Content</h3>
+      <div id="impPreviewTitle" style="font-weight:600;color:#f8fafc;margin-bottom:0.25rem;"></div>
       <div id="impPreviewSnippet"
-        style="font-size:0.82em;color:#64748b;max-height:80px;overflow:hidden;margin-bottom:1rem;"></div>
+        style="font-size:0.82em;color:#94a3b8;max-height:80px;overflow:hidden;margin-bottom:1rem;"></div>
 
       <div style="margin-bottom:1rem;">
         <label style="display:block;margin-bottom:0.4rem;font-weight:500;">Chapter Title *</label>
