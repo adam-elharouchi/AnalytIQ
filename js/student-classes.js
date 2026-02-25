@@ -114,11 +114,13 @@ function renderClasses(classes) {
           </div>
         </div>
 
-        <div style="padding: ${isFeatured ? '2rem' : '1.5rem'}; flex: 1; display: flex; flex-direction: column;">
-          <h3 style="margin: 0 0 0.4rem 0; color: #f8fafc; font-size: ${isFeatured ? '1.5rem' : '1.15rem'}; font-weight: 700; line-height: 1.2;">
-            ${escapeHtml(classItem.name)}
-          </h3>
-          <p style="color: var(--color-primary); font-size: 0.8rem; margin: 0 0 ${isFeatured ? '1.25rem' : '0.75rem'} 0; display: flex; align-items: center; gap: 0.35rem; font-family: var(--font-mono);">
+        <div style="padding: ${isFeatured ? '2rem' : '1.25rem 1.5rem'}; flex: 1; display: flex; flex-direction: column;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.6rem; gap: 1rem;">
+            <h3 style="margin: 0; color: #f8fafc; font-size: ${isFeatured ? '1.4rem' : '1.1rem'}; font-weight: 700; line-height: 1.2;">
+              ${escapeHtml(classItem.name)}
+            </h3>
+          </div>
+          <p style="color: var(--color-primary); font-size: 0.75rem; margin: 0 0 ${isFeatured ? '1rem' : '0.65rem'} 0; display: flex; align-items: center; gap: 0.35rem; font-family: var(--font-mono);">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
             </svg>
@@ -126,31 +128,30 @@ function renderClasses(classes) {
           </p>
 
           ${classItem.description
-            ? `<p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 1.25rem; line-height: 1.55; flex: 1;">${escapeHtml(classItem.description)}</p>`
+            ? `<p style="color: #94a3b8; font-size: ${isFeatured ? '0.9rem' : '0.85rem'}; margin-bottom: ${isFeatured ? '1.25rem' : '1rem'}; line-height: 1.55; flex: 1;">${escapeHtml(classItem.description)}</p>`
             : '<div style="flex:1;"></div>'}
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; padding-top: 1.25rem; border-top: 1px solid rgba(255,255,255,0.05);">
-            <div style="text-align: center; padding: 0.65rem 0.5rem; background: rgba(0,0,0,0.15); border-radius: 0.45rem;">
-              <div style="font-size: ${isFeatured ? '1.85rem' : '1.3rem'}; font-weight: 700; color: #f8fafc; font-family: var(--font-mono); line-height: 1;">
-                ${classItem.chapter_count || 0}
-              </div>
-              <div style="font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 0.25rem;">Modules</div>
+          <div style="display: flex; margin-bottom: ${isFeatured ? '1.25rem' : '1rem'}; border: 1px solid rgba(255,255,255,0.06); border-radius: 0.5rem; overflow: hidden; background: rgba(0,0,0,0.15);">
+            <div style="flex: 1; text-align: center; padding: 0.75rem 0.5rem; border-right: 1px solid rgba(255,255,255,0.06);">
+              <div style="font-size: ${isFeatured ? '1.75rem' : '1.25rem'}; font-family: var(--font-mono); color: #f8fafc; font-weight: 700; line-height: 1;">${classItem.chapter_count || 0}</div>
+              <div style="font-size: 0.65rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 0.25rem;">Modules</div>
             </div>
-            <div style="text-align: center; padding: 0.65rem 0.5rem; background: rgba(0,0,0,0.15); border-radius: 0.45rem;">
-              <div style="font-size: ${isFeatured ? '1.85rem' : '1.3rem'}; font-weight: 700; color: #f8fafc; font-family: var(--font-mono); line-height: 1;">
-                ${classItem.student_count || 0}
-              </div>
-              <div style="font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 0.25rem;">Peers</div>
+            <div style="flex: 1; text-align: center; padding: 0.75rem 0.5rem;">
+              <div style="font-size: ${isFeatured ? '1.75rem' : '1.25rem'}; font-family: var(--font-mono); color: #f8fafc; font-weight: 700; line-height: 1;">${classItem.student_count || 0}</div>
+              <div style="font-size: 0.65rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 0.25rem;">Peers</div>
             </div>
           </div>
 
-          ${isFeatured ? `
-          <div style="margin-top: 1.1rem;">
-            <div style="background: rgba(37,105,244,0.1); border: 1px solid rgba(37,105,244,0.2); color: var(--color-primary); padding: 0.6rem 1rem; border-radius: 0.375rem; font-family: var(--font-mono); font-size: 0.82rem; display: flex; align-items: center; gap: 0.5rem;">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-              &gt; open workspace
-            </div>
-          </div>` : ''}
+          <div style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: ${isFeatured ? '1.25rem' : '0.85rem'};">
+            <button
+              class="btn btn-primary"
+              style="width: 100%; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 0.4rem;"
+              onclick="event.stopPropagation(); viewClass('${escapeHtml(classItem.class_id)}')"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="pointer-events:none;"><polyline points="9 18 15 12 9 6"/></svg>
+              Enter Class
+            </button>
+          </div>
         </div>
       </div>
     `;

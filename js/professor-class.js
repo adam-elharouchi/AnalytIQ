@@ -203,21 +203,45 @@ async function loadChapters() {
       uiStates.showEmpty(chaptersList, 'No chapters yet', 'Upload your first chapter to get started.');
     } else {
       chaptersList.innerHTML = chapters.map(chapter => `
-        <div class="chapter-card" style="background: var(--bg-card, #fff); border: 1px solid var(--border-color); border-radius: 0.5rem; padding: 1.5rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: start;">
-          <div style="flex: 1;">
-            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-              <span style="background: var(--color-primary); color: white; padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.875rem; font-weight: 600;">Chapter ${chapter.chapter_number}</span>
-              <h3 style="margin: 0;font-size: 1.25rem;">${escapeHtml(chapter.title)}</h3>
+        <div class="chapter-card bento-card" style="border-radius: 1rem; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 1.25rem; overflow: hidden; display: flex; flex-direction: column; transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 32px rgba(0,0,0,0.35)'; this.style.borderColor='rgba(255,255,255,0.18)';" onmouseout="this.style.transform=''; this.style.boxShadow=''; this.style.borderColor='rgba(255,255,255,0.1)';">
+          <!-- IDE Tab Header -->
+          <div style="background: rgba(0,0,0,0.2); padding: 0.65rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 0.75rem; font-family: var(--font-mono); font-size: 0.8rem; color: #64748b;">
+              <span style="color: var(--color-primary);">[module_${chapter.chapter_number || '0'}]</span>
+              <span>// ${chapter.created_at ? new Date(chapter.created_at).toLocaleDateString() : 'system_init'}</span>
             </div>
-            ${chapter.description ? `<p style="color: #64748b; margin-bottom: 0.5rem;">${escapeHtml(chapter.description)}</p>` : ''}
-            <div style="font-size: 0.875rem; color: #64748b;">
-              ${chapter.created_at ? `<span>Uploaded: ${new Date(chapter.created_at).toLocaleDateString()}</span>` : ''}
-            </div>
+            <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--color-success); opacity: 0.5;"></div>
           </div>
-          <div style="display: flex; gap: 0.5rem;">
-            ${chapter.pdf_url || chapter.pdf_filename ? `<a href="chapter-view.html?chapter_id=${encodeURIComponent(chapter.chapter_id)}&class_id=${encodeURIComponent(currentClassId)}" class="btn btn-primary" style="text-decoration: none;">View PDF</a>` : ''}
-            <button class="btn btn-secondary" onclick="showEditChapterModal('${chapter.chapter_id}')" style="background: var(--bg-card, #fff);border: 1px solid #cbd5e1; padding: 0.5rem 0.75rem;">Edit</button>
-            <button class="btn btn-secondary" onclick="showDeleteChapterModal('${chapter.chapter_id}')" style="background: var(--bg-card, #fff); color: #ef4444; border: 1px solid #fca5a5; padding: 0.5rem 0.75rem;">Delete</button>
+          <!-- Content -->
+          <div style="padding: 1.5rem 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem;">
+            <div style="flex: 1; min-width: 200px;">
+              <h3 style="margin: 0 0 0.35rem 0; color: #f8fafc; font-size: 1.3rem; font-weight: 600;">${escapeHtml(chapter.title)}</h3>
+              ${chapter.description ? `<p style="color: #94a3b8; margin: 0; line-height: 1.5; font-size: 0.875rem;">${escapeHtml(chapter.description)}</p>` : ''}
+            </div>
+            <div style="display: flex; gap: 0.5rem; flex-shrink: 0;">
+              ${chapter.pdf_url || chapter.pdf_filename ? `
+              <a href="chapter-view.html?chapter_id=${encodeURIComponent(chapter.chapter_id)}&class_id=${encodeURIComponent(currentClassId)}"
+                style="text-decoration: none; padding: 0.55rem 1rem; background: rgba(37,105,244,0.1); border: 1px solid var(--color-primary); color: var(--color-primary); border-radius: 0.5rem; font-family: var(--font-mono); font-size: 0.82rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.4rem; transition: background 0.2s;"
+                onmouseover="this.style.background='var(--color-primary)'; this.style.color='white';"
+                onmouseout="this.style.background='rgba(37,105,244,0.1)'; this.style.color='var(--color-primary)';">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                View PDF
+              </a>` : ''}
+              <button onclick="showEditChapterModal('${chapter.chapter_id}')"
+                style="padding: 0.55rem 0.85rem; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; border-radius: 0.5rem; font-size: 0.82rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem; transition: all 0.2s;"
+                onmouseover="this.style.borderColor='rgba(255,255,255,0.25)'; this.style.color='#f8fafc';"
+                onmouseout="this.style.borderColor='rgba(255,255,255,0.1)'; this.style.color='#94a3b8';">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                Edit
+              </button>
+              <button onclick="showDeleteChapterModal('${chapter.chapter_id}')"
+                style="padding: 0.55rem 0.85rem; background: transparent; border: 1px solid rgba(220,38,38,0.3); color: #ef4444; border-radius: 0.5rem; font-size: 0.82rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem; transition: all 0.2s;"
+                onmouseover="this.style.background='rgba(220,38,38,0.1)'; this.style.borderColor='rgba(220,38,38,0.5)';"
+                onmouseout="this.style.background='transparent'; this.style.borderColor='rgba(220,38,38,0.3)';">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                Delete
+              </button>
+            </div>
           </div>
         </div>
       `).join('');
@@ -225,8 +249,8 @@ async function loadChapters() {
   } catch (error) {
     console.error('Error loading chapters:', error);
     chaptersList.innerHTML = `
-      <div style="text-align: center; padding: 3rem; background: #fee2e2; border: 1px solid #ef4444; border-radius: 0.5rem;">
-        <p style="color: #991b1b;">Error loading chapters: ${escapeHtml(error.message)}</p>
+      <div style="text-align: center; padding: 3rem; background: rgba(220,38,38,0.1); border: 1px solid rgba(220,38,38,0.3); border-radius: 0.5rem;">
+        <p style="color: #f87171;">Error loading chapters: ${escapeHtml(error.message)}</p>
         <button class="btn btn-primary" onclick="loadChapters()" style="margin-top: 1rem;">Retry</button>
       </div>
     `;
@@ -636,33 +660,59 @@ async function loadExercises() {
         exercisesByChapter[ex.chapter_id].exercises.push(ex);
       });
 
-      // Render in practice grid style, grouped by chapter
+      // Render in bento grid style, grouped by chapter
       exercisesList.innerHTML = `
-        <div class="practice-grid">
+        <div style="display: grid; gap: 2.5rem;">
           ${Object.keys(exercisesByChapter).map(chapterId => {
         const chapterData = exercisesByChapter[chapterId];
         return `
-              <div class="chapter-section" style="grid-column: 1 / -1; margin-bottom: 2rem;">
-                <h2 style="margin-top: 2rem; margin-bottom: 0.5rem;font-size: 1.75rem; border-bottom: 2px solid var(--color-primary); padding-bottom: 0.5rem;">${escapeHtml(chapterData.chapter_title)}</h2>
-              </div>
-              ${chapterData.exercises.map(exercise => `
-                <div class="practice-card">
-                  <div class="practice-header">
-                    <h2>${escapeHtml(exercise.title)}</h2>
-                    <span class="difficulty-badge ${exercise.difficulty || 'medium'}">${escapeHtml((exercise.difficulty || 'medium').charAt(0).toUpperCase() + (exercise.difficulty || 'medium').slice(1))}</span>
-                  </div>
-                  <p class="practice-description">${exercise.description ? escapeHtml(exercise.description) : 'Practice exercise from ' + escapeHtml(chapterData.chapter_title)}</p>
-                  <div class="practice-progress" style="margin: 1rem 0;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
-                    </div>
-                  </div>
-                  <div class="practice-actions">
-                    <button class="btn btn-primary" onclick="startExerciseFromClass('${escapeHtml(exercise.exercise_id)}', '${escapeHtml(exercise.chapter_id)}', '${escapeHtml(exercise.title)}')">Start Exercise</button>
-                    <button class="btn btn-secondary" onclick="editExercise('${escapeHtml(exercise.exercise_id)}')" style="margin-left: 0.5rem;">Edit</button>
-                    <button class="btn btn-secondary" onclick="deleteExercise('${escapeHtml(exercise.exercise_id)}', '${escapeHtml(exercise.title)}')" style="margin-left: 0.5rem; color: #dc2626;">Delete</button>
-                  </div>
+              <div>
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+                  <h2 style="margin: 0; font-size: 1.1rem; font-family: var(--font-mono); color: #e2e8f0; font-weight: 500;">
+                    <span style="color: var(--color-primary);">~/</span>${escapeHtml(chapterData.chapter_title).toLowerCase().replace(/\s+/g, '_')}
+                  </h2>
+                  <div style="flex: 1; height: 1px; background: rgba(255,255,255,0.1);"></div>
                 </div>
-              `).join('')}
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
+                  ${chapterData.exercises.map(exercise => {
+            const diffColor = exercise.difficulty === 'hard' ? '#ef4444' : exercise.difficulty === 'medium' ? '#f59e0b' : '#10b981';
+            return `
+                    <div class="practice-card bento-card" style="background: rgba(30,41,59,0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 1rem; border: 1px solid rgba(255,255,255,0.1); overflow: hidden; display: flex; flex-direction: column; transition: all 0.2s;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 12px 40px rgba(0,0,0,0.4)'; this.style.borderColor='rgba(255,255,255,0.2)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'; this.style.borderColor='rgba(255,255,255,0.1)';">
+                      <div style="padding: 1.5rem; flex: 1; display: flex; flex-direction: column;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem; gap: 0.5rem;">
+                          <h3 style="margin: 0; color: #f8fafc; font-size: 1.05rem; font-weight: 600; line-height: 1.3;">${escapeHtml(exercise.title)}</h3>
+                          <span style="flex-shrink: 0; background: rgba(0,0,0,0.3); border: 1px solid ${diffColor}; color: ${diffColor}; padding: 0.2rem 0.5rem; border-radius: 0.25rem; font-family: var(--font-mono); font-size: 0.7rem; text-transform: uppercase;">${escapeHtml(exercise.difficulty || 'medium')}</span>
+                        </div>
+                        <p style="color: #94a3b8; font-size: 0.875rem; margin: 0 0 1.25rem 0; line-height: 1.5; flex: 1;">${exercise.description ? escapeHtml(exercise.description) : 'Practice exercise.'}</p>
+                        <div style="display: flex; gap: 0.5rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.06);">
+                          <button onclick="startExerciseFromClass('${escapeHtml(exercise.exercise_id)}', '${escapeHtml(exercise.chapter_id)}', '${escapeHtml(exercise.title)}')"
+                            style="flex: 1; background: rgba(37,105,244,0.1); border: 1px solid var(--color-primary); color: var(--color-primary); font-family: var(--font-mono); font-weight: 600; padding: 0.6rem; border-radius: 0.5rem; cursor: pointer; font-size: 0.82rem; display: flex; align-items: center; justify-content: center; gap: 0.4rem; transition: all 0.2s;"
+                            onmouseover="this.style.background='var(--color-primary)'; this.style.color='white';"
+                            onmouseout="this.style.background='rgba(37,105,244,0.1)'; this.style.color='var(--color-primary)';">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                            Execute
+                          </button>
+                          <button onclick="editExercise('${escapeHtml(exercise.exercise_id)}')"
+                            style="padding: 0.6rem 0.75rem; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; border-radius: 0.5rem; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 0.3rem; transition: all 0.2s; flex-shrink: 0;"
+                            onmouseover="this.style.borderColor='rgba(255,255,255,0.25)'; this.style.color='#f8fafc';"
+                            onmouseout="this.style.borderColor='rgba(255,255,255,0.1)'; this.style.color='#94a3b8';">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            Edit
+                          </button>
+                          <button onclick="deleteExercise('${escapeHtml(exercise.exercise_id)}', '${escapeHtml(exercise.title)}')"
+                            style="padding: 0.6rem 0.75rem; background: transparent; border: 1px solid rgba(220,38,38,0.3); color: #ef4444; border-radius: 0.5rem; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 0.3rem; transition: all 0.2s; flex-shrink: 0;"
+                            onmouseover="this.style.background='rgba(220,38,38,0.1)'; this.style.borderColor='rgba(220,38,38,0.5)';"
+                            onmouseout="this.style.background='transparent'; this.style.borderColor='rgba(220,38,38,0.3)';">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  `;
+          }).join('')}
+                </div>
+              </div>
             `;
       }).join('')}
         </div>
@@ -671,8 +721,8 @@ async function loadExercises() {
   } catch (error) {
     console.error('Error loading exercises:', error);
     exercisesList.innerHTML = `
-      <div style="text-align: center; padding: 3rem; background: #fee2e2; border: 1px solid #ef4444; border-radius: 0.5rem;">
-        <p style="color: #991b1b;">Error loading exercises: ${escapeHtml(error.message)}</p>
+      <div style="text-align: center; padding: 3rem; background: rgba(220,38,38,0.1); border: 1px solid rgba(220,38,38,0.3); border-radius: 0.5rem;">
+        <p style="color: #f87171;">Error loading exercises: ${escapeHtml(error.message)}</p>
         <button class="btn btn-primary" onclick="loadExercises()" style="margin-top: 1rem;">Retry</button>
       </div>
     `;
@@ -1120,8 +1170,8 @@ async function loadResources() {
   } catch (error) {
     console.error('Error loading resources:', error);
     resourcesList.innerHTML = `
-      <div style="text-align: center; padding: 3rem; background: #fee2e2; border: 1px solid #ef4444; border-radius: 0.5rem;">
-        <p style="color: #991b1b;">Error loading resources: ${escapeHtml(error.message)}</p>
+      <div style="text-align: center; padding: 3rem; background: rgba(220,38,38,0.1); border: 1px solid rgba(220,38,38,0.3); border-radius: 0.5rem;">
+        <p style="color: #f87171;">Error loading resources: ${escapeHtml(error.message)}</p>
         <button class="btn btn-primary" onclick="loadResources()" style="margin-top: 1rem;">Retry</button>
       </div>
     `;
@@ -1565,7 +1615,7 @@ function openEditResourceModal(resourceId) {
 
   const note = document.createElement('div');
   note.id = 'editSourceNote';
-  note.style.cssText = 'margin-bottom: 1.5rem; padding: 0.75rem; background: #f1f5f9; color: #64748b; border-radius: 0.375rem; font-size: 0.875rem;';
+  note.style.cssText = 'margin-bottom: 1.5rem; padding: 0.75rem; background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255,255,255,0.08); color: #94a3b8; border-radius: 0.375rem; font-size: 0.875rem;';
   note.textContent = 'To change the file or URL, please delete this resource and create a new one.';
 
   const typeSection = document.getElementById('resourceInputTypeSection');

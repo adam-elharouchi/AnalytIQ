@@ -229,8 +229,8 @@ async function loadChapters() {
   } catch (error) {
     console.error('Error loading chapters:', error);
     chaptersList.innerHTML = `
-      <div style="text-align: center; padding: 3rem; background: #fee2e2; border: 1px solid #ef4444; border-radius: 0.5rem; color: #991b1b;">
-        <p>Error loading chapters: ${error.message}</p>
+      <div style="text-align: center; padding: 3rem; background: rgba(220,38,38,0.1); border: 1px solid rgba(220,38,38,0.3); border-radius: 0.5rem; color: #f87171;">
+        <p>Error loading chapters: ${escapeHtml(error.message)}</p>
         <button class="btn btn-primary" onclick="loadChapters()" style="margin-top: 1rem;">Retry</button>
       </div>
     `;
@@ -357,8 +357,8 @@ async function loadExercises() {
   } catch (error) {
     console.error('Error loading exercises:', error);
     exercisesList.innerHTML = `
-      <div style="text-align: center; padding: 3rem; background: #fee2e2; border: 1px solid #ef4444; border-radius: 0.5rem; color: #991b1b;">
-        <p>Error loading exercises: ${error.message}</p>
+      <div style="text-align: center; padding: 3rem; background: rgba(220,38,38,0.1); border: 1px solid rgba(220,38,38,0.3); border-radius: 0.5rem; color: #f87171;">
+        <p>Error loading exercises: ${escapeHtml(error.message)}</p>
         <button class="btn btn-primary" onclick="loadExercises()" style="margin-top: 1rem;">Retry</button>
       </div>
     `;
@@ -582,7 +582,7 @@ async function loadResources() {
 
         return `
           <div style="margin-bottom: 2.5rem;">
-            <h3 style="margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border-color);">
+            <h3 style="margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.08); color: #94a3b8; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em;">
               ${typeInfo.label}
             </h3>
             <div class="resources-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
@@ -734,8 +734,8 @@ async function loadStudents() {
   } catch (error) {
     console.error('Error loading students:', error);
     studentsList.innerHTML = `
-      <div style="text-align: center; padding: 3rem; background: #fee2e2; border: 1px solid #ef4444; border-radius: 0.5rem; color: #991b1b;">
-        <p>Error loading students: ${error.message}</p>
+      <div style="text-align: center; padding: 3rem; background: rgba(220,38,38,0.1); border: 1px solid rgba(220,38,38,0.3); border-radius: 0.5rem; color: #f87171;">
+        <p>Error loading students: ${escapeHtml(error.message)}</p>
         <button class="btn btn-primary" onclick="loadStudents()" style="margin-top: 1rem;">Retry</button>
       </div>
     `;
