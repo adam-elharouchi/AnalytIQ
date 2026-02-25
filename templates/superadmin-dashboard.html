@@ -282,6 +282,81 @@
     }
 
     /* Impersonation is now full-window (floating bar in base.html). No modal CSS needed. */
+
+    /* ── Icon Action Buttons ── */
+    .icon-btn {
+        width: 2rem;
+        height: 2rem;
+        border: none;
+        border-radius: 0.375rem;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.15s, opacity 0.15s;
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text-muted);
+        padding: 0;
+        flex-shrink: 0;
+    }
+
+    .icon-btn:hover {
+        background: rgba(255, 255, 255, 0.14);
+        color: var(--text-color);
+    }
+
+    .icon-btn svg {
+        width: 1rem;
+        height: 1rem;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+    .icon-btn.icon-btn-green {
+        background: rgba(5, 150, 105, 0.15);
+        color: #34d399;
+    }
+
+    .icon-btn.icon-btn-green:hover {
+        background: rgba(5, 150, 105, 0.3);
+    }
+
+    .icon-btn.icon-btn-success {
+        background: rgba(16, 185, 129, 0.15);
+        color: #34d399;
+    }
+
+    .icon-btn.icon-btn-success:hover {
+        background: rgba(16, 185, 129, 0.3);
+    }
+
+    .icon-btn.icon-btn-danger {
+        background: rgba(239, 68, 68, 0.12);
+        color: #f87171;
+    }
+
+    .icon-btn.icon-btn-danger:hover {
+        background: rgba(239, 68, 68, 0.28);
+    }
+
+    .icon-btn.icon-btn-amber {
+        background: rgba(245, 158, 11, 0.12);
+        color: #fbbf24;
+    }
+
+    .icon-btn.icon-btn-amber:hover {
+        background: rgba(245, 158, 11, 0.28);
+    }
+
+    .icon-btn-row {
+        display: flex;
+        gap: 0.3rem;
+        justify-content: flex-end;
+        align-items: center;
+    }
 </style>
 {% endblock %}
 
@@ -346,7 +421,7 @@
                 <span class="terminal-tab-num">01</span> Overview
             </button>
             <button class="terminal-tab-btn" data-target="analytics-section"
-                onclick="window.adminApp && window.adminApp.loadAnalytics()">
+                onclick="window.adminApp && window.adminApp.loadAnalytics(); window.adminApp && window.adminApp.loadAuditLog()">
                 <span class="terminal-tab-num">02</span> Analytics
             </button>
             <button class="terminal-tab-btn" data-target="tenants-section">
@@ -367,18 +442,11 @@
                 onclick="window.adminApp && window.adminApp.loadPlatformSettings()">
                 <span class="terminal-tab-num">07</span> Settings
             </button>
-            <button class="terminal-tab-btn" data-target="toggles-section">
-                <span class="terminal-tab-num">08</span> Role Switcher
-            </button>
             <button class="terminal-tab-btn" data-target="approvals-section"
                 onclick="window.adminApp && window.adminApp.loadPendingApprovals()">
-                <span class="terminal-tab-num">09</span> Approvals
+                <span class="terminal-tab-num">08</span> Approvals
                 <span id="approvals-badge" style="display:none; background:var(--color-error); color:var(--color-white);
                     font-size:0.68rem; font-weight:700; padding:1px 6px; border-radius:9999px; margin-left: 2px;">0</span>
-            </button>
-            <button class="terminal-tab-btn" data-target="audit-section"
-                onclick="window.adminApp && window.adminApp.loadAuditLog()">
-                <span class="terminal-tab-num">10</span> Audit Log
             </button>
         </div>
 
@@ -479,66 +547,168 @@
                     <p>Usage metrics, growth trends, and content statistics.</p>
                 </div>
 
-                <div id="analytics-stats-grid" class="stats-grid" style="margin-bottom:2rem;">
-                    <div class="stat-card">
-                        <h3>Total Users</h3>
-                        <div class="stat-value primary" id="an-total-users">—</div>
+                <!-- ── User metrics ── -->
+                <div class="bento-grid" style="margin-bottom: 1.5rem;">
+                    <div class="bento-card bento-span-4 neon-hover">
+                        <div class="bento-card-header">
+                            <div>
+                                <div style="font-family: var(--font-mono); font-size: 0.72rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.35rem;">Global Enrollment</div>
+                                <h3 style="margin: 0; font-size: 0.9rem;">Total Users</h3>
+                            </div>
+                            <span class="status-badge" style="background-color: rgba(37,105,244,0.12); color: var(--color-primary); border: 1px solid rgba(37,105,244,0.25); font-family: var(--font-mono); font-size: 0.7rem;">live</span>
+                        </div>
+                        <div class="bento-value primary" id="an-total-users">—</div>
                     </div>
-                    <div class="stat-card">
-                        <h3>New (7d)</h3>
-                        <div class="stat-value success" id="an-new-7d">—</div>
+                    <div class="bento-card bento-span-4 neon-hover">
+                        <div class="bento-card-header"><h3>New (7d)</h3></div>
+                        <div class="bento-value success" id="an-new-7d">—</div>
+                        <div style="margin-top: 0.5rem; font-family: var(--font-mono); font-size: 0.72rem; color: #64748b;">Last 7 days</div>
                     </div>
-                    <div class="stat-card">
-                        <h3>New (30d)</h3>
-                        <div class="stat-value success" id="an-new-30d">—</div>
+                    <div class="bento-card bento-span-4 neon-hover">
+                        <div class="bento-card-header"><h3>New (30d)</h3></div>
+                        <div class="bento-value success" id="an-new-30d">—</div>
+                        <div style="margin-top: 0.5rem; font-family: var(--font-mono); font-size: 0.72rem; color: #64748b;">Last 30 days</div>
                     </div>
-                    <div class="stat-card">
-                        <h3>Active (7d)</h3>
-                        <div class="stat-value purple" id="an-active-7d">—</div>
+                    <div class="bento-card bento-span-6 neon-hover">
+                        <div class="bento-card-header"><h3>Active (7d)</h3></div>
+                        <div class="bento-value purple" id="an-active-7d">—</div>
+                        <div style="margin-top: 0.5rem; font-family: var(--font-mono); font-size: 0.72rem; color: #64748b;">Unique active users</div>
                     </div>
-                    <div class="stat-card">
-                        <h3>Active (30d)</h3>
-                        <div class="stat-value purple" id="an-active-30d">—</div>
-                    </div>
-                </div>
-
-                <div
-                    style="display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:1.5rem; margin-bottom:2rem;">
-                    <div class="stat-card">
-                        <h3>Classes</h3>
-                        <div class="stat-value" id="an-classes">—</div>
-                    </div>
-                    <div class="stat-card">
-                        <h3>Chapters</h3>
-                        <div class="stat-value" id="an-chapters">—</div>
-                    </div>
-                    <div class="stat-card">
-                        <h3>Exercises</h3>
-                        <div class="stat-value" id="an-exercises">—</div>
-                    </div>
-                    <div class="stat-card">
-                        <h3>Completions</h3>
-                        <div class="stat-value success" id="an-completions">—</div>
+                    <div class="bento-card bento-span-6 neon-hover">
+                        <div class="bento-card-header"><h3>Active (30d)</h3></div>
+                        <div class="bento-value purple" id="an-active-30d">—</div>
+                        <div style="margin-top: 0.5rem; font-family: var(--font-mono); font-size: 0.72rem; color: #64748b;">Unique active users</div>
                     </div>
                 </div>
 
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; flex-wrap:wrap;">
-                    <!-- Role breakdown -->
-                    <div class="table-container" style="padding:1.5rem;">
-                        <h3 style="margin:0 0 1rem;font-size:1rem;">Users by Role</h3>
+                <!-- ── Content metrics ── -->
+                <div class="bento-grid" style="margin-bottom: 1.5rem;">
+                    <div class="bento-card bento-span-3 neon-hover">
+                        <div class="bento-card-header"><h3>Classes</h3></div>
+                        <div class="bento-value" id="an-classes">—</div>
+                    </div>
+                    <div class="bento-card bento-span-3 neon-hover">
+                        <div class="bento-card-header"><h3>Chapters</h3></div>
+                        <div class="bento-value" id="an-chapters">—</div>
+                    </div>
+                    <div class="bento-card bento-span-3 neon-hover">
+                        <div class="bento-card-header"><h3>Exercises</h3></div>
+                        <div class="bento-value" id="an-exercises">—</div>
+                    </div>
+                    <div class="bento-card bento-span-3 neon-hover">
+                        <div class="bento-card-header"><h3>Completions</h3></div>
+                        <div class="bento-value success" id="an-completions">—</div>
+                    </div>
+                </div>
+
+                <!-- ── Role breakdown + Top actions ── -->
+                <div class="bento-grid" style="margin-bottom: 1.5rem;">
+                    <div class="bento-card bento-span-6">
+                        <h3 style="margin: 0 0 1rem; font-size: 1rem;">Users by Role</h3>
                         <div id="an-roles" style="display:flex;flex-direction:column;gap:0.5rem;"></div>
                     </div>
-                    <!-- Top actions -->
-                    <div class="table-container" style="padding:1.5rem;">
-                        <h3 style="margin:0 0 1rem;font-size:1rem;">Top Actions (7d)</h3>
+                    <div class="bento-card bento-span-6">
+                        <h3 style="margin: 0 0 1rem; font-size: 1rem;">Top Actions (7d)</h3>
                         <div id="an-actions" style="display:flex;flex-direction:column;gap:0.5rem;"></div>
                     </div>
                 </div>
 
-                <div style="margin-top:1.5rem; text-align:right;">
-                    <button class="btn btn-secondary"
-                        onclick="window.adminApp && window.adminApp.loadAnalytics()">Refresh</button>
+                <div style="margin-bottom: 1.5rem; text-align:right;">
+                    <button class="btn btn-secondary" onclick="window.adminApp && window.adminApp.loadAnalytics()">Refresh</button>
                 </div>
+
+                <!-- ── Audit Log (merged) ── -->
+                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                    <span style="display:inline-block; width:10px; height:10px; background:var(--color-success); border-radius:50%; box-shadow: 0 0 8px var(--color-success); animation: pulse 2s infinite;"></span>
+                    <h2 style="margin: 0; font-size: 1.25rem; color: var(--text-color);">Live System Terminal</h2>
+                </div>
+                <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Real-time event streaming across all nodes and tenants.</p>
+
+                <!-- Audit Filters -->
+                <div style="display:flex; gap:0.75rem; flex-wrap:wrap; margin-bottom:1.5rem; align-items:flex-end; background: var(--bg-card); padding: 1rem; border-radius: 0.75rem; border: 1px solid var(--border-color);">
+                    <div style="flex: 1; min-width: 200px;">
+                        <label style="display:block; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted); margin-bottom:0.5rem;">Action Signature</label>
+                        <select id="audit-action-filter" style="width: 100%; padding:0.75rem; border:1px solid var(--border-color); border-radius:0.5rem; background:var(--bg-dark); color:var(--text-color); font-family: var(--font-mono); font-size: 0.85rem;">
+                            <option value="">[*] ALL_ACTIONS</option>
+                            <option>CREATE_USER</option>
+                            <option>RESET_PASSWORD</option>
+                            <option>UPDATE_PROFILE</option>
+                            <option>UPDATE_PASSWORD</option>
+                            <option>DELETE_USER</option>
+                            <option>CREATE_CLASS</option>
+                            <option>DELETE_CLASS</option>
+                            <option>ENROLL_CLASS</option>
+                            <option>CREATE_CHAPTER</option>
+                            <option>DELETE_CHAPTER</option>
+                            <option>IMPORT_CHAPTER</option>
+                            <option>CREATE_EXERCISE</option>
+                            <option>DELETE_EXERCISE</option>
+                            <option>EXERCISE_SUBMISSION</option>
+                            <option>IMPERSONATE_USER</option>
+                            <option>CREATE_TENANT</option>
+                            <option>UPDATE_TENANT</option>
+                            <option>DISABLE_USER</option>
+                            <option>ENABLE_USER</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1; min-width: 150px;">
+                        <label style="display:block; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted); margin-bottom:0.5rem;">Target Node</label>
+                        <select id="audit-resource-filter" style="width: 100%; padding:0.75rem; border:1px solid var(--border-color); border-radius:0.5rem; background:var(--bg-dark); color:var(--text-color); font-family: var(--font-mono); font-size: 0.85rem;">
+                            <option value="">[*] ALL_NODES</option>
+                            <option value="user">USER</option>
+                            <option value="chapter">CHAPTER</option>
+                            <option value="class">CLASS</option>
+                            <option value="tenant">TENANT</option>
+                            <option value="exercise">EXERCISE</option>
+                            <option value="application">APPLICATION</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1; min-width: 150px;">
+                        <label style="display:block; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted); margin-bottom:0.5rem;">From / To</label>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <input type="date" id="audit-from" style="width: 50%; padding:0.75rem; border:1px solid var(--border-color); border-radius:0.5rem; background:var(--bg-dark); color:var(--text-color); font-family: var(--font-mono); font-size: 0.75rem;" />
+                            <input type="date" id="audit-to" style="width: 50%; padding:0.75rem; border:1px solid var(--border-color); border-radius:0.5rem; background:var(--bg-dark); color:var(--text-color); font-family: var(--font-mono); font-size: 0.75rem;" />
+                        </div>
+                    </div>
+                    <button class="btn btn-secondary" onclick="window.adminApp && window.adminApp.loadAuditLog(1)">Execute Query</button>
+                    <button class="btn btn-primary" onclick="window.adminApp && window.adminApp.exportAuditLogCsv()" style="display: flex; align-items: center; gap: 0.5rem;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                        </svg>
+                        Dump Logs (.csv)
+                    </button>
+                </div>
+
+                <!-- Terminal-style Log Output -->
+                <div class="table-container" style="background: var(--color-dark); border: 1px solid #334155; border-radius: 0.75rem; padding: 0.5rem; box-shadow: 0 20px 40px rgba(0,0,0,0.3);">
+                    <div style="display: flex; gap: 0.5rem; padding: 0.5rem 1rem; border-bottom: 1px solid #334155; margin-bottom: 0.5rem;">
+                        <span style="display:block; width:12px; height:12px; border-radius:50%; background:#ef4444;"></span>
+                        <span style="display:block; width:12px; height:12px; border-radius:50%; background:#f59e0b;"></span>
+                        <span style="display:block; width:12px; height:12px; border-radius:50%; background:#10b981;"></span>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table class="admin-table admin-table-accent" style="font-family: var(--font-mono); font-size: 0.85rem; width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr>
+                                    <th style="color: #94a3b8; background: transparent; border-bottom: 1px dashed #334155; padding: 1rem;">TIMESTAMP</th>
+                                    <th style="color: #94a3b8; background: transparent; border-bottom: 1px dashed #334155; padding: 1rem;">ACTOR_ID</th>
+                                    <th style="color: #94a3b8; background: transparent; border-bottom: 1px dashed #334155; padding: 1rem;">ACTION_SIG</th>
+                                    <th style="color: #94a3b8; background: transparent; border-bottom: 1px dashed #334155; padding: 1rem;">TARGET_NODE</th>
+                                    <th style="color: #94a3b8; background: transparent; border-bottom: 1px dashed #334155; padding: 1rem;">IP_ADDR</th>
+                                </tr>
+                            </thead>
+                            <tbody id="audit-table-body" style="color: #e2e8f0;">
+                                <tr>
+                                    <td colspan="5" style="text-align:center; padding: 2rem;">
+                                        <span class="hero-bg-typed-cursor" style="color: var(--color-success);">▋</span>
+                                        Waiting for stream...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div id="audit-pagination" style="margin-top:1rem;display:flex;gap:0.5rem;align-items:center; justify-content: center; font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-muted);"></div>
             </section>
 
             <!-- Section: Tenants -->
@@ -947,39 +1117,6 @@
                 </div>
             </section>
 
-            <!-- Section: Role Switcher -->
-            <section id="toggles-section" class="admin-section">
-                <div class="dashboard-header">
-                    <h1>Role View Switcher</h1>
-                    <p>Quickly preview the platform from the perspective of different user roles.</p>
-                </div>
-
-                <div
-                    style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 2rem; display: flex; flex-direction: column; gap: 1.5rem;">
-                    <div>
-                        <h3 style="margin-bottom: 0.5rem; font-size: 1.25rem;">Preview as Student</h3>
-                        <p style="color: var(--text-muted); margin-bottom: 1rem;">View the "My Classes" dashboard,
-                            assignments, and student code tools just as a student enrolled in a class would see them.
-                        </p>
-                        <a href="/student-classes.html" class="btn btn-primary"
-                            style="display: inline-flex; align-items: center; gap: 0.5rem;">
-                            Go to Student View
-                        </a>
-                    </div>
-
-                    <hr style="border-color: var(--border-color); opacity: 0.5;">
-
-                    <div>
-                        <h3 style="margin-bottom: 0.5rem; font-size: 1.25rem;">Preview as Professor</h3>
-                        <p style="color: var(--text-muted); margin-bottom: 1rem;">Access the Professor Dashboard to view
-                            class management, module uploads, and analytics as an instructor.</p>
-                        <a href="/professor-dashboard.html" class="btn btn-secondary"
-                            style="display: inline-flex; align-items: center; gap: 0.5rem;">
-                            Go to Professor View
-                        </a>
-                    </div>
-                </div>
-            </section>
 
             <!-- Section: Pending Approvals -->
             <section id="approvals-section" class="admin-section">
@@ -1040,135 +1177,6 @@
                 </div>
             </section>
 
-            <!-- Section: Audit Log -->
-            <section id="audit-section" class="admin-section">
-                <div class="dashboard-header">
-                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-                        <span
-                            style="display:inline-block; width:10px; height:10px; background:var(--color-success); border-radius:50%; box-shadow: 0 0 8px var(--color-success); animation: pulse 2s infinite;"></span>
-                        <h1 style="margin: 0;">Live System Terminal</h1>
-                    </div>
-                    <p>Real-time event streaming across all nodes and tenants.</p>
-                </div>
-
-                <!-- Filters -->
-                <div
-                    style="display:flex; gap:0.75rem; flex-wrap:wrap; margin-bottom:1.5rem; align-items:flex-end; background: var(--bg-card); padding: 1rem; border-radius: 0.75rem; border: 1px solid var(--border-color);">
-                    <div style="flex: 1; min-width: 200px;">
-                        <label
-                            style="display:block; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted); margin-bottom:0.5rem;">Action
-                            Signature</label>
-                        <select id="audit-action-filter"
-                            style="width: 100%; padding:0.75rem; border:1px solid var(--border-color); border-radius:0.5rem; background:var(--bg-dark); color:var(--text-color); font-family: var(--font-mono); font-size: 0.85rem;">
-                            <option value="">[*] ALL_ACTIONS</option>
-                            <option>CREATE_USER</option>
-                            <option>RESET_PASSWORD</option>
-                            <option>UPDATE_PROFILE</option>
-                            <option>UPDATE_PASSWORD</option>
-                            <option>DELETE_USER</option>
-                            <option>CREATE_CLASS</option>
-                            <option>DELETE_CLASS</option>
-                            <option>ENROLL_CLASS</option>
-                            <option>CREATE_CHAPTER</option>
-                            <option>DELETE_CHAPTER</option>
-                            <option>IMPORT_CHAPTER</option>
-                            <option>CREATE_EXERCISE</option>
-                            <option>DELETE_EXERCISE</option>
-                            <option>EXERCISE_SUBMISSION</option>
-                            <option>IMPERSONATE_USER</option>
-                            <option>CREATE_TENANT</option>
-                            <option>UPDATE_TENANT</option>
-                            <option>DISABLE_USER</option>
-                            <option>ENABLE_USER</option>
-                        </select>
-                    </div>
-                    <div style="flex: 1; min-width: 150px;">
-                        <label
-                            style="display:block; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted); margin-bottom:0.5rem;">Target
-                            Node</label>
-                        <select id="audit-resource-filter"
-                            style="width: 100%; padding:0.75rem; border:1px solid var(--border-color); border-radius:0.5rem; background:var(--bg-dark); color:var(--text-color); font-family: var(--font-mono); font-size: 0.85rem;">
-                            <option value="">[*] ALL_NODES</option>
-                            <option value="user">USER</option>
-                            <option value="chapter">CHAPTER</option>
-                            <option value="class">CLASS</option>
-                            <option value="tenant">TENANT</option>
-                            <option value="exercise">EXERCISE</option>
-                            <option value="application">APPLICATION</option>
-                        </select>
-                    </div>
-                    <div style="flex: 1; min-width: 150px;">
-                        <label
-                            style="display:block; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted); margin-bottom:0.5rem;">From
-                            / To</label>
-                        <div style="display: flex; gap: 0.5rem;">
-                            <input type="date" id="audit-from"
-                                style="width: 50%; padding:0.75rem; border:1px solid var(--border-color); border-radius:0.5rem; background:var(--bg-dark); color:var(--text-color); font-family: var(--font-mono); font-size: 0.75rem;" />
-                            <input type="date" id="audit-to"
-                                style="width: 50%; padding:0.75rem; border:1px solid var(--border-color); border-radius:0.5rem; background:var(--bg-dark); color:var(--text-color); font-family: var(--font-mono); font-size: 0.75rem;" />
-                        </div>
-                    </div>
-                    <button class="btn btn-secondary"
-                        onclick="window.adminApp && window.adminApp.loadAuditLog(1)">Execute Query</button>
-                    <button class="btn btn-primary" onclick="window.adminApp && window.adminApp.exportAuditLogCsv()"
-                        style="display: flex; align-items: center; gap: 0.5rem;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                        </svg>
-                        Dump Logs (.csv)
-                    </button>
-                </div>
-
-                <!-- Terminal-style Log Output -->
-                <div class="table-container"
-                    style="background: var(--color-dark); border: 1px solid #334155; border-radius: 0.75rem; padding: 0.5rem; box-shadow: 0 20px 40px rgba(0,0,0,0.3);">
-                    <div
-                        style="display: flex; gap: 0.5rem; padding: 0.5rem 1rem; border-bottom: 1px solid #334155; margin-bottom: 0.5rem;">
-                        <span
-                            style="display:block; width:12px; height:12px; border-radius:50%; background:#ef4444;"></span>
-                        <span
-                            style="display:block; width:12px; height:12px; border-radius:50%; background:#f59e0b;"></span>
-                        <span
-                            style="display:block; width:12px; height:12px; border-radius:50%; background:#10b981;"></span>
-                    </div>
-                    <div style="overflow-x: auto;">
-                        <table class="admin-table admin-table-accent"
-                            style="font-family: var(--font-mono); font-size: 0.85rem; width: 100%; border-collapse: collapse;">
-                            <thead>
-                                <tr>
-                                    <th
-                                        style="color: #94a3b8; background: transparent; border-bottom: 1px dashed #334155; padding: 1rem;">
-                                        TIMESTAMP</th>
-                                    <th
-                                        style="color: #94a3b8; background: transparent; border-bottom: 1px dashed #334155; padding: 1rem;">
-                                        ACTOR_ID</th>
-                                    <th
-                                        style="color: #94a3b8; background: transparent; border-bottom: 1px dashed #334155; padding: 1rem;">
-                                        ACTION_SIG</th>
-                                    <th
-                                        style="color: #94a3b8; background: transparent; border-bottom: 1px dashed #334155; padding: 1rem;">
-                                        TARGET_NODE</th>
-                                    <th
-                                        style="color: #94a3b8; background: transparent; border-bottom: 1px dashed #334155; padding: 1rem;">
-                                        IP_ADDR</th>
-                                </tr>
-                            </thead>
-                            <tbody id="audit-table-body" style="color: #e2e8f0;">
-                                <tr>
-                                    <td colspan="5" style="text-align:center; padding: 2rem;">
-                                        <span class="hero-bg-typed-cursor" style="color: var(--color-success);">▋</span>
-                                        Waiting for stream...
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <div id="audit-pagination"
-                    style="margin-top:1rem;display:flex;gap:0.5rem;align-items:center; justify-content: center; font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-muted);">
-                </div>
-            </section>
 
         </div>
     </div>

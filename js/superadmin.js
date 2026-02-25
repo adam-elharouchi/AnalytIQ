@@ -342,16 +342,29 @@ class SuperAdminDashboard {
                 <td style="padding: 1rem; text-transform: capitalize; color: ${statusColor}; font-weight: 500;">
                     <span class="${u.account_status === 'disabled' ? 'status-badge disabled' : 'status-badge active'}">${escapeHtml(u.account_status)}</span>
                 </td>
-                <td style="padding: 1rem;">
-                    <div style="display:flex;gap:0.4rem;justify-content:flex-end;flex-wrap:wrap;">
-                        ${!u.is_super_admin ? `<button class="btn btn-sm" style="background:#059669;color:#fff;border:none;font-size:0.8rem;" onclick="window.adminApp.impersonateUser('${u.user_id}')">Impersonate</button>` : ''}
-                        <button class="btn btn-sm btn-secondary" style="font-size:0.8rem;" onclick="window.adminApp.changeUserRole('${u.user_id}','${escapeHtml(u.role)}')">Role</button>
-                        <button class="btn btn-sm ${u.account_status === 'disabled' ? 'btn-success' : 'btn-secondary'}" style="font-size:0.8rem;" onclick="window.adminApp.toggleUserStatus('${u.user_id}','${u.account_status === 'disabled' ? 'active' : 'disabled'}')">
-                            ${u.account_status === 'disabled' ? 'Enable' : 'Disable'}
+                <td style="padding: 0.75rem 1rem;">
+                    <div class="icon-btn-row">
+                        ${!u.is_super_admin ? `
+                        <button class="icon-btn icon-btn-green" title="Impersonate" onclick="window.adminApp.impersonateUser('${u.user_id}')">
+                            <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>
+                        </button>` : ''}
+                        <button class="icon-btn" title="Change Role" onclick="window.adminApp.changeUserRole('${u.user_id}','${escapeHtml(u.role)}')">
+                            <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                         </button>
-                        <button class="btn btn-sm btn-secondary" style="font-size:0.8rem;" onclick="window.adminApp.forcePasswordReset('${u.user_id}','${safeName}')">Reset PW</button>
-                        <button class="btn btn-sm btn-secondary" style="font-size:0.8rem;" onclick="window.adminApp.exportUserData('${u.user_id}')">Export</button>
-                        <button class="btn btn-sm btn-danger" style="font-size:0.8rem;" onclick="window.adminApp.deleteUser('${u.user_id}','${safeName}')">Delete</button>
+                        <button class="icon-btn ${u.account_status === 'disabled' ? 'icon-btn-success' : 'icon-btn-amber'}" title="${u.account_status === 'disabled' ? 'Enable' : 'Disable'}" onclick="window.adminApp.toggleUserStatus('${u.user_id}','${u.account_status === 'disabled' ? 'active' : 'disabled'}')">
+                            ${u.account_status === 'disabled'
+                                ? `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="10 8 16 12 10 16 10 8"/></svg>`
+                                : `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="10" y1="15" x2="10" y2="9"/><line x1="14" y1="15" x2="14" y2="9"/></svg>`}
+                        </button>
+                        <button class="icon-btn" title="Reset Password" onclick="window.adminApp.forcePasswordReset('${u.user_id}','${safeName}')">
+                            <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                        </button>
+                        <button class="icon-btn" title="Export Data" onclick="window.adminApp.exportUserData('${u.user_id}')">
+                            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        </button>
+                        <button class="icon-btn icon-btn-danger" title="Delete User" onclick="window.adminApp.deleteUser('${u.user_id}','${safeName}')">
+                            <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+                        </button>
                     </div>
                 </td>
             `;
@@ -876,9 +889,15 @@ class SuperAdminDashboard {
                     </td>
                     <td style="padding:1rem;text-align:center;">${c.student_count || 0}</td>
                     <td style="padding:1rem;text-align:center;">${c.chapter_count || 0}</td>
-                    <td style="padding:1rem;text-align:right;display:flex;gap:0.4rem;justify-content:flex-end;">
-                        <button class="btn btn-sm btn-secondary" onclick="window.adminApp.transferClass('${c.class_id}','${safeName}')">Transfer</button>
-                        <button class="btn btn-sm btn-danger" onclick="window.adminApp.deleteClass('${c.class_id}','${safeName}')">Delete</button>
+                    <td style="padding:0.75rem 1rem;">
+                        <div class="icon-btn-row">
+                            <button class="icon-btn" title="Transfer Ownership" onclick="window.adminApp.transferClass('${c.class_id}','${safeName}')">
+                                <svg viewBox="0 0 24 24"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+                            </button>
+                            <button class="icon-btn icon-btn-danger" title="Delete Class" onclick="window.adminApp.deleteClass('${c.class_id}','${safeName}')">
+                                <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+                            </button>
+                        </div>
                     </td>
                 </tr>`;
             }).join('');
