@@ -45,79 +45,128 @@ async function loadClasses() {
   }
 }
 
-// Render classes grid
+// Render classes grid — asymmetric bento layout with neon hover
 function renderClasses(classes) {
   const classesGrid = document.getElementById('classesGrid');
-  classesGrid.innerHTML = classes.map(classItem => `
-    <div class="class-card" style="background: white; border: 1px solid var(--border-color); border-radius: 0.5rem; padding: 1.5rem; transition: box-shadow 0.2s;">
-      <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
-        <h3 style="margin: 0;font-size: 1.25rem;">${escapeHtml(classItem.name)}</h3>
-        <span style="background: var(--color-primary); color: white; padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.875rem; font-weight: 600;">${escapeHtml(classItem.class_id)}</span>
-      </div>
-      
-      ${classItem.description ? `<p style="color: #64748b; margin-bottom: 1rem; line-height: 1.5;">${escapeHtml(classItem.description)}</p>` : ''}
-      
-      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1.5rem; padding: 1rem; background: #f8fafc; border-radius: 0.375rem;">
-        <div>
-          <div style="font-size: 1.5rem; font-weight: 600; color: var(--color-primary);">${classItem.student_count || 0}</div>
-          <div style="font-size: 0.875rem; color: #64748b;">Students</div>
+  const count = classes.length;
+
+  // Set grid based on count
+  if (count === 1) {
+    classesGrid.style.cssText = 'display: grid; grid-template-columns: 1fr; gap: 1.5rem;';
+  } else {
+    classesGrid.style.cssText = 'display: grid; grid-template-columns: repeat(12, 1fr); gap: 1.5rem;';
+  }
+
+  classesGrid.innerHTML = classes.map((classItem, index) => {
+    const isFeatured = index === 0 && count > 1;
+
+    // Asymmetric: first card span 8 (primary node), rest span 4
+    let spanStyle = '';
+    if (count === 2) {
+      spanStyle = index === 0 ? 'grid-column: span 8;' : 'grid-column: span 4;';
+    } else if (count >= 3) {
+      spanStyle = index === 0 ? 'grid-column: span 8;' : 'grid-column: span 4;';
+    }
+
+    return `
+    <div class="class-card bento-card neon-hover"
+      style="${spanStyle} display: flex; flex-direction: column; cursor: default; overflow: hidden; padding: 0;">
+
+      <!-- IDE-style tab header -->
+      <div style="background: rgba(0,0,0,0.25); padding: 0.65rem 1.25rem; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+        <div style="display: flex; align-items: center; gap: 0.5rem; font-family: var(--font-mono); font-size: 0.75rem; color: #64748b;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+          </svg>
+          ${escapeHtml(classItem.class_id)}.node
         </div>
-        <div>
-          <div style="font-size: 1.5rem; font-weight: 600; color: var(--color-primary);">${classItem.chapter_count || 0}</div>
-          <div style="font-size: 0.875rem; color: #64748b;">Chapters</div>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          ${isFeatured ? '<span style="font-family: var(--font-mono); font-size: 0.66rem; color: rgba(37,105,244,0.7); background: rgba(37,105,244,0.1); border: 1px solid rgba(37,105,244,0.25); padding: 0.1rem 0.45rem; border-radius: 0.25rem; text-transform: uppercase; letter-spacing: 0.04em;">PRIMARY NODE</span>' : ''}
+          <div class="card-indicator" style="width: 8px; height: 8px; border-radius: 50%; background: var(--color-success); opacity: 0.5; transition: opacity 0.2s, box-shadow 0.2s;"></div>
         </div>
       </div>
-      
-      <div style="display: flex; gap: 0.5rem;">
-        <button 
-          class="btn btn-primary" 
-          style="flex: 1;"
-          onclick="viewClass('${escapeHtml(classItem.class_id)}')"
-        >
-          View Class
-        </button>
-        <button 
-          class="btn btn-secondary" 
-          onclick="copyClassCode('${escapeHtml(classItem.class_id)}')"
-          title="Copy Class Code"
-        >
-          Copy
-        </button>
-        <button
-          class="btn btn-secondary"
-          onclick="deleteClass('${escapeHtml(classItem.class_id)}', '${escapeHtml(classItem.name)}')"
-          title="Delete Class"
-          style="color: #dc2626;"
-        >
-          Delete
-        </button>
+
+      <div style="padding: ${isFeatured ? '2rem' : '1.25rem 1.5rem'}; flex: 1; display: flex; flex-direction: column;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem; gap: 1rem;">
+          <h3 style="margin: 0; font-size: ${isFeatured ? '1.45rem' : '1.1rem'}; color: #f8fafc; font-weight: 700; line-height: 1.2;">
+            ${escapeHtml(classItem.name)}
+          </h3>
+          <span style="flex-shrink: 0; background: rgba(37,105,244,0.08); border: 1px solid rgba(37,105,244,0.25); color: rgba(37,105,244,0.8); padding: 0.2rem 0.55rem; border-radius: 0.25rem; font-size: 0.75rem; font-family: var(--font-mono); white-space: nowrap;">
+            ${escapeHtml(classItem.class_id)}
+          </span>
+        </div>
+
+        ${classItem.description
+          ? `<p style="color: #94a3b8; margin-bottom: ${isFeatured ? '1.5rem' : '1rem'}; line-height: 1.55; font-size: ${isFeatured ? '0.95rem' : '0.875rem'}; flex: 1;">${escapeHtml(classItem.description)}</p>`
+          : '<div style="flex: 1;"></div>'}
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; margin-bottom: ${isFeatured ? '1.5rem' : '1rem'}; padding: 0.85rem; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.04); border-radius: 0.5rem;">
+          <div>
+            <div style="font-size: ${isFeatured ? '1.85rem' : '1.35rem'}; font-family: var(--font-mono); color: #f8fafc; font-weight: 700; line-height: 1;">${classItem.student_count || 0}</div>
+            <div style="font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 0.25rem;">Enrolled</div>
+          </div>
+          <div>
+            <div style="font-size: ${isFeatured ? '1.85rem' : '1.35rem'}; font-family: var(--font-mono); color: #f8fafc; font-weight: 700; line-height: 1;">${classItem.chapter_count || 0}</div>
+            <div style="font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 0.25rem;">Modules</div>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: ${isFeatured ? '1.25rem' : '0.85rem'};">
+          <button
+            class="btn btn-primary"
+            style="flex: 1; font-family: var(--font-mono); font-size: 0.82rem;"
+            onclick="viewClass('${escapeHtml(classItem.class_id)}')"
+          >
+            &gt; run class_manager
+          </button>
+          <button
+            class="btn btn-secondary"
+            style="background: transparent; border-color: rgba(255,255,255,0.1); color: #94a3b8; font-family: var(--font-mono); font-size: 0.82rem; padding: 0.5rem 0.65rem; flex-shrink: 0;"
+            onclick="copyClassCode('${escapeHtml(classItem.class_id)}')"
+            title="Copy Target ID"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+          </button>
+          <button
+            class="btn btn-secondary"
+            onclick="deleteClass('${escapeHtml(classItem.class_id)}', '${escapeHtml(classItem.name)}')"
+            title="Delete Node"
+            style="background: transparent; border-color: rgba(239,68,68,0.3); color: #ef4444; font-family: var(--font-mono); font-size: 0.82rem; flex-shrink: 0;"
+          >
+            rm -rf
+          </button>
+        </div>
       </div>
     </div>
-  `).join('');
+    `;
+  }).join('');
 
-  // Add hover effect
-  const classCards = classesGrid.querySelectorAll('.class-card');
-  classCards.forEach(card => {
+  // Card indicator hover effect
+  classesGrid.querySelectorAll('.class-card').forEach(card => {
     card.addEventListener('mouseenter', function () {
-      this.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+      const dot = this.querySelector('.card-indicator');
+      if (dot) { dot.style.opacity = '1'; dot.style.boxShadow = '0 0 8px var(--color-success)'; }
     });
     card.addEventListener('mouseleave', function () {
-      this.style.boxShadow = 'none';
+      const dot = this.querySelector('.card-indicator');
+      if (dot) { dot.style.opacity = '0.5'; dot.style.boxShadow = 'none'; }
     });
   });
 }
 
-// Show create class modal
+// Show create class modal (Sliding Drawer)
 function showCreateClassModal() {
-  const modal = document.getElementById('createClassModal');
-  modal.style.display = 'flex';
+  document.getElementById('drawerOverlay').classList.add('visible');
+  document.getElementById('createClassModal').classList.add('visible');
   document.getElementById('className').focus();
 }
 
-// Hide create class modal
+// Hide create class modal (Sliding Drawer)
 function hideCreateClassModal() {
-  const modal = document.getElementById('createClassModal');
-  modal.style.display = 'none';
+  document.getElementById('drawerOverlay').classList.remove('visible');
+  document.getElementById('createClassModal').classList.remove('visible');
   document.getElementById('createClassForm').reset();
   document.getElementById('createClassError').style.display = 'none';
 }
