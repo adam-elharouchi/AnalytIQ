@@ -25,83 +25,53 @@
     <p style="color: #64748b;">Loading class details...</p>
   </div>
 
-  <!-- Class Header (Bento Style) -->
-  <div id="classHeader"
-    style="margin-bottom: 2.5rem; display: grid; grid-template-columns: repeat(12, 1fr); gap: 1.25rem;">
+  <!-- Class Header (Unified Fluid Card) -->
+  <div id="classHeader" style="margin-bottom: 2.5rem;">
+    <div style="background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); border-radius: 1rem; padding: 2rem; box-shadow: 0 8px 32px rgba(0,0,0,0.25);">
 
-    <!-- Left Column: Info & Description -->
-    <div
-      style="grid-column: span 8; background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); border-radius: 1rem; padding: 2rem; box-shadow: 0 8px 32px rgba(0,0,0,0.25);">
-      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-        <div>
+      <!-- Top row: identity + class code -->
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem;">
+        <div style="flex: 1; min-width: 0;">
           <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem;">
-            <span
-              style="width: 8px; height: 8px; border-radius: 50%; background: var(--color-success); box-shadow: 0 0 8px var(--color-success);"></span>
-            <span
-              style="font-family: var(--font-mono); color: var(--color-success); font-size: 0.8rem; letter-spacing: 0.05em; text-transform: uppercase;">Active
-              Workspace</span>
+            <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--color-success); box-shadow: 0 0 8px var(--color-success); flex-shrink: 0;"></span>
+            <span style="font-family: var(--font-mono); color: var(--color-success); font-size: 0.8rem; letter-spacing: 0.05em; text-transform: uppercase;">Active Workspace</span>
           </div>
           <h1 id="className" style="margin: 0 0 0.5rem 0; color: #f8fafc; font-size: 2rem; font-weight: 700;"></h1>
-          <p id="classDescription"
-            style="color: #94a3b8; font-size: 1.05rem; line-height: 1.6; max-width: 90%; margin-bottom: 1.5rem;"></p>
-
-          <div style="display: flex; align-items: center; gap: 1.5rem;">
-            <div
-              style="display: flex; align-items: center; gap: 0.5rem; background: rgba(0,0,0,0.2); padding: 0.5rem 1rem; border-radius: 0.5rem; border: 1px solid rgba(255,255,255,0.05);">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                style="color: var(--color-primary);">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
-              </svg>
-              <span style="color: #e2e8f0; font-size: 0.9rem;" id="professorName"></span>
-            </div>
+          <p id="classDescription" style="color: #94a3b8; font-size: 1rem; line-height: 1.6; margin-bottom: 1.25rem;"></p>
+          <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(0,0,0,0.2); padding: 0.45rem 0.9rem; border-radius: 0.5rem; border: 1px solid rgba(255,255,255,0.05);">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <span style="color: #e2e8f0; font-size: 0.875rem;" id="professorName"></span>
           </div>
         </div>
 
-        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem;">
-          <div
-            style="background: rgba(37, 105, 244, 0.15); border: 1px solid rgba(37, 105, 244, 0.3); color: var(--color-primary); padding: 0.5rem 1rem; border-radius: 0.5rem; font-family: var(--font-mono); font-weight: 600; font-size: 1.1rem; letter-spacing: 0.1em;"
-            id="classCode"></div>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem; flex-shrink: 0; margin-left: 1.5rem;">
+          <div style="background: rgba(37, 105, 244, 0.15); border: 1px solid rgba(37, 105, 244, 0.3); color: var(--color-primary); padding: 0.5rem 1rem; border-radius: 0.5rem; font-family: var(--font-mono); font-weight: 600; font-size: 1.1rem; letter-spacing: 0.1em;" id="classCode"></div>
           <button class="btn btn-secondary" onclick="copyClassCodeToClipboard()" id="copyCodeBtn"
             style="background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; font-size: 0.8rem; padding: 0.25rem 0.75rem; transition: all 0.2s;">
             Copy Code
           </button>
         </div>
       </div>
-    </div>
 
-    <!-- Right Column: Stats Bento -->
-    <div style="grid-column: span 4; display: grid; grid-template-rows: 1fr 1fr; gap: 1rem;">
-      <div style="display: flex; gap: 1rem;">
-        <div
-          style="flex: 1; background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); border-radius: 1rem; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 1.5rem; box-shadow: 0 4px 16px rgba(0,0,0,0.15);">
-          <div
-            style="font-size: 2.25rem; font-weight: 700; color: #f8fafc; font-family: var(--font-mono); line-height: 1;"
-            id="chapterCountStat">0</div>
-          <div
-            style="font-size: 0.8rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.5rem;">
-            Modules</div>
+      <!-- Stats row: fluid inline dividers -->
+      <div style="display: flex; border-top: 1px solid rgba(255,255,255,0.07); padding-top: 1.25rem;">
+        <div style="flex: 1; text-align: center; padding: 0.25rem 0.5rem; border-right: 1px solid rgba(255,255,255,0.07);">
+          <div style="font-size: 2rem; font-weight: 700; color: #f8fafc; font-family: var(--font-mono); line-height: 1;" id="chapterCountStat">0</div>
+          <div style="font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 0.35rem;">Modules</div>
         </div>
-        <div
-          style="flex: 1; background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); border-radius: 1rem; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 1.5rem; box-shadow: 0 4px 16px rgba(0,0,0,0.15);">
-          <div
-            style="font-size: 2.25rem; font-weight: 700; color: #f8fafc; font-family: var(--font-mono); line-height: 1;"
-            id="studentCountStat">0</div>
-          <div
-            style="font-size: 0.8rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.5rem;">
-            Peers</div>
+        <div style="flex: 1; text-align: center; padding: 0.25rem 0.5rem; border-right: 1px solid rgba(255,255,255,0.07);">
+          <div style="font-size: 2rem; font-weight: 700; color: #f8fafc; font-family: var(--font-mono); line-height: 1;" id="studentCountStat">0</div>
+          <div style="font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 0.35rem;">Peers</div>
+        </div>
+        <div style="flex: 1; text-align: center; padding: 0.25rem 0.5rem;">
+          <div style="font-size: 2rem; font-weight: 700; color: var(--color-primary); font-family: var(--font-mono); line-height: 1;" id="exerciseCountStat">0</div>
+          <div style="font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 0.35rem;">Practice Exercises</div>
         </div>
       </div>
-      <div
-        style="background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); border-radius: 1rem; display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 1rem; padding: 1.5rem; box-shadow: 0 4px 16px rgba(0,0,0,0.15);">
-        <div
-          style="font-size: 2.25rem; font-weight: 700; color: var(--color-primary); font-family: var(--font-mono); line-height: 1;"
-          id="exerciseCountStat">0</div>
-        <div style="display: flex; flex-direction: column;">
-          <div style="font-size: 0.9rem; color: #f8fafc; font-weight: 600;">Practice Exercises</div>
-          <div style="font-size: 0.8rem; color: #94a3b8;">Available to solve</div>
-        </div>
-      </div>
+
     </div>
   </div>
 
