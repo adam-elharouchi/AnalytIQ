@@ -641,6 +641,92 @@
         transform: scale(1);
       }
     }
+
+    .ide-layout {
+      display: flex;
+      height: calc(100vh - 64px - 28px);
+      gap: 1.5rem;
+      padding: 1.5rem;
+      background: var(--bg-primary);
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+
+    .split-pane-left {
+      width: 35%;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      padding-right: 0.5rem;
+    }
+
+    .split-pane-right {
+      width: 65%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .ide-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .embedded-chat-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 300px;
+    }
+
+    .ide-status-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 28px;
+      background: #0f172a;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      align-items: center;
+      padding: 0 1rem;
+      gap: 1.5rem;
+      z-index: 1000;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+    }
+
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .status-label {
+      color: #64748b;
+      text-transform: uppercase;
+    }
+
+    .status-value {
+      color: #e2e8f0;
+    }
+
+    .split-pane-left::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .split-pane-left::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .split-pane-left::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+    }
   </style>
   <!-- LOCAL DEV ONLY: dark theme — remove before deploy -->
   <link rel="stylesheet" href="css/local-dev-light-theme.css" />
@@ -651,103 +737,148 @@
 <body>
   <nav class="navbar" id="navbar"></nav>
 
-  <!-- Code Assistant Chat Widget -->
-  <button class="chat-widget-button" id="chatWidgetButton" onclick="toggleChatWidget()" title="Ask a question" aria-label="Open Code Assistant">
-    <span class="logo-iq" aria-hidden="true">IQ</span>
-  </button>
-
-  <div class="chat-widget-container" id="chatWidgetContainer">
-    <div class="chat-modal">
-      <div class="chat-modal-header">
-        <h3>Code Assistant</h3>
-        <button class="chat-modal-close" onclick="toggleChatWidget()" aria-label="Close Code Assistant">×</button>
-      </div>
-      <div class="chat-modal-body">
-        <div class="chat-messages" id="chatMessagesContainer">
-          <div class="welcome-section" id="playgroundWelcomeSection">
-            <div class="welcome-message">
-              <p>Hello! I'm your Code Assistant. I can help you with questions about this exercise, explain concepts,
-                provide hints, and assist with your code.</p>
-            </div>
-          </div>
-        </div>
-        <div class="chat-input-area-fixed"
-          style="position: relative; bottom: auto; left: auto; right: auto; padding: 0.5rem 1rem; border-top: 1px solid var(--border-color);">
-          <div class="input-container-compact">
-            <div class="input-wrapper">
-              <textarea class="chat-input-compact" id="chatInputField" aria-label="Chat message"
-                placeholder="Type your message, paste code, or describe what you need..." rows="2"
-                onkeydown="handlePlaygroundKeyDown(event)"></textarea>
-              <button class="btn-send-compact" id="chatSendButton" onclick="sendPlaygroundChatMessage()"
-                title="Send message">Send</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <main class="container">
-    <div class="playground-container">
-      <div class="playground-header">
-        <h1>Practice Playground</h1>
-        <button id="backButton" class="btn btn-primary"
-          style="text-decoration: none; display: inline-block; margin-top: 0.5rem; color: #ffffff; border: none; cursor: pointer; padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-size: 1rem; font-weight: 600;">←
-          Back to Exercise</button>
+  <!-- Replace with full IDE layout -->
+  <main class="ide-layout">
+    <div class="split-pane-left">
+      <div class="playground-header"
+        style="margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+        <button id="backButton" class="btn btn-secondary"
+          style="font-family: var(--font-mono); font-size: 0.85rem; padding: 0.5rem 1rem; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; cursor: pointer;">&lt;
+          Exit Workspace</button>
       </div>
 
-      <div class="exercise-info" id="exerciseInfo">
-        <h2 id="exerciseTitle">Loading exercise...</h2>
-        <span class="difficulty-badge" id="exerciseDifficulty">Easy</span>
-        <div class="exercise-description" id="exerciseDescription">
+      <div class="exercise-info" id="exerciseInfo"
+        style="background: transparent; border: none; padding: 0; margin-bottom: 1.5rem;">
+        <h2 id="exerciseTitle" style="font-family: var(--font-mono); color: #f8fafc; font-size: 1.25rem;">Loading
+          exercise...</h2>
+        <span class="difficulty-badge" id="exerciseDifficulty"
+          style="display: inline-block; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-family: var(--font-mono); font-size: 0.75rem; font-weight: 600; margin-bottom: 0.5rem;">Easy</span>
+        <div class="exercise-description" id="exerciseDescription"
+          style="color: #94a3b8; font-size: 0.95rem; line-height: 1.5;">
           Loading exercise description...
         </div>
       </div>
 
-      <div class="submission-message" id="submissionMessage"></div>
-
-      <div class="playground-stats" id="playgroundStats" style="display: none;">
-        <div class="stat-item">
-          <span class="stat-label">Time</span>
-          <span class="stat-value timer" id="timerDisplay">00:00</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-label">Accuracy</span>
-          <span class="stat-value accuracy" id="accuracyDisplay">0%</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-label">Score</span>
-          <span class="stat-value score" id="scoreDisplay">0</span>
-        </div>
+      <div class="submission-message" id="submissionMessage"
+        style="font-family: var(--font-mono); font-size: 0.85rem; margin-bottom: 1rem; display: none; padding: 0.75rem; border-radius: 0.5rem;">
       </div>
 
-      <div class="code-editor-section">
-        <h3 id="codeEditorTitle">Your Code</h3>
-        <div class="code-editor-wrapper">
-          <div class="code-editor-header">
-            <div class="code-editor-header-left">
-              <div class="code-editor-dot red"></div>
-              <div class="code-editor-dot yellow"></div>
-              <div class="code-editor-dot green"></div>
-              <span class="code-editor-title">main.py</span>
+      <!-- Code Assistant embedded naturally -->
+      <div class="embedded-chat-container">
+        <div class="chat-modal-header"
+          style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 0.5rem 0.5rem 0 0; padding: 0.75rem 1rem;">
+          <h3
+            style="margin: 0; font-family: var(--font-mono); font-size: 0.85rem; color: #94a3b8; font-weight: normal;">
+            &gt; auto_assistant</h3>
+        </div>
+        <div class="chat-modal-body"
+          style="flex: 1; display: flex; flex-direction: column; background: rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.05); border-top: none; border-radius: 0 0 0.5rem 0.5rem; overflow: hidden;">
+          <div class="chat-messages" id="chatMessagesContainer"
+            style="flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 1rem;">
+            <div class="welcome-section" id="playgroundWelcomeSection">
+              <div class="welcome-message"
+                style="background: rgba(37, 105, 244, 0.1); border: 1px solid rgba(37, 105, 244, 0.3); border-radius: 0.5rem; padding: 0.75rem;">
+                <p
+                  style="margin: 0; font-family: var(--font-mono); font-size: 0.85rem; color: var(--color-primary-light);">
+                  System: Code Assistant Online. Awaiting queries.</p>
+              </div>
             </div>
           </div>
-          <div class="code-editor-container">
-            <div class="code-editor-line-numbers" id="lineNumbers"></div>
-            <textarea id="codeEditor" class="code-editor" aria-labelledby="codeEditorTitle" placeholder="Write your code here..." spellcheck="false"
-              onscroll="syncLineNumbers()" oninput="updateLineNumbers()"
-              onkeydown="handleCodeEditorKeyDown(event)"></textarea>
-            <div id="codeDisplay" class="code-display"></div>
+          <div class="chat-input-area-fixed"
+            style="border-top: 1px solid rgba(255,255,255,0.05); background: transparent; padding: 0.5rem;">
+            <div class="input-container-compact" style="display: flex; gap: 0.5rem;">
+              <div class="input-wrapper" style="flex: 1; display: flex; gap: 0.5rem;">
+                <textarea class="chat-input-compact" id="chatInputField" aria-label="Chat message"
+                  placeholder="Input query..." rows="1" onkeydown="handlePlaygroundKeyDown(event)"
+                  style="flex: 1; font-family: var(--font-mono); font-size: 0.85rem; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: #e2e8f0; border-radius: 0.25rem; padding: 0.5rem; resize: none;"></textarea>
+                <button class="btn-send-compact" id="chatSendButton" onclick="sendPlaygroundChatMessage()"
+                  title="Send message"
+                  style="font-family: var(--font-mono); font-size: 0.85rem; background: var(--color-primary); color: white; border: none; border-radius: 0.25rem; padding: 0 1rem; cursor: pointer;">Eval</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
+    </div>
 
-      <div class="playground-actions">
-        <button class="btn-submit" id="submitBtn" onclick="submitSolution()">Submit Solution</button>
-        <button class="btn-reset" onclick="resetCode()">Reset Code</button>
+    <div class="split-pane-right">
+      <div class="ide-toolbar">
+        <h3 id="codeEditorTitle"
+          style="margin: 0; font-family: var(--font-mono); font-size: 1rem; color: #f8fafc; display: flex; align-items: center; gap: 0.5rem;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" style="color: var(--color-primary);">
+            <polyline points="16 18 22 12 16 6"></polyline>
+            <polyline points="8 6 2 12 8 18"></polyline>
+          </svg>
+          Workspace
+        </h3>
+        <div style="display: flex; gap: 0.5rem;">
+          <button class="btn btn-secondary" onclick="resetCode()"
+            style="font-family: var(--font-mono); font-size: 0.85rem; padding: 0.4rem 0.8rem; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; cursor: pointer; border-radius: 0.25rem;">reset_env</button>
+          <button class="btn btn-primary" id="submitBtn" onclick="submitSolution()"
+            style="font-family: var(--font-mono); font-size: 0.85rem; padding: 0.4rem 0.8rem; display: flex; align-items: center; gap: 0.4rem; cursor: pointer; background: var(--color-primary); color: white; border: none; border-radius: 0.25rem;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            Compile & Submit
+          </button>
+        </div>
+      </div>
+
+      <div class="code-editor-section"
+        style="margin-bottom: 0; display: flex; flex-direction: column; flex: 1; overflow: hidden;">
+        <div class="code-editor-wrapper"
+          style="flex: 1; display: flex; flex-direction: column; border: 1px solid rgba(255,255,255,0.05); border-radius: 0.5rem; background: #0f172a; box-shadow: none; overflow: hidden;">
+          <div class="code-editor-header"
+            style="background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(255,255,255,0.05); padding: 0.5rem 1rem;">
+            <div class="code-editor-header-left" style="display: flex; gap: 0.5rem; align-items: center;">
+              <div style="display: flex; gap: 0.25rem;">
+                <div class="code-editor-dot"
+                  style="background: #ef4444; width: 10px; height: 10px; border-radius: 50%;"></div>
+                <div class="code-editor-dot"
+                  style="background: #f59e0b; width: 10px; height: 10px; border-radius: 50%;"></div>
+                <div class="code-editor-dot"
+                  style="background: #10b981; width: 10px; height: 10px; border-radius: 50%;"></div>
+              </div>
+              <span class="code-editor-title"
+                style="color: #64748b; margin-left: 0.5rem; font-family: var(--font-mono); font-size: 0.8rem;">target:</span>
+              <span class="code-editor-title"
+                style="color: var(--color-primary-light); font-family: var(--font-mono); font-size: 0.85rem;">main.py</span>
+            </div>
+          </div>
+          <div class="code-editor-container"
+            style="flex: 1; display: flex; overflow: hidden; background: #0f172a; position: relative;">
+            <div class="code-editor-line-numbers" id="lineNumbers"
+              style="background: #0f172a; border-right: 1px solid rgba(255,255,255,0.05); color: #475569; position: absolute; left: 0; top: 0; bottom: 0; width: 40px; text-align: right; padding: 1rem 0.5rem; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.6; user-select: none;">
+            </div>
+            <textarea id="codeEditor" class="code-editor" aria-labelledby="codeEditorTitle"
+              placeholder="# Initialize workspace..." spellcheck="false" onscroll="syncLineNumbers()"
+              oninput="updateLineNumbers()" onkeydown="handleCodeEditorKeyDown(event)"
+              style="background: #0f172a; color: #e2e8f0; flex: 1; border: none; margin-left: 50px; padding: 1rem; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.6; resize: none; outline: none;"></textarea>
+            <div id="codeDisplay" class="code-display"
+              style="background: #0f172a; color: #e2e8f0; flex: 1; margin-left: 50px; padding: 1rem; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.6; overflow-y: auto;">
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </main>
+
+  <div class="ide-status-bar" id="playgroundStats" style="display: none;">
+    <div class="status-item">
+      <span class="status-label">SYS.TIME</span>
+      <span class="status-value timer" id="timerDisplay">00:00</span>
+    </div>
+    <div class="status-item">
+      <span class="status-label">ACCURACY_VAL</span>
+      <span class="status-value accuracy" id="accuracyDisplay" style="color: var(--color-success-text);">0%</span>
+    </div>
+    <div class="status-item">
+      <span class="status-label">SCORE_METRIC</span>
+      <span class="status-value score" id="scoreDisplay" style="color: var(--color-info-text);">0</span>
+    </div>
+  </div>
 
   <!-- JS load order: api-helper.js (head) → auth.js → navigation.js → ai-agent.js (CodeWriterAgent) → code-assistant.js -->
   <script src="js/auth.js"></script>

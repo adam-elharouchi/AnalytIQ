@@ -190,6 +190,16 @@ SUPABASE_BUCKET = os.getenv("SUPABASE_BUCKET", "pdfs")
 
 
 # ============================================================================
+# SSO (Single Sign-On)
+# ============================================================================
+
+FEATURE_SSO = os.getenv("FEATURE_SSO", "False").lower() == "true"
+# Seconds an OAuth2 state token remains valid in Redis
+SSO_STATE_TTL = int(os.getenv("SSO_STATE_TTL", 600))  # 10 minutes
+# Base URL used to build SSO callback URIs and post-login redirects
+SSO_REDIRECT_BASE_URL = os.getenv("FRONTEND_URL", "https://myanalytiq.org")
+
+# ============================================================================
 # REDIS CACHING
 # ============================================================================
 

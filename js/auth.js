@@ -319,11 +319,124 @@ function showTab(tabName, buttonElement) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// SSO helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Load SSO providers from the API and render sign-in buttons.
+ * Called on DOMContentLoaded when on the login page.
+ */
+async function loadSSOProviders() {
+  try {
+    const resp = await fetch(`${window.API_BASE_URL}/sso/providers`);
+    if (!resp.ok) return;
+    const data = await resp.json();
+    const providers = data.providers || [];
+    if (providers.length === 0) return;
+
+    const section = document.getElementById('ssoSection');
+    const container = document.getElementById('ssoButtons');
+    if (!section || !container) return;
+
+    const providerIcons = { google: '🔵', microsoft: '🟦', oidc: '🔐' };
+
+    providers.forEach(p => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn btn-secondary btn-full';
+      btn.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:0.5rem;';
+      const icon = providerIcons[p.provider_type] || '🔐';
+      btn.innerHTML = `${icon} ${p.provider_name}`;
+      btn.onclick = () => initSSOLogin(p.provider_id);
+      container.appendChild(btn);
+    });
+
+    section.style.display = 'block';
+  } catch (_) {
+    // SSO unavailable — degrade gracefully, don't break the login page
+  }
+}
+
+/**
+ * Initiate SSO login for a given provider.
+ * Fetches the IdP authorization URL from the backend, then redirects the browser.
+ */
+async function initSSOLogin(providerId) {
+  try {
+    const resp = await fetch(`${window.API_BASE_URL}/sso/init/${providerId}`);
+    if (!resp.ok) {
+      const data = await resp.json().catch(() => ({}));
+      alert(data.error || 'SSO is not available right now. Please try again.');
+      return;
+    }
+    const data = await resp.json();
+    if (data.auth_url) {
+      window.location.href = data.auth_url;
+    }
+  } catch (_) {
+    alert('SSO is not available right now. Please try again.');
+  }
+}
+
+/**
+ * Handle an SSO callback token delivered as ?sso_token= in the URL.
+ * The backend redirects here after a successful OIDC callback.
+ */
+function handleSSOTokenParam() {
+  const params = new URLSearchParams(window.location.search);
+  const ssoToken = params.get('sso_token');
+  const ssoError = params.get('sso_error');
+
+  if (ssoError) {
+    const errorDiv = document.getElementById('signinError');
+    if (errorDiv) {
+      errorDiv.textContent = decodeURIComponent(ssoError.replace(/\+/g, ' '));
+      errorDiv.style.display = 'block';
+    }
+    window.history.replaceState({}, '', window.location.pathname);
+    return;
+  }
+
+  if (ssoToken) {
+    try {
+      const payloadB64 = ssoToken.split('.')[1];
+      const payload = JSON.parse(atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/')));
+      authManager.saveToken(ssoToken);
+      authManager.saveUser({
+        id: payload.user_id,
+        user_id: payload.user_id,
+        name: payload.name || '',
+        email: payload.email || '',
+        role: payload.role || 'student',
+      });
+    } catch (_) {
+      authManager.saveToken(ssoToken);
+    }
+    window.location.href = 'index.html';
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Page load
+// ---------------------------------------------------------------------------
+
 // Check authentication on page load
 document.addEventListener('DOMContentLoaded', function () {
+  // Handle SSO callback token before the auth redirect check
+  if (window.location.pathname.includes('login.html')) {
+    handleSSOTokenParam();
+  }
+
   // If already authenticated and on login page, redirect to home
   if (authManager.isAuthenticated() && window.location.pathname.includes('login.html')) {
     window.location.href = 'index.html';
+    return;
+  }
+
+  // Load SSO provider buttons on the login page
+  if (window.location.pathname.includes('login.html')) {
+    loadSSOProviders();
   }
 
   // If not authenticated and trying to access any page except login, redirect to login

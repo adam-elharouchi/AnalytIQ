@@ -105,10 +105,10 @@ def create_default_ai_digest(conn, user_id):
 
 
 def get_user_by_email(conn, email):
-    """Return (user_id, name, email, password_hash, role) or None."""
+    """Return (user_id, name, email, password_hash, role, tenant_id) or None."""
     cur = conn.cursor()
     cur.execute(
-        "SELECT user_id, name, email, password_hash, COALESCE(role, 'student') FROM users WHERE email = %s",
+        "SELECT user_id, name, email, password_hash, COALESCE(role, 'student'), tenant_id FROM users WHERE email = %s",
         (email,),
     )
     row = cur.fetchone()
