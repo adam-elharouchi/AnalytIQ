@@ -2987,6 +2987,7 @@ body.hero-bg-active .hero-section p {
 .page-nav-card {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
+  border-left: 3px solid var(--color-primary);
   border-radius: 0.75rem;
   padding: 1rem;
   text-decoration: none;
@@ -3004,13 +3005,29 @@ body.hero-bg-active .hero-section p {
   transform: translateY(-3px);
   box-shadow: var(--shadow-lg);
   border-color: var(--color-primary);
+  border-left-color: var(--color-primary);
 }
 
 .page-nav-icon {
-  font-size: 1.75rem;
+  width: 2.4rem;
+  height: 2.4rem;
   display: flex;
   align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+  border-radius: 0.5rem;
+  background: rgba(37, 105, 244, 0.12);
+  color: var(--color-primary);
+}
+
+.page-nav-icon svg {
+  width: 1.2rem;
+  height: 1.2rem;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .page-nav-card h2 {
@@ -4476,6 +4493,20 @@ body.hero-bg-active .user-menu-divider {
   animation-delay: -9s;
 }
 
+.hero-bg-float-d {
+  bottom: 12%;
+  right: 4%;
+  animation-duration: 16s;
+  animation-delay: -3s;
+}
+
+.hero-bg-float-e {
+  top: 8%;
+  left: 42%;
+  animation-duration: 23s;
+  animation-delay: -15s;
+}
+
 @keyframes heroBgFloat {
   0% {
     transform: translateY(0px) rotate(0deg);
@@ -4619,7 +4650,9 @@ body.hero-bg-active .user-menu-divider {
 @media (max-width: 768px) {
 
   .hero-bg-float-b,
-  .hero-bg-float-c {
+  .hero-bg-float-c,
+  .hero-bg-float-d,
+  .hero-bg-float-e {
     display: none;
   }
 
@@ -4639,6 +4672,7 @@ body.hero-bg-active .page-nav-card {
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-left: 3px solid var(--color-primary) !important;
   color: var(--color-white) !important;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
   transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease, background 0.25s ease;
@@ -4649,7 +4683,11 @@ body.hero-bg-active .page-nav-card p {
 }
 
 body.hero-bg-active .page-nav-card h2 {
-  color: var(--color-white) !important;
+  color: var(--color-primary) !important;
+}
+
+body.hero-bg-active .page-nav-icon {
+  background: rgba(37, 105, 244, 0.18) !important;
 }
 
 body.hero-bg-active .page-nav-card:hover {
