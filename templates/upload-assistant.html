@@ -216,9 +216,9 @@
 
       <!-- Existing Chapter Selection -->
       <div id="existingChapterSection" style="display: none; margin-bottom: 2rem;">
-        <label for="existingChapterSelect" style="display: block; margin-bottom: 0.5rem; color: #1e293b; font-weight: 500;">Select Chapter</label>
+        <label for="existingChapterSelect" style="display: block; margin-bottom: 0.5rem; color: var(--text-primary, #f0f4ff); font-weight: 500;">Select Chapter</label>
         <select id="existingChapterSelect"
-          style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.5rem; font-size: 1rem;">
+          style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.5rem; font-size: 1rem; background: rgba(17,24,39,0.7); color: var(--text-primary, #f0f4ff);">
           <option value="">Loading chapters...</option>
         </select>
       </div>
@@ -226,14 +226,14 @@
       <!-- New Chapter Upload -->
       <div id="newChapterSection">
         <div style="margin-bottom: 2rem;">
-          <label style="display: block; margin-bottom: 0.5rem; color: #1e293b; font-weight: 500;">Chapter Title</label>
+          <label style="display: block; margin-bottom: 0.5rem; color: var(--text-primary, #f0f4ff); font-weight: 500;">Chapter Title</label>
           <input type="text" id="chapterTitleInput" placeholder="e.g., Chapter 3: Advanced Data Visualization"
-            style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.5rem; font-size: 1rem;">
+            style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.5rem; font-size: 1rem; background: rgba(17,24,39,0.7); color: var(--text-primary, #f0f4ff);">
         </div>
 
         <div class="upload-zone" id="dropZone">
           <div style="font-size: 3rem; margin-bottom: 1rem;"></div>
-          <h3 style="margin-bottom: 0.5rem; color: #1e293b;">Upload Chapter PDF</h3>
+          <h3 style="margin-bottom: 0.5rem; color: var(--text-primary, #f0f4ff);">Upload Chapter PDF</h3>
           <p style="color: #64748b; margin-bottom: 1.5rem;">Drag and drop your PDF here, or click to browse</p>
           <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">Select PDF
             File</button>
@@ -280,7 +280,7 @@
     <!-- Step 3: Review -->
     <div id="reviewView" style="display: none;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-        <h2 style="margin: 0; color: #1e293b;">Review Generated Exercises</h2>
+        <h2 style="margin: 0; color: var(--text-primary, #f0f4ff);">Review Generated Exercises</h2>
         <div style="display: flex; gap: 0.5rem;">
           <button class="btn btn-secondary" onclick="restartProcess()">Start Over</button>
           <button id="saveBtn" class="btn btn-primary" onclick="saveAll()">Save to Class</button>
