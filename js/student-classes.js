@@ -44,7 +44,7 @@ async function loadEnrolledClasses() {
     if (!data.classes || data.classes.length === 0) {
       // Update breadcrumb to show 0 nodes
       const countLabel = document.getElementById('classCountLabel');
-      if (countLabel) countLabel.textContent = '· 0 nodes enrolled';
+      if (countLabel) countLabel.textContent = '· 0 classes enrolled';
 
       // Update status to neutral
       const dot = document.getElementById('wsStatusDot');
@@ -74,7 +74,7 @@ function renderClasses(classes) {
   // Update breadcrumb count
   const countLabel = document.getElementById('classCountLabel');
   if (countLabel) {
-    countLabel.textContent = `· ${count} node${count !== 1 ? 's' : ''} active`;
+    countLabel.textContent = `· ${count} class${count !== 1 ? 'es' : ''} enrolled`;
   }
 
   // Set grid based on count

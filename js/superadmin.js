@@ -796,22 +796,44 @@ class SuperAdminDashboard {
     // ==========================================
 
     async changeUserRole(userId, currentRole) {
-        const roles = ['student', 'professor', 'superadmin'];
-        const roleLabels = { student: 'Student', professor: 'Professor', superadmin: 'Super Admin' };
-        const options = roles.map(r => `${r === currentRole ? '● ' : '○ '}${roleLabels[r]}`).join('\n');
-        const input = prompt(`Select new role for user:\n\n${options}\n\nType role name (student / professor / superadmin):`);
-        if (!input) return;
-        const newRole = input.trim().toLowerCase();
-        if (!roles.includes(newRole)) { showError('Invalid role. Must be student, professor, or superadmin.'); return; }
-        if (newRole === currentRole) { showError('User already has that role.'); return; }
+        this._pendingRoleUserId = userId;
+        document.getElementById('changeRoleTargetLabel').textContent = `Current role: ${currentRole}`;
+        const sel = document.getElementById('changeRoleSelect');
+        sel.value = currentRole;
+        this._onRoleSelectChange();
+        const tSel = document.getElementById('changeRoleTenantSelect');
+        tSel.innerHTML = '<option value="">Loading…</option>';
         try {
-            const res = await authFetch(`${this.baseAdminUrl}/users/${userId}/role`, {
+            const r = await authFetch(`${this.baseAdminUrl}/tenants`);
+            const d = await r.json();
+            const tenants = d.tenants || [];
+            tSel.innerHTML = tenants.length
+                ? tenants.map(t => `<option value="${t.tenant_id}">${escapeHtml(t.name)}</option>`).join('')
+                : '<option value="">No tenants found</option>';
+        } catch (e) {
+            tSel.innerHTML = '<option value="">Error loading tenants</option>';
+        }
+        document.getElementById('changeRoleModal').style.display = 'flex';
+    }
+
+    _onRoleSelectChange() {
+        const isTenantAdmin = document.getElementById('changeRoleSelect').value === 'tenant_admin';
+        document.getElementById('tenantSelectSection').style.display = isTenantAdmin ? 'block' : 'none';
+    }
+
+    async _submitRoleChange() {
+        const role = document.getElementById('changeRoleSelect').value;
+        const tenantId = document.getElementById('changeRoleTenantSelect').value;
+        if (role === 'tenant_admin' && !tenantId) { showError('Please select a tenant.'); return; }
+        try {
+            const res = await authFetch(`${this.baseAdminUrl}/users/${this._pendingRoleUserId}/role`, {
                 method: 'PATCH',
-                body: JSON.stringify({ role: newRole })
+                body: JSON.stringify({ role, ...(tenantId && { tenant_id: tenantId }) })
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Role update failed');
-            showSuccess(data.message || `Role updated to ${newRole}.`);
+            document.getElementById('changeRoleModal').style.display = 'none';
+            showSuccess(data.message || `Role updated to ${role}.`);
             this.loadUsers();
         } catch (err) {
             showError(err.message);

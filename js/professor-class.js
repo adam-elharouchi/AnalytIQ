@@ -340,7 +340,7 @@ async function loadStudents() {
               ${students.map(student => {
         const progress = progressData[student.user_id] || { completed: 0, avgScore: 0 };
         const percentage = totalExercises > 0 ? Math.round((progress.completed / totalExercises) * 100) : 0;
-        const barColor = percentage >= 80 ? '#10b981' : percentage >= 50 ? '#f59e0b' : '#64748b';
+        const barColor = percentage >= 80 ? 'var(--color-success,#10b981)' : percentage >= 50 ? 'var(--color-warning,#f59e0b)' : 'var(--text-secondary,#64748b)';
         return `
                 <tr style="border-bottom: 1px solid var(--border-color);">
                   <td style="padding: 1rem;font-weight: 500;">${escapeHtml(student.name)}</td>
@@ -1144,7 +1144,7 @@ async function loadResources() {
           }
 
           return `
-                  <div class="resource-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.1)';">
+                  <div class="resource-card" style="background: var(--bg-card); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 1.5rem; box-shadow: var(--shadow-card, 0 4px 16px rgba(0,0,0,0.3)); transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 32px rgba(0,0,0,0.35)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow-card, 0 4px 16px rgba(0,0,0,0.3))';">
                     <div style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 0.75rem;">${typeLabel}</div>
                     <h3 style="margin: 0 0 0.5rem 0;font-size: 1.125rem;">${escapeHtml(resource.title)}</h3>
                     <p style="color: #64748b; margin: 0 0 1rem 0; font-size: 0.875rem; line-height: 1.5;">${escapeHtml(resource.description || '')}</p>
@@ -1155,7 +1155,7 @@ async function loadResources() {
                       ${!resource.is_default ? `
                         <div style="display: flex; gap: 0.25rem;">
                           ${!resource.is_chapter ? `<button class="btn btn-secondary edit-resource-btn" data-resource-id="${resource.resource_id}" style="padding: 0.375rem 0.75rem; font-size: 0.75rem;">Edit</button>` : ''}
-                          <button class="btn btn-secondary delete-resource-btn" data-resource-id="${resource.resource_id}" ${resource.is_chapter ? `data-chapter-id="${resource.chapter_id}"` : ''} style="padding: 0.375rem 0.75rem; font-size: 0.75rem; color: #dc2626;">Delete</button>
+                          <button class="btn btn-secondary delete-resource-btn" data-resource-id="${resource.resource_id}" ${resource.is_chapter ? `data-chapter-id="${resource.chapter_id}"` : ''} style="padding: 0.375rem 0.75rem; font-size: 0.75rem; color: var(--color-error, #ef4444);">Delete</button>
                         </div>
                       ` : ''}
                     </div>

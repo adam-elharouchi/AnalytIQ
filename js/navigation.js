@@ -18,8 +18,9 @@ document.addEventListener('DOMContentLoaded', function () {
   const userRole = currentUser ? currentUser.role : null;
   const isProfessor = userRole === 'professor';
   const isSuperAdmin = userRole === 'superadmin';
+  const isTenantAdmin = userRole === 'tenant_admin';
 
-  // Build user menu
+  // Build user menu (lives outside nav-links for centering)
   let userMenu = '';
   if (isAuthenticated) {
     const userName = currentUser.name || currentUser.email || 'User';
@@ -30,7 +31,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const avatarSrc = profilePicture || defaultAvatar;
 
     userMenu = `
-      <li class="user-menu">
+      <div class="user-menu">
         <button class="user-menu-toggle profile-picture-btn" onclick="toggleUserMenu()" title="User Menu" aria-label="User menu" aria-expanded="false" aria-controls="userMenuDropdown">
           <img src="${avatarSrc}" alt="Profile picture" class="nav-profile-picture" />
         </button>
@@ -46,12 +47,10 @@ document.addEventListener('DOMContentLoaded', function () {
             <span>Sign Out</span>
           </button>
         </div>
-      </li>
+      </div>
     `;
   } else {
-    userMenu = `
-      <li><a href="login.html" class="btn-login">Sign In</a></li>
-    `;
+    userMenu = `<a href="login.html" class="btn-login">Sign In</a>`;
   }
 
   // Build role-based navigation links
@@ -62,6 +61,9 @@ document.addEventListener('DOMContentLoaded', function () {
     if (isSuperAdmin) {
       // Superadmin: Management Portals
       roleLinks = `<li><a href="superadmin-dashboard.html" ${currentPage === 'superadmin-dashboard.html' ? 'class="active"' : ''} style="color: #eab308; font-weight: bold;">Super Admin</a></li>`;
+      commonLinks = '';
+    } else if (isTenantAdmin) {
+      roleLinks = `<li><a href="tenant-admin-dashboard.html" ${currentPage === 'tenant-admin-dashboard.html' ? 'class="active"' : ''}>Admin Dashboard</a></li>`;
       commonLinks = '';
     } else if (isProfessor) {
       // Professors: Dashboard, Code
@@ -95,8 +97,8 @@ document.addEventListener('DOMContentLoaded', function () {
         <li><a href="index.html" ${currentPage === 'index.html' ? 'class="active"' : ''}>Home</a></li>
         ${roleLinks}
         ${commonLinks}
-        ${userMenu}
       </ul>
+      <div class="nav-user-slot">${userMenu}</div>
     </div>
   `;
 
