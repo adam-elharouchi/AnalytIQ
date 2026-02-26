@@ -520,8 +520,8 @@ async function loadAvgLeaderboard() {
                     <tbody>
                         ${leaderboard.map(student => `
                             <tr style="border-bottom: 1px solid var(--border-color);">
-                                <td style="padding: 1rem; text-align: center; font-weight: bold; color: ${student.rank <= 3 ? '#eab308' : '#64748b'};">
-                                    ${student.rank === 1 ? '#1' : student.rank === 2 ? '#2' : student.rank === 3 ? '#3' : student.rank}
+                                <td style="padding: 1rem; text-align: center;">
+                                    ${student.rank === 1 ? '<span class="rank-gold">1</span>' : student.rank === 2 ? '<span class="rank-silver">2</span>' : student.rank === 3 ? '<span class="rank-bronze">3</span>' : '<span style="color:var(--text-secondary,#64748b);font-family:var(--font-mono);">#' + student.rank + '</span>'}
                                 </td>
                                 <td style="padding: 1rem; font-weight: 500;">${escapeHtml(student.name)}</td>
                                 <td style="padding: 1rem; text-align: center;">${student.exercises_completed}</td>
@@ -579,12 +579,12 @@ async function loadExerciseLeaderboard(exerciseId) {
                     <tbody>
                         ${leaderboard.map(student => `
                             <tr style="border-bottom: 1px solid var(--border-color);">
-                                <td style="padding: 1rem; text-align: center; font-weight: bold; color: ${student.rank <= 3 ? '#eab308' : '#64748b'};">
-                                    ${student.rank === 1 ? '#1' : student.rank === 2 ? '#2' : student.rank === 3 ? '#3' : student.rank}
+                                <td style="padding: 1rem; text-align: center;">
+                                    ${student.rank === 1 ? '<span class="rank-gold">1</span>' : student.rank === 2 ? '<span class="rank-silver">2</span>' : student.rank === 3 ? '<span class="rank-bronze">3</span>' : '<span style="color:var(--text-secondary,#64748b);font-family:var(--font-mono);">#' + student.rank + '</span>'}
                                 </td>
                                 <td style="padding: 1rem; font-weight: 500;">${escapeHtml(student.name)}</td>
                                 <td style="padding: 1rem; text-align: right; font-weight: 600; color: var(--color-primary);">${student.score}%</td>
-                                <td style="padding: 1rem; text-align: right; color: #64748b; font-size: 0.875rem;">${student.submitted_at ? new Date(student.submitted_at).toLocaleDateString() : '-'}</td>
+                                <td style="padding: 1rem; text-align: right; color: var(--text-secondary, #64748b); font-size: 0.875rem;">${student.submitted_at ? new Date(student.submitted_at).toLocaleDateString() : '-'}</td>
                             </tr>
                         `).join('')}
                     </tbody>
@@ -857,7 +857,7 @@ async function handleCreateExercise(event) {
     // Show success message
     const exercisesList = document.getElementById('exercisesList');
     const successMsg = document.createElement('div');
-    successMsg.style.cssText = 'padding: 1rem; margin-bottom: 1rem; background: #d1fae5; color: #065f46; border-radius: 0.5rem; border: 1px solid #10b981;';
+    successMsg.className = 'alert-success-dark';
     successMsg.textContent = isEdit ? 'Exercise updated successfully!' : 'Exercise created successfully!';
     exercisesList.insertBefore(successMsg, exercisesList.firstChild);
 
@@ -1758,28 +1758,18 @@ async function loadDetailedProgress() {
       exercises.forEach(ex => {
         const score = studentScores[ex.exercise_id];
         let cellContent = '-';
-        let cellStyle = 'color: #94a3b8;'; // gray for no data
-        let bgColor = '';
+        let heatClass = 'heatmap-neutral';
 
         if (score !== undefined) {
           cellContent = score;
           const scoreNum = parseFloat(score);
-          if (scoreNum >= 90) {
-            cellStyle = 'color: var(--color-success, #10b981); font-weight: 600;'; // green
-            bgColor = 'background-color: rgba(16,185,129,0.12);';
-          } else if (scoreNum >= 70) {
-            cellStyle = 'color: #60a5fa; font-weight: 600;'; // blue
-            bgColor = 'background-color: rgba(2,132,199,0.12);';
-          } else if (scoreNum >= 50) {
-            cellStyle = 'color: var(--color-warning, #f59e0b); font-weight: 500;'; // amber
-            bgColor = 'background-color: rgba(217,119,6,0.12);';
-          } else {
-            cellStyle = 'color: var(--color-danger, #ef4444); font-weight: 500;'; // red
-            bgColor = 'background-color: rgba(220,38,38,0.12);';
-          }
+          if (scoreNum >= 90)      heatClass = 'heatmap-success';
+          else if (scoreNum >= 70) heatClass = 'heatmap-info';
+          else if (scoreNum >= 50) heatClass = 'heatmap-warning';
+          else                     heatClass = 'heatmap-danger';
         }
 
-        html += `<td style="padding: 0.5rem; text-align: center; ${cellStyle} ${bgColor} border-right: 1px solid #ebf0f5;">${cellContent}</td>`;
+        html += `<td class="${heatClass}" style="padding: 0.5rem; text-align: center; border-right: 1px solid var(--border-color, rgba(255,255,255,0.08));">${cellContent}</td>`;
       });
 
       html += `</tr>`;

@@ -252,7 +252,7 @@
   <!-- Resources Tab -->
   <div id="tabContentResources" class="tab-content" style="display: none;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-      <h2 style="margin: 0; color: #f8fafc;">Course Resources</h2>
+      <h2 style="margin: 0; color: var(--text-primary, #f0f4ff);">Course Resources</h2>
       <button class="btn btn-primary" onclick="showAddResourceModal()"
         style="display: flex; align-items: center; gap: 0.4rem;">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -271,7 +271,7 @@
   <!-- Students Tab -->
   <div id="tabContentStudents" class="tab-content" style="display: none;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-      <h2 style="margin: 0; color: #f8fafc;">Enrolled Students</h2>
+      <h2 style="margin: 0; color: var(--text-primary, #f0f4ff);">Enrolled Students</h2>
       <div style="display: flex; align-items: center; gap: 0.75rem;">
         <span style="color: #64748b; font-size: 0.875rem;" id="studentsCount">0 students</span>
         <button id="syncLmsBtn" class="btn btn-secondary"
@@ -291,7 +291,7 @@
   <!-- Progress Tab -->
   <div id="tabContentProgress" class="tab-content" style="display: none;">
     <div style="margin-bottom: 1.5rem;">
-      <h2 style="margin: 0 0 0.4rem 0; color: #f8fafc;">Class Leaderboards</h2>
+      <h2 style="margin: 0 0 0.4rem 0; color: var(--text-primary, #f0f4ff);">Class Leaderboards</h2>
       <p style="color: #64748b; margin: 0; font-size: 0.875rem;">See how students are performing in the class exercises.</p>
     </div>
 
@@ -339,7 +339,7 @@
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
         <h2 id="uploadChapterModalTitle" style="margin: 0; color: var(--text-primary, #f0f4ff);">Upload Chapter</h2>
         <button onclick="hideUploadChapterModal()" aria-label="Close dialog"
-          style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-secondary, #94a3b8);">&times;</button>
+          class="modal-close-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
 
       <form id="uploadChapterForm" onsubmit="handleUploadChapter(event)">
@@ -401,7 +401,7 @@
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
         <h2 id="editClassModalTitle" style="margin: 0; color: var(--text-primary, #f0f4ff);">Edit Class</h2>
         <button onclick="hideEditClassModal()" aria-label="Close dialog"
-          style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-secondary, #94a3b8);">&times;</button>
+          class="modal-close-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
 
       <form id="editClassForm" onsubmit="handleEditClass(event)">
@@ -476,7 +476,7 @@
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
       <h2 id="addResourceModalTitle" style="margin: 0; color: var(--text-primary, #f0f4ff);">Add Resource</h2>
       <button onclick="hideAddResourceModal()" aria-label="Close dialog"
-        style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-secondary, #94a3b8);">&times;</button>
+        class="modal-close-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
 
     <form id="addResourceForm" onsubmit="handleAddResource(event)">
@@ -581,7 +581,7 @@
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
       <h2 id="createExerciseModalTitle" style="margin: 0; color: var(--text-primary, #f0f4ff);">Create New Exercise</h2>
       <button onclick="hideCreateExerciseModal()" aria-label="Close dialog"
-        style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-secondary, #94a3b8);">&times;</button>
+        class="modal-close-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
 
     <form id="createExerciseForm" onsubmit="handleCreateExercise(event)">
@@ -653,7 +653,7 @@
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
       <h2 id="editChapterModalTitle" style="margin: 0; color: var(--text-primary, #f0f4ff);">Edit Chapter</h2>
       <button onclick="hideEditChapterModal()" aria-label="Close dialog"
-        style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-secondary, #94a3b8);">&times;</button>
+        class="modal-close-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
 
     <form id="editChapterForm" onsubmit="handleEditChapter(event)">
@@ -702,9 +702,12 @@
 <!-- Import Chapter Modal (LIB-7 unified import UI) -->
 <style>
   .imp-tab-btn {
-    padding: 0.5rem 1rem; border: none; background: none; cursor: pointer;
-    font-size: 0.9rem; color: #64748b; border-bottom: 2px solid transparent; white-space: nowrap;
+    padding: 0.55rem 1rem; border: none; background: none; cursor: pointer;
+    font-size: var(--font-size-sm, 0.875rem); color: var(--text-secondary, #64748b);
+    border-bottom: 2px solid transparent; white-space: nowrap;
+    transition: color 0.2s, border-color 0.2s; font-family: var(--font-mono);
   }
+  .imp-tab-btn:hover { color: var(--text-primary, #f0f4ff); }
   .imp-tab-active { color: var(--color-primary); border-bottom-color: var(--color-primary); font-weight: 600; }
   .imp-tab-content { display: none; }
   .imp-card {
@@ -726,7 +729,7 @@
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
       <h2 id="importChapterModalTitle" style="margin:0; color:var(--text-primary, #f0f4ff);">Import Chapter from Web</h2>
       <button onclick="window.contentImporter && window.contentImporter.hide()" aria-label="Close"
-        style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-secondary, #94a3b8);">&times;</button>
+        class="modal-close-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
 
     <!-- Source tabs -->
@@ -813,8 +816,8 @@
 
     <!-- Preview & chapter settings (shared) -->
     <div id="impPreviewSection" style="display:none;border-top:1px solid rgba(255,255,255,0.08);margin-top:1.5rem;padding-top:1.5rem;">
-      <h3 style="margin:0 0 0.5rem;color:#f8fafc;font-size:1rem;">Selected Content</h3>
-      <div id="impPreviewTitle" style="font-weight:600;color:#f8fafc;margin-bottom:0.25rem;"></div>
+      <h3 style="margin:0 0 0.5rem;color:var(--text-primary,#f0f4ff);font-size:1rem;">Selected Content</h3>
+      <div id="impPreviewTitle" style="font-weight:600;color:var(--text-primary,#f0f4ff);margin-bottom:0.25rem;"></div>
       <div id="impPreviewSnippet"
         style="font-size:0.82em;color:#94a3b8;max-height:80px;overflow:hidden;margin-bottom:1rem;"></div>
 

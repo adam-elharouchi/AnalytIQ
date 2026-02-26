@@ -879,3 +879,36 @@ footer a:hover,
     background: var(--bg-card) !important;
     border-color: var(--border-color) !important;
 }
+
+/* ── 32. Dark-theme stat card headers (tenant-admin + superadmin) ── */
+.stat-card h3 {
+    font-size: var(--font-size-xs, 0.75rem) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.08em !important;
+    font-family: var(--font-mono) !important;
+    color: var(--text-secondary) !important;
+    font-weight: 500 !important;
+}
+
+/* ── 33. Alias tokens for pages that use non-standard variable names ── */
+:root {
+    --text-muted:    var(--text-secondary);
+    --text-color:    var(--text-primary);
+    --primary-color: var(--color-primary);
+    --bg-dark:       var(--bg-secondary);
+}
+
+/* ── 34. JS-rendered dark success alert override ── */
+.alert-success-dark {
+    background: rgba(5, 150, 105, 0.15) !important;
+    color: #6ee7b7 !important;
+    border-color: rgba(16, 185, 129, 0.4) !important;
+}
+
+/* ── 35. Glass-card in dark theme ── */
+.glass-card {
+    background: var(--bg-card) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border-color: var(--border-color) !important;
+}
