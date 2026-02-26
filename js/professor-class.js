@@ -328,7 +328,7 @@ async function loadStudents() {
       studentsList.innerHTML = `
         <div style="overflow-x: auto;">
           <table style="width: 100%; border-collapse: collapse; min-width: 700px;">
-            <thead style="background: var(--bg-secondary, #f8fafc); border-bottom: 2px solid var(--border-color);">
+            <thead style="background: var(--bg-secondary); border-bottom: 2px solid var(--border-color);">
               <tr>
                 <th style="text-align: left; padding: 1rem; color: #64748b; font-weight: 600;">Name</th>
                 <th style="text-align: left; padding: 1rem; color: #64748b; font-weight: 600;">Email</th>
@@ -388,7 +388,7 @@ async function loadProgress() {
 
     if (students.length === 0) {
       progressOverview.innerHTML = `
-        <div style="text-align: center; padding: 3rem; background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-color); border-radius: 0.5rem;">
+        <div style="text-align: center; padding: 3rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 0.5rem;">
           <p style="color: #64748b;">No student data available yet.</p>
         </div>
       `;
@@ -397,7 +397,7 @@ async function loadProgress() {
 
     if (exercises.length === 0) {
       progressOverview.innerHTML = `
-        <div style="text-align: center; padding: 3rem; background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-color); border-radius: 0.5rem;">
+        <div style="text-align: center; padding: 3rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 0.5rem;">
           <p style="color: #64748b;">No exercises defined yet.</p>
         </div>
       `;
@@ -410,9 +410,9 @@ async function loadProgress() {
     tableContainer.innerHTML = `
       <div style="overflow-x: auto;">
         <table style="width: 100%; border-collapse: collapse; min-width: 800px;">
-          <thead style="background: var(--bg-secondary, #f8fafc); border-bottom: 2px solid var(--border-color);">
+          <thead style="background: var(--bg-secondary); border-bottom: 2px solid var(--border-color);">
             <tr>
-              <th style="text-align: left; padding: 1rem; position: sticky; left: 0; background: var(--bg-secondary, #f8fafc); z-index: 10;">Student</th>
+              <th style="text-align: left; padding: 1rem; position: sticky; left: 0; background: var(--bg-secondary); z-index: 10;">Student</th>
               ${exercises.map(ex => `
                 <th style="padding: 1rem; text-align: center; min-width: 100px;">
                   <div style="font-size: 0.875rem; color: #64748b;">${escapeHtml(ex.title)}</div>
@@ -423,7 +423,7 @@ async function loadProgress() {
           <tbody>
             ${students.map(student => `
               <tr style="border-bottom: 1px solid var(--border-color);">
-                <td style="padding: 1rem; font-weight: 500; position: sticky; left: 0; background: var(--bg-card, #fff); border-right: 1px solid var(--border-color);">${escapeHtml(student.name)}</td>
+                <td style="padding: 1rem; font-weight: 500; position: sticky; left: 0; background: var(--bg-card); border-right: 1px solid var(--border-color);">${escapeHtml(student.name)}</td>
                 ${exercises.map(ex => {
       const progress = student.progress[ex.id];
       if (!progress) return '<td style="text-align: center; color: #cbd5e1;">-</td>';
@@ -507,9 +507,9 @@ async function loadAvgLeaderboard() {
     }
 
     container.innerHTML = `
-            <div style="background: var(--bg-card, #fff); border-radius: 0.5rem; border: 1px solid var(--border-color); overflow: hidden; max-width: 800px; margin: 0 auto;">
+            <div style="background: var(--bg-card); border-radius: 0.5rem; border: 1px solid var(--border-color); overflow: hidden; max-width: 800px; margin: 0 auto;">
                 <table style="width: 100%; border-collapse: collapse;">
-                    <thead style="background: var(--bg-secondary, #f8fafc); border-bottom: 2px solid var(--border-color);">
+                    <thead style="background: var(--bg-secondary); border-bottom: 2px solid var(--border-color);">
                          <tr>
                             <th style="padding: 1rem; text-align: center; width: 60px;">Rank</th>
                             <th style="padding: 1rem; text-align: left;">Student</th>
@@ -543,7 +543,7 @@ async function loadAvgLeaderboard() {
 async function loadExerciseLeaderboard(exerciseId) {
   const container = document.getElementById('exLeaderboardContent');
   if (!exerciseId) {
-    container.innerHTML = '<div style="text-align: center; padding: 3rem; background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-color); border-radius: 0.5rem;"><p style="color: #64748b;">Select an exercise above to see the leaderboard.</p></div>';
+    container.innerHTML = '<div style="text-align: center; padding: 3rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 0.5rem;"><p style="color: #64748b;">Select an exercise above to see the leaderboard.</p></div>';
     return;
   }
 
@@ -566,9 +566,9 @@ async function loadExerciseLeaderboard(exerciseId) {
     }
 
     container.innerHTML = `
-            <div style="background: var(--bg-card, #fff); border-radius: 0.5rem; border: 1px solid var(--border-color); overflow: hidden; max-width: 800px; margin: 0 auto;">
+            <div style="background: var(--bg-card); border-radius: 0.5rem; border: 1px solid var(--border-color); overflow: hidden; max-width: 800px; margin: 0 auto;">
                 <table style="width: 100%; border-collapse: collapse;">
-                    <thead style="background: var(--bg-secondary, #f8fafc); border-bottom: 2px solid var(--border-color);">
+                    <thead style="background: var(--bg-secondary); border-bottom: 2px solid var(--border-color);">
                          <tr>
                             <th style="padding: 1rem; text-align: center; width: 60px;">Rank</th>
                             <th style="padding: 1rem; text-align: left;">Student</th>
@@ -1066,7 +1066,7 @@ async function loadResources() {
 
     if (combinedResources.length === 0) {
       resourcesList.innerHTML = `
-        <div style="text-align: center; padding: 3rem; background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-color); border-radius: 0.5rem;">
+        <div style="text-align: center; padding: 3rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 0.5rem;">
           <p style="color: #64748b;">No resources added yet. Add helpful links, documents, or external resources for your students.</p>
         </div>
       `;
@@ -1144,7 +1144,7 @@ async function loadResources() {
           }
 
           return `
-                  <div class="resource-card" style="background: var(--bg-card, #fff); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.1)';">
+                  <div class="resource-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.1)';">
                     <div style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 0.75rem;">${typeLabel}</div>
                     <h3 style="margin: 0 0 0.5rem 0;font-size: 1.125rem;">${escapeHtml(resource.title)}</h3>
                     <p style="color: #64748b; margin: 0 0 1rem 0; font-size: 0.875rem; line-height: 1.5;">${escapeHtml(resource.description || '')}</p>
@@ -1245,7 +1245,7 @@ function toggleResourceInput() {
     fileInput.required = false;
     fileInput.value = ''; // Clear file selection
     linkLabel.style.borderColor = 'var(--color-primary)';
-    linkLabel.style.background = '#eff6ff';
+    linkLabel.style.background = 'rgba(37,105,244,0.12)';
     uploadLabel.style.borderColor = 'var(--border-color)';
     uploadLabel.style.background = 'transparent';
   } else {
@@ -1257,7 +1257,7 @@ function toggleResourceInput() {
     linkLabel.style.borderColor = 'var(--border-color)';
     linkLabel.style.background = 'transparent';
     uploadLabel.style.borderColor = 'var(--color-primary)';
-    uploadLabel.style.background = '#eff6ff';
+    uploadLabel.style.background = 'rgba(37,105,244,0.12)';
   }
 
   // Update file input accept attribute based on resource type
@@ -1695,7 +1695,7 @@ async function loadDetailedProgress() {
 
     if (!data.students || data.students.length === 0) {
       container.innerHTML = `
-        <div style="text-align: center; padding: 3rem; background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-color); border-radius: 0.5rem;">
+        <div style="text-align: center; padding: 3rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 0.5rem;">
           <p style="color: #64748b;">No students enrolled yet.</p>
         </div>
       `;
@@ -1707,7 +1707,7 @@ async function loadDetailedProgress() {
 
     if (exercises.length === 0) {
       container.innerHTML = `
-        <div style="text-align: center; padding: 3rem; background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-color); border-radius: 0.5rem;">
+        <div style="text-align: center; padding: 3rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 0.5rem;">
           <p style="color: #64748b;">No exercises created yet.</p>
         </div>
       `;
@@ -1719,8 +1719,8 @@ async function loadDetailedProgress() {
       <div style="overflow-x: auto; border: 1px solid var(--border-color); border-radius: 0.5rem;">
         <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
           <thead>
-            <tr style="background: var(--bg-secondary, #f8fafc); border-bottom: 2px solid var(--border-color);">
-              <th style="padding: 0.75rem 1rem; text-align: left; position: sticky; left: 0; background: var(--bg-secondary, #f8fafc); z-index: 10;">Student</th>
+            <tr style="background: var(--bg-secondary); border-bottom: 2px solid var(--border-color);">
+              <th style="padding: 0.75rem 1rem; text-align: left; position: sticky; left: 0; background: var(--bg-secondary); z-index: 10;">Student</th>
               <th style="padding: 0.75rem 1rem; text-align: center; border-right: 1px solid var(--border-color);">Avg Score</th>
     `;
 
@@ -1749,8 +1749,8 @@ async function loadDetailedProgress() {
       const avg = count > 0 ? (totalScore / count).toFixed(1) : '-';
 
       html += `
-        <tr style="border-bottom: 1px solid var(--border-color); background: var(--bg-card, #fff);">
-          <td style="padding: 0.75rem 1rem; font-weight: 500; color: #1e293b; position: sticky; left: 0; background: var(--bg-card, #fff); border-right: 1px solid var(--border-color);">${student.name}</td>
+        <tr style="border-bottom: 1px solid var(--border-color); background: var(--bg-card);">
+          <td style="padding: 0.75rem 1rem; font-weight: 500; color: var(--text-primary, #f0f4ff); position: sticky; left: 0; background: var(--bg-card); border-right: 1px solid var(--border-color);">${student.name}</td>
           <td style="padding: 0.75rem 1rem; text-align: center; font-weight: 600; color: var(--color-primary); border-right: 1px solid var(--border-color);">${avg}</td>
       `;
 
@@ -1765,17 +1765,17 @@ async function loadDetailedProgress() {
           cellContent = score;
           const scoreNum = parseFloat(score);
           if (scoreNum >= 90) {
-            cellStyle = 'color: #059669; font-weight: 600;'; // green
-            bgColor = 'background-color: #ecfdf5;';
+            cellStyle = 'color: var(--color-success, #10b981); font-weight: 600;'; // green
+            bgColor = 'background-color: rgba(16,185,129,0.12);';
           } else if (scoreNum >= 70) {
-            cellStyle = 'color: #0284c7; font-weight: 600;'; // blue
-            bgColor = 'background-color: #f0f9ff;';
+            cellStyle = 'color: #60a5fa; font-weight: 600;'; // blue
+            bgColor = 'background-color: rgba(2,132,199,0.12);';
           } else if (scoreNum >= 50) {
-            cellStyle = 'color: #d97706; font-weight: 500;'; // orange
-            bgColor = 'background-color: #fffbeb;';
+            cellStyle = 'color: var(--color-warning, #f59e0b); font-weight: 500;'; // amber
+            bgColor = 'background-color: rgba(217,119,6,0.12);';
           } else {
-            cellStyle = 'color: #dc2626; font-weight: 500;'; // red
-            bgColor = 'background-color: #fef2f2;';
+            cellStyle = 'color: var(--color-danger, #ef4444); font-weight: 500;'; // red
+            bgColor = 'background-color: rgba(220,38,38,0.12);';
           }
         }
 
@@ -1810,7 +1810,7 @@ async function loadAvgLeaderboard() {
 
     if (!data.leaderboard || data.leaderboard.length === 0) {
       container.innerHTML = `
-        <div style="text-align: center; padding: 3rem; background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-color); border-radius: 0.5rem;">
+        <div style="text-align: center; padding: 3rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 0.5rem;">
           <p style="color: #64748b;">No data available for leaderboard yet.</p>
         </div>
       `;
@@ -1821,7 +1821,7 @@ async function loadAvgLeaderboard() {
     let html = `
       <div style="max-width: 800px; margin: 0 auto; border: 1px solid var(--border-color); border-radius: 0.5rem; overflow: hidden;">
         <table style="width: 100%; border-collapse: collapse;">
-          <thead style="background: var(--bg-secondary, #f8fafc); border-bottom: 2px solid var(--border-color);">
+          <thead style="background: var(--bg-secondary); border-bottom: 2px solid var(--border-color);">
             <tr>
               <th style="padding: 1rem; text-align: center; width: 60px;">Rank</th>
               <th style="padding: 1rem; text-align: left;">Student</th>
@@ -1839,7 +1839,7 @@ async function loadAvgLeaderboard() {
       else if (entry.rank === 3) rankIcon = '#3';
 
       html += `
-        <tr style="border-bottom: 1px solid var(--border-color); background: var(--bg-card, #fff);">
+        <tr style="border-bottom: 1px solid var(--border-color); background: var(--bg-card);">
           <td style="padding: 1rem; text-align: center; font-size: 1.2rem; font-weight: 600;">${rankIcon}</td>
           <td style="padding: 1rem; font-weight: 500;">${entry.name}</td>
           <td style="padding: 1rem; text-align: center; color: #64748b;">${entry.exercises_completed}</td>
@@ -1897,7 +1897,7 @@ async function loadExerciseLeaderboard(exerciseId) {
   const currentUser = getCurrentUser();
 
   if (!exerciseId) {
-    container.innerHTML = `<div style="text-align: center; padding: 3rem; background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-color); border-radius: 0.5rem;"><p style="color: #64748b;">Select an exercise above to see the leaderboard.</p></div>`;
+    container.innerHTML = `<div style="text-align: center; padding: 3rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 0.5rem;"><p style="color: #64748b;">Select an exercise above to see the leaderboard.</p></div>`;
     return;
   }
 
@@ -1911,7 +1911,7 @@ async function loadExerciseLeaderboard(exerciseId) {
       // Handle the case where no scores exist for this exercise gracefully
       if (response.status === 404 || (data.message && data.message.includes('No scores'))) {
         container.innerHTML = `
-          <div style="text-align: center; padding: 3rem; background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-color); border-radius: 0.5rem;">
+          <div style="text-align: center; padding: 3rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 0.5rem;">
             <p style="color: #64748b;">No scores recorded for this exercise yet.</p>
           </div>
         `;
@@ -1922,7 +1922,7 @@ async function loadExerciseLeaderboard(exerciseId) {
 
     if (!data.leaderboard || data.leaderboard.length === 0) {
       container.innerHTML = `
-        <div style="text-align: center; padding: 3rem; background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-color); border-radius: 0.5rem;">
+        <div style="text-align: center; padding: 3rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 0.5rem;">
           <p style="color: #64748b;">No scores for this exercise yet.</p>
         </div>
       `;
@@ -1933,7 +1933,7 @@ async function loadExerciseLeaderboard(exerciseId) {
     let html = `
       <div style="max-width: 800px; margin: 0 auto; border: 1px solid var(--border-color); border-radius: 0.5rem; overflow: hidden;">
         <table style="width: 100%; border-collapse: collapse;">
-          <thead style="background: var(--bg-secondary, #f8fafc); border-bottom: 2px solid var(--border-color);">
+          <thead style="background: var(--bg-secondary); border-bottom: 2px solid var(--border-color);">
             <tr>
               <th style="padding: 1rem; text-align: center; width: 60px;">Rank</th>
               <th style="padding: 1rem; text-align: left;">Student</th>
@@ -1953,7 +1953,7 @@ async function loadExerciseLeaderboard(exerciseId) {
       const date = entry.submitted_at ? new Date(entry.submitted_at).toLocaleDateString() : '-';
 
       html += `
-        <tr style="border-bottom: 1px solid var(--border-color); background: var(--bg-card, #fff);">
+        <tr style="border-bottom: 1px solid var(--border-color); background: var(--bg-card);">
           <td style="padding: 1rem; text-align: center; font-size: 1.2rem; font-weight: 600;">${rankIcon}</td>
           <td style="padding: 1rem; font-weight: 500;">${entry.name}</td>
           <td style="padding: 1rem; text-align: center; color: #64748b;">${date}</td>

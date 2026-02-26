@@ -41,6 +41,19 @@
     --color-info-bg: rgba(37, 105, 244, 0.15);
     --color-info-text: #93c5fd;
     --color-info-border: #2569f4;
+
+    /* Semantic shorthands — dark-safe overrides */
+    --color-success:        #10b981;   /* brighter emerald for dark bg */
+    --color-warning:        #f59e0b;   /* amber, dark-safe */
+    --color-danger:         #ef4444;   /* shorthand for error */
+
+    /* Warning dark variants (styles.css only has light versions) */
+    --color-warning-bg:     rgba(245, 158, 11, 0.15);
+    --color-warning-text:   #fcd34d;
+    --color-warning-border: #f59e0b;
+
+    /* Font override — richer monospace stack */
+    --font-mono: 'Menlo', 'Monaco', 'Courier New', monospace;
 }
 
 /* ── 2. Page body & global base ── */
@@ -221,6 +234,17 @@ select:focus {
     background: rgba(37, 105, 244, 0.18) !important;
     border-color: var(--color-primary) !important;
     color: var(--color-white) !important;
+}
+
+.btn-danger {
+    color: var(--color-error-text, #fca5a5) !important;
+    border-color: rgba(239, 68, 68, 0.3) !important;
+    background: transparent !important;
+}
+
+.btn-danger:hover {
+    background: rgba(239, 68, 68, 0.12) !important;
+    border-color: rgba(239, 68, 68, 0.5) !important;
 }
 
 /* ── 8. Tables ── */

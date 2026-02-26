@@ -24,7 +24,7 @@
       left: 0;
       right: 0;
       height: 2px;
-      background: #e2e8f0;
+      background: var(--border-color, rgba(255,255,255,0.1));
       z-index: 0;
       transform: translateY(-50%);
     }
@@ -33,13 +33,13 @@
       width: 40px;
       height: 40px;
       border-radius: 50%;
-      background: white;
-      border: 2px solid #e2e8f0;
+      background: var(--bg-card, rgba(34,44,62,0.82));
+      border: 2px solid var(--border-color, rgba(255,255,255,0.1));
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: 600;
-      color: #94a3b8;
+      color: var(--text-secondary, #94a3b8);
       position: relative;
       z-index: 1;
     }
@@ -52,7 +52,7 @@
 
     .step.completed {
       border-color: var(--color-primary);
-      background: white;
+      background: rgba(37,105,244,0.1);
       color: var(--color-primary);
     }
 
@@ -63,7 +63,7 @@
       transform: translateX(-50%);
       margin-top: 0.5rem;
       font-size: 0.875rem;
-      color: #64748b;
+      color: var(--text-secondary, #64748b);
       white-space: nowrap;
     }
 
@@ -73,19 +73,19 @@
     }
 
     .upload-zone {
-      border: 2px dashed #cbd5e1;
+      border: 2px dashed var(--border-color, rgba(255,255,255,0.15));
       border-radius: 1rem;
       padding: 4rem 2rem;
       text-align: center;
       cursor: pointer;
       transition: all 0.2s;
-      background: #f8fafc;
+      background: var(--bg-card, rgba(34,44,62,0.7));
     }
 
     .upload-zone:hover,
     .upload-zone.dragover {
       border-color: var(--color-primary);
-      background: #eff6ff;
+      background: rgba(37,105,244,0.1);
     }
 
     .processing-stage {
@@ -94,8 +94,8 @@
       align-items: center;
       gap: 1rem;
       padding: 1rem;
-      background: white;
-      border: 1px solid #e2e8f0;
+      background: var(--bg-card, rgba(34,44,62,0.82));
+      border: 1px solid var(--border-color, rgba(255,255,255,0.1));
       border-radius: 0.5rem;
       opacity: 0.5;
     }
@@ -103,19 +103,19 @@
     .processing-stage.active {
       opacity: 1;
       border-color: var(--color-primary);
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
     }
 
     .processing-stage.completed {
       opacity: 1;
-      border-color: #10b981;
-      background: #f0fdf4;
+      border-color: var(--color-success, #10b981);
+      background: rgba(16,185,129,0.1);
     }
 
     .spinner {
       width: 20px;
       height: 20px;
-      border: 2px solid #e2e8f0;
+      border: 2px solid rgba(255,255,255,0.1);
       border-top-color: var(--color-primary);
       border-radius: 50%;
       animation: spin 1s linear infinite;
@@ -128,8 +128,8 @@
     }
 
     .exercise-card {
-      background: white;
-      border: 1px solid #e2e8f0;
+      background: var(--bg-card, rgba(34,44,62,0.82));
+      border: 1px solid var(--border-color, rgba(255,255,255,0.1));
       border-radius: 0.5rem;
       padding: 1.5rem;
       margin-bottom: 1rem;
@@ -137,15 +137,15 @@
 
     .exercise-card h3 {
       margin-top: 0;
-      color: #1e293b;
+      color: var(--text-primary, #f0f4ff);
     }
 
     .code-preview {
-      background: #1e293b;
-      color: #e2e8f0;
+      background: var(--color-dark, #1e293b);
+      color: var(--text-primary, #f0f4ff);
       padding: 1rem;
       border-radius: 0.5rem;
-      font-family: monospace;
+      font-family: var(--font-mono, monospace);
       font-size: 0.875rem;
       overflow-x: auto;
       margin-top: 1rem;
@@ -160,10 +160,10 @@
     <!-- Header -->
     <div style="margin-bottom: 2rem;">
       <a href="#" onclick="goBack()"
-        style="color: #64748b; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+        style="color: var(--text-secondary, #64748b); text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
         <span>←</span> Back to Class
       </a>
-      <h1 style="color: #1e293b; margin-bottom: 0.5rem;">Upload Assistant</h1>
+      <h1 style="color: var(--text-primary, #f0f4ff); margin-bottom: 0.5rem;">Upload Assistant</h1>
       <p style="color: #64748b;">Generate coding exercises from your chapter content using AI.</p>
     </div>
 
@@ -188,27 +188,27 @@
       <!-- Chapter Source Selection -->
       <div style="margin-bottom: 2rem;">
         <label
-          style="display: block; margin-bottom: 0.75rem; color: #1e293b; font-weight: 600; font-size: 1.1rem;">Choose
+          style="display: block; margin-bottom: 0.75rem; color: var(--text-primary, #f0f4ff); font-weight: 600; font-size: 1.1rem;">Choose
           Chapter Source</label>
         <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
           <label
-            style="flex: 1; display: flex; align-items: center; gap: 0.75rem; padding: 1rem; border: 2px solid #e2e8f0; border-radius: 0.5rem; cursor: pointer; transition: all 0.2s;"
+            style="flex: 1; display: flex; align-items: center; gap: 0.75rem; padding: 1rem; border: 2px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.5rem; cursor: pointer; transition: all 0.2s;"
             id="existingChapterOption">
             <input type="radio" name="chapterSource" value="existing" onchange="toggleChapterSource('existing')"
               style="cursor: pointer;">
             <span>
-              <strong style="display: block; color: #1e293b;">Existing Chapter</strong>
-              <span style="font-size: 0.875rem; color: #64748b;">Select from uploaded chapters</span>
+              <strong style="display: block; color: var(--text-primary, #f0f4ff);">Existing Chapter</strong>
+              <span style="font-size: 0.875rem; color: var(--text-secondary, #64748b);">Select from uploaded chapters</span>
             </span>
           </label>
           <label
-            style="flex: 1; display: flex; align-items: center; gap: 0.75rem; padding: 1rem; border: 2px solid #e2e8f0; border-radius: 0.5rem; cursor: pointer; transition: all 0.2s;"
+            style="flex: 1; display: flex; align-items: center; gap: 0.75rem; padding: 1rem; border: 2px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.5rem; cursor: pointer; transition: all 0.2s;"
             id="newChapterOption">
             <input type="radio" name="chapterSource" value="new" checked onchange="toggleChapterSource('new')"
               style="cursor: pointer;">
             <span>
-              <strong style="display: block; color: #1e293b;">New Chapter</strong>
-              <span style="font-size: 0.875rem; color: #64748b;">Upload a new PDF</span>
+              <strong style="display: block; color: var(--text-primary, #f0f4ff);">New Chapter</strong>
+              <span style="font-size: 0.875rem; color: var(--text-secondary, #64748b);">Upload a new PDF</span>
             </span>
           </label>
         </div>
