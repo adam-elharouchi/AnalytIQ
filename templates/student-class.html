@@ -76,27 +76,34 @@
   </div>
 
   <!-- Tabs (Pill Style) -->
-  <div id="tabsContainer" style="display: none; margin-bottom: 3rem;">
-    <div
-      style="display: flex; gap: 1rem; background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(255,255,255,0.05); padding: 0.5rem; border-radius: 0.75rem; overflow-x: auto; -webkit-overflow-scrolling: touch;">
-      <button class="tab-button" onclick="switchTab('chapters')" id="tabChapters"
-        style="border: none; padding: 0.75rem 1.5rem; border-radius: 0.5rem; background: transparent; color: #94a3b8; font-weight: 500; cursor: pointer; transition: all 0.2s;">Modules</button>
-      <button class="tab-button" onclick="switchTab('exercises')" id="tabExercises"
-        style="border: none; padding: 0.75rem 1.5rem; border-radius: 0.5rem; background: transparent; color: #94a3b8; font-weight: 500; cursor: pointer; transition: all 0.2s;">Practice
-        Exercises</button>
-      <button class="tab-button" onclick="switchTab('resources')" id="tabResources"
-        style="border: none; padding: 0.75rem 1.5rem; border-radius: 0.5rem; background: transparent; color: #94a3b8; font-weight: 500; cursor: pointer; transition: all 0.2s;">Resources</button>
-      <button class="tab-button" onclick="switchTab('progress')" id="tabProgress"
-        style="border: none; padding: 0.75rem 1.5rem; border-radius: 0.5rem; background: transparent; color: #94a3b8; font-weight: 500; cursor: pointer; transition: all 0.2s;">Leaderboard</button>
-    </div>
+  <div id="tabsContainer" style="display: none; margin-bottom: 2.5rem;">
+    <nav class="terminal-tab-nav" style="justify-content: center;">
+      <button class="tab-button terminal-tab-btn" onclick="switchTab('chapters')" id="tabChapters">
+        <span class="terminal-tab-num">01</span> Modules
+      </button>
+      <button class="tab-button terminal-tab-btn" onclick="switchTab('exercises')" id="tabExercises">
+        <span class="terminal-tab-num">02</span> Practice Exercises
+      </button>
+      <button class="tab-button terminal-tab-btn" onclick="switchTab('resources')" id="tabResources">
+        <span class="terminal-tab-num">03</span> Resources
+      </button>
+      <button class="tab-button terminal-tab-btn" onclick="switchTab('progress')" id="tabProgress">
+        <span class="terminal-tab-num">04</span> Leaderboard
+      </button>
+    </nav>
   </div>
 
   <style>
-    /* Active pill tab */
+    /* ── Terminal tab active state ── */
     .tab-button.active {
-      background: var(--color-primary) !important;
-      color: white !important;
-      box-shadow: 0 4px 12px rgba(37, 105, 244, 0.3) !important;
+      color: var(--color-primary) !important;
+      background: rgba(37, 105, 244, 0.1) !important;
+      border-color: rgba(37, 105, 244, 0.3) !important;
+      border-bottom-color: var(--bg-primary, #0f172a) !important;
+      box-shadow: 0 0 10px rgba(37, 105, 244, 0.2) !important;
+    }
+    .tab-button.active .terminal-tab-num {
+      color: rgba(37, 105, 244, 0.65) !important;
     }
 
     /* Leaderboard sub-tabs */
