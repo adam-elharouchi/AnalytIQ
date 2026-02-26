@@ -43,17 +43,17 @@ function toggleChapterSource(source) {
         newSection.style.display = 'none';
         existingActions.style.display = 'block';
         existingOption.style.borderColor = 'var(--color-primary)';
-        existingOption.style.background = '#eff6ff';
+        existingOption.style.background = 'rgba(37,105,244,0.12)';
         newOption.style.borderColor = 'var(--border-color)';
-        newOption.style.background = 'white';
+        newOption.style.background = '';
     } else {
         existingSection.style.display = 'none';
         newSection.style.display = 'block';
         existingActions.style.display = 'none';
         newOption.style.borderColor = 'var(--color-primary)';
-        newOption.style.background = '#eff6ff';
+        newOption.style.background = 'rgba(37,105,244,0.12)';
         existingOption.style.borderColor = 'var(--border-color)';
-        existingOption.style.background = 'white';
+        existingOption.style.background = '';
     }
 }
 
@@ -219,12 +219,13 @@ function showProcessError(message) {
     const errorDiv = document.createElement('div');
     errorDiv.style.marginTop = '2rem';
     errorDiv.style.padding = '1rem';
-    errorDiv.style.background = '#fee2e2';
-    errorDiv.style.color = '#dc2626';
+    errorDiv.style.background = 'var(--color-error-bg, rgba(239,68,68,0.15))';
+    errorDiv.style.color = 'var(--color-error-text, #fca5a5)';
     errorDiv.style.borderRadius = '0.5rem';
+    errorDiv.style.border = '1px solid var(--color-error-border, #ef4444)';
     errorDiv.innerHTML = `
         <strong>Error:</strong> ${message}<br>
-        <button onclick="location.reload()" class="btn btn-secondary" style="margin-top: 1rem; background: white;">Try Again</button>
+        <button onclick="location.reload()" class="btn btn-secondary" style="margin-top: 1rem;">Try Again</button>
     `;
     processView.appendChild(errorDiv);
 

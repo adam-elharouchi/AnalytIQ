@@ -152,7 +152,7 @@ class TenantAdminDashboard {
                     return `<div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem;">
                         <span style="min-width:160px;font-size:0.8rem;font-family:monospace;color:var(--text-muted);">${escapeHtml(a.action)}</span>
                         <div style="flex:1;height:8px;background:var(--bg-dark);border-radius:4px;overflow:hidden;">
-                            <div style="width:${pct}%;height:100%;background:#10b981;border-radius:4px;"></div>
+                            <div style="width:${pct}%;height:100%;background:var(--color-success, #10b981);border-radius:4px;"></div>
                         </div>
                         <span style="font-size:0.85rem;color:var(--text-muted);min-width:30px;text-align:right;">${a.count}</span>
                     </div>`;
@@ -428,7 +428,7 @@ class TenantAdminDashboard {
                     </td>
                     <td style="padding:1rem;color:var(--text-muted);font-size:0.9rem;">${date}</td>
                     <td style="padding:1rem;text-align:right;display:flex;gap:0.5rem;justify-content:flex-end;">
-                        <button class="btn btn-sm" style="background:#10b981;color:#fff;border:none;"
+                        <button class="btn btn-sm" style="background:var(--color-success, #10b981);color:#fff;border:none;"
                             onclick="window.tenantAdminApp.approveUser('${u.user_id}','${escapeHtml(u.name).replace(/'/g,"\\'")}')">
                             Approve
                         </button>
@@ -519,7 +519,7 @@ class TenantAdminDashboard {
                 pager.innerHTML = `${prev}${info}${next}`;
             }
         } catch (err) {
-            if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="color:#ef4444;text-align:center;">${escapeHtml(err.message)}</td></tr>`;
+            if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="color:var(--color-danger, #ef4444);text-align:center;">${escapeHtml(err.message)}</td></tr>`;
         }
     }
 
@@ -589,7 +589,7 @@ class TenantAdminDashboard {
                 </tr>`;
             }).join('');
         } catch (err) {
-            if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="color:#ef4444;text-align:center;">${escapeHtml(err.message)}</td></tr>`;
+            if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="color:var(--color-danger, #ef4444);text-align:center;">${escapeHtml(err.message)}</td></tr>`;
         }
     }
 
@@ -726,7 +726,7 @@ class TenantAdminDashboard {
             if (!res.ok) throw new Error(data.error || 'Failed to load audit log');
             this.renderAuditLog(data.entries || [], data.total, data.pages, page);
         } catch (err) {
-            if (tbody) tbody.innerHTML = `<tr><td colspan="4" style="color:#ef4444;text-align:center;">${escapeHtml(err.message)}</td></tr>`;
+            if (tbody) tbody.innerHTML = `<tr><td colspan="4" style="color:var(--color-danger, #ef4444);text-align:center;">${escapeHtml(err.message)}</td></tr>`;
         }
     }
 

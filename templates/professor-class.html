@@ -36,7 +36,7 @@
             <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--color-success); box-shadow: 0 0 8px var(--color-success); flex-shrink: 0;"></span>
             <span style="font-family: var(--font-mono); color: var(--color-success); font-size: 0.8rem; letter-spacing: 0.05em; text-transform: uppercase;">Active Class</span>
           </div>
-          <h1 id="className" style="margin: 0 0 0.5rem 0; color: #f8fafc; font-size: 1.875rem; font-weight: 700;"></h1>
+          <h1 id="className" style="margin: 0 0 0.5rem 0; color: var(--text-primary, #f0f4ff); font-size: 1.875rem; font-weight: 700;"></h1>
           <p id="classDescription" style="color: #94a3b8; font-size: 1rem; line-height: 1.6; margin-bottom: 1.25rem;"></p>
           <div style="display: inline-flex; align-items: center; gap: 0.6rem; background: rgba(37, 105, 244, 0.12); padding: 0.4rem 0.9rem; border-radius: 0.5rem; border: 1px solid rgba(37, 105, 244, 0.25);">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="2">
@@ -65,11 +65,11 @@
       <!-- Stats row: fluid inline dividers -->
       <div style="display: flex; border-top: 1px solid rgba(255,255,255,0.07); padding-top: 1.25rem;">
         <div style="flex: 1; text-align: center; padding: 0.25rem 0.5rem; border-right: 1px solid rgba(255,255,255,0.07);">
-          <div style="font-size: 2rem; font-weight: 700; color: #f8fafc; font-family: var(--font-mono); line-height: 1;" id="studentCountStat">0</div>
+          <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary, #f0f4ff); font-family: var(--font-mono); line-height: 1;" id="studentCountStat">0</div>
           <div style="font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 0.35rem;">Students</div>
         </div>
         <div style="flex: 1; text-align: center; padding: 0.25rem 0.5rem; border-right: 1px solid rgba(255,255,255,0.07);">
-          <div style="font-size: 2rem; font-weight: 700; color: #f8fafc; font-family: var(--font-mono); line-height: 1;" id="chapterCountStat">0</div>
+          <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary, #f0f4ff); font-family: var(--font-mono); line-height: 1;" id="chapterCountStat">0</div>
           <div style="font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 0.35rem;">Chapters</div>
         </div>
         <div style="flex: 1; text-align: center; padding: 0.25rem 0.5rem;">
@@ -128,16 +128,16 @@
       border: 1px solid rgba(255,255,255,0.1) !important;
       box-shadow: 0 20px 60px rgba(0,0,0,0.6) !important;
     }
-    [id$="Modal"] h2 { color: #f8fafc !important; }
-    [id$="Modal"] label { color: #e2e8f0 !important; }
-    [id$="Modal"] small { color: #94a3b8 !important; }
-    [id$="Modal"] > [role="dialog"] p { color: #94a3b8 !important; }
+    [id$="Modal"] h2 { color: var(--text-primary) !important; }
+    [id$="Modal"] label { color: var(--text-primary) !important; }
+    [id$="Modal"] small { color: var(--text-secondary) !important; }
+    [id$="Modal"] > [role="dialog"] p { color: var(--text-secondary) !important; }
     [id$="Modal"] input:not([type="radio"]):not([type="checkbox"]):not([type="file"]),
     [id$="Modal"] textarea,
     [id$="Modal"] select {
-      background: rgba(30, 41, 59, 0.8) !important;
-      border: 1px solid rgba(255,255,255,0.1) !important;
-      color: #e2e8f0 !important;
+      background: rgba(17, 24, 39, 0.7) !important;
+      border: 1px solid var(--border-color) !important;
+      color: var(--text-primary) !important;
     }
     [id$="Modal"] input:not([type="radio"]):not([type="checkbox"]):not([type="file"]):focus,
     [id$="Modal"] textarea:focus,
@@ -178,16 +178,16 @@
     #importChapterModal #impPreviewSection {
       border-top-color: rgba(255,255,255,0.08) !important;
     }
-    #importChapterModal #impPreviewTitle { color: #f8fafc !important; font-weight: 600; }
-    #importChapterModal #impPreviewSnippet { color: #94a3b8 !important; }
-    #importChapterModal h3 { color: #f8fafc !important; }
-    #importChapterModal p { color: #94a3b8 !important; }
+    #importChapterModal #impPreviewTitle { color: var(--text-primary) !important; font-weight: 600; }
+    #importChapterModal #impPreviewSnippet { color: var(--text-secondary) !important; }
+    #importChapterModal h3 { color: var(--text-primary) !important; }
+    #importChapterModal p { color: var(--text-secondary) !important; }
   </style>
 
   <!-- Chapters Tab -->
   <div id="tabContentChapters" class="tab-content" style="display: none;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-      <h2 style="margin: 0; color: #f8fafc;">Chapters</h2>
+      <h2 style="margin: 0; color: var(--text-primary, #f0f4ff);">Chapters</h2>
       <div style="display: flex; gap: 0.5rem;">
         <button class="btn btn-secondary" onclick="window.contentImporter && window.contentImporter.show()"
           style="display: flex; align-items: center; gap: 0.4rem;">
@@ -205,7 +205,7 @@
     </div>
 
     <div id="chaptersList">
-      <div style="text-align: center; padding: 3rem; background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.75rem;">
+      <div style="text-align: center; padding: 3rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 0.75rem;">
         <p style="color: #64748b; margin: 0;">No chapters yet. Upload your first chapter to get started.</p>
       </div>
     </div>
@@ -214,7 +214,7 @@
   <!-- Exercises Tab -->
   <div id="tabContentExercises" class="tab-content" style="display: none;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-      <h2 style="margin: 0; color: #f8fafc;">Exercises</h2>
+      <h2 style="margin: 0; color: var(--text-primary, #f0f4ff);">Exercises</h2>
       <div style="display: flex; gap: 0.5rem;">
         <a href="#"
           onclick="window.location.href='upload-assistant.html?class_id=' + new URLSearchParams(window.location.search).get('class_id')"

@@ -267,7 +267,7 @@ function copyClassCode(classId) {
     const button = event.target.closest('button');
     const originalText = button.innerHTML;
     button.innerHTML = 'Copied';
-    button.style.background = '#10b981';
+    button.style.background = 'var(--color-success, #10b981)';
     setTimeout(() => {
       button.innerHTML = originalText;
       button.style.background = '';
