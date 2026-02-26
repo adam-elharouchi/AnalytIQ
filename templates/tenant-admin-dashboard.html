@@ -6,60 +6,52 @@
 <!-- Tenant Admin — same style conventions as superadmin-dashboard.html -->
 <style>
     .admin-dashboard-container {
-        display: flex;
-        gap: 2rem;
         padding-top: 1rem;
-        min-height: calc(100vh - 200px);
     }
 
-    /* Vertical Tabs Sidebar */
-    .admin-sidebar {
-        width: 250px;
-        flex-shrink: 0;
-        background: var(--bg-card);
-        border: 1px solid var(--border-color);
-        border-radius: 0.75rem;
-        padding: 1.5rem;
-        position: sticky;
-        top: 100px;
-        height: fit-content;
-    }
-
-    .admin-nav-list {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-
+    /* Terminal tab overrides for admin nav links */
     .admin-nav-link {
-        display: flex;
+        display: inline-flex;
         align-items: center;
-        gap: 12px;
-        padding: 12px 16px;
-        color: var(--text-color);
-        text-decoration: none;
-        border-radius: 0.5rem;
-        transition: all 0.2s;
+        gap: 0.45rem;
+        padding: 0.45rem 0.85rem;
+        background: transparent;
+        border: 1px solid transparent;
+        border-bottom: none;
+        border-radius: 0.375rem 0.375rem 0 0;
+        color: #64748b;
+        font-size: 0.85rem;
+        font-family: var(--font-mono);
         font-weight: 500;
+        cursor: pointer;
+        text-decoration: none;
+        white-space: nowrap;
+        transition: all 0.2s;
+        margin-bottom: -1px;
+        position: relative;
     }
 
     .admin-nav-link:hover {
-        background: var(--bg-dark);
-        color: var(--primary-color);
+        color: #94a3b8;
+        background: rgba(255, 255, 255, 0.03);
+        border-color: rgba(255, 255, 255, 0.06);
     }
 
     .admin-nav-link.active {
-        background: rgba(59, 130, 246, 0.1);
-        color: var(--primary-color);
-        border-left: 4px solid var(--primary-color);
+        color: var(--color-primary);
+        background: rgba(37, 105, 244, 0.1);
+        border-color: rgba(37, 105, 244, 0.3);
+        border-bottom-color: var(--bg-primary, #0f172a);
+        box-shadow: 0 0 10px rgba(37, 105, 244, 0.2);
+        border-left: none;
+    }
+
+    .admin-nav-link.active .terminal-tab-num {
+        color: rgba(37, 105, 244, 0.65);
     }
 
     /* Main Content Area */
     .admin-content {
-        flex: 1;
         min-width: 0;
     }
 
@@ -224,57 +216,37 @@
 <main class="container">
     <div class="admin-dashboard-container">
 
-        <!-- Sidebar Navigation -->
-        <aside class="admin-sidebar">
-            <h2
-                style="font-size: 0.875rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 1rem; letter-spacing: 0.05em; padding-left: 0.5rem;">
-                Tenant Admin</h2>
-            <ul class="admin-nav-list">
-                <li>
-                    <a href="#overview" class="admin-nav-link active" data-target="overview-section">
-                        Overview
-                    </a>
-                </li>
-                <li>
-                    <a href="#analytics" class="admin-nav-link" data-target="analytics-section"
-                        onclick="window.tenantAdminApp && window.tenantAdminApp.loadAnalytics()">
-                        Analytics
-                    </a>
-                </li>
-                <li>
-                    <a href="#users" class="admin-nav-link" data-target="users-section">
-                        Users
-                    </a>
-                </li>
-                <li>
-                    <a href="#classes-admin" class="admin-nav-link" data-target="classes-admin-section"
-                        onclick="window.tenantAdminApp && window.tenantAdminApp.loadAllClasses()">
-                        Classes
-                    </a>
-                </li>
-                <li>
-                    <a href="#sso-config" class="admin-nav-link" data-target="sso-config-section"
-                        onclick="window.tenantAdminApp && window.tenantAdminApp.loadSSOProviders()">
-                        SSO Config
-                    </a>
-                </li>
-                <li>
-                    <a href="#approvals" class="admin-nav-link" data-target="approvals-section"
-                        onclick="window.tenantAdminApp && window.tenantAdminApp.loadPendingApprovals()">
-                        Pending Approvals
-                        <span id="approvals-badge" style="display:none; background:#ef4444; color:#fff;
-                            font-size:0.7rem; font-weight:700; padding:1px 6px; border-radius:9999px;
-                            margin-left:auto;">0</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="#audit" class="admin-nav-link" data-target="audit-section"
-                        onclick="window.tenantAdminApp && window.tenantAdminApp.loadAuditLog()">
-                        Audit Log
-                    </a>
-                </li>
-            </ul>
-        </aside>
+        <!-- Terminal Tab Navigation -->
+        <nav class="terminal-tab-nav" style="justify-content: center; margin-bottom: 2rem;">
+            <a href="#overview" class="admin-nav-link active" data-target="overview-section">
+                <span class="terminal-tab-num">01</span> Overview
+            </a>
+            <a href="#analytics" class="admin-nav-link" data-target="analytics-section"
+                onclick="window.tenantAdminApp && window.tenantAdminApp.loadAnalytics()">
+                <span class="terminal-tab-num">02</span> Analytics
+            </a>
+            <a href="#users" class="admin-nav-link" data-target="users-section">
+                <span class="terminal-tab-num">03</span> Users
+            </a>
+            <a href="#classes-admin" class="admin-nav-link" data-target="classes-admin-section"
+                onclick="window.tenantAdminApp && window.tenantAdminApp.loadAllClasses()">
+                <span class="terminal-tab-num">04</span> Classes
+            </a>
+            <a href="#sso-config" class="admin-nav-link" data-target="sso-config-section"
+                onclick="window.tenantAdminApp && window.tenantAdminApp.loadSSOProviders()">
+                <span class="terminal-tab-num">05</span> SSO Config
+            </a>
+            <a href="#approvals" class="admin-nav-link" data-target="approvals-section"
+                onclick="window.tenantAdminApp && window.tenantAdminApp.loadPendingApprovals()">
+                <span class="terminal-tab-num">06</span> Approvals
+                <span id="approvals-badge" style="display:none; background:var(--color-error); color:#fff;
+                    font-size:0.68rem; font-weight:700; padding:1px 6px; border-radius:9999px; margin-left:2px;">0</span>
+            </a>
+            <a href="#audit" class="admin-nav-link" data-target="audit-section"
+                onclick="window.tenantAdminApp && window.tenantAdminApp.loadAuditLog()">
+                <span class="terminal-tab-num">07</span> Audit Log
+            </a>
+        </nav>
 
         <!-- Main Content Area -->
         <div class="admin-content">
