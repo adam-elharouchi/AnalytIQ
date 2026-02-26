@@ -845,10 +845,10 @@ async function loadAvgLeaderboard() {
                     <tbody>
                         ${leaderboard.map(student => `
                             <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); ${student.student_id === currentUser.user_id ? 'background-color: rgba(37, 105, 244, 0.1);' : ''}">
-                                <td style="padding: 1rem; text-align: center; font-weight: bold; font-family: var(--font-mono); color: ${student.rank <= 3 ? '#eab308' : '#64748b'};">
-                                    ${student.rank === 1 ? '<span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:rgba(234,179,8,0.2);border:1px solid rgba(234,179,8,0.5);color:#fbbf24;font-size:0.75rem;font-weight:700;">1</span>' : student.rank === 2 ? '<span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:rgba(148,163,184,0.2);border:1px solid rgba(148,163,184,0.5);color:#cbd5e1;font-size:0.75rem;font-weight:700;">2</span>' : student.rank === 3 ? '<span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:rgba(180,120,60,0.2);border:1px solid rgba(180,120,60,0.5);color:#c4885a;font-size:0.75rem;font-weight:700;">3</span>' : '<span style="color:#64748b;font-family:var(--font-mono);">#' + student.rank + '</span>'}
+                                <td style="padding: 1rem; text-align: center;">
+                                    ${student.rank === 1 ? '<span class="rank-gold">1</span>' : student.rank === 2 ? '<span class="rank-silver">2</span>' : student.rank === 3 ? '<span class="rank-bronze">3</span>' : '<span style="color:var(--text-secondary,#64748b);font-family:var(--font-mono);">#' + student.rank + '</span>'}
                                 </td>
-                                <td style="padding: 1rem; font-weight: 500; color: #e2e8f0;">
+                                <td style="padding: 1rem; font-weight: 500; color: var(--text-primary, #e2e8f0);">
                                     ${escapeHtml(student.name)}
                                     ${student.student_id === currentUser.user_id ? '<span style="font-size: 0.7rem; background: var(--color-primary); color: white; padding: 2px 6px; border-radius: 4px; margin-left: 0.5rem; font-weight: 600;">YOU</span>' : ''}
                                 </td>
@@ -905,10 +905,10 @@ async function loadStudentExerciseLeaderboard(exerciseId) {
                     <tbody>
                         ${leaderboard.map(student => `
                             <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); ${student.student_id === currentUser.user_id ? 'background-color: rgba(37, 105, 244, 0.1);' : ''}">
-                                <td style="padding: 1rem; text-align: center; font-weight: bold; font-family: var(--font-mono); color: ${student.rank <= 3 ? '#eab308' : '#64748b'};">
-                                    ${student.rank === 1 ? '<span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:rgba(234,179,8,0.2);border:1px solid rgba(234,179,8,0.5);color:#fbbf24;font-size:0.75rem;font-weight:700;">1</span>' : student.rank === 2 ? '<span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:rgba(148,163,184,0.2);border:1px solid rgba(148,163,184,0.5);color:#cbd5e1;font-size:0.75rem;font-weight:700;">2</span>' : student.rank === 3 ? '<span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:rgba(180,120,60,0.2);border:1px solid rgba(180,120,60,0.5);color:#c4885a;font-size:0.75rem;font-weight:700;">3</span>' : '<span style="color:#64748b;font-family:var(--font-mono);">#' + student.rank + '</span>'}
+                                <td style="padding: 1rem; text-align: center;">
+                                    ${student.rank === 1 ? '<span class="rank-gold">1</span>' : student.rank === 2 ? '<span class="rank-silver">2</span>' : student.rank === 3 ? '<span class="rank-bronze">3</span>' : '<span style="color:var(--text-secondary,#64748b);font-family:var(--font-mono);">#' + student.rank + '</span>'}
                                 </td>
-                                <td style="padding: 1rem; font-weight: 500; color: #e2e8f0;">
+                                <td style="padding: 1rem; font-weight: 500; color: var(--text-primary, #e2e8f0);">
                                     ${escapeHtml(student.name)}
                                     ${student.student_id === currentUser.user_id ? '<span style="font-size: 0.7rem; background: var(--color-primary); color: white; padding: 2px 6px; border-radius: 4px; margin-left: 0.5rem; font-weight: 600;">YOU</span>' : ''}
                                 </td>
