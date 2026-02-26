@@ -41,27 +41,29 @@ class TenantAdminDashboard {
     }
 
     setupNavigation() {
-        const links    = document.querySelectorAll('.admin-nav-link');
+        const tabs     = document.querySelectorAll('.terminal-tab-btn[data-target]');
         const sections = document.querySelectorAll('.admin-section');
 
-        links.forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                links.forEach(l => l.classList.remove('active'));
+        tabs.forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                tabs.forEach(t => t.classList.remove('active'));
                 e.currentTarget.classList.add('active');
 
                 const targetId = e.currentTarget.getAttribute('data-target');
-                sections.forEach(s => { s.style.display = s.id === targetId ? 'block' : 'none'; });
-
-                switch (targetId) {
-                    case 'analytics-section':     this.loadAnalytics(); break;
-                    case 'classes-admin-section': this.loadAllClasses(); break;
-                    case 'sso-config-section':    this.loadSSOProviders(); break;
-                    case 'audit-section':         this.loadAuditLog(1); break;
-                    case 'approvals-section':     this.loadPendingApprovals(true); break;
-                }
+                sections.forEach(s => {
+                    s.classList.remove('active');
+                    if (s.id === targetId) s.classList.add('active');
+                });
             });
         });
+
+        // Honor sessionStorage tab hint from home page card links
+        const hint = sessionStorage.getItem('ta_tab');
+        if (hint) {
+            sessionStorage.removeItem('ta_tab');
+            const target = document.querySelector(`.terminal-tab-btn[data-target="${hint}"]`);
+            if (target) target.click();
+        }
     }
 
     setupEventListeners() {
@@ -94,6 +96,21 @@ class TenantAdminDashboard {
             set('stat-total-classes',     data.total_classes);
             set('stat-sso-providers',     data.sso_providers);
             set('stat-pending-approvals', data.pending_approvals);
+
+            // Populate identity header quick-stats
+            set('header-stat-users',   data.total_users);
+            set('header-stat-classes', data.total_classes);
+            set('header-stat-pending', data.pending_approvals);
+
+            // Populate breadcrumb tenant name if available
+            if (data.tenant_name) {
+                const crumb = document.getElementById('tenant-name-breadcrumb');
+                if (crumb) crumb.textContent = data.tenant_name.toLowerCase().replace(/\s+/g, '-');
+                const desc = document.getElementById('tenant-identity-desc');
+                if (desc) desc.textContent = `Manage users, classes, SSO, and approvals for ${data.tenant_name}.`;
+            }
+            const countLabel = document.getElementById('tenant-user-count');
+            if (countLabel) countLabel.textContent = `· ${data.total_users ?? 0} users`;
 
             const badge = document.getElementById('approvals-badge');
             const count = data.pending_approvals || 0;
