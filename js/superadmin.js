@@ -323,7 +323,7 @@ class SuperAdminDashboard {
 
             // Format Role
             const roleBadge = u.is_super_admin
-                ? '<span style="background: #eab308; color: #000; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold;">Super Admin</span>'
+                ? '<span style="background: rgba(234,179,8,0.15); border: 1px solid rgba(234,179,8,0.4); color: #fcd34d; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold;">Super Admin</span>'
                 : `<span style="background: var(--bg-dark); border: 1px solid var(--border-color); color: var(--text-color); padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; text-transform: capitalize;">${escapeHtml(u.role)}</span>`;
 
             // Format Status
