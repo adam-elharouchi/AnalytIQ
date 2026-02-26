@@ -196,8 +196,7 @@
 
   <!-- Chapters Tab -->
   <div id="tabContentChapters" class="tab-content" style="display: none;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-      <h2 style="margin: 0; color: var(--text-primary, #f0f4ff);">Chapters</h2>
+    <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 1.5rem;">
       <div style="display: flex; gap: 0.5rem;">
         <button class="btn btn-secondary" onclick="window.contentImporter && window.contentImporter.show()"
           style="display: flex; align-items: center; gap: 0.4rem;">
@@ -223,8 +222,7 @@
 
   <!-- Exercises Tab -->
   <div id="tabContentExercises" class="tab-content" style="display: none;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-      <h2 style="margin: 0; color: var(--text-primary, #f0f4ff);">Exercises</h2>
+    <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 1.5rem;">
       <div style="display: flex; gap: 0.5rem;">
         <a href="#"
           onclick="window.location.href='upload-assistant.html?class_id=' + new URLSearchParams(window.location.search).get('class_id')"
@@ -251,8 +249,7 @@
 
   <!-- Resources Tab -->
   <div id="tabContentResources" class="tab-content" style="display: none;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-      <h2 style="margin: 0; color: var(--text-primary, #f0f4ff);">Course Resources</h2>
+    <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 1.5rem;">
       <button class="btn btn-primary" onclick="showAddResourceModal()"
         style="display: flex; align-items: center; gap: 0.4rem;">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -270,8 +267,7 @@
 
   <!-- Students Tab -->
   <div id="tabContentStudents" class="tab-content" style="display: none;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-      <h2 style="margin: 0; color: var(--text-primary, #f0f4ff);">Enrolled Students</h2>
+    <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 1.5rem;">
       <div style="display: flex; align-items: center; gap: 0.75rem;">
         <span style="color: #64748b; font-size: 0.875rem;" id="studentsCount">0 students</span>
         <button id="syncLmsBtn" class="btn btn-secondary"
@@ -290,11 +286,6 @@
 
   <!-- Progress Tab -->
   <div id="tabContentProgress" class="tab-content" style="display: none;">
-    <div style="margin-bottom: 1.5rem;">
-      <h2 style="margin: 0 0 0.4rem 0; color: var(--text-primary, #f0f4ff);">Class Leaderboards</h2>
-      <p style="color: #64748b; margin: 0; font-size: 0.875rem;">See how students are performing in the class exercises.</p>
-    </div>
-
     <!-- Progress View Sub-Tabs -->
     <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.08);">
       <button class="sub-tab-button active" onclick="switchProgressView('avgLeaderboard')" id="subTabAvg">Average Score</button>
@@ -410,14 +401,14 @@
             style="display: block; margin-bottom: 0.5rem; color: var(--text-primary, #f0f4ff); font-weight: 500;">Class Name
             *</label>
           <input type="text" id="editClassName" required
-            style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;" />
+            style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.375rem; font-size: 1rem; background: rgba(17,24,39,0.7); color: var(--text-primary, #f0f4ff);" />
         </div>
 
         <div style="margin-bottom: 1.5rem;">
           <label for="editClassDescription"
             style="display: block; margin-bottom: 0.5rem; color: var(--text-primary, #f0f4ff); font-weight: 500;">Description</label>
           <textarea id="editClassDescription" rows="4"
-            style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem; resize: vertical;"></textarea>
+            style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.375rem; font-size: 1rem; background: rgba(17,24,39,0.7); color: var(--text-primary, #f0f4ff); resize: vertical;"></textarea>
         </div>
 
         <div id="editClassError" class="error-message" style="display: none; margin-bottom: 1rem;"></div>
@@ -485,14 +476,14 @@
           style="display: block; margin-bottom: 0.5rem; color: var(--text-primary, #f0f4ff); font-weight: 500;">Resource Title
           *</label>
         <input type="text" id="resourceTitle" required placeholder="e.g., Python Documentation"
-          style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;" />
+          style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.375rem; font-size: 1rem; background: rgba(17,24,39,0.7); color: var(--text-primary, #f0f4ff);" />
       </div>
 
       <div style="margin-bottom: 1.5rem;">
         <label for="resourceDescription"
           style="display: block; margin-bottom: 0.5rem; color: var(--text-primary, #f0f4ff); font-weight: 500;">Description</label>
         <textarea id="resourceDescription" rows="3" placeholder="Describe this resource and how it helps students..."
-          style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem; resize: vertical;"></textarea>
+          style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.375rem; font-size: 1rem; background: rgba(17,24,39,0.7); color: var(--text-primary, #f0f4ff); resize: vertical;"></textarea>
       </div>
 
       <div style="margin-bottom: 1.5rem;">
@@ -500,7 +491,7 @@
           style="display: block; margin-bottom: 0.5rem; color: var(--text-primary, #f0f4ff); font-weight: 500;">Resource Type
           *</label>
         <select id="resourceType" required
-          style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;"
+          style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.375rem; font-size: 1rem; background: rgba(17,24,39,0.7); color: var(--text-primary, #f0f4ff);"
           onchange="updateResourceInputType()">
           <option value="link">Link</option>
           <option value="tool">Tool</option>
@@ -521,14 +512,14 @@
           *</label>
         <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
           <label
-            style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 1rem; border: 2px solid #e2e8f0; border-radius: 0.375rem; flex: 1; transition: all 0.2s;"
+            style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 1rem; border: 2px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.375rem; flex: 1; transition: all 0.2s;"
             id="linkOptionLabel">
             <input type="radio" name="resourceInputType" value="link" checked onchange="toggleResourceInput()"
               id="resourceMethodLink" style="cursor: pointer;" />
             <span>Link/URL</span>
           </label>
           <label
-            style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 1rem; border: 2px solid #e2e8f0; border-radius: 0.375rem; flex: 1; transition: all 0.2s;"
+            style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 1rem; border: 2px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.375rem; flex: 1; transition: all 0.2s;"
             id="uploadOptionLabel">
             <input type="radio" name="resourceInputType" value="upload" onchange="toggleResourceInput()"
               id="resourceMethodUpload" style="cursor: pointer;" />
@@ -543,7 +534,7 @@
           style="display: block; margin-bottom: 0.5rem; color: var(--text-primary, #f0f4ff); font-weight: 500;">Resource URL
           *</label>
         <input type="url" id="resourceUrl" placeholder="https://example.com or code-assistant.html"
-          style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;" />
+          style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.375rem; font-size: 1rem; background: rgba(17,24,39,0.7); color: var(--text-primary, #f0f4ff);" />
         <small style="color: #64748b; font-size: 0.875rem; display: block; margin-top: 0.5rem;">Enter a full URL
           (https://...) or a relative path (e.g., code-assistant.html)</small>
       </div>
@@ -554,7 +545,7 @@
           style="display: block; margin-bottom: 0.5rem; color: var(--text-primary, #f0f4ff); font-weight: 500;">Upload File
           *</label>
         <input type="file" id="resourceFile" accept=".pdf,.csv,.xlsx,.xls,.txt,.json,.ipynb"
-          style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;" />
+          style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.375rem; font-size: 1rem; background: rgba(17,24,39,0.7); color: var(--text-primary, #f0f4ff);" />
         <small style="color: #64748b; font-size: 0.875rem; display: block; margin-top: 0.5rem;">Supported formats:
           PDF, CSV, Excel, TXT, JSON, Jupyter Notebook (.ipynb)</small>
         <small id="resourceFileInfo"
@@ -589,7 +580,7 @@
         <label for="exerciseChapter"
           style="display: block; margin-bottom: 0.5rem; color: var(--text-primary, #f0f4ff); font-weight: 500;">Chapter *</label>
         <select id="exerciseChapter" required
-          style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;">
+          style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.375rem; font-size: 1rem; background: rgba(17,24,39,0.7); color: var(--text-primary, #f0f4ff);">
           <option value="">Select a chapter...</option>
         </select>
       </div>
@@ -599,14 +590,14 @@
           style="display: block; margin-bottom: 0.5rem; color: var(--text-primary, #f0f4ff); font-weight: 500;">Exercise Title
           *</label>
         <input type="text" id="exerciseTitle" required placeholder="e.g., Calculate mean and median"
-          style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;" />
+          style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.375rem; font-size: 1rem; background: rgba(17,24,39,0.7); color: var(--text-primary, #f0f4ff);" />
       </div>
 
       <div style="margin-bottom: 1.5rem;">
         <label for="exerciseDescription"
           style="display: block; margin-bottom: 0.5rem; color: var(--text-primary, #f0f4ff); font-weight: 500;">Description</label>
         <textarea id="exerciseDescription" rows="3" placeholder="Describe what students should do in this exercise..."
-          style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem; resize: vertical;"></textarea>
+          style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.375rem; font-size: 1rem; background: rgba(17,24,39,0.7); color: var(--text-primary, #f0f4ff); resize: vertical;"></textarea>
       </div>
 
       <div style="margin-bottom: 1.5rem;">
@@ -614,7 +605,7 @@
           style="display: block; margin-bottom: 0.5rem; color: var(--text-primary, #f0f4ff); font-weight: 500;">Difficulty
           *</label>
         <select id="exerciseDifficulty" required
-          style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;">
+          style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.375rem; font-size: 1rem; background: rgba(17,24,39,0.7); color: var(--text-primary, #f0f4ff);">
           <option value="easy">Easy</option>
           <option value="medium" selected>Medium</option>
           <option value="hard">Hard</option>
@@ -627,7 +618,7 @@
           Code</label>
         <textarea id="exerciseSolution" rows="6"
           placeholder="# Enter the solution code here...&#10;# Example:&#10;import pandas as pd&#10;df = pd.read_csv('data.csv')&#10;print(df.head())"
-          style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 0.875rem; font-family: 'Courier New', monospace; resize: vertical;"></textarea>
+          style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.375rem; font-size: 0.875rem; font-family: 'Courier New', monospace; resize: vertical; background: rgba(17,24,39,0.7); color: var(--text-primary, #f0f4ff);"></textarea>
         <small style="color: #64748b; font-size: 0.875rem; display: block; margin-top: 0.5rem;">This code will be used
           to validate student submissions</small>
       </div>
@@ -662,14 +653,14 @@
           style="display: block; margin-bottom: 0.5rem; color: var(--text-primary, #f0f4ff); font-weight: 500;">Chapter Title
           *</label>
         <input type="text" id="editChapterTitle" required
-          style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;" />
+          style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.375rem; font-size: 1rem; background: rgba(17,24,39,0.7); color: var(--text-primary, #f0f4ff);" />
       </div>
 
       <div style="margin-bottom: 1.5rem;">
         <label for="editChapterDescription"
           style="display: block; margin-bottom: 0.5rem; color: var(--text-primary, #f0f4ff); font-weight: 500;">Description</label>
         <textarea id="editChapterDescription" rows="4"
-          style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem; resize: vertical;"></textarea>
+          style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.375rem; font-size: 1rem; background: rgba(17,24,39,0.7); color: var(--text-primary, #f0f4ff); resize: vertical;"></textarea>
       </div>
 
       <div id="editChapterError" class="error-message" style="display: none; margin-bottom: 1rem;"></div>
@@ -751,7 +742,7 @@
       <p style="color:#64748b;font-size:0.9em;margin-top:0;">Paste any public URL — GitHub README, blog post, article, OpenStax page, LibreTexts chapter, etc.</p>
       <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;">
         <input type="url" id="impUrlInput" placeholder="https://..."
-          style="flex:1;padding:0.65rem;border:1px solid #e2e8f0;border-radius:0.375rem;font-size:0.95rem;"
+          style="flex:1;padding:0.65rem;border:1px solid var(--border-color,rgba(255,255,255,0.1));border-radius:0.375rem;font-size:0.95rem;background:rgba(17,24,39,0.7);color:var(--text-primary,#f0f4ff);"
           onkeydown="if(event.key==='Enter') window.contentImporter && window.contentImporter.previewUrl()" />
         <button class="btn btn-secondary"
           onclick="window.contentImporter && window.contentImporter.previewUrl()">Preview</button>
@@ -764,7 +755,7 @@
       <p style="color:#64748b;font-size:0.9em;margin-top:0;">Enter a PyPI package name to import its documentation as a chapter.</p>
       <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;">
         <input type="text" id="impPypiPackage" placeholder="e.g. pandas, numpy, scikit-learn"
-          style="flex:1;padding:0.65rem;border:1px solid #e2e8f0;border-radius:0.375rem;font-size:0.95rem;"
+          style="flex:1;padding:0.65rem;border:1px solid var(--border-color,rgba(255,255,255,0.1));border-radius:0.375rem;font-size:0.95rem;background:rgba(17,24,39,0.7);color:var(--text-primary,#f0f4ff);"
           onkeydown="if(event.key==='Enter') window.contentImporter && window.contentImporter.previewPypi()" />
         <button class="btn btn-secondary"
           onclick="window.contentImporter && window.contentImporter.previewPypi()">Fetch Docs</button>
@@ -786,11 +777,11 @@
       <p style="color:#64748b;font-size:0.9em;margin-top:0;">Search LibreTexts open textbooks by keyword and subject library.</p>
       <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem;flex-wrap:wrap;">
         <select id="impLtLibrary"
-          style="padding:0.65rem;border:1px solid #e2e8f0;border-radius:0.375rem;font-size:0.9rem;">
+          style="padding:0.65rem;border:1px solid var(--border-color,rgba(255,255,255,0.1));border-radius:0.375rem;font-size:0.9rem;background:rgba(17,24,39,0.7);color:var(--text-primary,#f0f4ff);">
           <option value="">All Libraries</option>
         </select>
         <input type="text" id="impLtQuery" placeholder="e.g. machine learning, statistics"
-          style="flex:1;min-width:160px;padding:0.65rem;border:1px solid #e2e8f0;border-radius:0.375rem;font-size:0.9rem;"
+          style="flex:1;min-width:160px;padding:0.65rem;border:1px solid var(--border-color,rgba(255,255,255,0.1));border-radius:0.375rem;font-size:0.9rem;background:rgba(17,24,39,0.7);color:var(--text-primary,#f0f4ff);"
           onkeydown="if(event.key==='Enter') window.contentImporter && window.contentImporter.searchLibretexts()" />
         <button class="btn btn-secondary"
           onclick="window.contentImporter && window.contentImporter.searchLibretexts()">Search</button>
@@ -803,7 +794,7 @@
       <p style="color:#64748b;font-size:0.9em;margin-top:0;">Search OER Commons for open educational resources.</p>
       <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem;">
         <input type="text" id="impOerQuery" placeholder="e.g. data science, business analytics"
-          style="flex:1;padding:0.65rem;border:1px solid #e2e8f0;border-radius:0.375rem;font-size:0.9rem;"
+          style="flex:1;padding:0.65rem;border:1px solid var(--border-color,rgba(255,255,255,0.1));border-radius:0.375rem;font-size:0.9rem;background:rgba(17,24,39,0.7);color:var(--text-primary,#f0f4ff);"
           onkeydown="if(event.key==='Enter') window.contentImporter && window.contentImporter.searchOer()" />
         <button class="btn btn-secondary"
           onclick="window.contentImporter && window.contentImporter.searchOer()">Search</button>
@@ -824,12 +815,12 @@
       <div style="margin-bottom:1rem;">
         <label style="display:block;margin-bottom:0.4rem;font-weight:500;">Chapter Title *</label>
         <input type="text" id="impChapterTitle"
-          style="width:100%;padding:0.65rem;border:1px solid #e2e8f0;border-radius:0.375rem;font-size:0.95rem;" />
+          style="width:100%;padding:0.65rem;border:1px solid var(--border-color,rgba(255,255,255,0.1));border-radius:0.375rem;font-size:0.95rem;background:rgba(17,24,39,0.7);color:var(--text-primary,#f0f4ff);" />
       </div>
       <div style="margin-bottom:1rem;">
         <label style="display:block;margin-bottom:0.4rem;font-weight:500;">Description</label>
         <textarea id="impChapterDesc" rows="2"
-          style="width:100%;padding:0.65rem;border:1px solid #e2e8f0;border-radius:0.375rem;font-size:0.95rem;resize:vertical;"></textarea>
+          style="width:100%;padding:0.65rem;border:1px solid var(--border-color,rgba(255,255,255,0.1));border-radius:0.375rem;font-size:0.95rem;resize:vertical;background:rgba(17,24,39,0.7);color:var(--text-primary,#f0f4ff);"></textarea>
       </div>
       <div style="margin-bottom:1.5rem;">
         <label style="display:block;margin-bottom:0.4rem;font-weight:500;">Exercise Generation</label>
