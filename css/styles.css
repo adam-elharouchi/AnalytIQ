@@ -181,14 +181,6 @@ body {
   list-style: none;
   gap: 2rem;
   align-items: center;
-  flex: 1;
-  justify-content: center;
-}
-
-.nav-user-slot {
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
 }
 
 .nav-links a {
