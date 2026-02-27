@@ -4951,6 +4951,7 @@ body.hero-bg-active .nav-links a.active {
 /* ── Terminal-style chip tab navigation ── */
 .terminal-tab-nav {
   display: flex;
+  justify-content: center;
   gap: 0.35rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   margin-bottom: 1.75rem;
