@@ -396,20 +396,20 @@ async function renderChapters(chapters) {
                 <span style="color: var(--color-primary);">[module_${chapter.chapter_number || '0'}]</span>
                 <span style="color: #64748b;">// ${chapter.created_at ? new Date(chapter.created_at).toLocaleDateString() : 'system_init'}</span>
             </div>
-            <div class="card-indicator" style="width: 8px; height: 8px; border-radius: 50%; background: var(--color-primary); opacity: 0.5; transition: all 0.2s;"></div>
+            <div class="card-indicator" style="width: 8px; height: 8px; border-radius: 50%; background: #059669; opacity: 0.5; transition: all 0.2s;"></div>
         </div>
 
         <!-- Content Body -->
-        <div style="padding: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem;">
+        <div style="padding: 1.5rem 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem;">
             <div style="flex: 1; min-width: 250px;">
-                <h3 style="margin: 0 0 0.5rem 0; color: #f8fafc; font-size: 1.5rem; font-weight: 600;">${escapeHtml(chapter.title)}</h3>
+                <h3 style="margin: 0 0 0.5rem 0; color: #f8fafc; font-size: 1.3rem; font-weight: 600;">${escapeHtml(chapter.title)}</h3>
                 ${chapter.description ? `<p style="color: #94a3b8; margin: 0; line-height: 1.6;">${escapeHtml(chapter.description)}</p>` : ''}
             </div>
             
             <div style="display: flex; gap: 1rem;">
                 ${chapter.pdf_url || chapter.pdf_filename ? `
-                <a href="chapter-view.html?chapter_id=${encodeURIComponent(chapter.chapter_id)}&class_id=${encodeURIComponent(currentClassId)}" 
-                   style="text-decoration: none; padding: 0.75rem 1.5rem; background: rgba(37, 105, 244, 0.1); border: 1px solid var(--color-primary); color: var(--color-primary); border-radius: 0.5rem; font-family: var(--font-mono); font-size: 0.9rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem; transition: background 0.2s;" onmouseover="this.style.background='var(--color-primary)'; this.style.color='white';" onmouseout="this.style.background='rgba(37, 105, 244, 0.1)'; this.style.color='var(--color-primary)';">
+                <a href="chapter-view.html?chapter_id=${encodeURIComponent(chapter.chapter_id)}&class_id=${encodeURIComponent(currentClassId)}"
+                   style="text-decoration: none; padding: 0.75rem 1.5rem; background: rgba(37, 105, 244, 0.1); border: 1px solid var(--color-primary); color: var(--color-primary); border-radius: 0.5rem; font-family: var(--font-mono); font-size: 0.82rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem; transition: background 0.2s;" onmouseover="this.style.background='var(--color-primary)'; this.style.color='white';" onmouseout="this.style.background='rgba(37, 105, 244, 0.1)'; this.style.color='var(--color-primary)';">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                     Init Module
                 </a>` : ''}
@@ -434,31 +434,6 @@ async function renderChapters(chapters) {
       }, 500);
     }
   }
-
-  // Add hover effect
-  const chapterCards = chaptersList.querySelectorAll('.chapter-card');
-  chapterCards.forEach(card => {
-    card.addEventListener('mouseenter', function () {
-      this.style.transform = 'translateY(-4px)';
-      this.style.boxShadow = '0 12px 40px rgba(0,0,0,0.4)';
-      this.style.borderColor = 'rgba(255,255,255,0.2)';
-      const indicator = this.querySelector('.card-indicator');
-      if (indicator) {
-        indicator.style.opacity = '1';
-        indicator.style.boxShadow = '0 0 8px var(--color-primary)';
-      }
-    });
-    card.addEventListener('mouseleave', function () {
-      this.style.transform = 'translateY(0)';
-      this.style.boxShadow = 'none';
-      this.style.borderColor = 'rgba(255,255,255,0.1)';
-      const indicator = this.querySelector('.card-indicator');
-      if (indicator) {
-        indicator.style.opacity = '0.5';
-        indicator.style.boxShadow = 'none';
-      }
-    });
-  });
 }
 
 

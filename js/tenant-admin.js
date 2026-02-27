@@ -225,12 +225,17 @@ class TenantAdminDashboard {
         }
 
         tbody.innerHTML = users.map(u => {
-            const roleBadge = `<span style="background:var(--bg-dark);border:1px solid var(--border-color);color:var(--text-color);padding:2px 8px;border-radius:4px;font-size:0.8rem;text-transform:capitalize;">${escapeHtml(u.role)}</span>`;
+            const safeId     = escapeHtml(u.user_id);
+            const safeName   = escapeHtml(u.name).replace(/'/g, "\\'");
+            const safeEmail  = escapeHtml(u.email).replace(/'/g, "\\'");
+            const safeRole   = escapeHtml(u.role);
+            const safeStatus = escapeHtml(u.account_status);
+            const roleBadge = `<span style="background:var(--bg-dark);border:1px solid var(--border-color);color:var(--text-color);padding:2px 8px;border-radius:4px;font-size:0.8rem;text-transform:capitalize;">${safeRole}</span>`;
             const statusBadge = u.account_status === 'active'
                 ? '<span class="status-badge active">Active</span>'
                 : u.account_status === 'disabled'
                     ? '<span class="status-badge disabled">Disabled</span>'
-                    : `<span class="status-badge pending">${escapeHtml(u.account_status)}</span>`;
+                    : `<span class="status-badge pending">${safeStatus}</span>`;
             return `<tr style="border-bottom:1px solid var(--border-color);">
                 <td style="padding:1rem;">
                     <div style="font-weight:500;">${escapeHtml(u.name)}</div>
@@ -238,11 +243,24 @@ class TenantAdminDashboard {
                 </td>
                 <td style="padding:1rem;">${roleBadge}</td>
                 <td style="padding:1rem;">${statusBadge}</td>
-                <td style="padding:1rem;text-align:right;">
-                    <button class="btn btn-sm btn-secondary" style="font-size:0.8rem;"
-                        onclick="window.tenantAdminApp.openUserModal('${escapeHtml(u.user_id)}','${escapeHtml(u.name).replace(/'/g,"\\'")}','${escapeHtml(u.email).replace(/'/g,"\\'")}','${escapeHtml(u.role)}','${escapeHtml(u.account_status)}')">
-                        Manage
-                    </button>
+                <td style="padding:0.75rem 1rem;">
+                    <div class="icon-btn-row">
+                        <button class="icon-btn" title="Manage User"
+                            onclick="window.tenantAdminApp.openUserModal('${safeId}','${safeName}','${safeEmail}','${safeRole}','${safeStatus}')">
+                            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+                        </button>
+                        <button class="icon-btn ${u.account_status === 'disabled' ? 'icon-btn-success' : 'icon-btn-amber'}"
+                            title="${u.account_status === 'disabled' ? 'Enable Account' : 'Disable Account'}"
+                            onclick="window.tenantAdminApp.quickToggleStatus('${safeId}','${safeStatus}')">
+                            ${u.account_status === 'disabled'
+                                ? `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="10 8 16 12 10 16 10 8"/></svg>`
+                                : `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="10" y1="15" x2="10" y2="9"/><line x1="14" y1="15" x2="14" y2="9"/></svg>`}
+                        </button>
+                        <button class="icon-btn" title="Reset Password"
+                            onclick="window.tenantAdminApp.quickPasswordReset('${safeId}')">
+                            <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                        </button>
+                    </div>
                 </td>
             </tr>`;
         }).join('');
@@ -400,6 +418,31 @@ class TenantAdminDashboard {
             this.closeUserModal();
             this.loadUsers();
         } catch (err) { this._showUserModalError(err.message); }
+    }
+
+    // Direct action helpers (used by icon buttons in user table rows)
+    async quickToggleStatus(userId, currentStatus) {
+        const newStatus = currentStatus === 'active' ? 'disabled' : 'active';
+        if (!confirm(`${newStatus === 'disabled' ? 'Disable' : 'Enable'} this account?`)) return;
+        try {
+            const res  = await authFetch(`${this.baseUrl}/users/${userId}/status`, {
+                method: 'PATCH', body: JSON.stringify({ status: newStatus })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Status update failed');
+            showSuccess(`User ${newStatus === 'active' ? 'enabled' : 'disabled'}.`);
+            this.loadUsers();
+        } catch (err) { showError(err.message); }
+    }
+
+    async quickPasswordReset(userId) {
+        if (!confirm('Force this user to change their password on next login?')) return;
+        try {
+            const res  = await authFetch(`${this.baseUrl}/users/${userId}/force-reset`, { method: 'POST' });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Reset failed');
+            showSuccess(data.message || 'Password reset flagged.');
+        } catch (err) { showError(err.message); }
     }
 
     // ============================================================
