@@ -21,32 +21,34 @@
   --color-white: #ffffff;
   --color-black: #000000;
 
-  /* Semantic colors */
+  /* Semantic colors — dark-optimized */
   --color-error: #ef4444;
   --color-error-dark: #dc2626;
-  --color-error-bg: #fee2e2;
-  --color-error-text: #991b1b;
-  --color-error-border: #fca5a5;
-  --color-success: #059669;
-  --color-success-bg: #d1fae5;
-  --color-success-text: #065f46;
-  --color-success-border: #86efac;
-  --color-warning: #d97706;
-  --color-warning-bg: #fef3c7;
+  --color-error-bg: rgba(239, 68, 68, 0.15);
+  --color-error-text: #fca5a5;
+  --color-error-border: #ef4444;
+  --color-success: #10b981;
+  --color-success-bg: rgba(5, 150, 105, 0.15);
+  --color-success-text: #6ee7b7;
+  --color-success-border: #059669;
+  --color-warning: #f59e0b;
+  --color-warning-bg: rgba(245, 158, 11, 0.15);
+  --color-warning-text: #fcd34d;
   --color-warning-border: #f59e0b;
-  --color-info-bg: #dbeafe;
-  --color-info-text: #1e40af;
-  --color-info-border: #93c5fd;
+  --color-danger: #ef4444;
+  --color-info-bg: rgba(37, 105, 244, 0.15);
+  --color-info-text: #93c5fd;
+  --color-info-border: #2569f4;
 
-  /* Badge colors */
-  --color-badge-beginner-bg: #dbeafe;
-  --color-badge-beginner-text: #1e40af;
-  --color-badge-intermediate-bg: #fef3c7;
-  --color-badge-intermediate-text: #92400e;
-  --color-badge-advanced-bg: #fee2e2;
-  --color-badge-advanced-text: #991b1b;
-  --color-badge-easy-bg: #d1fae5;
-  --color-badge-easy-text: #065f46;
+  /* Badge colors — dark-optimized */
+  --color-badge-beginner-bg: rgba(37, 105, 244, 0.2);
+  --color-badge-beginner-text: #93c5fd;
+  --color-badge-intermediate-bg: rgba(217, 119, 6, 0.2);
+  --color-badge-intermediate-text: #fcd34d;
+  --color-badge-advanced-bg: rgba(239, 68, 68, 0.2);
+  --color-badge-advanced-text: #fca5a5;
+  --color-badge-easy-bg: rgba(5, 150, 105, 0.2);
+  --color-badge-easy-text: #6ee7b7;
 
   /* Terminal dot colors */
   --color-dot-red: #ef4444;
@@ -54,16 +56,19 @@
   --color-dot-green: #10b981;
 
   /* Text */
-  --text-primary: #1e293b;
-  --text-secondary: #64748b;
+  --text-primary: #f0f4ff;
+  --text-secondary: rgba(210, 220, 240, 0.65);
+  --text-muted: var(--text-secondary);
+  --text-color: var(--text-primary);
 
   /* Backgrounds */
-  --bg-primary: #ffffff;
-  --bg-secondary: #f8fafc;
-  --bg-card: #ffffff;
+  --bg-primary: #111827;
+  --bg-secondary: #1a2235;
+  --bg-card: rgba(34, 44, 62, 0.82);
+  --bg-dark: var(--bg-secondary);
 
   /* Borders */
-  --border-color: #e2e8f0;
+  --border-color: rgba(255, 255, 255, 0.10);
 
   /* ── Spacing ── */
   --spacing-xs: 0.25rem;
@@ -82,14 +87,14 @@
   --radius-pill: 9999px;
   --radius-full: 50%;
 
-  /* ── Shadows ── */
-  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  /* ── Shadows — dark-optimized ── */
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
   --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.5);
 
   /* ── Typography ── */
   --font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-mono: 'Courier New', monospace;
+  --font-mono: 'Menlo', 'Monaco', 'Courier New', monospace;
   --font-size-xs: 0.75rem;
   --font-size-sm: 0.875rem;
   --font-size-base: 1rem;
@@ -120,7 +125,7 @@
   --code-panel-bg: var(--bg-secondary);
   --code-panel-text: var(--text-primary);
 
-  /* Legacy aliases (backward compatibility) */
+  /* Legacy aliases */
   --primary-color: var(--color-primary);
   --primary-dark: var(--color-primary-hover);
   --secondary-color: var(--color-secondary);
@@ -5333,4 +5338,728 @@ body.hero-bg-active .nav-links a.active {
   --shadow-card:    0 4px 16px rgba(0, 0, 0, 0.30);
   --shadow-glow:    0 0 10px rgba(37, 105, 244, 0.25);
   --shadow-glow-lg: 0 6px 20px rgba(37, 105, 244, 0.40);
+}
+
+/* ================================================================
+   DARK THEME — Component overrides (merged from local-dev-dark-theme.css)
+   Variables are set in :root above; these rules add properties like
+   backdrop-filter, specific rgba() backgrounds, and inline-style overrides.
+   ================================================================ */
+
+/* ── Navbar — frosted glass ── */
+.navbar {
+  background: rgba(17, 24, 39, 0.80);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.logo-analyt { color: var(--text-primary); }
+.nav-links a { color: var(--text-secondary); }
+.nav-links a:hover,
+.nav-links a.active { color: var(--color-primary); }
+.user-menu-toggle { color: var(--text-primary); border-color: var(--border-color); }
+.user-menu-dropdown {
+  background: rgba(26, 34, 53, 0.96);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-color: var(--border-color);
+}
+.user-menu-item { color: var(--text-primary); }
+.user-menu-item:hover { background: rgba(37, 105, 244, 0.12); }
+.user-menu-header .user-name { color: var(--text-primary); }
+.user-menu-divider { background: var(--border-color); }
+
+/* ── Cards — all flavours ── */
+.dashboard-card,
+.module-card,
+.practice-card,
+.resource-card,
+.class-card,
+.stat-card,
+.info-card,
+.chapter-card,
+.exercise-card,
+.leaderboard-card,
+.contact-card,
+.upload-card,
+.section-card,
+.profile-card,
+.notification-card,
+.terms-section,
+.privacy-section {
+  background: var(--bg-card);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+/* ── Login / auth pages ── */
+.login-container { background: var(--bg-primary); }
+.login-card {
+  background: rgba(34, 44, 62, 0.90);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+}
+.login-header p,
+.login-tab,
+.login-footer p { color: var(--text-secondary); }
+.login-tabs { border-color: var(--border-color); }
+.login-tab-content .form-group label { color: var(--text-primary); }
+.login-tab-content .form-group input,
+.login-tab-content .form-group select,
+.login-tab-content .form-group textarea {
+  background: rgba(17, 24, 39, 0.7);
+  color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+.login-tab-content .form-group input::placeholder { color: var(--text-secondary); }
+
+/* ── Forms (all pages) ── */
+.form-group label { color: var(--text-primary); }
+.form-group small { color: var(--text-secondary); }
+input,
+textarea,
+select {
+  background: rgba(17, 24, 39, 0.7);
+  color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+input::placeholder,
+textarea::placeholder { color: var(--text-secondary); }
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(37, 105, 244, 0.25);
+  outline: none;
+}
+
+/* ── Buttons ── */
+.btn-secondary {
+  background: rgba(34, 44, 62, 0.85);
+  color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+.btn-secondary:hover {
+  background: rgba(37, 105, 244, 0.18);
+  border-color: var(--color-primary);
+  color: var(--color-white);
+}
+.btn-danger {
+  color: var(--color-error-text, #fca5a5);
+  border-color: rgba(239, 68, 68, 0.3);
+  background: transparent;
+}
+.btn-danger:hover {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+/* ── Tables ── */
+th {
+  background: rgba(37, 105, 244, 0.15);
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-color);
+}
+td {
+  color: var(--text-primary);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+tr:hover td { background: rgba(37, 105, 244, 0.08); }
+
+/* ── Modals ── */
+.modal { background: rgba(0, 0, 0, 0.7); }
+.modal-content {
+  background: rgba(26, 34, 53, 0.97);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text-primary);
+}
+.modal-header { border-bottom: 1px solid var(--border-color); }
+.modal-header h2 { color: var(--text-primary); }
+.modal-footer { border-top: 1px solid var(--border-color); }
+.modal-close { color: var(--text-secondary); background: transparent; }
+.modal-close:hover { color: var(--text-primary); }
+
+/* ── Tabs ── */
+.tab-button,
+.login-tab,
+.sub-tab-button {
+  color: var(--text-secondary);
+  background: transparent;
+}
+.tab-button:hover,
+.login-tab:hover { color: var(--text-primary); }
+.tab-button.active,
+.login-tab.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+.tabs-border,
+.login-tabs { border-color: var(--border-color); }
+
+/* ── Code editor / playground panels ── */
+.playground-container,
+.code-panel,
+.output-section,
+.editor-container,
+.editor-section,
+.output-panel {
+  background: rgba(17, 24, 39, 0.95);
+  border-color: var(--border-color);
+  color: #e2e8f0;
+}
+.panel-header,
+.editor-header,
+.output-header {
+  background: rgba(26, 34, 53, 0.95);
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+/* ── Sidebar / chat ── */
+.sidebar,
+.chat-sidebar {
+  background: rgba(17, 24, 39, 0.97);
+  border-right: 1px solid var(--border-color);
+}
+.chat-area,
+.chat-main { background: rgba(17, 24, 39, 0.90); }
+.message-bubble.user-message { background: rgba(37, 105, 244, 0.25); color: var(--text-primary); }
+.message-bubble.assistant-message,
+.message-bubble.bot-message { background: rgba(34, 44, 62, 0.85); color: var(--text-primary); }
+.chat-input-area { background: rgba(17, 24, 39, 0.97); border-top: 1px solid var(--border-color); }
+.chat-input { background: rgba(26, 34, 53, 0.9); color: var(--text-primary); border-color: var(--border-color); }
+
+/* ── Dropdowns ── */
+select option { background: #1a2235; color: var(--text-primary); }
+
+/* ── Lists / resource items ── */
+.resource-item,
+.chapter-item,
+.exercise-item,
+.class-item {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+.resource-item:hover,
+.chapter-item:hover,
+.exercise-item:hover {
+  background: rgba(37, 105, 244, 0.1);
+  border-color: rgba(37, 105, 244, 0.35);
+}
+
+/* ── Footer ── */
+footer,
+.home-footer {
+  background: rgba(17, 24, 39, 0.95);
+  border-top: 1px solid var(--border-color);
+  color: var(--text-secondary);
+}
+footer a,
+.home-footer a { color: var(--text-secondary); }
+footer a:hover,
+.home-footer a:hover { color: var(--color-primary); }
+
+/* ── Upload drag zone ── */
+.upload-zone,
+.drop-zone {
+  background: rgba(34, 44, 62, 0.7);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: var(--text-secondary);
+}
+.upload-zone:hover,
+.drop-zone:hover,
+.drop-zone.drag-over {
+  border-color: var(--color-primary);
+  background: rgba(37, 105, 244, 0.1);
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: rgba(17, 24, 39, 0.8); }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(37, 105, 244, 0.5); }
+
+/* ── Text selection ── */
+::selection { background: rgba(37, 105, 244, 0.35); color: #fff; }
+
+/* ── ui-states.js dynamic elements ── */
+.ui-skeleton {
+  background: linear-gradient(90deg,
+    rgba(255, 255, 255, 0.06) 25%,
+    rgba(255, 255, 255, 0.10) 50%,
+    rgba(255, 255, 255, 0.06) 75%);
+}
+.ui-skeleton-card { border-color: var(--border-color); background: var(--bg-card); }
+.ui-empty-state h3 { color: var(--text-primary); }
+.ui-empty-state p,
+.ui-empty-state { color: var(--text-secondary); }
+.ui-error-state { color: var(--color-error-text, #fca5a5); }
+
+/* ── Inline-styled state containers (need !important to override element style attrs) ── */
+#emptyState,
+#loadingState,
+[id$="State"] {
+  background: var(--bg-card) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+/* ── Modal dialogs with hardcoded background (need !important) ── */
+[role="dialog"],
+.ui-confirm-card {
+  background: rgba(26, 34, 53, 0.97) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+[role="dialog"] h2,
+[role="dialog"] label,
+.ui-confirm-message { color: var(--text-primary) !important; }
+[role="dialog"] input,
+[role="dialog"] textarea,
+[role="dialog"] select {
+  background: rgba(17, 24, 39, 0.7) !important;
+  color: var(--text-primary) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+.ui-confirm-btn-cancel {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: var(--text-primary) !important;
+}
+
+/* ── Class cards (inline style overrides) ── */
+.class-card div[style*="grid-template-columns"] {
+  background: rgba(17, 24, 39, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+.class-card div[style*="grid-template-columns"] > div > div:nth-child(2) { color: var(--text-secondary) !important; }
+
+/* ── Professor class inner page — inline style overrides ── */
+#classHeader > div[style*="grid-template-columns"] {
+  background: rgba(17, 24, 39, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+#classHeader > div[style*="grid-template-columns"] > div > div:nth-child(2) { color: var(--text-secondary) !important; }
+
+#chaptersList > div[style*="background: #f8fafc"],
+#exercisesList > div[style*="background: #f8fafc"],
+#resourcesList > div[style*="background: #f8fafc"],
+#studentsList > div[style*="background: #f8fafc"],
+#progressTableContainer > div[style*="background: #f8fafc"],
+#exLeaderboardContent > div[style*="background: #f8fafc"] {
+  background: rgba(17, 24, 39, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+#studentsList table thead,
+#progressTableContainer table thead,
+#avgLeaderboardContainer table thead,
+#exLeaderboardContent table thead {
+  background: rgba(37, 105, 244, 0.15);
+  border-color: var(--border-color);
+}
+#studentsList table th,
+#progressTableContainer table th,
+#avgLeaderboardContainer table th,
+#exLeaderboardContent table th { background: transparent; color: var(--text-primary); }
+#studentsList table td,
+#progressTableContainer table td,
+#avgLeaderboardContainer table td,
+#exLeaderboardContent table td {
+  color: var(--text-primary);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: transparent;
+}
+#studentsList table td:nth-child(2),
+#studentsList table td:nth-child(4),
+#exLeaderboardContent table td:nth-child(4) { color: var(--text-secondary); }
+#progressTableContainer th[style*="position: sticky"],
+#progressTableContainer td[style*="position: sticky"] {
+  background: var(--bg-card) !important;
+  border-right-color: var(--border-color) !important;
+}
+#avgLeaderboardContainer > div,
+#exLeaderboardContent > div { background: var(--bg-card); border-color: var(--border-color); }
+
+/* ── Chapter view page ── */
+.chapter-header,
+.pdf-pages-container,
+.study-toolbar-sidebar,
+.study-side-panel,
+.selection-popup,
+.add-note-card,
+.add-note-panel-popup {
+  background: var(--bg-card);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+.study-side-panel-header { border-bottom-color: var(--border-color); }
+.bookmark-item,
+.note-item {
+  background: rgba(17, 24, 39, 0.5);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+.bookmark-item:hover,
+.note-item:hover {
+  background: rgba(37, 105, 244, 0.12);
+  border-color: rgba(37, 105, 244, 0.35);
+}
+.study-toolbar-sidebar .btn-bookmark.bookmarked {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: #f59e0b;
+  color: #fcd34d;
+}
+.note-item .note-text { color: var(--text-secondary); }
+.note-item-actions button {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
+  border-color: transparent;
+}
+.note-item-actions button:hover {
+  background: rgba(37, 105, 244, 0.15);
+  color: var(--text-primary);
+}
+.study-toolbar-sidebar .toolbar-divider { background: var(--border-color); }
+.study-toolbar-sidebar .btn-bookmark,
+.study-toolbar-sidebar .btn-notes-panel,
+.study-toolbar-sidebar .btn-add-note {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--border-color);
+  color: var(--text-secondary);
+}
+.study-toolbar-sidebar .btn-bookmark:hover,
+.study-toolbar-sidebar .btn-notes-panel:hover,
+.study-toolbar-sidebar .btn-add-note:hover {
+  background: rgba(37, 105, 244, 0.12);
+  color: var(--color-primary);
+}
+.marker-mode-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--border-color);
+  color: var(--text-secondary);
+}
+.marker-mode-btn:hover {
+  background: rgba(37, 105, 244, 0.12);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+.selection-popup button {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+
+/* ── Practice Playground page ── */
+.exercise-info,
+.playground-stats {
+  background: var(--bg-card);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-color: var(--border-color);
+}
+.solution-code {
+  background: rgba(17, 24, 39, 0.6);
+  border-color: var(--border-color);
+}
+.chat-widget-container {
+  background: var(--bg-card);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--border-color);
+}
+.chat-loading { background: var(--bg-card); border-color: var(--border-color); }
+
+/* ── Stat card headers (monospace/uppercase style) ── */
+.stat-card h3 {
+  font-size: var(--font-size-xs, 0.75rem);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* ── Glass card ── */
+.glass-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-color: var(--border-color);
+}
+
+/* ================================================================
+   NEON HOVER GLOW — replaces js/local-dev-dark-theme.js
+   Respects prefers-reduced-motion. Applied via CSS :hover.
+   ================================================================ */
+@media (prefers-reduced-motion: no-preference) {
+  .page-nav-card,
+  .dashboard-card,
+  .module-card,
+  .practice-card,
+  .resource-card,
+  .class-card,
+  .stat-card,
+  .info-card,
+  .chapter-card,
+  .exercise-card,
+  .leaderboard-card,
+  .upload-card,
+  .section-card,
+  .contact-card,
+  .resource-item,
+  .chapter-item,
+  .exercise-item,
+  .class-item {
+    transition: box-shadow 0.22s ease, border-color 0.22s ease, transform 0.22s ease;
+  }
+  .page-nav-card:hover,
+  .dashboard-card:hover,
+  .module-card:hover,
+  .practice-card:hover,
+  .resource-card:hover,
+  .class-card:hover,
+  .stat-card:hover,
+  .info-card:hover,
+  .chapter-card:hover,
+  .exercise-card:hover,
+  .leaderboard-card:hover,
+  .upload-card:hover,
+  .section-card:hover,
+  .contact-card:hover,
+  .resource-item:hover,
+  .chapter-item:hover,
+  .exercise-item:hover,
+  .class-item:hover {
+    box-shadow:
+      0 0 0 1px rgba(37, 105, 244, 0.9),
+      0 0 12px 3px rgba(37, 105, 244, 0.55),
+      0 0 32px 8px rgba(37, 105, 244, 0.22);
+    border-color: rgba(37, 105, 244, 0.85);
+    transform: translateY(-3px);
+  }
+
+  .btn,
+  .tab-button,
+  .login-tab,
+  .sub-tab-button,
+  .user-menu-toggle,
+  .user-menu-item,
+  .modal-close {
+    transition: box-shadow 0.22s ease, border-color 0.22s ease;
+  }
+  .btn:hover,
+  .tab-button:hover,
+  .login-tab:hover,
+  .sub-tab-button:hover,
+  .user-menu-toggle:hover,
+  .user-menu-item:hover,
+  .modal-close:hover {
+    box-shadow:
+      0 0 0 1px rgba(37, 105, 244, 0.6),
+      0 0 8px 2px rgba(37, 105, 244, 0.35),
+      0 0 20px 4px rgba(37, 105, 244, 0.15);
+    border-color: rgba(37, 105, 244, 0.85);
+  }
+}
+
+/* ================================================================
+   PROFESSOR DASHBOARD — extracted from professor-dashboard.html <style>
+   ================================================================ */
+.creator-header-bento {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.creator-header-main {
+  grid-column: span 8;
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  padding: 2.5rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.creator-header-action {
+  grid-column: span 4;
+  background: rgba(37, 105, 244, 0.1);
+  border: 1px solid rgba(37, 105, 244, 0.3);
+  border-radius: 1rem;
+  padding: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.creator-header-action:hover {
+  background: rgba(37, 105, 244, 0.2);
+  border-color: rgba(37, 105, 244, 0.5);
+  transform: translateY(-4px);
+}
+
+.creator-header-action svg {
+  margin-bottom: 1rem;
+  color: var(--color-primary-light);
+}
+
+/* Floating Side Drawer */
+.drawer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+.drawer-overlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.floating-action-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  max-width: 500px;
+  background: var(--color-dark);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: -20px 0 60px rgba(0, 0, 0, 0.5);
+  z-index: 1001;
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+}
+.floating-action-drawer.visible { transform: translateX(0); }
+
+.drawer-header {
+  padding: 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.2);
+}
+.drawer-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #f8fafc;
+  font-family: var(--font-mono);
+}
+
+.drawer-body {
+  padding: 2rem;
+  overflow-y: auto;
+  flex: 1;
+}
+.drawer-body input,
+.drawer-body textarea {
+  background: rgba(0, 0, 0, 0.2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #f8fafc !important;
+}
+.drawer-body input:focus,
+.drawer-body textarea:focus {
+  border-color: var(--color-primary) !important;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(37, 105, 244, 0.2);
+}
+.drawer-body label {
+  color: #e2e8f0;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ── Terminal empty state (professor dashboard) ── */
+.terminal-empty-state {
+  background: var(--color-dark);
+  border-radius: 1rem;
+  padding: 3rem;
+  position: relative;
+  overflow: hidden;
+  color: var(--color-white);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  font-family: var(--font-mono);
+  max-width: 800px;
+  margin: 0 auto;
+}
+.terminal-empty-state::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.terminal-empty-state-dots {
+  position: absolute;
+  top: 10px;
+  left: 1rem;
+  display: flex;
+  gap: 0.5rem;
+}
+.terminal-empty-state-dot {
+  height: 12px;
+  width: 12px;
+  border-radius: 50%;
+}
+.dot-red   { background: #ef4444; }
+.dot-yellow { background: #eab308; }
+.dot-green  { background: #22c55e; }
+
+/* ================================================================
+   BACK BUTTON — shared utility class
+   ================================================================ */
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+  text-decoration: none;
+}
+.btn-back:hover {
+  color: var(--color-primary);
+  background: rgba(37, 105, 244, 0.08);
+  border-color: rgba(37, 105, 244, 0.35);
 }

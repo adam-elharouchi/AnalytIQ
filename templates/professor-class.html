@@ -8,21 +8,21 @@
 <main class="container">
   <!-- Back Button -->
   <div style="margin-bottom: 1.5rem;">
-    <a href="professor-dashboard.html"
-      style="color: #94a3b8; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; font-weight: 500; padding: 0.5rem 0.875rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 0.5rem; transition: all 0.2s;"
-      onmouseover="this.style.color='#f8fafc'; this.style.background='rgba(255,255,255,0.08)'; this.style.borderColor='rgba(255,255,255,0.15)';"
-      onmouseout="this.style.color='#94a3b8'; this.style.background='rgba(255,255,255,0.05)'; this.style.borderColor='rgba(255,255,255,0.08)';">
+    <a href="professor-dashboard.html" class="btn-back">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <line x1="19" y1="12" x2="5" y2="12"></line>
         <polyline points="12 19 5 12 12 5"></polyline>
       </svg>
-      <span>Back to Dashboard</span>
+      Back to Dashboard
     </a>
   </div>
 
   <!-- Loading State -->
-  <div id="loadingState" style="text-align: center; padding: 3rem;">
-    <p style="color: #64748b;">Loading class details...</p>
+  <div id="loadingState" class="terminal-loading-state">
+    <div class="terminal-loading-dots">
+      <span></span><span></span><span></span>
+    </div>
+    <p class="terminal-loading-text">Loading class details<span style="animation: blink 1s step-end infinite; display: inline-block;">_</span></p>
   </div>
 
   <!-- Class Header (Dark Bento Card) -->

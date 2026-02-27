@@ -8,21 +8,21 @@
 <main class="container">
   <!-- Back Button -->
   <div style="margin-bottom: 2rem;">
-    <a href="student-classes.html"
-      style="color: #94a3b8; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; font-weight: 500; padding: 0.5rem 0.875rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 0.5rem; transition: all 0.2s;"
-      onmouseover="this.style.color='#f8fafc'; this.style.background='rgba(255,255,255,0.08)'; this.style.borderColor='rgba(255,255,255,0.15)';"
-      onmouseout="this.style.color='#94a3b8'; this.style.background='rgba(255,255,255,0.05)'; this.style.borderColor='rgba(255,255,255,0.08)';">
+    <a href="student-classes.html" class="btn-back">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <line x1="19" y1="12" x2="5" y2="12"></line>
         <polyline points="12 19 5 12 12 5"></polyline>
       </svg>
-      <span>Back to My Classes</span>
+      Back to My Classes
     </a>
   </div>
 
   <!-- Loading State -->
-  <div id="loadingState" style="text-align: center; padding: 3rem;">
-    <p style="color: #64748b;">Loading class details...</p>
+  <div id="loadingState" class="terminal-loading-state">
+    <div class="terminal-loading-dots">
+      <span></span><span></span><span></span>
+    </div>
+    <p class="terminal-loading-text">Loading class details<span style="animation: blink 1s step-end infinite; display: inline-block;">_</span></p>
   </div>
 
   <!-- Class Header (Unified Fluid Card) -->
@@ -193,8 +193,7 @@
   <div id="embeddedPlaygroundContainer"
     style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #0f172a; z-index: 9999; overflow-y: auto;">
     <div style="position: absolute; top: 1rem; left: 1rem; z-index: 10000;">
-      <button id="closePlaygroundBtn"
-        style="color: #94a3b8; cursor: pointer; padding: 0.5rem 0.875rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 500; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); display: inline-flex; align-items: center; gap: 0.5rem; transition: all 0.2s;">
+      <button id="closePlaygroundBtn" class="btn-back">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
         </svg>
