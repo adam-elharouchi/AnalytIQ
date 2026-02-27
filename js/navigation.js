@@ -62,7 +62,7 @@ document.addEventListener('DOMContentLoaded', function () {
   if (isAuthenticated) {
     if (isSuperAdmin) {
       // Superadmin: Management Portals
-      roleLinks = `<li><a href="superadmin-dashboard.html" ${currentPage === 'superadmin-dashboard.html' ? 'class="active"' : ''} style="color: #eab308; font-weight: bold;">Super Admin</a></li>`;
+      roleLinks = `<li><a href="superadmin-dashboard.html" ${currentPage === 'superadmin-dashboard.html' ? 'class="active"' : ''}>Super Admin</a></li>`;
       commonLinks = '';
     } else if (isTenantAdmin) {
       roleLinks = `<li><a href="tenant-admin-dashboard.html" ${currentPage === 'tenant-admin-dashboard.html' ? 'class="active"' : ''}>Admin Dashboard</a></li>`;

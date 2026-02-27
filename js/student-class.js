@@ -313,37 +313,36 @@ async function loadExercises() {
       return `
             <div class="chapter-section">
               <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
-                <h2 style="margin: 0; font-size: 1.25rem; font-family: var(--font-mono); color: #e2e8f0; font-weight: 500;">
+                <h2 style="margin: 0; font-size: 1.1rem; font-family: var(--font-mono); color: #e2e8f0; font-weight: 500;">
                   <span style="color: var(--color-primary);">~/</span>${escapeHtml(chapterData.chapter_title).toLowerCase().replace(/\\s+/g, '_')}
                 </h2>
                 <div style="flex: 1; height: 1px; background: rgba(255,255,255,0.1);"></div>
               </div>
-              <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem;">
+              <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
                 ${chapterData.exercises.map(exercise => {
-        const diffColor = exercise.difficulty === 'hard' ? 'var(--color-danger, #ef4444)' : (exercise.difficulty === 'medium' ? 'var(--color-warning, #f59e0b)' : 'var(--color-success, #10b981)');
+        const diffColor = exercise.difficulty === 'hard' ? '#ef4444' : exercise.difficulty === 'medium' ? '#f59e0b' : '#10b981';
         return `
-                  <div class="practice-card bento-card" style="background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 1rem; border: 1px solid rgba(255,255,255,0.1); overflow: hidden; display: flex; flex-direction: column; transition: all 0.2s;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 12px 40px rgba(0,0,0,0.4)'; this.style.borderColor='rgba(255,255,255,0.2)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'; this.style.borderColor='rgba(255,255,255,0.1)';">
-                    
+                  <div class="practice-card bento-card" style="background: rgba(30,41,59,0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 1rem; border: 1px solid rgba(255,255,255,0.1); overflow: hidden; display: flex; flex-direction: column; transition: all 0.2s;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 12px 40px rgba(0,0,0,0.4)'; this.style.borderColor='rgba(255,255,255,0.2)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'; this.style.borderColor='rgba(255,255,255,0.1)';">
                     <div style="padding: 1.5rem; flex: 1; display: flex; flex-direction: column;">
-                      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
-                        <h3 style="margin: 0; color: #f8fafc; font-size: 1.15rem; font-weight: 600;">${escapeHtml(exercise.title)}</h3>
-                        <span style="background: rgba(0,0,0,0.3); border: 1px solid ${diffColor}; color: ${diffColor}; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-family: var(--font-mono); font-size: 0.7rem; text-transform: uppercase;">${escapeHtml(exercise.difficulty || 'medium')}</span>
+                      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem; gap: 0.5rem;">
+                        <h3 style="margin: 0; color: #f8fafc; font-size: 1.05rem; font-weight: 600; line-height: 1.3;">${escapeHtml(exercise.title)}</h3>
+                        <span style="flex-shrink: 0; background: rgba(0,0,0,0.3); border: 1px solid ${diffColor}; color: ${diffColor}; padding: 0.2rem 0.5rem; border-radius: 0.25rem; font-family: var(--font-mono); font-size: 0.7rem; text-transform: uppercase;">${escapeHtml(exercise.difficulty || 'medium')}</span>
                       </div>
-                      
-                      <p style="color: #94a3b8; font-size: 0.9rem; margin: 0 0 1.5rem 0; line-height: 1.5; flex: 1;">${exercise.description ? escapeHtml(exercise.description) : 'Interactive exercise session.'}</p>
-                      
-                      <button class="btn btn-primary start-exercise-btn" 
-                        data-exercise-id="${escapeHtml(exercise.exercise_id)}" 
-                        data-chapter-id="${escapeHtml(exercise.chapter_id)}"
-                        data-title="${escapeHtml(exercise.title)}"
-                        data-description="${escapeHtml(exercise.description || '')}"
-                        data-difficulty="${escapeHtml(exercise.difficulty || 'medium')}"
-                        style="width: 100%; background: rgba(37, 105, 244, 0.1); border: 1px solid var(--color-primary); color: var(--color-primary); font-family: var(--font-mono); font-weight: 600; padding: 0.75rem; border-radius: 0.5rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: all 0.2s;"
-                        onmouseover="this.style.background='var(--color-primary)'; this.style.color='white';" 
-                        onmouseout="this.style.background='rgba(37, 105, 244, 0.1)'; this.style.color='var(--color-primary)';">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                        Execute
-                      </button>
+                      <p style="color: #94a3b8; font-size: 0.875rem; margin: 0 0 1.25rem 0; line-height: 1.5; flex: 1;">${exercise.description ? escapeHtml(exercise.description) : 'Interactive exercise session.'}</p>
+                      <div style="display: flex; gap: 0.5rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.06);">
+                        <button class="btn btn-primary start-exercise-btn"
+                          data-exercise-id="${escapeHtml(exercise.exercise_id)}"
+                          data-chapter-id="${escapeHtml(exercise.chapter_id)}"
+                          data-title="${escapeHtml(exercise.title)}"
+                          data-description="${escapeHtml(exercise.description || '')}"
+                          data-difficulty="${escapeHtml(exercise.difficulty || 'medium')}"
+                          style="flex: 1; background: rgba(37,105,244,0.1); border: 1px solid var(--color-primary); color: var(--color-primary); font-family: var(--font-mono); font-weight: 600; padding: 0.6rem; border-radius: 0.5rem; cursor: pointer; font-size: 0.82rem; display: flex; align-items: center; justify-content: center; gap: 0.4rem; transition: all 0.2s;"
+                          onmouseover="this.style.background='var(--color-primary)'; this.style.color='white';"
+                          onmouseout="this.style.background='rgba(37,105,244,0.1)'; this.style.color='var(--color-primary)';">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                          Execute
+                        </button>
+                      </div>
                     </div>
                   </div>
                 `}).join('')}
@@ -388,32 +387,33 @@ async function renderChapters(chapters) {
     const isTargetChapter = scrollToChapterId === chapter.chapter_id;
 
     chaptersHTML += `
-      <div class="chapter-card bento-card" id="${chapterIdAttr}" style="background: var(--color-dark); border-radius: 1rem; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 1.5rem; overflow: hidden; position: relative; display: flex; flex-direction: column; transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s; ${isTargetChapter ? 'border-color: var(--color-primary); box-shadow: 0 0 20px rgba(37, 105, 244, 0.4);' : ''}">
-        
-        <!-- Tab Header -->
-        <div style="background: rgba(0,0,0,0.2); padding: 0.75rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;">
-            <div style="display: flex; align-items: center; gap: 0.75rem; font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-muted);">
-                <span style="color: var(--color-primary);">[module_${chapter.chapter_number || '0'}]</span>
-                <span style="color: #64748b;">// ${chapter.created_at ? new Date(chapter.created_at).toLocaleDateString() : 'system_init'}</span>
-            </div>
-            <div class="card-indicator" style="width: 8px; height: 8px; border-radius: 50%; background: #059669; opacity: 0.5; transition: all 0.2s;"></div>
+      <div class="chapter-card bento-card" id="${chapterIdAttr}" style="border-radius: 1rem; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 1.25rem; overflow: hidden; display: flex; flex-direction: column; transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s; ${isTargetChapter ? 'border-color: var(--color-primary); box-shadow: 0 0 20px rgba(37, 105, 244, 0.4);' : ''}" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 32px rgba(0,0,0,0.35)'; this.style.borderColor='rgba(255,255,255,0.18)';" onmouseout="this.style.transform=''; this.style.boxShadow=''; this.style.borderColor='rgba(255,255,255,0.1)';">
+
+        <!-- IDE Tab Header -->
+        <div style="background: rgba(0,0,0,0.2); padding: 0.65rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; align-items: center; gap: 0.75rem; font-family: var(--font-mono); font-size: 0.8rem; color: #64748b;">
+            <span style="color: var(--color-primary);">[module_${chapter.chapter_number || '0'}]</span>
+            <span>// ${chapter.created_at ? new Date(chapter.created_at).toLocaleDateString() : 'system_init'}</span>
+          </div>
+          <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--color-success); opacity: 0.5;"></div>
         </div>
 
-        <!-- Content Body -->
+        <!-- Content -->
         <div style="padding: 1.5rem 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem;">
-            <div style="flex: 1; min-width: 250px;">
-                <h3 style="margin: 0 0 0.5rem 0; color: #f8fafc; font-size: 1.3rem; font-weight: 600;">${escapeHtml(chapter.title)}</h3>
-                ${chapter.description ? `<p style="color: #94a3b8; margin: 0; line-height: 1.6;">${escapeHtml(chapter.description)}</p>` : ''}
-            </div>
-            
-            <div style="display: flex; gap: 1rem;">
-                ${chapter.pdf_url || chapter.pdf_filename ? `
-                <a href="chapter-view.html?chapter_id=${encodeURIComponent(chapter.chapter_id)}&class_id=${encodeURIComponent(currentClassId)}"
-                   style="text-decoration: none; padding: 0.75rem 1.5rem; background: rgba(37, 105, 244, 0.1); border: 1px solid var(--color-primary); color: var(--color-primary); border-radius: 0.5rem; font-family: var(--font-mono); font-size: 0.82rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem; transition: background 0.2s;" onmouseover="this.style.background='var(--color-primary)'; this.style.color='white';" onmouseout="this.style.background='rgba(37, 105, 244, 0.1)'; this.style.color='var(--color-primary)';">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                    Init Module
-                </a>` : ''}
-            </div>
+          <div style="flex: 1; min-width: 200px;">
+            <h3 style="margin: 0 0 0.35rem 0; color: #f8fafc; font-size: 1.3rem; font-weight: 600;">${escapeHtml(chapter.title)}</h3>
+            ${chapter.description ? `<p style="color: #94a3b8; margin: 0; line-height: 1.5; font-size: 0.875rem;">${escapeHtml(chapter.description)}</p>` : ''}
+          </div>
+          <div style="display: flex; gap: 0.5rem; flex-shrink: 0;">
+            ${chapter.pdf_url || chapter.pdf_filename ? `
+            <a href="chapter-view.html?chapter_id=${encodeURIComponent(chapter.chapter_id)}&class_id=${encodeURIComponent(currentClassId)}"
+               style="text-decoration: none; padding: 0.55rem 1rem; background: rgba(37,105,244,0.1); border: 1px solid var(--color-primary); color: var(--color-primary); border-radius: 0.5rem; font-family: var(--font-mono); font-size: 0.82rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.4rem; transition: background 0.2s;"
+               onmouseover="this.style.background='var(--color-primary)'; this.style.color='white';"
+               onmouseout="this.style.background='rgba(37,105,244,0.1)'; this.style.color='var(--color-primary)';">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              Open Chapter
+            </a>` : ''}
+          </div>
         </div>
       </div>
     `;
@@ -808,32 +808,34 @@ async function loadAvgLeaderboard() {
     }
 
     container.innerHTML = `
-            <div style="background: rgba(30, 41, 59, 0.6); border-radius: 0.5rem; border: 1px solid rgba(255,255,255,0.08); overflow: hidden; max-width: 800px; margin: 0 auto;">
-                <table style="width: 100%; border-collapse: collapse;">
-                    <thead style="background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(255,255,255,0.08);">
-                         <tr>
-                            <th style="padding: 1rem; text-align: center; width: 60px; color: #64748b; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Rank</th>
-                            <th style="padding: 1rem; text-align: left; color: #64748b; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Student</th>
-                            <th style="padding: 1rem; text-align: right; color: #64748b; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Average Score</th>
-                         </tr>
-                    </thead>
-                    <tbody>
-                        ${leaderboard.map(student => `
-                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); ${student.student_id === currentUser.user_id ? 'background-color: rgba(37, 105, 244, 0.1);' : ''}">
-                                <td style="padding: 1rem; text-align: center;">
-                                    ${student.rank === 1 ? '<span class="rank-gold">1</span>' : student.rank === 2 ? '<span class="rank-silver">2</span>' : student.rank === 3 ? '<span class="rank-bronze">3</span>' : '<span style="color:var(--text-secondary,#64748b);font-family:var(--font-mono);">#' + student.rank + '</span>'}
-                                </td>
-                                <td style="padding: 1rem; font-weight: 500; color: var(--text-primary, #e2e8f0);">
-                                    ${escapeHtml(student.name)}
-                                    ${student.student_id === currentUser.user_id ? '<span style="font-size: 0.7rem; background: var(--color-primary); color: white; padding: 2px 6px; border-radius: 4px; margin-left: 0.5rem; font-weight: 600;">YOU</span>' : ''}
-                                </td>
-                                <td style="padding: 1rem; text-align: right; font-weight: 600; color: var(--color-primary); font-family: var(--font-mono);">${student.average_score}%</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            </div>
-        `;
+      <div style="background: var(--bg-card); border-radius: 0.5rem; border: 1px solid var(--border-color); overflow: hidden; max-width: 800px; margin: 0 auto;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead style="background: var(--bg-secondary); border-bottom: 2px solid var(--border-color);">
+            <tr>
+              <th style="padding: 1rem; text-align: center; width: 60px;">Rank</th>
+              <th style="padding: 1rem; text-align: left;">Student</th>
+              <th style="padding: 1rem; text-align: center;">Exercises Completed</th>
+              <th style="padding: 1rem; text-align: right;">Average Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${leaderboard.map(student => `
+              <tr style="border-bottom: 1px solid var(--border-color); ${student.student_id === currentUser.user_id ? 'background-color: rgba(37, 105, 244, 0.1);' : ''}">
+                <td style="padding: 1rem; text-align: center;">
+                  ${student.rank === 1 ? '<span class="rank-gold">1</span>' : student.rank === 2 ? '<span class="rank-silver">2</span>' : student.rank === 3 ? '<span class="rank-bronze">3</span>' : '<span style="color:var(--text-secondary,#64748b);font-family:var(--font-mono);">#' + student.rank + '</span>'}
+                </td>
+                <td style="padding: 1rem; font-weight: 500;">
+                  ${escapeHtml(student.name)}
+                  ${student.student_id === currentUser.user_id ? '<span style="font-size: 0.7rem; background: var(--color-primary); color: white; padding: 2px 6px; border-radius: 4px; margin-left: 0.5rem; font-weight: 600;">YOU</span>' : ''}
+                </td>
+                <td style="padding: 1rem; text-align: center;">${student.exercises_completed != null ? student.exercises_completed : '-'}</td>
+                <td style="padding: 1rem; text-align: right; font-weight: 600; color: var(--color-primary);">${student.average_score}%</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
 
   } catch (error) {
     console.error("Error loading avg leaderboard", error);
@@ -868,32 +870,34 @@ async function loadStudentExerciseLeaderboard(exerciseId) {
     }
 
     container.innerHTML = `
-            <div style="background: rgba(30, 41, 59, 0.6); border-radius: 0.5rem; border: 1px solid rgba(255,255,255,0.08); overflow: hidden; max-width: 800px; margin: 0 auto;">
-                <table style="width: 100%; border-collapse: collapse;">
-                    <thead style="background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(255,255,255,0.08);">
-                         <tr>
-                            <th style="padding: 1rem; text-align: center; width: 60px; color: #64748b; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Rank</th>
-                            <th style="padding: 1rem; text-align: left; color: #64748b; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Student</th>
-                            <th style="padding: 1rem; text-align: right; color: #64748b; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Best Score</th>
-                         </tr>
-                    </thead>
-                    <tbody>
-                        ${leaderboard.map(student => `
-                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); ${student.student_id === currentUser.user_id ? 'background-color: rgba(37, 105, 244, 0.1);' : ''}">
-                                <td style="padding: 1rem; text-align: center;">
-                                    ${student.rank === 1 ? '<span class="rank-gold">1</span>' : student.rank === 2 ? '<span class="rank-silver">2</span>' : student.rank === 3 ? '<span class="rank-bronze">3</span>' : '<span style="color:var(--text-secondary,#64748b);font-family:var(--font-mono);">#' + student.rank + '</span>'}
-                                </td>
-                                <td style="padding: 1rem; font-weight: 500; color: var(--text-primary, #e2e8f0);">
-                                    ${escapeHtml(student.name)}
-                                    ${student.student_id === currentUser.user_id ? '<span style="font-size: 0.7rem; background: var(--color-primary); color: white; padding: 2px 6px; border-radius: 4px; margin-left: 0.5rem; font-weight: 600;">YOU</span>' : ''}
-                                </td>
-                                <td style="padding: 1rem; text-align: right; font-weight: 600; color: var(--color-primary); font-family: var(--font-mono);">${student.score}%</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            </div>
-        `;
+      <div style="background: var(--bg-card); border-radius: 0.5rem; border: 1px solid var(--border-color); overflow: hidden; max-width: 800px; margin: 0 auto;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead style="background: var(--bg-secondary); border-bottom: 2px solid var(--border-color);">
+            <tr>
+              <th style="padding: 1rem; text-align: center; width: 60px;">Rank</th>
+              <th style="padding: 1rem; text-align: left;">Student</th>
+              <th style="padding: 1rem; text-align: center;">Submitted</th>
+              <th style="padding: 1rem; text-align: right;">Best Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${leaderboard.map(student => `
+              <tr style="border-bottom: 1px solid var(--border-color); ${student.student_id === currentUser.user_id ? 'background-color: rgba(37, 105, 244, 0.1);' : ''}">
+                <td style="padding: 1rem; text-align: center;">
+                  ${student.rank === 1 ? '<span class="rank-gold">1</span>' : student.rank === 2 ? '<span class="rank-silver">2</span>' : student.rank === 3 ? '<span class="rank-bronze">3</span>' : '<span style="color:var(--text-secondary,#64748b);font-family:var(--font-mono);">#' + student.rank + '</span>'}
+                </td>
+                <td style="padding: 1rem; font-weight: 500;">
+                  ${escapeHtml(student.name)}
+                  ${student.student_id === currentUser.user_id ? '<span style="font-size: 0.7rem; background: var(--color-primary); color: white; padding: 2px 6px; border-radius: 4px; margin-left: 0.5rem; font-weight: 600;">YOU</span>' : ''}
+                </td>
+                <td style="padding: 1rem; text-align: center; color: #64748b;">${student.submitted_at ? new Date(student.submitted_at).toLocaleDateString() : '-'}</td>
+                <td style="padding: 1rem; text-align: right; font-weight: 600; color: var(--color-primary);">${student.score}%</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
 
   } catch (error) {
     console.error("Error loading exercise leaderboard", error);
