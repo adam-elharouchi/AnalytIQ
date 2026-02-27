@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const avatarSrc = profilePicture || defaultAvatar;
 
     userMenu = `
-      <div class="user-menu">
+      <li class="user-menu">
         <button class="user-menu-toggle profile-picture-btn" onclick="toggleUserMenu()" title="User Menu" aria-label="User menu" aria-expanded="false" aria-controls="userMenuDropdown">
           <img src="${avatarSrc}" alt="Profile picture" class="nav-profile-picture" />
         </button>
@@ -47,10 +47,12 @@ document.addEventListener('DOMContentLoaded', function () {
             <span>Sign Out</span>
           </button>
         </div>
-      </div>
+      </li>
     `;
   } else {
-    userMenu = `<a href="login.html" class="btn-login">Sign In</a>`;
+    userMenu = `
+      <li><a href="login.html" class="btn-login">Sign In</a></li>
+    `;
   }
 
   // Build role-based navigation links
@@ -97,8 +99,8 @@ document.addEventListener('DOMContentLoaded', function () {
         <li><a href="index.html" ${currentPage === 'index.html' ? 'class="active"' : ''}>Home</a></li>
         ${roleLinks}
         ${commonLinks}
+        ${userMenu}
       </ul>
-      <div class="nav-user-slot">${userMenu}</div>
     </div>
   `;
 
