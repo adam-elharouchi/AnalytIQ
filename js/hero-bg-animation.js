@@ -39,39 +39,10 @@
     if (farLayer) clearLayer(farLayer);
 
     // ══════════════════════════════════════════════════════════════
-    // MID LAYER — ghost code blocks scrolling upward
+    // MID LAYER — intentionally left empty (ghost code blocks removed)
     // ══════════════════════════════════════════════════════════════
     const midLayer = document.getElementById('heroBgMid');
     clearLayer(midLayer);
-
-    const ghostSnippets = [
-        `import pandas as pd\nimport numpy as np\n\ndf = pd.read_csv('data.csv')\nprint(df.shape)`,
-        `from sklearn.preprocessing import StandardScaler\n\nscaler = StandardScaler()\nX_scaled = scaler.fit_transform(X)`,
-        `# Split the dataset\nX_train, X_test, y_train, y_test =\n  train_test_split(X, y, test_size=0.2,\n                   random_state=42)`,
-        `model = RandomForestClassifier(\n  n_estimators=100,\n  max_depth=5\n)\nmodel.fit(X_train, y_train)`,
-        `accuracy = model.score(X_test, y_test)\nprint(f'Accuracy: {accuracy:.2%}')`,
-        `plt.figure(figsize=(10, 6))\nplt.plot(df['date'], df['value'])\nplt.title('Trend Analysis')\nplt.show()`,
-        `corr = df.corr()\nsns.heatmap(corr, annot=True,\n  cmap='coolwarm')`,
-        `df.groupby('category')['value']\n  .agg(['mean', 'std', 'count'])\n  .reset_index()`,
-    ];
-
-    if (midLayer) {
-        const ghostCount = 7;
-        for (let i = 0; i < ghostCount; i++) {
-            const ghost = document.createElement('div');
-            ghost.className = 'hero-bg-ghost';
-            ghost.textContent = ghostSnippets[i % ghostSnippets.length];
-
-            // Random horizontal position
-            ghost.style.left = (5 + Math.random() * 75) + '%';
-            ghost.style.top = (10 + Math.random() * 80) + '%';
-            ghost.style.animationDuration = (25 + Math.random() * 20) + 's';
-            ghost.style.animationDelay = (-Math.random() * 25) + 's';
-            ghost.style.opacity = (0.07 + Math.random() * 0.06).toFixed(3);
-
-            midLayer.appendChild(ghost);
-        }
-    }
 
     // ══════════════════════════════════════════════════════════════
     // FOREGROUND LAYER — floating IDE windows with live typing
