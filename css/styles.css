@@ -2748,9 +2748,9 @@ body.hero-bg-active .hero-section p {
 
 /* Code Animation Container */
 .code-animation-container {
-  background: var(--color-dark);
+  background: rgba(17, 24, 39, 0.85);
   flex: 1;
-  border: 1px solid var(--border-color);
+  border: 1px solid rgba(226, 232, 240, 0.12);
   border-radius: 0.75rem;
   overflow: hidden;
   box-shadow: var(--shadow-lg);
@@ -2763,12 +2763,12 @@ body.hero-bg-active .hero-section p {
 }
 
 .code-animation-header {
-  background: var(--text-secondary);
+  background: rgba(100, 116, 139, 0.35);
   padding: 0.75rem 1rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.12);
 }
 
 .code-animation-dot {
