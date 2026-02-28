@@ -4342,7 +4342,7 @@ body.hero-bg-active .container {
 }
 
 body.hero-bg-active {
-  background: transparent;
+  background: #0f172a;
 }
 
 /* Make nav dark/frosted with white text on hero page */
