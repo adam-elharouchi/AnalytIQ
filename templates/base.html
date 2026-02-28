@@ -115,12 +115,17 @@
   <script>
     /* Fetch active announcements and render dismissible toast banners */
     (function () {
-      var role = '';
+      var role = '', tenantId = '';
       try {
-        role = (JSON.parse(localStorage.getItem('currentUser') || '{}').role) || '';
+        var _cu = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        role     = _cu.role      || '';
+        tenantId = _cu.tenant_id || '';
       } catch (e) {}
 
-      var url = '/api/platform/status' + (role ? '?role=' + encodeURIComponent(role) : '');
+      var _params = [];
+      if (role)     _params.push('role='      + encodeURIComponent(role));
+      if (tenantId) _params.push('tenant_id=' + encodeURIComponent(tenantId));
+      var url = '/api/platform/status' + (_params.length ? '?' + _params.join('&') : '');
       fetch(url)
         .then(function (r) { return r.json(); })
         .then(function (data) {

@@ -539,65 +539,6 @@ async function loadAvgLeaderboard() {
   }
 }
 
-// Load Exercise Leaderboard
-async function loadExerciseLeaderboard(exerciseId) {
-  const container = document.getElementById('exLeaderboardContent');
-  if (!exerciseId) {
-    container.innerHTML = '<div style="text-align: center; padding: 3rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 0.5rem;"><p style="color: #64748b;">Select an exercise above to see the leaderboard.</p></div>';
-    return;
-  }
-
-  container.innerHTML = '<div style="text-align: center; padding: 2rem;">Loading leaderboard...</div>';
-
-  try {
-    const currentUser = getCurrentUser();
-    if (!currentUser) return;
-
-    const response = await authFetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/leaderboard/exercise/${exerciseId}`);
-    const data = await response.json();
-
-    if (!response.ok) throw new Error(data.error);
-
-    const leaderboard = data.leaderboard || [];
-
-    if (leaderboard.length === 0) {
-      container.innerHTML = '<div style="text-align: center; padding: 2rem; color: #64748b;">No submissions yet for this exercise.</div>';
-      return;
-    }
-
-    container.innerHTML = `
-            <div style="background: var(--bg-card); border-radius: 0.5rem; border: 1px solid var(--border-color); overflow: hidden; max-width: 800px; margin: 0 auto;">
-                <table style="width: 100%; border-collapse: collapse;">
-                    <thead style="background: var(--bg-secondary); border-bottom: 2px solid var(--border-color);">
-                         <tr>
-                            <th style="padding: 1rem; text-align: center; width: 60px;">Rank</th>
-                            <th style="padding: 1rem; text-align: left;">Student</th>
-                            <th style="padding: 1rem; text-align: right;">Best Score</th>
-                            <th style="padding: 1rem; text-align: right;">Submitted</th>
-                         </tr>
-                    </thead>
-                    <tbody>
-                        ${leaderboard.map(student => `
-                            <tr style="border-bottom: 1px solid var(--border-color);">
-                                <td style="padding: 1rem; text-align: center;">
-                                    ${student.rank === 1 ? '<span class="rank-gold">1</span>' : student.rank === 2 ? '<span class="rank-silver">2</span>' : student.rank === 3 ? '<span class="rank-bronze">3</span>' : '<span style="color:var(--text-secondary,#64748b);font-family:var(--font-mono);">#' + student.rank + '</span>'}
-                                </td>
-                                <td style="padding: 1rem; font-weight: 500;">${escapeHtml(student.name)}</td>
-                                <td style="padding: 1rem; text-align: right; font-weight: 600; color: var(--color-primary);">${student.score}%</td>
-                                <td style="padding: 1rem; text-align: right; color: var(--text-secondary, #64748b); font-size: 0.875rem;">${student.submitted_at ? new Date(student.submitted_at).toLocaleDateString() : '-'}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            </div>
-        `;
-
-  } catch (error) {
-    console.error("Error loading exercise leaderboard", error);
-    container.innerHTML = `<div class="error-message">Error: ${escapeHtml(error.message)}</div>`;
-  }
-}
-
 // Load exercises
 async function loadExercises() {
   const currentUser = getCurrentUser();

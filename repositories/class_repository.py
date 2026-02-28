@@ -471,12 +471,14 @@ def get_exercise_leaderboard_for_class(conn, class_id, exercise_id):
         """
         SELECT
             u.user_id, u.name, u.email,
-            COALESCE(pp.best_score, 0) AS score
+            COALESCE(pp.best_score, 0) AS score,
+            pp.last_completed_at
         FROM class_enrollments ce
         JOIN users u ON ce.student_id = u.user_id
         LEFT JOIN practice_progress pp
             ON pp.user_id = u.user_id AND pp.class_exercise_id = %s
         WHERE ce.class_id = %s
+          AND COALESCE(pp.best_score, 0) > 0
         ORDER BY score DESC, u.name ASC
         """,
         (exercise_id, class_id),

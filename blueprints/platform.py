@@ -33,18 +33,50 @@ def platform_status():
         maintenance_msg = config.get("maintenance_message", "")
 
         # Active announcements (not expired)
-        # Filter by caller's role if provided via optional ?role= param
+        # Supports optional ?role= and ?tenant_id= params to filter results.
+        # Returns: global announcements (tenant_id IS NULL) + tenant-specific ones.
         role = request.args.get("role", "")
-        cur.execute(
-            """
-            SELECT announcement_id, title, message, type, target_roles
-            FROM   announcements
-            WHERE  is_active = TRUE
-              AND  (expires_at IS NULL OR expires_at > NOW())
-            ORDER  BY created_at DESC
-            LIMIT  10
-            """
-        )
+        tenant_id = request.args.get("tenant_id", "").strip() or None
+
+        try:
+            if tenant_id:
+                cur.execute(
+                    """
+                    SELECT announcement_id, title, message, type, target_roles
+                    FROM   announcements
+                    WHERE  is_active = TRUE
+                      AND  (expires_at IS NULL OR expires_at > NOW())
+                      AND  (tenant_id IS NULL OR tenant_id = %s::uuid)
+                    ORDER  BY created_at DESC
+                    LIMIT  10
+                    """,
+                    (tenant_id,),
+                )
+            else:
+                cur.execute(
+                    """
+                    SELECT announcement_id, title, message, type, target_roles
+                    FROM   announcements
+                    WHERE  is_active = TRUE
+                      AND  (expires_at IS NULL OR expires_at > NOW())
+                      AND  tenant_id IS NULL
+                    ORDER  BY created_at DESC
+                    LIMIT  10
+                    """
+                )
+        except Exception:
+            # Fallback if tenant_id column doesn't exist yet (pre-migration)
+            cur.execute(
+                """
+                SELECT announcement_id, title, message, type, target_roles
+                FROM   announcements
+                WHERE  is_active = TRUE
+                  AND  (expires_at IS NULL OR expires_at > NOW())
+                ORDER  BY created_at DESC
+                LIMIT  10
+                """
+            )
+
         rows = cur.fetchall()
         cur.close()
 

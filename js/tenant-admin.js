@@ -832,6 +832,111 @@ class TenantAdminDashboard {
             pager.innerHTML = `${prev} ${totalStr} ${next}`;
         }
     }
+
+    // ── Announcements ──────────────────────────────────────────────────────
+
+    async loadAnnouncements() {
+        const tbody = document.getElementById('ann-table-body');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);">Loading…</td></tr>';
+        try {
+            const res  = await authFetch(`${this.baseUrl}/announcements`);
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to load announcements');
+
+            const items = data.announcements || [];
+            if (!tbody) return;
+            if (!items.length) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);">No announcements yet. Create one above.</td></tr>';
+                return;
+            }
+
+            const typeColor = { info: '#3b82f6', warning: '#eab308', danger: '#ef4444', success: '#10b981' };
+            tbody.innerHTML = items.map(a => {
+                const exp    = a.expires_at ? new Date(a.expires_at).toLocaleDateString() : 'Never';
+                const color  = typeColor[a.type] || 'var(--text-color)';
+                const badge  = a.is_active
+                    ? '<span class="status-badge active">Active</span>'
+                    : '<span class="status-badge disabled">Inactive</span>';
+                return `<tr style="border-bottom:1px solid var(--border-color);">
+                    <td style="padding:1rem;font-weight:500;">${escapeHtml(a.title)}</td>
+                    <td style="padding:1rem;"><span style="color:${color};font-weight:600;text-transform:capitalize;">${escapeHtml(a.type)}</span></td>
+                    <td style="padding:1rem;">${badge}</td>
+                    <td style="padding:1rem;color:var(--text-muted);font-size:0.9rem;">${exp}</td>
+                    <td style="padding:1rem;text-align:right;">
+                        <div class="icon-btn-row" style="justify-content:flex-end;">
+                            <button class="btn btn-sm btn-secondary"
+                                onclick="window.tenantAdminApp.toggleAnnouncement('${escapeHtml(a.id)}', ${!a.is_active})">
+                                ${a.is_active ? 'Deactivate' : 'Activate'}
+                            </button>
+                            <button class="btn btn-sm btn-danger"
+                                onclick="window.tenantAdminApp.deleteAnnouncement('${escapeHtml(a.id)}')">
+                                Delete
+                            </button>
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
+        } catch (err) {
+            if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="color:var(--color-danger,#ef4444);text-align:center;padding:1rem;">${escapeHtml(err.message)}</td></tr>`;
+        }
+    }
+
+    async createAnnouncement() {
+        const title   = (document.getElementById('ann-title')?.value   || '').trim();
+        const message = (document.getElementById('ann-message')?.value || '').trim();
+        const type    = document.getElementById('ann-type')?.value  || 'info';
+        const expires = document.getElementById('ann-expires')?.value || null;
+        const rolesEl = document.getElementById('ann-roles');
+        const roles   = rolesEl ? Array.from(rolesEl.selectedOptions).map(o => o.value) : [];
+
+        if (!title || !message) { showError('Title and message are required.'); return; }
+
+        try {
+            const res  = await authFetch(`${this.baseUrl}/announcements`, {
+                method: 'POST',
+                body: JSON.stringify({ title, type, message, target_roles: roles, expires_at: expires || null })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to create announcement');
+            showSuccess('Announcement posted.');
+            // Clear form fields
+            ['ann-title', 'ann-message', 'ann-expires'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+            if (rolesEl) Array.from(rolesEl.options).forEach(o => o.selected = false);
+            this.loadAnnouncements();
+        } catch (err) {
+            showError(err.message);
+        }
+    }
+
+    async toggleAnnouncement(id, active) {
+        try {
+            const res  = await authFetch(`${this.baseUrl}/announcements/${id}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ is_active: active })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Update failed');
+            this.loadAnnouncements();
+        } catch (err) {
+            showError(err.message);
+        }
+    }
+
+    async deleteAnnouncement(id) {
+        if (!confirm('Delete this announcement? This cannot be undone.')) return;
+        try {
+            const res  = await authFetch(`${this.baseUrl}/announcements/${id}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Delete failed');
+            showSuccess('Announcement deleted.');
+            this.loadAnnouncements();
+        } catch (err) {
+            showError(err.message);
+        }
+    }
 }
 
 // Initialize on DOM ready

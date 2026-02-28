@@ -792,6 +792,7 @@ def get_exercise_leaderboard_for_class(class_id, exercise_id):
                 "name": student[1],
                 "email": student[2],
                 "score": round(float(student[3]), 1),
+                "submitted_at": student[4].isoformat() if student[4] else None,
             }
             for rank, student in enumerate(students, 1)
         ]
