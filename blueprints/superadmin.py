@@ -1060,19 +1060,23 @@ def list_all_classes():
             where += " AND (c.name ILIKE %s OR u.name ILIKE %s OR u.email ILIKE %s)"
             params.extend([f"%{q}%", f"%{q}%", f"%{q}%"])
 
+        # Total count (separate query to avoid window-function + GROUP BY complexity)
+        cur.execute(
+            f"SELECT COUNT(*) FROM classes c LEFT JOIN users u ON u.user_id = c.professor_id {where}",
+            params,
+        )
+        total = cur.fetchone()[0]
+
+        # Page data — subqueries for counts (same pattern as class_repository.py)
         cur.execute(
             f"""
             SELECT c.class_id, c.name, c.description, c.created_at,
                    u.user_id AS prof_id, u.name AS prof_name, u.email AS prof_email,
-                   COUNT(DISTINCT ce.student_id) AS student_count,
-                   COUNT(DISTINCT cc.chapter_id) AS chapter_count,
-                   COUNT(*) OVER() AS total_count
+                   (SELECT COUNT(*) FROM class_enrollments WHERE class_id = c.class_id) AS student_count,
+                   (SELECT COUNT(*) FROM class_chapters    WHERE class_id = c.class_id) AS chapter_count
             FROM classes c
             LEFT JOIN users u ON u.user_id = c.professor_id
-            LEFT JOIN class_enrollments ce ON ce.class_id = c.class_id
-            LEFT JOIN class_chapters    cc ON cc.class_id = c.class_id
             {where}
-            GROUP BY c.class_id, u.user_id
             ORDER BY c.created_at DESC
             LIMIT %s OFFSET %s
             """,
@@ -1081,7 +1085,6 @@ def list_all_classes():
         rows = cur.fetchall()
         cur.close()
 
-        total = rows[0][9] if rows else 0
         classes = [
             {
                 "class_id": r[0],

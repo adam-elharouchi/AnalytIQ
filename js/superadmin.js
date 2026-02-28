@@ -199,16 +199,22 @@ class SuperAdminDashboard {
         this.refreshHeaderHealth();
     }
 
-    // Update the header "Node Health" panel using the /api/health endpoint
+    // Update both health panels (header Node Health + overview System Status) using /api/health
     async refreshHeaderHealth() {
-        const setDot = (id, status) => {
-            const dot = document.getElementById(`health-dot-${id}`);
-            const val = document.getElementById(`health-val-${id}`);
-            if (!dot || !val) return;
+        const setService = (key, status) => {
             const healthy = status === true || status === 'ok' || status === 'healthy' || status === 'connected';
-            dot.className = `system-status-item-dot ${healthy ? 'healthy' : 'down'}`;
-            val.className = `system-status-item-value ${healthy ? '' : 'down'}`;
-            val.textContent = healthy ? 'operational' : 'degraded';
+            const cls = `system-status-item-dot ${healthy ? 'healthy' : 'down'}`;
+            const txt = healthy ? 'operational' : 'degraded';
+            // Header panel
+            const hDot = document.getElementById(`health-dot-${key}`);
+            const hVal = document.getElementById(`health-val-${key}`);
+            if (hDot) hDot.className = cls;
+            if (hVal) { hVal.className = `system-status-item-value ${healthy ? '' : 'down'}`; hVal.textContent = txt; }
+            // Overview panel
+            const oDot = document.getElementById(`overview-dot-${key}`);
+            const oVal = document.getElementById(`overview-val-${key}`);
+            if (oDot) oDot.className = cls;
+            if (oVal) { oVal.className = `system-status-item-value ${healthy ? '' : 'down'}`; oVal.textContent = txt; }
         };
 
         try {
@@ -220,16 +226,19 @@ class SuperAdminDashboard {
             if (!res.ok) throw new Error('Health check failed');
             const data = await res.json();
 
-            // data.services: { database, redis, storage }
             const svc = data.services || {};
-            setDot('postgres', svc.database);
-            setDot('redis', svc.redis);
-            setDot('storage', svc.storage);
+            setService('postgres', svc.database);
+            setService('redis', svc.redis);
+            setService('storage', svc.storage);
+
+            const ts = document.getElementById('overview-health-timestamp');
+            if (ts) ts.textContent = `Last check: ${new Date().toLocaleTimeString()}`;
         } catch (_e) {
-            // Network failure — mark all as unknown/degraded quietly
-            ['postgres', 'redis', 'storage'].forEach(id => {
-                const val = document.getElementById(`health-val-${id}`);
-                if (val) val.textContent = 'unknown';
+            ['postgres', 'redis', 'storage'].forEach(key => {
+                ['health-val-', 'overview-val-'].forEach(prefix => {
+                    const el = document.getElementById(`${prefix}${key}`);
+                    if (el) el.textContent = 'unknown';
+                });
             });
         }
     }
