@@ -260,6 +260,14 @@ class TenantAdminDashboard {
                             onclick="window.tenantAdminApp.quickPasswordReset('${safeId}')">
                             <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
                         </button>
+                        <button class="icon-btn" title="Export Data"
+                            onclick="window.tenantAdminApp.quickExportUser('${safeId}')">
+                            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        </button>
+                        <button class="icon-btn icon-btn-danger" title="Delete User"
+                            onclick="window.tenantAdminApp.quickDeleteUser('${safeId}','${safeName}')">
+                            <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+                        </button>
                     </div>
                 </td>
             </tr>`;
@@ -400,8 +408,11 @@ class TenantAdminDashboard {
             const a    = document.createElement('a');
             a.href     = url;
             a.download = `user-export-${userId}.json`;
+            a.style.display = 'none';
+            document.body.appendChild(a);
             a.click();
-            URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 100);
         } catch (err) { this._showUserModalError(err.message); }
     }
 
@@ -442,6 +453,37 @@ class TenantAdminDashboard {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Reset failed');
             showSuccess(data.message || 'Password reset flagged.');
+        } catch (err) { showError(err.message); }
+    }
+
+    async quickExportUser(userId) {
+        try {
+            const token = localStorage.getItem('authToken');
+            const res   = await fetch(`${this.baseUrl}/users/${userId}/export`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Export failed'); }
+            const blob = await res.blob();
+            const url  = URL.createObjectURL(blob);
+            const a    = document.createElement('a');
+            a.href     = url;
+            a.download = `user-export-${userId}.json`;
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 100);
+        } catch (err) { showError(err.message); }
+    }
+
+    async quickDeleteUser(userId, name) {
+        if (!confirm(`Permanently delete "${name}"?\n\nThis removes the user and all associated data. This action cannot be undone.`)) return;
+        try {
+            const res  = await authFetch(`${this.baseUrl}/users/${userId}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Delete failed');
+            showSuccess(data.message || `${name} deleted.`);
+            this.loadUsers();
         } catch (err) { showError(err.message); }
     }
 
