@@ -1061,3 +1061,190 @@ def get_audit_log():
     except Exception as e:
         logger.error("tenant_admin get_audit_log failed: %s", e)
         return jsonify({"error": "Failed to fetch audit log"}), 500
+
+
+# ---------------------------------------------------------------------------
+# Announcements (tenant-scoped)
+# ---------------------------------------------------------------------------
+
+_announcements_migrated = False
+
+
+def _ensure_announcements_tenant_column():
+    """Idempotent migration: adds tenant_id column to announcements if missing."""
+    global _announcements_migrated
+    if _announcements_migrated:
+        return
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(
+            "ALTER TABLE announcements "
+            "ADD COLUMN IF NOT EXISTS tenant_id UUID "
+            "REFERENCES tenants(tenant_id) ON DELETE CASCADE"
+        )
+        cur.execute(
+            "CREATE INDEX IF NOT EXISTS idx_announcements_tenant_id "
+            "ON announcements(tenant_id)"
+        )
+        conn.commit()
+        cur.close()
+        _announcements_migrated = True
+    except Exception as e:
+        logger.warning("Could not migrate announcements.tenant_id column: %s", e)
+
+
+@bp.route("/api/tenant-admin/announcements", methods=["GET"])
+@require_auth
+@require_tenant_admin
+def list_tenant_announcements():
+    """List announcements scoped to this tenant."""
+    _ensure_announcements_tenant_column()
+    tenant_id = _scoped_tenant_id()
+    if not tenant_id:
+        return jsonify({"error": "tenant_id is required"}), 400
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(
+            """
+            SELECT a.announcement_id, a.title, a.message, a.type, a.target_roles,
+                   a.is_active, a.expires_at, a.created_at, u.name AS created_by_name
+            FROM announcements a
+            LEFT JOIN users u ON u.user_id = a.created_by
+            WHERE a.tenant_id = %s
+            ORDER BY a.created_at DESC
+            """,
+            (tenant_id,),
+        )
+        rows = cur.fetchall()
+        cur.close()
+        return jsonify({
+            "announcements": [
+                {
+                    "id": r[0],
+                    "title": r[1],
+                    "message": r[2],
+                    "type": r[3],
+                    "target_roles": r[4] or [],
+                    "is_active": r[5],
+                    "expires_at": r[6].isoformat() if r[6] else None,
+                    "created_at": r[7].isoformat() if r[7] else None,
+                    "created_by_name": r[8],
+                }
+                for r in rows
+            ]
+        }), 200
+    except Exception as e:
+        logger.error("list_tenant_announcements failed: %s", e)
+        return jsonify({"error": "Failed to list announcements"}), 500
+
+
+@bp.route("/api/tenant-admin/announcements", methods=["POST"])
+@csrf_exempt
+@require_auth
+@require_tenant_admin
+def create_tenant_announcement():
+    """Create an announcement scoped to this tenant."""
+    _ensure_announcements_tenant_column()
+    tenant_id = _scoped_tenant_id()
+    if not tenant_id:
+        return jsonify({"error": "tenant_id is required"}), 400
+
+    data = request.json or {}
+    title = (data.get("title") or "").strip()
+    message = (data.get("message") or "").strip()
+    atype = data.get("type", "info")
+    target = data.get("target_roles", [])
+    expires = data.get("expires_at") or None
+
+    if not title or not message:
+        return jsonify({"error": "title and message are required"}), 400
+    if atype not in ("info", "warning", "danger", "success"):
+        return jsonify({"error": "type must be info, warning, danger, or success"}), 400
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(
+            """
+            INSERT INTO announcements
+                (title, message, type, target_roles, expires_at, created_by, tenant_id)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            RETURNING announcement_id
+            """,
+            (title, message, atype, target or [], expires, g.user_id, tenant_id),
+        )
+        new_id = cur.fetchone()[0]
+        conn.commit()
+        cur.close()
+        audit("CREATE_ANNOUNCEMENT", resource_type="announcement", resource_id=str(new_id))
+        return jsonify({"success": True, "id": new_id}), 201
+    except Exception as e:
+        logger.error("create_tenant_announcement failed: %s", e)
+        return jsonify({"error": "Failed to create announcement"}), 500
+
+
+@bp.route("/api/tenant-admin/announcements/<announcement_id>", methods=["PATCH"])
+@csrf_exempt
+@require_auth
+@require_tenant_admin
+def update_tenant_announcement(announcement_id):
+    """Update an announcement — tenant-scoped (cannot modify other tenants' announcements)."""
+    tenant_id = _scoped_tenant_id()
+    if not tenant_id:
+        return jsonify({"error": "tenant_id is required"}), 400
+
+    data = request.json or {}
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        updates, params = [], []
+        for field in ("title", "message", "type", "is_active", "expires_at"):
+            if field in data:
+                updates.append(f"{field} = %s")
+                params.append(data[field])
+        if not updates:
+            return jsonify({"error": "No fields to update"}), 400
+        params += [announcement_id, tenant_id]
+        cur.execute(
+            f"UPDATE announcements SET {', '.join(updates)}, updated_at = NOW() "
+            f"WHERE announcement_id = %s AND tenant_id = %s RETURNING announcement_id",
+            params,
+        )
+        if not cur.fetchone():
+            return jsonify({"error": "Announcement not found"}), 404
+        conn.commit()
+        cur.close()
+        return jsonify({"success": True}), 200
+    except Exception as e:
+        logger.error("update_tenant_announcement failed: %s", e)
+        return jsonify({"error": "Failed to update announcement"}), 500
+
+
+@bp.route("/api/tenant-admin/announcements/<announcement_id>", methods=["DELETE"])
+@csrf_exempt
+@require_auth
+@require_tenant_admin
+def delete_tenant_announcement(announcement_id):
+    """Delete an announcement — tenant-scoped."""
+    tenant_id = _scoped_tenant_id()
+    if not tenant_id:
+        return jsonify({"error": "tenant_id is required"}), 400
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(
+            "DELETE FROM announcements WHERE announcement_id = %s AND tenant_id = %s "
+            "RETURNING announcement_id",
+            (announcement_id, tenant_id),
+        )
+        if not cur.fetchone():
+            return jsonify({"error": "Announcement not found"}), 404
+        conn.commit()
+        cur.close()
+        audit("DELETE_ANNOUNCEMENT", resource_type="announcement", resource_id=announcement_id)
+        return jsonify({"success": True}), 200
+    except Exception as e:
+        logger.error("delete_tenant_announcement failed: %s", e)
+        return jsonify({"error": "Failed to delete announcement"}), 500
