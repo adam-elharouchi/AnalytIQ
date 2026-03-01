@@ -807,9 +807,10 @@ class SuperAdminDashboard {
         document.getElementById('changeRoleTargetLabel').textContent = `Current role: ${currentRole}`;
         const sel = document.getElementById('changeRoleSelect');
         sel.value = currentRole;
-        // Clear tenant name input on open
         const nameInput = document.getElementById('changeRoleTenantName');
         if (nameInput) nameInput.value = '';
+        // Default to "existing" mode each time the modal opens
+        this._onTenantModeChange('existing');
         this._onRoleSelectChange();
         document.getElementById('changeRoleModal').style.display = 'flex';
     }
@@ -817,33 +818,70 @@ class SuperAdminDashboard {
     _onRoleSelectChange() {
         const isTenantAdmin = document.getElementById('changeRoleSelect').value === 'tenant_admin';
         document.getElementById('tenantSelectSection').style.display = isTenantAdmin ? 'block' : 'none';
+        if (isTenantAdmin) this._loadTenantsDropdown();
+    }
+
+    _onTenantModeChange(mode) {
+        this._tenantMode = mode;
+        const existingBtn = document.getElementById('tenantModeExistingBtn');
+        const newBtn      = document.getElementById('tenantModeNewBtn');
+        const existingSec = document.getElementById('tenantExistingSection');
+        const newSec      = document.getElementById('tenantNewSection');
+        const active   = 'background:var(--color-primary,#2569f4);color:#fff;';
+        const inactive = 'background:rgba(17,24,39,0.7);color:var(--text-secondary,#94a3b8);';
+        if (existingBtn) existingBtn.style.cssText += mode === 'existing' ? active : inactive;
+        if (newBtn)      newBtn.style.cssText      += mode === 'new'      ? active : inactive;
+        if (existingSec) existingSec.style.display  = mode === 'existing' ? 'block' : 'none';
+        if (newSec)      newSec.style.display       = mode === 'new'      ? 'block' : 'none';
+    }
+
+    async _loadTenantsDropdown() {
+        const sel = document.getElementById('changeRoleTenantSelect');
+        if (!sel) return;
+        try {
+            const res  = await authFetch(`${this.baseAdminUrl}/tenants`);
+            const data = await res.json();
+            const tenants = data.tenants || [];
+            sel.innerHTML = tenants.length
+                ? '<option value="">— Select a tenant —</option>'
+                  + tenants.map(t => `<option value="${t.tenant_id}">${escapeHtml(t.name)}</option>`).join('')
+                : '<option value="">No tenants found</option>';
+        } catch (_) {
+            sel.innerHTML = '<option value="">Failed to load tenants</option>';
+        }
     }
 
     async _submitRoleChange() {
-        const role = document.getElementById('changeRoleSelect').value;
+        const role    = document.getElementById('changeRoleSelect').value;
         const saveBtn = document.querySelector('#changeRoleModal .btn-primary');
 
         try {
             let tenantId = null;
 
             if (role === 'tenant_admin') {
-                const tenantName = (document.getElementById('changeRoleTenantName').value || '').trim();
-                if (!tenantName) { showError('Please enter an institution / tenant name.'); return; }
-
-                // Step 1: Create the new tenant
-                if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Creating tenant…'; }
-                const tRes = await authFetch(`${this.baseAdminUrl}/tenants`, {
-                    method: 'POST',
-                    body: JSON.stringify({ name: tenantName })
-                });
-                const tData = await tRes.json();
-                if (!tRes.ok) throw new Error(tData.error || 'Failed to create tenant');
-                tenantId = tData.tenant.tenant_id;
+                if (this._tenantMode === 'existing') {
+                    // Use the selected existing tenant
+                    const sel = document.getElementById('changeRoleTenantSelect');
+                    tenantId = sel ? sel.value : '';
+                    if (!tenantId) { showError('Please select a tenant.'); return; }
+                } else {
+                    // Create a new tenant first
+                    const tenantName = (document.getElementById('changeRoleTenantName').value || '').trim();
+                    if (!tenantName) { showError('Please enter an institution / tenant name.'); return; }
+                    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Creating tenant…'; }
+                    const tRes  = await authFetch(`${this.baseAdminUrl}/tenants`, {
+                        method: 'POST',
+                        body: JSON.stringify({ name: tenantName })
+                    });
+                    const tData = await tRes.json();
+                    if (!tRes.ok) throw new Error(tData.error || 'Failed to create tenant');
+                    tenantId = tData.tenant.tenant_id;
+                }
             }
 
-            // Step 2: Assign the role (with new tenant_id if tenant_admin)
+            // Assign the role (with tenant_id if tenant_admin)
             if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving…'; }
-            const res = await authFetch(`${this.baseAdminUrl}/users/${this._pendingRoleUserId}/role`, {
+            const res  = await authFetch(`${this.baseAdminUrl}/users/${this._pendingRoleUserId}/role`, {
                 method: 'PATCH',
                 body: JSON.stringify({ role, ...(tenantId && { tenant_id: tenantId }) })
             });
