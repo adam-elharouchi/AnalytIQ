@@ -604,12 +604,27 @@ def delete_user(user_id):
                 return jsonify({"error": "Cannot delete your own account"}), 400
 
         cur = conn.cursor()
-        # Cascade manually
+
+        # 1. Remove student enrollments in other classes
         cur.execute("DELETE FROM class_enrollments WHERE user_id = %s", (user_id,))
-        cur.execute("DELETE FROM user_profiles WHERE user_id = %s", (user_id,))
-        cur.execute("DELETE FROM user_settings WHERE user_id = %s", (user_id,))
+
+        # 2. Cascade-delete classes the user owns as a professor
+        cur.execute("SELECT class_id FROM classes WHERE professor_id = %s", (user_id,))
+        professor_class_ids = [r[0] for r in cur.fetchall()]
+        for cid in professor_class_ids:
+            cur.execute("DELETE FROM class_enrollments WHERE class_id = %s", (cid,))
+            cur.execute(
+                "SELECT chapter_id FROM class_chapters WHERE class_id = %s", (cid,)
+            )
+            for (chid,) in cur.fetchall():
+                cur.execute("DELETE FROM exercises WHERE chapter_id = %s", (chid,))
+            cur.execute("DELETE FROM class_chapters WHERE class_id = %s", (cid,))
+        cur.execute("DELETE FROM classes WHERE professor_id = %s", (user_id,))
+
+        # 3. Delete the user record
         cur.execute("DELETE FROM users WHERE user_id = %s", (user_id,))
         cur.close()
+
         audit(conn, "DELETE_USER", resource_type="user", resource_id=user_id,
               details={"name": name, "email": email})
         conn.commit()
@@ -805,28 +820,32 @@ def list_classes():
 
         conn = get_db_connection()
         cur = conn.cursor()
+
+        # Separate count query to avoid window-function + GROUP BY complexity
+        cur.execute(
+            f"SELECT COUNT(*) FROM classes c JOIN users u ON u.user_id = c.professor_id AND u.tenant_id = %s WHERE 1=1 {extra_where}",
+            params,
+        )
+        total = cur.fetchone()[0]
+
+        # Page data — subqueries for per-class counts
         cur.execute(
             f"""
             SELECT
                 c.class_id, c.name, c.description,
                 u.user_id AS professor_id, u.name AS professor_name, u.email AS professor_email,
-                COUNT(DISTINCT ce.user_id) AS student_count,
-                COUNT(DISTINCT cc.chapter_id) AS chapter_count,
-                c.created_at,
-                COUNT(*) OVER() AS total_count
+                (SELECT COUNT(*) FROM class_enrollments WHERE class_id = c.class_id) AS student_count,
+                (SELECT COUNT(*) FROM class_chapters    WHERE class_id = c.class_id) AS chapter_count,
+                c.created_at
             FROM classes c
             JOIN users u ON u.user_id = c.professor_id AND u.tenant_id = %s
-            LEFT JOIN class_enrollments ce ON ce.class_id = c.class_id
-            LEFT JOIN class_chapters cc ON cc.class_id = c.class_id
             WHERE 1=1 {extra_where}
-            GROUP BY c.class_id, u.user_id
             ORDER BY c.created_at DESC
             LIMIT %s OFFSET %s
             """,
             params + [limit, offset],
         )
         rows = cur.fetchall()
-        total = rows[0][9] if rows else 0
 
         classes = [
             {
@@ -1169,8 +1188,8 @@ def create_tenant_announcement():
         cur.execute(
             """
             INSERT INTO announcements
-                (title, message, type, target_roles, expires_at, created_by, tenant_id)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
+                (title, message, type, target_roles, expires_at, created_by, tenant_id, is_active)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, TRUE)
             RETURNING announcement_id
             """,
             (title, message, atype, target or [], expires, g.user_id, tenant_id),
