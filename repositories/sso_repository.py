@@ -184,9 +184,16 @@ def update_provider(conn, provider_id, updates: dict):
                   role_mapping, default_role, is_enabled.
     """
     allowed = {
-        "provider_name", "provider_type", "client_id", "client_secret",
-        "discovery_url", "allowed_domains", "role_mapping_attribute",
-        "role_mapping", "default_role", "is_enabled",
+        "provider_name",
+        "provider_type",
+        "client_id",
+        "client_secret",
+        "discovery_url",
+        "allowed_domains",
+        "role_mapping_attribute",
+        "role_mapping",
+        "default_role",
+        "is_enabled",
     }
     fields = {k: v for k, v in updates.items() if k in allowed}
     if not fields:

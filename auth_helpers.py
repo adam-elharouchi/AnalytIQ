@@ -281,6 +281,7 @@ def require_auth(f):
             payload = decode_jwt_token(token)
             g.user_id = str(payload["user_id"])
             g.user_role = payload.get("role", "student")
+            g.user_email = payload.get("email", "")
             g.impersonator_id = payload.get("impersonator_id")
             g.tenant_id = payload.get("tenant_id")
         except jwt.ExpiredSignatureError:

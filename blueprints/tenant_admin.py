@@ -448,8 +448,13 @@ def change_user_role(user_id):
             (new_role, user_id),
         )
         cur.close()
-        audit(conn, "UPDATE_USER_ROLE", resource_type="user", resource_id=user_id,
-              details={"new_role": new_role})
+        audit(
+            conn,
+            "UPDATE_USER_ROLE",
+            resource_type="user",
+            resource_id=user_id,
+            details={"new_role": new_role},
+        )
         conn.commit()
         return jsonify({"message": "Role updated"}), 200
     except Exception as e:
@@ -528,8 +533,12 @@ def export_user_data(user_id):
             (user_id,),
         )
         owned_classes = [
-            {"class_id": r[0], "name": r[1], "description": r[2],
-             "created_at": r[3].isoformat() if r[3] else None}
+            {
+                "class_id": r[0],
+                "name": r[1],
+                "description": r[2],
+                "created_at": r[3].isoformat() if r[3] else None,
+            }
             for r in cur.fetchall()
         ]
 
@@ -544,8 +553,7 @@ def export_user_data(user_id):
             (user_id,),
         )
         enrolled = [
-            {"class_id": r[0], "name": r[1],
-             "enrolled_at": r[2].isoformat() if r[2] else None}
+            {"class_id": r[0], "name": r[1], "enrolled_at": r[2].isoformat() if r[2] else None}
             for r in cur.fetchall()
         ]
 
@@ -561,8 +569,13 @@ def export_user_data(user_id):
             (user_id,),
         )
         attempts = [
-            {"exercise_id": r[0], "completed": r[1], "score": r[2],
-             "attempts": r[3], "updated_at": r[4].isoformat() if r[4] else None}
+            {
+                "exercise_id": r[0],
+                "completed": r[1],
+                "score": r[2],
+                "attempts": r[3],
+                "updated_at": r[4].isoformat() if r[4] else None,
+            }
             for r in cur.fetchall()
         ]
 
@@ -616,9 +629,7 @@ def delete_user(user_id):
         professor_class_ids = [r[0] for r in cur.fetchall()]
         for cid in professor_class_ids:
             cur.execute("DELETE FROM class_enrollments WHERE class_id = %s", (cid,))
-            cur.execute(
-                "SELECT chapter_id FROM class_chapters WHERE class_id = %s", (cid,)
-            )
+            cur.execute("SELECT chapter_id FROM class_chapters WHERE class_id = %s", (cid,))
             for (chid,) in cur.fetchall():
                 cur.execute("DELETE FROM exercises WHERE chapter_id = %s", (chid,))
             cur.execute("DELETE FROM class_chapters WHERE class_id = %s", (cid,))
@@ -628,8 +639,13 @@ def delete_user(user_id):
         cur.execute("DELETE FROM users WHERE user_id = %s", (user_id,))
         cur.close()
 
-        audit(conn, "DELETE_USER", resource_type="user", resource_id=user_id,
-              details={"name": name, "email": email})
+        audit(
+            conn,
+            "DELETE_USER",
+            resource_type="user",
+            resource_id=user_id,
+            details={"name": name, "email": email},
+        )
         conn.commit()
         return jsonify({"message": "User deleted"}), 200
     except Exception as e:
@@ -668,8 +684,13 @@ def impersonate_user(user_id):
             expires_hours=1,
             tenant_id=tenant_id,
         )
-        audit(conn, "IMPERSONATE_USER", resource_type="user", resource_id=user_id,
-              details={"impersonator_id": g.user_id})
+        audit(
+            conn,
+            "IMPERSONATE_USER",
+            resource_type="user",
+            resource_id=user_id,
+            details={"impersonator_id": g.user_id},
+        )
         conn.commit()
         return jsonify({"token": token, "user": {"name": name, "email": email, "role": role}}), 200
     except Exception as e:
@@ -749,8 +770,13 @@ def approve_user(user_id):
             cur.close()
             return jsonify({"error": "User is not pending approval"}), 400
         cur.close()
-        audit(conn, "ENABLE_USER", resource_type="user", resource_id=user_id,
-              details={"action": "approved_admin"})
+        audit(
+            conn,
+            "ENABLE_USER",
+            resource_type="user",
+            resource_id=user_id,
+            details={"action": "approved_admin"},
+        )
         conn.commit()
         return jsonify({"message": "User approved"}), 200
     except Exception as e:
@@ -786,8 +812,13 @@ def deny_user(user_id):
             cur.close()
             return jsonify({"error": "User is not pending approval"}), 400
         cur.close()
-        audit(conn, "DISABLE_USER", resource_type="user", resource_id=user_id,
-              details={"action": "denied_admin"})
+        audit(
+            conn,
+            "DISABLE_USER",
+            resource_type="user",
+            resource_id=user_id,
+            details={"action": "denied_admin"},
+        )
         conn.commit()
         return jsonify({"message": "User denied"}), 200
     except Exception as e:
@@ -929,8 +960,16 @@ def transfer_class(class_id):
             (new_professor_id, class_id),
         )
         cur.close()
-        audit(conn, "TRANSFER_CLASS", resource_type="class", resource_id=class_id,
-              details={"new_professor_id": new_professor_id, "new_professor_email": new_professor_email})
+        audit(
+            conn,
+            "TRANSFER_CLASS",
+            resource_type="class",
+            resource_id=class_id,
+            details={
+                "new_professor_id": new_professor_id,
+                "new_professor_email": new_professor_email,
+            },
+        )
         conn.commit()
         return jsonify({"message": "Class transferred"}), 200
     except Exception as e:
@@ -976,8 +1015,13 @@ def delete_class(class_id):
         cur.execute("DELETE FROM class_enrollments WHERE class_id = %s", (class_id,))
         cur.execute("DELETE FROM classes WHERE class_id = %s", (class_id,))
         cur.close()
-        audit(conn, "DELETE_CLASS", resource_type="class", resource_id=class_id,
-              details={"name": class_name})
+        audit(
+            conn,
+            "DELETE_CLASS",
+            resource_type="class",
+            resource_id=class_id,
+            details={"name": class_name},
+        )
         conn.commit()
         return jsonify({"message": "Class deleted"}), 200
     except Exception as e:
@@ -1106,8 +1150,7 @@ def _ensure_announcements_tenant_column():
             "REFERENCES tenants(tenant_id) ON DELETE CASCADE"
         )
         cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_announcements_tenant_id "
-            "ON announcements(tenant_id)"
+            "CREATE INDEX IF NOT EXISTS idx_announcements_tenant_id " "ON announcements(tenant_id)"
         )
         conn.commit()
         cur.close()
@@ -1141,22 +1184,27 @@ def list_tenant_announcements():
         )
         rows = cur.fetchall()
         cur.close()
-        return jsonify({
-            "announcements": [
+        return (
+            jsonify(
                 {
-                    "id": r[0],
-                    "title": r[1],
-                    "message": r[2],
-                    "type": r[3],
-                    "target_roles": r[4] or [],
-                    "is_active": r[5],
-                    "expires_at": r[6].isoformat() if r[6] else None,
-                    "created_at": r[7].isoformat() if r[7] else None,
-                    "created_by_name": r[8],
+                    "announcements": [
+                        {
+                            "id": r[0],
+                            "title": r[1],
+                            "message": r[2],
+                            "type": r[3],
+                            "target_roles": r[4] or [],
+                            "is_active": r[5],
+                            "expires_at": r[6].isoformat() if r[6] else None,
+                            "created_at": r[7].isoformat() if r[7] else None,
+                            "created_by_name": r[8],
+                        }
+                        for r in rows
+                    ]
                 }
-                for r in rows
-            ]
-        }), 200
+            ),
+            200,
+        )
     except Exception as e:
         logger.error("list_tenant_announcements failed: %s", e)
         return jsonify({"error": "Failed to list announcements"}), 500
@@ -1265,7 +1313,9 @@ def delete_tenant_announcement(announcement_id):
             return jsonify({"error": "Announcement not found"}), 404
         conn.commit()
         cur.close()
-        audit(conn, "DELETE_ANNOUNCEMENT", resource_type="announcement", resource_id=announcement_id)
+        audit(
+            conn, "DELETE_ANNOUNCEMENT", resource_type="announcement", resource_id=announcement_id
+        )
         return jsonify({"success": True}), 200
     except Exception as e:
         logger.error("delete_tenant_announcement failed: %s", e)
