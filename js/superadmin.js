@@ -1076,8 +1076,8 @@ class SuperAdminDashboard {
                     <td style="padding:1rem;">${activeBadge}</td>
                     <td style="padding:1rem;color:var(--text-muted);font-size:0.9rem;">${exp}</td>
                     <td style="padding:1rem;text-align:right;display:flex;gap:0.4rem;justify-content:flex-end;">
-                        <button class="btn btn-sm btn-secondary" onclick="window.adminApp.toggleAnnouncement('${a.announcement_id}',${!a.is_active})">${a.is_active ? 'Deactivate' : 'Activate'}</button>
-                        <button class="btn btn-sm btn-danger" onclick="window.adminApp.deleteAnnouncement('${a.announcement_id}')">Delete</button>
+                        <button class="btn btn-sm btn-secondary" onclick="window.adminApp.toggleAnnouncement('${a.id}',${!a.is_active})">${a.is_active ? 'Deactivate' : 'Activate'}</button>
+                        <button class="btn btn-sm btn-danger" onclick="window.adminApp.deleteAnnouncement('${a.id}')">Delete</button>
                     </td>
                 </tr>`;
             }).join('');
