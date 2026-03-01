@@ -335,7 +335,7 @@ def impersonate_user(user_id):
         cur = conn.cursor()
 
         cur.execute(
-            "SELECT user_id, name, email, role FROM users WHERE user_id = %s",
+            "SELECT user_id, name, email, role, tenant_id FROM users WHERE user_id = %s",
             (user_id,),
         )
         target_user = cur.fetchone()
@@ -363,6 +363,7 @@ def impersonate_user(user_id):
             email=target_user[2],
             impersonator_id=impersonator_id,
             expires_hours=1,
+            tenant_id=target_user[4],  # carry tenant_id so tenant_admin dashboard works
         )
 
         return (

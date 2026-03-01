@@ -235,7 +235,8 @@ class TestSuperadminUpdateUserStatus:
 class TestSuperadminImpersonateUser:
     def test_impersonate_student_returns_token(self, client, mock_db):
         cursor = mock_db.cursor()
-        cursor.fetchone.return_value = (USER_ID, "Alice", "alice@ex.com", "student")
+        # Columns: user_id, name, email, role, tenant_id
+        cursor.fetchone.return_value = (USER_ID, "Alice", "alice@ex.com", "student", None)
         resp = client.post(
             f"/api/superadmin/users/{USER_ID}/impersonate",
             headers=AUTH,
@@ -245,7 +246,7 @@ class TestSuperadminImpersonateUser:
 
     def test_cannot_impersonate_superadmin_returns_403(self, client, mock_db):
         cursor = mock_db.cursor()
-        cursor.fetchone.return_value = (USER_ID, "SA", "sa@ex.com", "superadmin")
+        cursor.fetchone.return_value = (USER_ID, "SA", "sa@ex.com", "superadmin", None)
         resp = client.post(
             f"/api/superadmin/users/{USER_ID}/impersonate",
             headers=AUTH,
