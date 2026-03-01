@@ -63,31 +63,33 @@ class SuperAdminDashboard {
     }
 
     setupNavigation() {
-        const links = document.querySelectorAll('.admin-nav-link');
+        // Support both old .admin-nav-link and new .terminal-tab-btn
+        const links = document.querySelectorAll('.admin-nav-link, .terminal-tab-btn');
         const sections = document.querySelectorAll('.admin-section');
 
         links.forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
 
-                // Active states
+                // Active states — update whichever group the clicked element belongs to
                 links.forEach(l => l.classList.remove('active'));
                 e.currentTarget.classList.add('active');
 
                 // Show section
                 const targetId = e.currentTarget.getAttribute('data-target');
+                if (!targetId) return;
                 sections.forEach(s => {
                     s.style.display = s.id === targetId ? 'block' : 'none';
                 });
 
                 // Lazy-load data for sections that need it
                 switch (targetId) {
-                    case 'analytics-section':      this.loadAnalytics(); break;
-                    case 'classes-admin-section':  this.loadAllClasses(); break;
-                    case 'announcements-section':  this.loadAnnouncements(); break;
+                    case 'analytics-section':         this.loadAnalytics(); break;
+                    case 'classes-admin-section':     this.loadAllClasses(); break;
+                    case 'announcements-section':     this.loadAnnouncements(); break;
                     case 'platform-settings-section': this.loadPlatformSettings(); break;
-                    case 'audit-section':          this.loadAuditLog(1); break;
-                    case 'approvals-section':      this.loadPendingApprovals(true); break;
+                    case 'audit-section':             this.loadAuditLog(1); break;
+                    case 'approvals-section':         this.loadPendingApprovals(true); break;
                 }
             });
         });
@@ -192,6 +194,53 @@ class SuperAdminDashboard {
         document.getElementById('stat-total-tenants').textContent = tenants.length;
         document.getElementById('stat-total-users').textContent = totalUsers;
         document.getElementById('stat-total-classes').textContent = totalClasses;
+
+        // Populate header health status panel
+        this.refreshHeaderHealth();
+    }
+
+    // Update both health panels (header Node Health + overview System Status) using /api/health
+    async refreshHeaderHealth() {
+        const setService = (key, status) => {
+            const healthy = status === true || status === 'ok' || status === 'healthy' || status === 'connected';
+            const cls = `system-status-item-dot ${healthy ? 'healthy' : 'down'}`;
+            const txt = healthy ? 'operational' : 'degraded';
+            // Header panel
+            const hDot = document.getElementById(`health-dot-${key}`);
+            const hVal = document.getElementById(`health-val-${key}`);
+            if (hDot) hDot.className = cls;
+            if (hVal) { hVal.className = `system-status-item-value ${healthy ? '' : 'down'}`; hVal.textContent = txt; }
+            // Overview panel
+            const oDot = document.getElementById(`overview-dot-${key}`);
+            const oVal = document.getElementById(`overview-val-${key}`);
+            if (oDot) oDot.className = cls;
+            if (oVal) { oVal.className = `system-status-item-value ${healthy ? '' : 'down'}`; oVal.textContent = txt; }
+        };
+
+        try {
+            const _base = window.API_BASE_URL || '/api';
+            const healthUrl = _base.startsWith('http')
+                ? `${_base}/health`
+                : `${window.location.protocol}//${window.location.host}${_base}/health`;
+            const res = await fetch(healthUrl);
+            if (!res.ok) throw new Error('Health check failed');
+            const data = await res.json();
+
+            const svc = data.services || {};
+            setService('postgres', svc.database);
+            setService('redis', svc.redis);
+            setService('storage', svc.storage);
+
+            const ts = document.getElementById('overview-health-timestamp');
+            if (ts) ts.textContent = `Last check: ${new Date().toLocaleTimeString()}`;
+        } catch (_e) {
+            ['postgres', 'redis', 'storage'].forEach(key => {
+                ['health-val-', 'overview-val-'].forEach(prefix => {
+                    const el = document.getElementById(`${prefix}${key}`);
+                    if (el) el.textContent = 'unknown';
+                });
+            });
+        }
     }
 
     renderTenants(tenants) {
@@ -283,7 +332,7 @@ class SuperAdminDashboard {
 
             // Format Role
             const roleBadge = u.is_super_admin
-                ? '<span style="background: #eab308; color: #000; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold;">Super Admin</span>'
+                ? '<span style="background: rgba(234,179,8,0.15); border: 1px solid rgba(234,179,8,0.4); color: #fcd34d; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold;">Super Admin</span>'
                 : `<span style="background: var(--bg-dark); border: 1px solid var(--border-color); color: var(--text-color); padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; text-transform: capitalize;">${escapeHtml(u.role)}</span>`;
 
             // Format Status
@@ -302,16 +351,29 @@ class SuperAdminDashboard {
                 <td style="padding: 1rem; text-transform: capitalize; color: ${statusColor}; font-weight: 500;">
                     <span class="${u.account_status === 'disabled' ? 'status-badge disabled' : 'status-badge active'}">${escapeHtml(u.account_status)}</span>
                 </td>
-                <td style="padding: 1rem;">
-                    <div style="display:flex;gap:0.4rem;justify-content:flex-end;flex-wrap:wrap;">
-                        ${!u.is_super_admin ? `<button class="btn btn-sm" style="background:#059669;color:#fff;border:none;font-size:0.8rem;" onclick="window.adminApp.impersonateUser('${u.user_id}')">Impersonate</button>` : ''}
-                        <button class="btn btn-sm btn-secondary" style="font-size:0.8rem;" onclick="window.adminApp.changeUserRole('${u.user_id}','${escapeHtml(u.role)}')">Role</button>
-                        <button class="btn btn-sm ${u.account_status === 'disabled' ? 'btn-success' : 'btn-secondary'}" style="font-size:0.8rem;" onclick="window.adminApp.toggleUserStatus('${u.user_id}','${u.account_status === 'disabled' ? 'active' : 'disabled'}')">
-                            ${u.account_status === 'disabled' ? 'Enable' : 'Disable'}
+                <td style="padding: 0.75rem 1rem;">
+                    <div class="icon-btn-row">
+                        ${!u.is_super_admin ? `
+                        <button class="icon-btn icon-btn-green" title="Impersonate" onclick="window.adminApp.impersonateUser('${u.user_id}')">
+                            <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>
+                        </button>` : ''}
+                        <button class="icon-btn" title="Change Role" onclick="window.adminApp.changeUserRole('${u.user_id}','${escapeHtml(u.role)}')">
+                            <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                         </button>
-                        <button class="btn btn-sm btn-secondary" style="font-size:0.8rem;" onclick="window.adminApp.forcePasswordReset('${u.user_id}','${safeName}')">Reset PW</button>
-                        <button class="btn btn-sm btn-secondary" style="font-size:0.8rem;" onclick="window.adminApp.exportUserData('${u.user_id}')">Export</button>
-                        <button class="btn btn-sm btn-danger" style="font-size:0.8rem;" onclick="window.adminApp.deleteUser('${u.user_id}','${safeName}')">Delete</button>
+                        <button class="icon-btn ${u.account_status === 'disabled' ? 'icon-btn-success' : 'icon-btn-amber'}" title="${u.account_status === 'disabled' ? 'Enable' : 'Disable'}" onclick="window.adminApp.toggleUserStatus('${u.user_id}','${u.account_status === 'disabled' ? 'active' : 'disabled'}')">
+                            ${u.account_status === 'disabled'
+                                ? `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="10 8 16 12 10 16 10 8"/></svg>`
+                                : `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="10" y1="15" x2="10" y2="9"/><line x1="14" y1="15" x2="14" y2="9"/></svg>`}
+                        </button>
+                        <button class="icon-btn" title="Reset Password" onclick="window.adminApp.forcePasswordReset('${u.user_id}','${safeName}')">
+                            <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                        </button>
+                        <button class="icon-btn" title="Export Data" onclick="window.adminApp.exportUserData('${u.user_id}')">
+                            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        </button>
+                        <button class="icon-btn icon-btn-danger" title="Delete User" onclick="window.adminApp.deleteUser('${u.user_id}','${safeName}')">
+                            <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+                        </button>
                     </div>
                 </td>
             `;
@@ -527,7 +589,7 @@ class SuperAdminDashboard {
             if (!res.ok) throw new Error(data.error || 'Failed to load audit log');
             this.renderAuditLog(data.entries || [], data.total, data.pages, page);
         } catch (err) {
-            if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="color:#ef4444;text-align:center;">${err.message}</td></tr>`;
+            if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="color:var(--color-danger, #ef4444);text-align:center;">${err.message}</td></tr>`;
         }
     }
 
@@ -653,7 +715,7 @@ class SuperAdminDashboard {
                     <td style="padding:1rem;color:var(--text-muted);font-size:0.9rem;">${date}</td>
                     <td style="padding:1rem;text-align:right;display:flex;gap:0.5rem;justify-content:flex-end;">
                         <button class="btn btn-sm btn-success"
-                            style="background:#10b981;color:#fff;border:none;"
+                            style="background:var(--color-success, #10b981);color:#fff;border:none;"
                             onclick="window.adminApp.approveAdmin('${u.user_id}', '${escapeHtml(u.name)}')">
                             Approve
                         </button>
@@ -743,25 +805,59 @@ class SuperAdminDashboard {
     // ==========================================
 
     async changeUserRole(userId, currentRole) {
-        const roles = ['student', 'professor', 'superadmin'];
-        const roleLabels = { student: 'Student', professor: 'Professor', superadmin: 'Super Admin' };
-        const options = roles.map(r => `${r === currentRole ? '● ' : '○ '}${roleLabels[r]}`).join('\n');
-        const input = prompt(`Select new role for user:\n\n${options}\n\nType role name (student / professor / superadmin):`);
-        if (!input) return;
-        const newRole = input.trim().toLowerCase();
-        if (!roles.includes(newRole)) { showError('Invalid role. Must be student, professor, or superadmin.'); return; }
-        if (newRole === currentRole) { showError('User already has that role.'); return; }
+        this._pendingRoleUserId = userId;
+        document.getElementById('changeRoleTargetLabel').textContent = `Current role: ${currentRole}`;
+        const sel = document.getElementById('changeRoleSelect');
+        sel.value = currentRole;
+        // Clear tenant name input on open
+        const nameInput = document.getElementById('changeRoleTenantName');
+        if (nameInput) nameInput.value = '';
+        this._onRoleSelectChange();
+        document.getElementById('changeRoleModal').style.display = 'flex';
+    }
+
+    _onRoleSelectChange() {
+        const isTenantAdmin = document.getElementById('changeRoleSelect').value === 'tenant_admin';
+        document.getElementById('tenantSelectSection').style.display = isTenantAdmin ? 'block' : 'none';
+    }
+
+    async _submitRoleChange() {
+        const role = document.getElementById('changeRoleSelect').value;
+        const saveBtn = document.querySelector('#changeRoleModal .btn-primary');
+
         try {
-            const res = await authFetch(`${this.baseAdminUrl}/users/${userId}/role`, {
+            let tenantId = null;
+
+            if (role === 'tenant_admin') {
+                const tenantName = (document.getElementById('changeRoleTenantName').value || '').trim();
+                if (!tenantName) { showError('Please enter an institution / tenant name.'); return; }
+
+                // Step 1: Create the new tenant
+                if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Creating tenant…'; }
+                const tRes = await authFetch(`${this.baseAdminUrl}/tenants`, {
+                    method: 'POST',
+                    body: JSON.stringify({ name: tenantName })
+                });
+                const tData = await tRes.json();
+                if (!tRes.ok) throw new Error(tData.error || 'Failed to create tenant');
+                tenantId = tData.tenant.tenant_id;
+            }
+
+            // Step 2: Assign the role (with new tenant_id if tenant_admin)
+            if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving…'; }
+            const res = await authFetch(`${this.baseAdminUrl}/users/${this._pendingRoleUserId}/role`, {
                 method: 'PATCH',
-                body: JSON.stringify({ role: newRole })
+                body: JSON.stringify({ role, ...(tenantId && { tenant_id: tenantId }) })
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Role update failed');
-            showSuccess(data.message || `Role updated to ${newRole}.`);
+            document.getElementById('changeRoleModal').style.display = 'none';
+            showSuccess(data.message || `Role updated to ${role}.`);
             this.loadUsers();
         } catch (err) {
             showError(err.message);
+        } finally {
+            if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save Role'; }
         }
     }
 
@@ -792,8 +888,11 @@ class SuperAdminDashboard {
             const a = document.createElement('a');
             a.href = url;
             a.download = `user-export-${userId}.json`;
+            a.style.display = 'none';
+            document.body.appendChild(a);
             a.click();
-            URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 100);
         } catch (err) {
             showError(err.message);
         }
@@ -836,9 +935,15 @@ class SuperAdminDashboard {
                     </td>
                     <td style="padding:1rem;text-align:center;">${c.student_count || 0}</td>
                     <td style="padding:1rem;text-align:center;">${c.chapter_count || 0}</td>
-                    <td style="padding:1rem;text-align:right;display:flex;gap:0.4rem;justify-content:flex-end;">
-                        <button class="btn btn-sm btn-secondary" onclick="window.adminApp.transferClass('${c.class_id}','${safeName}')">Transfer</button>
-                        <button class="btn btn-sm btn-danger" onclick="window.adminApp.deleteClass('${c.class_id}','${safeName}')">Delete</button>
+                    <td style="padding:0.75rem 1rem;">
+                        <div class="icon-btn-row">
+                            <button class="icon-btn" title="Transfer Ownership" onclick="window.adminApp.transferClass('${c.class_id}','${safeName}')">
+                                <svg viewBox="0 0 24 24"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+                            </button>
+                            <button class="icon-btn icon-btn-danger" title="Delete Class" onclick="window.adminApp.deleteClass('${c.class_id}','${safeName}')">
+                                <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+                            </button>
+                        </div>
                     </td>
                 </tr>`;
             }).join('');
@@ -852,7 +957,7 @@ class SuperAdminDashboard {
                 pager.innerHTML = `${prev}${info}${next}`;
             }
         } catch (err) {
-            if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="color:#ef4444;text-align:center;">${err.message}</td></tr>`;
+            if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="color:var(--color-danger, #ef4444);text-align:center;">${err.message}</td></tr>`;
         }
     }
 
@@ -927,7 +1032,7 @@ class SuperAdminDashboard {
                     return `<div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem;">
                         <span style="min-width:160px;font-size:0.8rem;font-family:monospace;color:var(--text-muted);">${escapeHtml(a.action)}</span>
                         <div style="flex:1;height:8px;background:var(--bg-dark);border-radius:4px;overflow:hidden;">
-                            <div style="width:${pct}%;height:100%;background:#10b981;border-radius:4px;"></div>
+                            <div style="width:${pct}%;height:100%;background:var(--color-success, #10b981);border-radius:4px;"></div>
                         </div>
                         <span style="font-size:0.85rem;color:var(--text-muted);min-width:30px;text-align:right;">${a.count}</span>
                     </div>`;
@@ -971,13 +1076,13 @@ class SuperAdminDashboard {
                     <td style="padding:1rem;">${activeBadge}</td>
                     <td style="padding:1rem;color:var(--text-muted);font-size:0.9rem;">${exp}</td>
                     <td style="padding:1rem;text-align:right;display:flex;gap:0.4rem;justify-content:flex-end;">
-                        <button class="btn btn-sm btn-secondary" onclick="window.adminApp.toggleAnnouncement('${a.announcement_id}',${!a.is_active})">${a.is_active ? 'Deactivate' : 'Activate'}</button>
-                        <button class="btn btn-sm btn-danger" onclick="window.adminApp.deleteAnnouncement('${a.announcement_id}')">Delete</button>
+                        <button class="btn btn-sm btn-secondary" onclick="window.adminApp.toggleAnnouncement('${a.id}',${!a.is_active})">${a.is_active ? 'Deactivate' : 'Activate'}</button>
+                        <button class="btn btn-sm btn-danger" onclick="window.adminApp.deleteAnnouncement('${a.id}')">Delete</button>
                     </td>
                 </tr>`;
             }).join('');
         } catch (err) {
-            if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="color:#ef4444;text-align:center;">${err.message}</td></tr>`;
+            if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="color:var(--color-danger, #ef4444);text-align:center;">${err.message}</td></tr>`;
         }
     }
 
@@ -1122,7 +1227,7 @@ class SuperAdminDashboard {
                 </tr>`;
             }).join('');
         } catch (err) {
-            if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="color:#ef4444;text-align:center;">${err.message}</td></tr>`;
+            if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="color:var(--color-danger, #ef4444);text-align:center;">${err.message}</td></tr>`;
         }
     }
 

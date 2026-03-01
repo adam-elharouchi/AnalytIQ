@@ -4,35 +4,42 @@
   <meta charset="UTF-8" />
   <title>Select Content — AnalytIQ LTI</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/css/styles.css" />
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: var(--font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
       margin: 0;
-      background: #f5f7fa;
-      color: #374151;
+      background: #0f172a;
+      color: #e2e8f0;
     }
     header {
-      background: #6366f1;
-      color: #fff;
+      background: rgba(30, 41, 59, 0.95);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
       padding: 1rem 1.5rem;
     }
-    header h1 { margin: 0; font-size: 1.2rem; }
-    header p  { margin: .25rem 0 0; font-size: .85rem; opacity: .85; }
+    header h1 { margin: 0; font-size: 1.2rem; color: #f0f4ff; }
+    header p  { margin: .25rem 0 0; font-size: .85rem; color: #94a3b8; }
     main {
       max-width: 760px;
       margin: 2rem auto;
-      padding: 0 1rem;
+      padding: 0 1rem 5rem;
     }
     .class-block { margin-bottom: 2rem; }
     .class-block h2 {
       font-size: 1rem;
       font-weight: 600;
       margin: 0 0 .75rem;
-      color: #1f2937;
+      color: #f0f4ff;
       display: flex;
       align-items: center;
       gap: .5rem;
+    }
+    .class-icon {
+      width: 20px;
+      height: 20px;
+      color: #2569f4;
+      flex-shrink: 0;
     }
     .chapter-list { list-style: none; margin: 0; padding: 0; }
     .chapter-item {
@@ -40,24 +47,34 @@
       align-items: center;
       gap: .75rem;
       padding: .7rem 1rem;
-      background: #fff;
-      border: 2px solid #e5e7eb;
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(255,255,255,0.08);
       border-radius: 8px;
       margin-bottom: .5rem;
       cursor: pointer;
       transition: border-color .15s, background .15s;
     }
-    .chapter-item:hover { border-color: #a5b4fc; background: #f5f3ff; }
-    .chapter-item.selected { border-color: #6366f1; background: #eef2ff; }
-    .chapter-item input[type="radio"] { accent-color: #6366f1; width: 1rem; height: 1rem; flex-shrink: 0; }
-    .chapter-title { font-size: .95rem; font-weight: 500; }
-    .chapter-desc  { font-size: .8rem; color: #6b7280; margin-top: .15rem; }
-    .empty-state { color: #9ca3af; font-size: .9rem; padding: .5rem 0; }
+    .chapter-item:hover {
+      border-color: rgba(37,105,244,0.4);
+      background: rgba(37,105,244,0.08);
+    }
+    .chapter-item.selected {
+      border-color: #2569f4;
+      background: rgba(37,105,244,0.15);
+    }
+    .chapter-item input[type="radio"] { accent-color: #2569f4; width: 1rem; height: 1rem; flex-shrink: 0; }
+    .chapter-title { font-size: .95rem; font-weight: 500; color: #f0f4ff; }
+    .chapter-desc  { font-size: .8rem; color: #94a3b8; margin-top: .15rem; }
+    .empty-state { color: #64748b; font-size: .9rem; padding: .5rem 0; }
     .actions {
-      position: sticky;
+      position: fixed;
       bottom: 0;
-      background: #fff;
-      border-top: 1px solid #e5e7eb;
+      left: 0;
+      right: 0;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-top: 1px solid rgba(255,255,255,0.08);
       padding: 1rem 1.5rem;
       display: flex;
       justify-content: flex-end;
@@ -71,10 +88,23 @@
       border: none;
       cursor: pointer;
     }
-    .btn-primary { background: #6366f1; color: #fff; }
-    .btn-primary:disabled { background: #a5b4fc; cursor: not-allowed; }
-    .btn-secondary { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
-    #status { font-size: .85rem; color: #6b7280; align-self: center; }
+    .btn-primary {
+      background: #2569f4;
+      color: #fff;
+    }
+    .btn-primary:disabled {
+      background: rgba(37,105,244,0.4);
+      cursor: not-allowed;
+    }
+    .btn-secondary {
+      background: rgba(255,255,255,0.08);
+      color: #e2e8f0;
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+    .btn-secondary:hover {
+      background: rgba(255,255,255,0.12);
+    }
+    #status { font-size: .85rem; color: #94a3b8; align-self: center; }
   </style>
 </head>
 <body>
@@ -91,7 +121,12 @@
     {% set class_id   = cls[0] %}
     {% set class_name = cls[2] if cls|length > 2 else cls[1] %}
     <div class="class-block">
-      <h2>&#128218; {{ class_name }}</h2>
+      <h2>
+        <svg class="class-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+        </svg>
+        {{ class_name }}
+      </h2>
       <ul class="chapter-list" id="chapters-{{ class_id }}">
         <li class="empty-state">Loading chapters&hellip;</li>
       </ul>

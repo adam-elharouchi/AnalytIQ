@@ -6,80 +6,110 @@
 <nav class="navbar" id="navbar"></nav>
 
 <main class="container">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-    <div>
-      <h1>Professor Dashboard</h1>
-      <p class="subtitle">Manage your classes, upload chapters, and track student progress</p>
+  <!-- Workspace Identity Header -->
+  <div class="workspace-header-bento">
+    <div class="workspace-header-main">
+      <div>
+        <div class="workspace-status-line">
+          <span class="workspace-status-dot" id="wsStatusDot"></span>
+          <span class="workspace-status-label" id="wsStatusLabel">Class Management Active</span>
+        </div>
+        <h1 class="workspace-header-title">Professor Dashboard</h1>
+        <p class="workspace-header-desc">Manage your classes, upload chapters, and track student progress.</p>
+      </div>
+      <div style="margin-top: 1rem; display: flex; align-items: center; gap: 0.5rem; font-family: var(--font-mono); font-size: 0.8rem; color: #475569;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        <span>classes</span>
+        <span id="classCountLabel" style="color: var(--color-primary);">· loading...</span>
+      </div>
     </div>
-    <div style="display: flex; gap: .75rem; align-items: center;">
-      <button class="btn btn-primary" onclick="showCreateClassModal()"
-        style="display: flex; align-items: center; gap: 0.5rem;">
-        <span>Create New Class</span>
-      </button>
+
+    <div class="workspace-header-action" onclick="showCreateClassModal()" style="cursor: pointer;">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(37,105,244,0.8)" stroke-width="1.5" style="margin-bottom: 0.5rem;">
+        <path d="M12 5v14M5 12h14"/>
+      </svg>
+      <div style="font-size: 0.95rem; font-weight: 600; color: #f8fafc; margin-bottom: 0.25rem;">New Class</div>
+      <p style="margin: 0; color: #64748b; font-size: 0.8rem;">Create a class for your students</p>
     </div>
   </div>
 
   <!-- Loading State -->
-  <div id="loadingState" style="text-align: center; padding: 3rem;">
-    <p style="color: #64748b;">Loading classes...</p>
+  <div id="loadingState" class="terminal-loading-state">
+    <div class="terminal-loading-dots">
+      <span></span><span></span><span></span>
+    </div>
+    <p class="terminal-loading-text">Fetching class nodes<span style="animation: blink 1s step-end infinite; display: inline-block;">_</span></p>
   </div>
 
   <!-- Empty State -->
-  <div id="emptyState"
-    style="display: none; text-align: center; padding: 3rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 0.5rem;">
-    <h2 style="color: var(--text-primary); margin-bottom: 0.5rem;">No Classes Yet</h2>
-    <p style="color: #64748b; margin-bottom: 1.5rem;">Create your first class to get started</p>
-    <button class="btn btn-primary" onclick="showCreateClassModal()">Create Your First Class</button>
+  <div id="emptyState" style="display: none; width: 100%; max-width: 600px; margin: 3rem auto;">
+    <div style="background: var(--color-dark); border-radius: 1rem; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 60px rgba(0,0,0,0.5); overflow: hidden;">
+      <div style="background: rgba(255,255,255,0.05); padding: 0.75rem 1rem; display: flex; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05);">
+        <div style="display: flex; gap: 0.5rem;">
+          <span style="width: 12px; height: 12px; border-radius: 50%; background: #ef4444;"></span>
+          <span style="width: 12px; height: 12px; border-radius: 50%; background: #f59e0b;"></span>
+          <span style="width: 12px; height: 12px; border-radius: 50%; background: #10b981;"></span>
+        </div>
+        <div style="flex: 1; text-align: center; color: rgba(255,255,255,0.4); font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.05em;">~/classes/status</div>
+      </div>
+      <div style="padding: 2.5rem; font-family: var(--font-mono); color: #f8fafc; line-height: 1.6;">
+        <div style="color: #94a3b8; margin-bottom: 2rem; font-size: 0.875rem;">No classes found. Create your first class to get started.</div>
+        <div>
+          <span style="color: var(--color-success); margin-right: 0.5rem;">➜</span>
+          <span style="color: var(--color-primary); margin-right: 0.5rem;">~</span>
+          <button onclick="showCreateClassModal()"
+            style="font-family: var(--font-mono); padding: 0.5rem 1rem; font-size: 0.9rem; background: rgba(37,105,244,0.15); color: var(--color-primary); border: 1px solid var(--color-primary); border-radius: 0.375rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; transition: all 0.2s;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+            Create First Class
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Classes Grid -->
-  <div id="classesGrid"
-    style="display: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem;">
-    <!-- Classes will be dynamically inserted here -->
-  </div>
+  <div id="classesGrid" style="display: none;"></div>
 
-  <!-- Create Class Modal -->
-  <div id="createClassModal"
-    style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center;">
-    <div role="dialog" aria-modal="true" aria-labelledby="createClassModalTitle"
-      style="background: var(--bg-card); border-radius: 0.5rem; padding: 2rem; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; border: 1px solid var(--border-color);">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-        <h2 id="createClassModalTitle" style="margin: 0; color: var(--color-dark);">Create New Class</h2>
-        <button onclick="hideCreateClassModal()" aria-label="Close dialog"
-          style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b;">&times;</button>
-      </div>
+  <!-- Drawer Overlay -->
+  <div class="student-drawer-overlay" id="drawerOverlay" onclick="hideCreateClassModal()"></div>
 
+  <!-- Create Class Drawer -->
+  <div class="student-join-drawer" id="createClassModal" role="dialog" aria-modal="true" aria-labelledby="createClassModalTitle">
+    <div class="drawer-header">
+      <h2 id="createClassModalTitle">Create New Class</h2>
+      <button onclick="hideCreateClassModal()" aria-label="Close dialog"
+        style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b; transition: color 0.2s; line-height: 1;">&times;</button>
+    </div>
+
+    <div class="drawer-body">
       <form id="createClassForm" onsubmit="handleCreateClass(event)">
         <div style="margin-bottom: 1.5rem;">
-          <label for="className"
-            style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Class Name
-            *</label>
-          <input type="text" id="className" required placeholder="e.g., Business Analytics 101"
-            style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;" />
+          <label for="className">Class Name *</label>
+          <input type="text" id="className" required placeholder="e.g., Business Analytics 101" autocomplete="off" />
         </div>
 
         <div style="margin-bottom: 1.5rem;">
-          <label for="classCode"
-            style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Class Code/ID
-            *</label>
+          <label for="classCode">Class Code / ID *</label>
           <input type="text" id="classCode" required placeholder="e.g., BA101, ANALYTICS2024"
             pattern="[A-Za-z0-9\-_]{3,20}" title="3-20 characters (letters, numbers, hyphens, underscores only)"
-            style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;" />
-          <small style="display: block; margin-top: 0.25rem; color: #64748b; font-size: 0.875rem;">3-20 characters.
-            Students will use this code to enroll in your class.</small>
+            maxlength="20" autocomplete="off" />
+          <div class="drawer-hint">3–20 characters (letters, numbers, hyphens, underscores). Students use this to enroll.</div>
         </div>
 
         <div style="margin-bottom: 1.5rem;">
-          <label for="classDescription"
-            style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Description</label>
-          <textarea id="classDescription" rows="4" placeholder="Optional: Add a description for your class..."
-            style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem; resize: vertical;"></textarea>
+          <label for="classDescription">Description</label>
+          <textarea id="classDescription" rows="4" placeholder="Optional: describe this class for your students..."
+            style="width: 100%; padding: 0.75rem; background: rgba(30,41,59,0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 0.375rem; font-size: 0.95rem; color: #e2e8f0; resize: vertical; font-family: inherit;"></textarea>
         </div>
 
-        <div id="createClassError" class="error-message" style="display: none; margin-bottom: 1rem;"></div>
+        <div id="createClassError"
+          style="display: none; margin-bottom: 1.5rem; background: rgba(220,38,38,0.1); border: 1px solid rgba(220,38,38,0.3); color: #f87171; padding: 1rem; border-radius: 0.5rem; font-size: 0.875rem;"></div>
 
-        <div style="display: flex; gap: 1rem; justify-content: flex-end;">
-          <button type="button" class="btn btn-secondary" onclick="hideCreateClassModal()">Cancel</button>
+        <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 2rem;">
+          <button type="button" onclick="hideCreateClassModal()"
+            style="background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; padding: 0.65rem 1.25rem; border-radius: 0.375rem; cursor: pointer; font-size: 0.875rem; transition: all 0.2s;">
+            Cancel
+          </button>
           <button type="submit" class="btn btn-primary">Create Class</button>
         </div>
       </form>

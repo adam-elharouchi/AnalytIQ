@@ -105,15 +105,34 @@ def create_default_ai_digest(conn, user_id):
 
 
 def get_user_by_email(conn, email):
-    """Return (user_id, name, email, password_hash, role) or None."""
+    """Return (user_id, name, email, password_hash, role, tenant_id) or None."""
     cur = conn.cursor()
-    cur.execute(
-        "SELECT user_id, name, email, password_hash, COALESCE(role, 'student') FROM users WHERE email = %s",
-        (email,),
-    )
-    row = cur.fetchone()
-    cur.close()
-    return row
+    try:
+        cur.execute(
+            "SELECT user_id, name, email, password_hash, COALESCE(role, 'student'), tenant_id FROM users WHERE email = %s",
+            (email,),
+        )
+        row = cur.fetchone()
+        cur.close()
+        return row
+    except Exception:
+        conn.rollback()
+        # Fallback for environments where the tenant_id migration hasn't run yet
+        cur2 = conn.cursor()
+        try:
+            cur2.execute(
+                "SELECT user_id, name, email, password_hash, COALESCE(role, 'student') FROM users WHERE email = %s",
+                (email,),
+            )
+            row = cur2.fetchone()
+            cur2.close()
+            if row:
+                return row + (None,)  # Append None for tenant_id
+            return None
+        except Exception:
+            conn.rollback()
+            cur2.close()
+            return None
 
 
 def update_password_hash(conn, user_id, new_hash):

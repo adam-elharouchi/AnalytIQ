@@ -7,22 +7,35 @@
 <style>
     .admin-dashboard-container {
         display: flex;
+        flex-direction: column;
         gap: 2rem;
         padding-top: 1rem;
         min-height: calc(100vh - 200px);
+        max-width: 1400px;
+        margin: 0 auto;
+        /* Override default variables for a guaranteed dark, premium aesthetic */
+        --bg-card: rgba(30, 41, 59, 0.6);
+        --border-color: rgba(255, 255, 255, 0.1);
+        --text-color: #f8fafc;
+        --text-muted: #94a3b8;
+        --shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.25);
+        --shadow-lg: 0 12px 40px 0 rgba(0, 0, 0, 0.4);
     }
 
-    /* Vertical Tabs Sidebar */
-    .admin-sidebar {
-        width: 250px;
-        flex-shrink: 0;
-        background: var(--bg-card);
-        border: 1px solid var(--border-color);
-        border-radius: 0.75rem;
-        padding: 1.5rem;
-        position: sticky;
-        top: 100px;
-        height: fit-content;
+    /* Horizontal Tabs Navigation (replaces sidebar) */
+    .admin-nav-scroll-container {
+        width: 100%;
+        overflow-x: auto;
+        border-bottom: 1px solid var(--border-color);
+        margin-bottom: 1rem;
+        padding-bottom: 2px;
+        /* Hide scrollbar for cleaner look */
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .admin-nav-scroll-container::-webkit-scrollbar {
+        display: none;
     }
 
     .admin-nav-list {
@@ -30,31 +43,30 @@
         padding: 0;
         margin: 0;
         display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
+        gap: 1.5rem;
+        white-space: nowrap;
     }
 
     .admin-nav-link {
         display: flex;
         align-items: center;
-        gap: 12px;
-        padding: 12px 16px;
-        color: var(--text-color);
+        gap: 8px;
+        padding: 0.75rem 0.25rem;
+        color: var(--text-secondary);
         text-decoration: none;
-        border-radius: 0.5rem;
+        border-bottom: 2px solid transparent;
         transition: all 0.2s;
         font-weight: 500;
+        font-size: 0.95rem;
     }
 
     .admin-nav-link:hover {
-        background: var(--bg-dark);
-        color: var(--primary-color);
+        color: var(--text-primary);
     }
 
     .admin-nav-link.active {
-        background: rgba(59, 130, 246, 0.1);
-        color: var(--primary-color);
-        border-left: 4px solid var(--primary-color);
+        color: var(--color-primary);
+        border-bottom: 2px solid var(--color-primary);
     }
 
     /* Main Content Area */
@@ -85,32 +97,95 @@
         color: var(--text-muted);
     }
 
-    /* Stats Grid */
-    .stats-grid {
+    /* Bento Grid */
+    .bento-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        grid-template-columns: repeat(12, 1fr);
         gap: 1.5rem;
         margin-bottom: 2rem;
     }
 
-    .stat-card {
+    .bento-card {
         background: var(--bg-card);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
         padding: 1.5rem;
-        border-radius: 0.75rem;
+        border-radius: 1rem;
         border: 1px solid var(--border-color);
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        box-shadow: var(--shadow);
+        transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        color: var(--text-color);
     }
 
-    .stat-card h3 {
-        font-size: 0.875rem;
-        color: var(--text-muted);
-        margin-bottom: 0.5rem;
-        font-weight: 500;
+    .bento-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+        border-color: rgba(255, 255, 255, 0.2);
     }
 
-    .stat-value {
-        font-size: 2.5rem;
-        font-weight: 700;
+    .bento-span-12 {
+        grid-column: span 12;
+    }
+
+    .bento-span-8 {
+        grid-column: span 8;
+    }
+
+    .bento-span-6 {
+        grid-column: span 6;
+    }
+
+    .bento-span-4 {
+        grid-column: span 4;
+    }
+
+    .bento-span-3 {
+        grid-column: span 3;
+    }
+
+    @media (max-width: 1024px) {
+
+        .bento-span-8,
+        .bento-span-6 {
+            grid-column: span 12;
+        }
+
+        .bento-span-4,
+        .bento-span-3 {
+            grid-column: span 6;
+        }
+    }
+
+    @media (max-width: 640px) {
+
+        .bento-span-4,
+        .bento-span-3 {
+            grid-column: span 12;
+        }
+    }
+
+    .bento-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+    }
+
+    .bento-card h3 {
+        font-size: 0.95rem;
+        color: var(--text-secondary);
+        margin-bottom: 0.25rem;
+        font-weight: 600;
+    }
+
+    .bento-value {
+        font-size: 3rem;
+        font-weight: 800;
+        line-height: 1;
+        letter-spacing: -0.02em;
     }
 
     .stat-value.primary {
@@ -207,6 +282,81 @@
     }
 
     /* Impersonation is now full-window (floating bar in base.html). No modal CSS needed. */
+
+    /* ── Icon Action Buttons ── */
+    .icon-btn {
+        width: 2rem;
+        height: 2rem;
+        border: none;
+        border-radius: 0.375rem;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.15s, opacity 0.15s;
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text-muted);
+        padding: 0;
+        flex-shrink: 0;
+    }
+
+    .icon-btn:hover {
+        background: rgba(255, 255, 255, 0.14);
+        color: var(--text-color);
+    }
+
+    .icon-btn svg {
+        width: 1rem;
+        height: 1rem;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+    .icon-btn.icon-btn-green {
+        background: rgba(5, 150, 105, 0.15);
+        color: #34d399;
+    }
+
+    .icon-btn.icon-btn-green:hover {
+        background: rgba(5, 150, 105, 0.3);
+    }
+
+    .icon-btn.icon-btn-success {
+        background: rgba(16, 185, 129, 0.15);
+        color: #34d399;
+    }
+
+    .icon-btn.icon-btn-success:hover {
+        background: rgba(16, 185, 129, 0.3);
+    }
+
+    .icon-btn.icon-btn-danger {
+        background: rgba(239, 68, 68, 0.12);
+        color: #f87171;
+    }
+
+    .icon-btn.icon-btn-danger:hover {
+        background: rgba(239, 68, 68, 0.28);
+    }
+
+    .icon-btn.icon-btn-amber {
+        background: rgba(245, 158, 11, 0.12);
+        color: #fbbf24;
+    }
+
+    .icon-btn.icon-btn-amber:hover {
+        background: rgba(245, 158, 11, 0.28);
+    }
+
+    .icon-btn-row {
+        display: flex;
+        gap: 0.3rem;
+        justify-content: flex-end;
+        align-items: center;
+    }
 </style>
 {% endblock %}
 
@@ -216,102 +366,177 @@
 <main class="container">
     <div class="admin-dashboard-container">
 
-        <!-- Sidebar Navigation Tabs -->
-        <aside class="admin-sidebar">
-            <h2
-                style="font-size: 0.875rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 1rem; letter-spacing: 0.05em; padding-left: 0.5rem;">
-                Administration</h2>
-            <ul class="admin-nav-list">
-                <li>
-                    <a href="#overview" class="admin-nav-link active" data-target="overview-section">
-                        Overview
-                    </a>
-                </li>
-                <li>
-                    <a href="#analytics" class="admin-nav-link" data-target="analytics-section"
-                        onclick="window.adminApp && window.adminApp.loadAnalytics()">
-                        Analytics
-                    </a>
-                </li>
-                <li>
-                    <a href="#tenants" class="admin-nav-link" data-target="tenants-section">
-                        Tenants & LMS
-                    </a>
-                </li>
-                <li>
-                    <a href="#users" class="admin-nav-link" data-target="users-section">
-                        Users
-                    </a>
-                </li>
-                <li>
-                    <a href="#classes-admin" class="admin-nav-link" data-target="classes-admin-section"
-                        onclick="window.adminApp && window.adminApp.loadAllClasses()">
-                        Classes
-                    </a>
-                </li>
-                <li>
-                    <a href="#announcements" class="admin-nav-link" data-target="announcements-section"
-                        onclick="window.adminApp && window.adminApp.loadAnnouncements()">
-                        Announcements
-                    </a>
-                </li>
-                <li>
-                    <a href="#platform-settings" class="admin-nav-link" data-target="platform-settings-section"
-                        onclick="window.adminApp && window.adminApp.loadPlatformSettings()">
-                        Platform Settings
-                    </a>
-                </li>
-                <li>
-                    <a href="#toggles" class="admin-nav-link" data-target="toggles-section">
-                        Role Switcher
-                    </a>
-                </li>
-                <li>
-                    <a href="#approvals" class="admin-nav-link" data-target="approvals-section"
-                        onclick="window.adminApp && window.adminApp.loadPendingApprovals()">
-                        Pending Approvals
-                        <span id="approvals-badge" style="display:none; background:#ef4444; color:#fff;
-                            font-size:0.7rem; font-weight:700; padding:1px 6px; border-radius:9999px;
-                            margin-left:auto;">0</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="#audit" class="admin-nav-link" data-target="audit-section"
-                        onclick="window.adminApp && window.adminApp.loadAuditLog()">
-                        Audit Log
-                    </a>
-                </li>
-            </ul>
-        </aside>
+        <!-- ══ Command Center Identity Header ══ -->
+        <div class="workspace-header-bento">
+            <div class="workspace-header-main">
+                <div>
+                    <div class="workspace-status-line">
+                        <span class="workspace-status-dot"></span>
+                        <span class="workspace-status-label">System Command Center Online</span>
+                    </div>
+                    <h1 class="workspace-header-title">Super Admin</h1>
+                    <p class="workspace-header-desc">Global platform administration. Manage tenants, users, classes, and system configuration across all environments.</p>
+                </div>
+                <div class="breadcrumb-mono" style="margin-top: 1.25rem; margin-bottom: 0;">
+                    <span class="bm-prompt">➜</span>
+                    <span class="bm-path">~</span>
+                    <span class="bm-sep">/</span>
+                    <span class="bm-active">platform</span>
+                    <span class="bm-sep">/</span>
+                    <span class="bm-active">admin</span>
+                    <span class="bm-count" style="margin-left: 0.75rem;">· full access enabled</span>
+                </div>
+            </div>
+
+            <!-- Health status right panel -->
+            <div class="workspace-header-action" style="cursor: default; align-items: flex-start; justify-content: flex-start; text-align: left;"
+                onclick="document.querySelector('[data-target=overview-section]').click()">
+                <div style="width: 100%;">
+                    <div style="font-family: var(--font-mono); font-size: 0.72rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.85rem;">Node Health</div>
+                    <div class="system-status-panel">
+                        <div class="system-status-item">
+                            <div class="system-status-item-dot healthy" id="health-dot-postgres"></div>
+                            <span class="system-status-item-name">PostgreSQL</span>
+                            <span class="system-status-item-value" id="health-val-postgres">checking...</span>
+                        </div>
+                        <div class="system-status-item">
+                            <div class="system-status-item-dot healthy" id="health-dot-redis"></div>
+                            <span class="system-status-item-name">Redis</span>
+                            <span class="system-status-item-value" id="health-val-redis">checking...</span>
+                        </div>
+                        <div class="system-status-item">
+                            <div class="system-status-item-dot healthy" id="health-dot-storage"></div>
+                            <span class="system-status-item-name">Storage</span>
+                            <span class="system-status-item-value" id="health-val-storage">checking...</span>
+                        </div>
+                    </div>
+                    <div style="margin-top: 0.85rem; font-family: var(--font-mono); font-size: 0.72rem; color: #475569;">v2.6 · platform.myanalytiq.org</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══ Terminal Chip Tab Navigation ══ -->
+        <div class="terminal-tab-nav" id="adminTabNav">
+            <button class="terminal-tab-btn active" data-target="overview-section">
+                <span class="terminal-tab-num">01</span> Overview
+            </button>
+            <button class="terminal-tab-btn" data-target="analytics-section"
+                onclick="window.adminApp && window.adminApp.loadAnalytics(); window.adminApp && window.adminApp.loadAuditLog()">
+                <span class="terminal-tab-num">02</span> Analytics
+            </button>
+            <button class="terminal-tab-btn" data-target="tenants-section">
+                <span class="terminal-tab-num">03</span> Tenants &amp; LMS
+            </button>
+            <button class="terminal-tab-btn" data-target="users-section">
+                <span class="terminal-tab-num">04</span> Users
+            </button>
+            <button class="terminal-tab-btn" data-target="classes-admin-section"
+                onclick="window.adminApp && window.adminApp.loadAllClasses()">
+                <span class="terminal-tab-num">05</span> Classes
+            </button>
+            <button class="terminal-tab-btn" data-target="announcements-section"
+                onclick="window.adminApp && window.adminApp.loadAnnouncements()">
+                <span class="terminal-tab-num">06</span> Announcements
+            </button>
+            <button class="terminal-tab-btn" data-target="platform-settings-section"
+                onclick="window.adminApp && window.adminApp.loadPlatformSettings()">
+                <span class="terminal-tab-num">07</span> Settings
+            </button>
+            <button class="terminal-tab-btn" data-target="approvals-section"
+                onclick="window.adminApp && window.adminApp.loadPendingApprovals()">
+                <span class="terminal-tab-num">08</span> Approvals
+                <span id="approvals-badge" style="display:none; background:var(--color-error); color:var(--color-white);
+                    font-size:0.68rem; font-weight:700; padding:1px 6px; border-radius:9999px; margin-left: 2px;">0</span>
+            </button>
+        </div>
 
         <!-- Main Content Area -->
         <div class="admin-content">
 
             <!-- Section: Overview -->
             <section id="overview-section" class="admin-section active">
-                <div class="dashboard-header">
-                    <h1>System Overview</h1>
-                    <p>Global metrics across all tenants and connected LMS platforms.</p>
-                </div>
 
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <h3>Total Tenants</h3>
-                        <div class="stat-value primary" id="stat-total-tenants">0</div>
+                <!-- Asymmetric metric row: hero stat (span 6) + two supporting (span 3 each) + alert (span 3) -->
+                <div class="bento-grid" style="margin-bottom: 1.5rem;">
+
+                    <!-- Hero metric: total users -->
+                    <div class="bento-card bento-span-6 neon-hover">
+                        <div class="bento-card-header">
+                            <div>
+                                <div style="font-family: var(--font-mono); font-size: 0.72rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.35rem;">Global Enrollment</div>
+                                <h3 style="margin: 0; font-size: 0.9rem;">Total Users</h3>
+                            </div>
+                            <span class="status-badge active"
+                                style="background-color: rgba(37,105,244,0.12); color: var(--color-primary); border: 1px solid rgba(37,105,244,0.25); font-family: var(--font-mono); font-size: 0.7rem;">
+                                live
+                            </span>
+                        </div>
+                        <div class="bento-value primary" id="stat-total-users" style="font-size: 4rem; margin-top: 0.5rem;">0</div>
+                        <div style="margin-top: 1rem; height: 40px; background: repeating-linear-gradient(90deg, rgba(37,105,244,0.15) 0px, rgba(37,105,244,0.15) 2px, transparent 2px, transparent 10px); border-radius: 4px;"></div>
                     </div>
-                    <div class="stat-card">
-                        <h3>Total Users</h3>
-                        <div class="stat-value success" id="stat-total-users">0</div>
+
+                    <!-- Tenants -->
+                    <div class="bento-card bento-span-3 neon-hover">
+                        <div class="bento-card-header">
+                            <h3>Active Tenants</h3>
+                        </div>
+                        <div class="bento-value" style="color: var(--color-secondary); font-size: 3rem; margin-top: 0.35rem;" id="stat-total-tenants">0</div>
+                        <div style="margin-top: 0.5rem; font-family: var(--font-mono); font-size: 0.72rem; color: #64748b;">Institutions connected</div>
                     </div>
-                    <div class="stat-card">
-                        <h3>Total Classes</h3>
-                        <div class="stat-value purple" id="stat-total-classes">0</div>
+
+                    <!-- Classes -->
+                    <div class="bento-card bento-span-3 neon-hover">
+                        <div class="bento-card-header">
+                            <h3>Active Classes</h3>
+                        </div>
+                        <div class="bento-value success" style="font-size: 3rem; margin-top: 0.35rem;" id="stat-total-classes">0</div>
+                        <div style="margin-top: 0.5rem; font-family: var(--font-mono); font-size: 0.72rem; color: #64748b;">Learning environments</div>
                     </div>
-                    <div class="stat-card" style="cursor:pointer; border-left:4px solid #ef4444;"
+
+                    <!-- Action required: pending approvals -->
+                    <div class="bento-card bento-span-6"
+                        style="border-left: 3px solid var(--color-error); cursor: pointer;"
                         onclick="document.querySelector('[data-target=approvals-section]').click(); window.adminApp && window.adminApp.loadPendingApprovals();">
-                        <h3 style="color:#ef4444;">Pending Approvals</h3>
-                        <div class="stat-value" style="color:#ef4444;" id="stat-pending-approvals">0</div>
+                        <div class="bento-card-header">
+                            <h3 style="color: var(--color-error); display: flex; align-items: center; gap: 0.5rem;">
+                                <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--color-error); box-shadow: 0 0 8px var(--color-error);"></span>
+                                Action Required
+                            </h3>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--color-error); opacity: 0.6;">
+                                <polyline points="9 18 15 12 9 6"/>
+                            </svg>
+                        </div>
+                        <div class="bento-value" style="color: var(--color-error); font-size: 3rem; margin-top: 0.35rem;" id="stat-pending-approvals">0</div>
+                        <p style="margin-top: 0.5rem; color: #64748b; font-size: 0.82rem; font-family: var(--font-mono);">
+                            &gt; pending superadmin approvals
+                        </p>
                     </div>
+
+                    <!-- System status live card -->
+                    <div class="bento-card bento-span-6" style="background: rgba(15, 23, 42, 0.8);">
+                        <div class="bento-card-header">
+                            <h3 style="color: rgba(255,255,255,0.6); font-family: var(--font-mono); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em;">System Status</h3>
+                        </div>
+                        <div class="system-status-panel" style="margin-top: 0.5rem;">
+                            <div class="system-status-item">
+                                <div class="system-status-item-dot healthy" id="overview-dot-postgres"></div>
+                                <span class="system-status-item-name">PostgreSQL</span>
+                                <span class="system-status-item-value" id="overview-val-postgres">checking...</span>
+                            </div>
+                            <div class="system-status-item">
+                                <div class="system-status-item-dot healthy" id="overview-dot-redis"></div>
+                                <span class="system-status-item-name">Redis Cache</span>
+                                <span class="system-status-item-value" id="overview-val-redis">checking...</span>
+                            </div>
+                            <div class="system-status-item">
+                                <div class="system-status-item-dot healthy" id="overview-dot-storage"></div>
+                                <span class="system-status-item-name">Supabase Storage</span>
+                                <span class="system-status-item-value" id="overview-val-storage">checking...</span>
+                            </div>
+                        </div>
+                        <p style="margin-top: 1rem; font-family: var(--font-mono); font-size: 0.72rem; color: rgba(255,255,255,0.35);" id="overview-health-timestamp">Last check: checking...</p>
+                    </div>
+
                 </div>
             </section>
 
@@ -322,37 +547,168 @@
                     <p>Usage metrics, growth trends, and content statistics.</p>
                 </div>
 
-                <div id="analytics-stats-grid" class="stats-grid" style="margin-bottom:2rem;">
-                    <div class="stat-card"><h3>Total Users</h3><div class="stat-value primary" id="an-total-users">—</div></div>
-                    <div class="stat-card"><h3>New (7d)</h3><div class="stat-value success" id="an-new-7d">—</div></div>
-                    <div class="stat-card"><h3>New (30d)</h3><div class="stat-value success" id="an-new-30d">—</div></div>
-                    <div class="stat-card"><h3>Active (7d)</h3><div class="stat-value purple" id="an-active-7d">—</div></div>
-                    <div class="stat-card"><h3>Active (30d)</h3><div class="stat-value purple" id="an-active-30d">—</div></div>
+                <!-- ── User metrics ── -->
+                <div class="bento-grid" style="margin-bottom: 1.5rem;">
+                    <div class="bento-card bento-span-4 neon-hover">
+                        <div class="bento-card-header">
+                            <div>
+                                <div style="font-family: var(--font-mono); font-size: 0.72rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.35rem;">Global Enrollment</div>
+                                <h3 style="margin: 0; font-size: 0.9rem;">Total Users</h3>
+                            </div>
+                            <span class="status-badge" style="background-color: rgba(37,105,244,0.12); color: var(--color-primary); border: 1px solid rgba(37,105,244,0.25); font-family: var(--font-mono); font-size: 0.7rem;">live</span>
+                        </div>
+                        <div class="bento-value primary" id="an-total-users">—</div>
+                    </div>
+                    <div class="bento-card bento-span-4 neon-hover">
+                        <div class="bento-card-header"><h3>New (7d)</h3></div>
+                        <div class="bento-value success" id="an-new-7d">—</div>
+                        <div style="margin-top: 0.5rem; font-family: var(--font-mono); font-size: 0.72rem; color: #64748b;">Last 7 days</div>
+                    </div>
+                    <div class="bento-card bento-span-4 neon-hover">
+                        <div class="bento-card-header"><h3>New (30d)</h3></div>
+                        <div class="bento-value success" id="an-new-30d">—</div>
+                        <div style="margin-top: 0.5rem; font-family: var(--font-mono); font-size: 0.72rem; color: #64748b;">Last 30 days</div>
+                    </div>
+                    <div class="bento-card bento-span-6 neon-hover">
+                        <div class="bento-card-header"><h3>Active (7d)</h3></div>
+                        <div class="bento-value purple" id="an-active-7d">—</div>
+                        <div style="margin-top: 0.5rem; font-family: var(--font-mono); font-size: 0.72rem; color: #64748b;">Unique active users</div>
+                    </div>
+                    <div class="bento-card bento-span-6 neon-hover">
+                        <div class="bento-card-header"><h3>Active (30d)</h3></div>
+                        <div class="bento-value purple" id="an-active-30d">—</div>
+                        <div style="margin-top: 0.5rem; font-family: var(--font-mono); font-size: 0.72rem; color: #64748b;">Unique active users</div>
+                    </div>
                 </div>
 
-                <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:1.5rem; margin-bottom:2rem;">
-                    <div class="stat-card"><h3>Classes</h3><div class="stat-value" id="an-classes">—</div></div>
-                    <div class="stat-card"><h3>Chapters</h3><div class="stat-value" id="an-chapters">—</div></div>
-                    <div class="stat-card"><h3>Exercises</h3><div class="stat-value" id="an-exercises">—</div></div>
-                    <div class="stat-card"><h3>Completions</h3><div class="stat-value success" id="an-completions">—</div></div>
+                <!-- ── Content metrics ── -->
+                <div class="bento-grid" style="margin-bottom: 1.5rem;">
+                    <div class="bento-card bento-span-3 neon-hover">
+                        <div class="bento-card-header"><h3>Classes</h3></div>
+                        <div class="bento-value" id="an-classes">—</div>
+                    </div>
+                    <div class="bento-card bento-span-3 neon-hover">
+                        <div class="bento-card-header"><h3>Chapters</h3></div>
+                        <div class="bento-value" id="an-chapters">—</div>
+                    </div>
+                    <div class="bento-card bento-span-3 neon-hover">
+                        <div class="bento-card-header"><h3>Exercises</h3></div>
+                        <div class="bento-value" id="an-exercises">—</div>
+                    </div>
+                    <div class="bento-card bento-span-3 neon-hover">
+                        <div class="bento-card-header"><h3>Completions</h3></div>
+                        <div class="bento-value success" id="an-completions">—</div>
+                    </div>
                 </div>
 
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; flex-wrap:wrap;">
-                    <!-- Role breakdown -->
-                    <div class="table-container" style="padding:1.5rem;">
-                        <h3 style="margin:0 0 1rem;font-size:1rem;">Users by Role</h3>
+                <!-- ── Role breakdown + Top actions ── -->
+                <div class="bento-grid" style="margin-bottom: 1.5rem;">
+                    <div class="bento-card bento-span-6">
+                        <h3 style="margin: 0 0 1rem; font-size: 1rem;">Users by Role</h3>
                         <div id="an-roles" style="display:flex;flex-direction:column;gap:0.5rem;"></div>
                     </div>
-                    <!-- Top actions -->
-                    <div class="table-container" style="padding:1.5rem;">
-                        <h3 style="margin:0 0 1rem;font-size:1rem;">Top Actions (7d)</h3>
+                    <div class="bento-card bento-span-6">
+                        <h3 style="margin: 0 0 1rem; font-size: 1rem;">Top Actions (7d)</h3>
                         <div id="an-actions" style="display:flex;flex-direction:column;gap:0.5rem;"></div>
                     </div>
                 </div>
 
-                <div style="margin-top:1.5rem; text-align:right;">
+                <div style="margin-bottom: 1.5rem; text-align:right;">
                     <button class="btn btn-secondary" onclick="window.adminApp && window.adminApp.loadAnalytics()">Refresh</button>
                 </div>
+
+                <!-- ── Audit Log (merged) ── -->
+                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                    <span style="display:inline-block; width:10px; height:10px; background:var(--color-success); border-radius:50%; box-shadow: 0 0 8px var(--color-success); animation: pulse 2s infinite;"></span>
+                    <h2 style="margin: 0; font-size: 1.25rem; color: var(--text-color);">Live System Terminal</h2>
+                </div>
+                <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Real-time event streaming across all nodes and tenants.</p>
+
+                <!-- Audit Filters -->
+                <div style="display:flex; gap:0.75rem; flex-wrap:wrap; margin-bottom:1.5rem; align-items:flex-end; background: var(--bg-card); padding: 1rem; border-radius: 0.75rem; border: 1px solid var(--border-color);">
+                    <div style="flex: 1; min-width: 200px;">
+                        <label style="display:block; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted); margin-bottom:0.5rem;">Action Signature</label>
+                        <select id="audit-action-filter" style="width: 100%; padding:0.75rem; border:1px solid var(--border-color); border-radius:0.5rem; background:var(--bg-dark); color:var(--text-color); font-family: var(--font-mono); font-size: 0.85rem;">
+                            <option value="">[*] ALL_ACTIONS</option>
+                            <option>CREATE_USER</option>
+                            <option>RESET_PASSWORD</option>
+                            <option>UPDATE_PROFILE</option>
+                            <option>UPDATE_PASSWORD</option>
+                            <option>DELETE_USER</option>
+                            <option>CREATE_CLASS</option>
+                            <option>DELETE_CLASS</option>
+                            <option>ENROLL_CLASS</option>
+                            <option>CREATE_CHAPTER</option>
+                            <option>DELETE_CHAPTER</option>
+                            <option>IMPORT_CHAPTER</option>
+                            <option>CREATE_EXERCISE</option>
+                            <option>DELETE_EXERCISE</option>
+                            <option>EXERCISE_SUBMISSION</option>
+                            <option>IMPERSONATE_USER</option>
+                            <option>CREATE_TENANT</option>
+                            <option>UPDATE_TENANT</option>
+                            <option>DISABLE_USER</option>
+                            <option>ENABLE_USER</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1; min-width: 150px;">
+                        <label style="display:block; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted); margin-bottom:0.5rem;">Target Node</label>
+                        <select id="audit-resource-filter" style="width: 100%; padding:0.75rem; border:1px solid var(--border-color); border-radius:0.5rem; background:var(--bg-dark); color:var(--text-color); font-family: var(--font-mono); font-size: 0.85rem;">
+                            <option value="">[*] ALL_NODES</option>
+                            <option value="user">USER</option>
+                            <option value="chapter">CHAPTER</option>
+                            <option value="class">CLASS</option>
+                            <option value="tenant">TENANT</option>
+                            <option value="exercise">EXERCISE</option>
+                            <option value="application">APPLICATION</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1; min-width: 150px;">
+                        <label style="display:block; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted); margin-bottom:0.5rem;">From / To</label>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <input type="date" id="audit-from" style="width: 50%; padding:0.75rem; border:1px solid var(--border-color); border-radius:0.5rem; background:var(--bg-dark); color:var(--text-color); font-family: var(--font-mono); font-size: 0.75rem;" />
+                            <input type="date" id="audit-to" style="width: 50%; padding:0.75rem; border:1px solid var(--border-color); border-radius:0.5rem; background:var(--bg-dark); color:var(--text-color); font-family: var(--font-mono); font-size: 0.75rem;" />
+                        </div>
+                    </div>
+                    <button class="btn btn-secondary" onclick="window.adminApp && window.adminApp.loadAuditLog(1)">Execute Query</button>
+                    <button class="btn btn-primary" onclick="window.adminApp && window.adminApp.exportAuditLogCsv()" style="display: flex; align-items: center; gap: 0.5rem;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                        </svg>
+                        Dump Logs (.csv)
+                    </button>
+                </div>
+
+                <!-- Terminal-style Log Output -->
+                <div class="table-container" style="background: var(--color-dark); border: 1px solid #334155; border-radius: 0.75rem; padding: 0.5rem; box-shadow: 0 20px 40px rgba(0,0,0,0.3);">
+                    <div style="display: flex; gap: 0.5rem; padding: 0.5rem 1rem; border-bottom: 1px solid #334155; margin-bottom: 0.5rem;">
+                        <span style="display:block; width:12px; height:12px; border-radius:50%; background:#ef4444;"></span>
+                        <span style="display:block; width:12px; height:12px; border-radius:50%; background:#f59e0b;"></span>
+                        <span style="display:block; width:12px; height:12px; border-radius:50%; background:#10b981;"></span>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table class="admin-table admin-table-accent" style="font-family: var(--font-mono); font-size: 0.85rem; width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr>
+                                    <th style="color: #94a3b8; background: transparent; border-bottom: 1px dashed #334155; padding: 1rem;">TIMESTAMP</th>
+                                    <th style="color: #94a3b8; background: transparent; border-bottom: 1px dashed #334155; padding: 1rem;">ACTOR_ID</th>
+                                    <th style="color: #94a3b8; background: transparent; border-bottom: 1px dashed #334155; padding: 1rem;">ACTION_SIG</th>
+                                    <th style="color: #94a3b8; background: transparent; border-bottom: 1px dashed #334155; padding: 1rem;">TARGET_NODE</th>
+                                    <th style="color: #94a3b8; background: transparent; border-bottom: 1px dashed #334155; padding: 1rem;">IP_ADDR</th>
+                                </tr>
+                            </thead>
+                            <tbody id="audit-table-body" style="color: #e2e8f0;">
+                                <tr>
+                                    <td colspan="5" style="text-align:center; padding: 2rem;">
+                                        <span class="hero-bg-typed-cursor" style="color: var(--color-success);">▋</span>
+                                        Waiting for stream...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div id="audit-pagination" style="margin-top:1rem;display:flex;gap:0.5rem;align-items:center; justify-content: center; font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-muted);"></div>
             </section>
 
             <!-- Section: Tenants -->
@@ -443,6 +799,7 @@
                         <option value="">All Roles</option>
                         <option value="student">Student</option>
                         <option value="professor">Professor</option>
+                        <option value="tenant_admin">Tenant Admin</option>
                         <option value="superadmin">Superadmin</option>
                     </select>
 
@@ -463,7 +820,7 @@
                 </div>
 
                 <div class="table-container">
-                    <table class="admin-table">
+                    <table class="admin-table admin-table-accent">
                         <thead>
                             <tr>
                                 <th>User</th>
@@ -506,7 +863,7 @@
                 </div>
 
                 <div class="table-container">
-                    <table class="admin-table">
+                    <table class="admin-table admin-table-accent">
                         <thead>
                             <tr>
                                 <th>Class</th>
@@ -517,72 +874,102 @@
                             </tr>
                         </thead>
                         <tbody id="classes-admin-table-body">
-                            <tr><td colspan="5" style="text-align:center;color:var(--text-muted);">Click "Classes" to load.</td></tr>
+                            <tr>
+                                <td colspan="5" style="text-align:center;color:var(--text-muted);">Click "Classes" to
+                                    load.</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
-                <div id="classes-admin-pagination" style="display:flex;justify-content:center;gap:1rem;margin-top:1.5rem;"></div>
+                <div id="classes-admin-pagination"
+                    style="display:flex;justify-content:center;gap:1rem;margin-top:1.5rem;"></div>
             </section>
 
             <!-- Section: Announcements -->
             <section id="announcements-section" class="admin-section">
                 <div class="dashboard-header">
                     <h1>Announcements</h1>
-                    <p>Broadcast messages to all users or specific roles. They appear as dismissible banners on every page.</p>
+                    <p>Broadcast messages to all users or specific roles. They appear as dismissible banners on every
+                        page.</p>
                 </div>
 
                 <!-- Create form -->
-                <div class="table-container" style="padding:1.5rem;margin-bottom:2rem;">
-                    <h3 style="margin:0 0 1rem;font-size:1rem;">Create Announcement</h3>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
-                        <div>
-                            <label style="display:block;font-size:0.8rem;color:var(--text-muted);margin-bottom:0.25rem;">Title</label>
-                            <input id="ann-title" type="text" placeholder="Short headline…"
-                                style="width:100%;padding:0.6rem;border:1px solid var(--border-color);border-radius:0.375rem;background:var(--bg-dark);color:var(--text-color);">
+                <div class="table-container" style="padding:0;margin-bottom:2rem;overflow:hidden;">
+                    <div style="display:flex;align-items:center;gap:0.75rem;padding:1.25rem 1.5rem;border-bottom:1px solid var(--border-color);background:rgba(37,105,244,0.05);">
+                        <div style="width:36px;height:36px;border-radius:0.5rem;background:rgba(37,105,244,0.15);color:var(--color-primary);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
                         </div>
                         <div>
-                            <label style="display:block;font-size:0.8rem;color:var(--text-muted);margin-bottom:0.25rem;">Type</label>
-                            <select id="ann-type" style="width:100%;padding:0.6rem;border:1px solid var(--border-color);border-radius:0.375rem;background:var(--bg-dark);color:var(--text-color);">
-                                <option value="info">Info (blue)</option>
-                                <option value="warning">Warning (yellow)</option>
-                                <option value="danger">Danger (red)</option>
-                                <option value="success">Success (green)</option>
-                            </select>
-                        </div>
-                        <div style="grid-column:1/-1;">
-                            <label style="display:block;font-size:0.8rem;color:var(--text-muted);margin-bottom:0.25rem;">Message</label>
-                            <textarea id="ann-message" rows="3" placeholder="Announcement body…"
-                                style="width:100%;padding:0.6rem;border:1px solid var(--border-color);border-radius:0.375rem;background:var(--bg-dark);color:var(--text-color);resize:vertical;"></textarea>
-                        </div>
-                        <div>
-                            <label style="display:block;font-size:0.8rem;color:var(--text-muted);margin-bottom:0.25rem;">Target Roles (optional)</label>
-                            <select id="ann-roles" multiple
-                                style="width:100%;padding:0.6rem;border:1px solid var(--border-color);border-radius:0.375rem;background:var(--bg-dark);color:var(--text-color);height:80px;">
-                                <option value="student">Student</option>
-                                <option value="professor">Professor</option>
-                                <option value="superadmin">Superadmin</option>
-                            </select>
-                            <small style="color:var(--text-muted);font-size:0.75rem;">Hold Ctrl/Cmd to select multiple. Empty = all roles.</small>
-                        </div>
-                        <div>
-                            <label style="display:block;font-size:0.8rem;color:var(--text-muted);margin-bottom:0.25rem;">Expires At (optional)</label>
-                            <input id="ann-expires" type="datetime-local"
-                                style="width:100%;padding:0.6rem;border:1px solid var(--border-color);border-radius:0.375rem;background:var(--bg-dark);color:var(--text-color);">
+                            <div style="font-weight:600;color:var(--text-primary);font-size:0.95rem;">New Announcement</div>
+                            <div style="font-size:0.78rem;color:var(--text-muted);">Broadcasts appear as dismissible banners on every page load</div>
                         </div>
                     </div>
-                    <div style="margin-top:1rem;text-align:right;">
-                        <button class="btn btn-primary" onclick="window.adminApp && window.adminApp.createAnnouncement()">Post Announcement</button>
+                    <div style="padding:1.5rem;">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
+                            <div>
+                                <label style="display:block;font-size:0.78rem;font-weight:500;color:var(--text-muted);margin-bottom:0.4rem;text-transform:uppercase;letter-spacing:0.04em;">Title</label>
+                                <input id="ann-title" type="text" placeholder="Short headline…"
+                                    style="width:100%;padding:0.65rem 0.9rem;border:1px solid var(--border-color);border-radius:0.5rem;background:rgba(0,0,0,0.2);color:var(--text-color);font-size:0.9rem;box-sizing:border-box;">
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:0.78rem;font-weight:500;color:var(--text-muted);margin-bottom:0.4rem;text-transform:uppercase;letter-spacing:0.04em;">Type</label>
+                                <select id="ann-type"
+                                    style="width:100%;padding:0.65rem 0.9rem;border:1px solid var(--border-color);border-radius:0.5rem;background:rgba(0,0,0,0.2);color:var(--text-color);font-size:0.9rem;">
+                                    <option value="info">Info (blue)</option>
+                                    <option value="warning">Warning (yellow)</option>
+                                    <option value="danger">Danger (red)</option>
+                                    <option value="success">Success (green)</option>
+                                </select>
+                            </div>
+                            <div style="grid-column:1/-1;">
+                                <label style="display:block;font-size:0.78rem;font-weight:500;color:var(--text-muted);margin-bottom:0.4rem;text-transform:uppercase;letter-spacing:0.04em;">Message</label>
+                                <textarea id="ann-message" rows="3" placeholder="Announcement body…"
+                                    style="width:100%;padding:0.65rem 0.9rem;border:1px solid var(--border-color);border-radius:0.5rem;background:rgba(0,0,0,0.2);color:var(--text-color);resize:vertical;font-size:0.9rem;box-sizing:border-box;font-family:var(--font-mono);"></textarea>
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:0.78rem;font-weight:500;color:var(--text-muted);margin-bottom:0.4rem;text-transform:uppercase;letter-spacing:0.04em;">Target Roles <span style="font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></label>
+                                <select id="ann-roles" multiple
+                                    style="width:100%;padding:0.5rem 0.9rem;border:1px solid var(--border-color);border-radius:0.5rem;background:rgba(0,0,0,0.2);color:var(--text-color);height:108px;font-size:0.9rem;">
+                                    <option value="student">Student</option>
+                                    <option value="professor">Professor</option>
+                                    <option value="tenant_admin">Tenant Admin</option>
+                                    <option value="superadmin">Superadmin</option>
+                                </select>
+                                <small style="color:var(--text-muted);font-size:0.72rem;margin-top:0.3rem;display:block;">Hold Ctrl/Cmd to select multiple. Empty = all roles.</small>
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:0.78rem;font-weight:500;color:var(--text-muted);margin-bottom:0.4rem;text-transform:uppercase;letter-spacing:0.04em;">Expires At <span style="font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></label>
+                                <input id="ann-expires" type="datetime-local"
+                                    style="width:100%;padding:0.65rem 0.9rem;border:1px solid var(--border-color);border-radius:0.5rem;background:rgba(0,0,0,0.2);color:var(--text-color);font-size:0.9rem;box-sizing:border-box;">
+                            </div>
+                        </div>
+                        <div style="margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid var(--border-color);display:flex;justify-content:flex-end;">
+                            <button class="btn btn-primary" style="display:flex;align-items:center;gap:0.5rem;"
+                                onclick="window.adminApp && window.adminApp.createAnnouncement()">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                                Post Announcement
+                            </button>
+                        </div>
                     </div>
                 </div>
 
                 <!-- List -->
                 <div class="table-container">
-                    <table class="admin-table">
+                    <table class="admin-table admin-table-accent">
                         <thead>
-                            <tr><th>Title</th><th>Type</th><th>Status</th><th>Expires</th><th style="text-align:right;">Actions</th></tr>
+                            <tr>
+                                <th>Title</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Expires</th>
+                                <th style="text-align:right;">Actions</th>
+                            </tr>
                         </thead>
                         <tbody id="announcements-table-body">
-                            <tr><td colspan="5" style="text-align:center;color:var(--text-muted);">Click "Announcements" to load.</td></tr>
+                            <tr>
+                                <td colspan="5" style="text-align:center;color:var(--text-muted);">Click "Announcements"
+                                    to load.</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -605,12 +992,15 @@
                             onclick="window.adminApp && window.adminApp.toggleMaintenanceMode()">Toggle</button>
                     </div>
                     <div>
-                        <label style="display:block;font-size:0.8rem;color:var(--text-muted);margin-bottom:0.25rem;">Maintenance Message</label>
-                        <input id="maint-message" type="text"
-                            placeholder="Shown to users during maintenance…"
+                        <label
+                            style="display:block;font-size:0.8rem;color:var(--text-muted);margin-bottom:0.25rem;">Maintenance
+                            Message</label>
+                        <input id="maint-message" type="text" placeholder="Shown to users during maintenance…"
                             style="width:100%;padding:0.6rem;border:1px solid var(--border-color);border-radius:0.375rem;background:var(--bg-dark);color:var(--text-color);">
                         <div style="margin-top:0.5rem;text-align:right;">
-                            <button class="btn btn-sm btn-primary" onclick="window.adminApp && window.adminApp.savePlatformSettings()">Save Message</button>
+                            <button class="btn btn-sm btn-primary"
+                                onclick="window.adminApp && window.adminApp.savePlatformSettings()">Save
+                                Message</button>
                         </div>
                     </div>
                 </div>
@@ -626,10 +1016,20 @@
                         <button class="btn btn-danger btn-sm" style="white-space:nowrap;"
                             onclick="window.adminApp && window.adminApp.addIpBlock()">Block IP</button>
                     </div>
-                    <table class="admin-table">
-                        <thead><tr><th>IP Address</th><th>Reason</th><th>Blocked By</th><th>Date</th><th style="text-align:right;">Remove</th></tr></thead>
+                    <table class="admin-table admin-table-accent">
+                        <thead>
+                            <tr>
+                                <th>IP Address</th>
+                                <th>Reason</th>
+                                <th>Blocked By</th>
+                                <th>Date</th>
+                                <th style="text-align:right;">Remove</th>
+                            </tr>
+                        </thead>
                         <tbody id="ip-blocklist-body">
-                            <tr><td colspan="5" style="text-align:center;color:var(--text-muted);">Loading…</td></tr>
+                            <tr>
+                                <td colspan="5" style="text-align:center;color:var(--text-muted);">Loading…</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -704,7 +1104,7 @@
                     Support Tickets Inbox
                 </h2>
                 <div class="table-container">
-                    <table class="admin-table">
+                    <table class="admin-table admin-table-accent">
                         <thead>
                             <tr>
                                 <th>Name</th>
@@ -724,67 +1124,58 @@
                 </div>
             </section>
 
-            <!-- Section: Role Switcher -->
-            <section id="toggles-section" class="admin-section">
-                <div class="dashboard-header">
-                    <h1>Role View Switcher</h1>
-                    <p>Quickly preview the platform from the perspective of different user roles.</p>
-                </div>
-
-                <div
-                    style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 2rem; display: flex; flex-direction: column; gap: 1.5rem;">
-                    <div>
-                        <h3 style="margin-bottom: 0.5rem; font-size: 1.25rem;">Preview as Student</h3>
-                        <p style="color: var(--text-muted); margin-bottom: 1rem;">View the "My Classes" dashboard,
-                            assignments, and student code tools just as a student enrolled in a class would see them.
-                        </p>
-                        <a href="/student-classes.html" class="btn btn-primary"
-                            style="display: inline-flex; align-items: center; gap: 0.5rem;">
-                            Go to Student View
-                        </a>
-                    </div>
-
-                    <hr style="border-color: var(--border-color); opacity: 0.5;">
-
-                    <div>
-                        <h3 style="margin-bottom: 0.5rem; font-size: 1.25rem;">Preview as Professor</h3>
-                        <p style="color: var(--text-muted); margin-bottom: 1rem;">Access the Professor Dashboard to view
-                            class management, module uploads, and analytics as an instructor.</p>
-                        <a href="/professor-dashboard.html" class="btn btn-secondary"
-                            style="display: inline-flex; align-items: center; gap: 0.5rem;">
-                            Go to Professor View
-                        </a>
-                    </div>
-                </div>
-            </section>
 
             <!-- Section: Pending Approvals -->
             <section id="approvals-section" class="admin-section">
-                <div class="dashboard-header">
-                    <h1>Pending Account Approvals</h1>
-                    <p>New superadmin accounts require your approval before they can access the platform.</p>
+                <div class="dashboard-header"
+                    style="display: flex; justify-content: space-between; align-items: flex-end;">
+                    <div>
+                        <h1>Action Required</h1>
+                        <p>Pending account approvals awaiting your authorization.</p>
+                    </div>
+                    <button class="btn btn-secondary" style="display: flex; align-items: center; gap: 0.5rem;"
+                        onclick="window.adminApp && window.adminApp.loadPendingApprovals()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path
+                                d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9">
+                            </path>
+                        </svg>
+                        Refresh List
+                    </button>
                 </div>
 
                 <div id="approvals-empty"
-                    style="display:none; text-align:center; padding:3rem; background:var(--bg-card);
-                           border:1px solid var(--border-color); border-radius:0.75rem; color:var(--text-muted);">
-                    <p style="font-size:1.1rem; color:var(--text-muted);">No pending approvals.</p>
+                    style="display:none; text-align:center; padding:4rem 2rem; background:var(--bg-card);
+                           border:1px dashed var(--border-color); border-radius:1rem; color:var(--text-muted);">
+                    <div style="display:flex; flex-direction:column; align-items:center; gap:1.25rem;">
+                        <div style="width:56px; height:56px; border-radius:50%; background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.25); color:#10b981; display:flex; align-items:center; justify-content:center;">
+                            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <path d="M5 13l4 4L19 7"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 style="color:var(--text-primary); margin:0 0 0.4rem; font-size:1.1rem;">Inbox Zero</h3>
+                            <p style="font-size:0.9rem; color:var(--text-muted); margin:0;">No pending approvals. You're all caught up.</p>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="table-container" id="approvals-table-wrapper">
-                    <table class="admin-table">
+                <div class="table-container" id="approvals-table-wrapper"
+                    style="border-radius: 1rem; overflow: hidden; border-left: 4px solid var(--color-error); display: none;">
+                    <table class="admin-table admin-table-accent" style="margin: 0;">
                         <thead>
-                            <tr>
+                            <tr style="background: rgba(239, 68, 68, 0.05);">
                                 <th>Applicant</th>
-                                <th>Role</th>
-                                <th>Requested</th>
+                                <th>Requested Role</th>
+                                <th>Timestamp</th>
                                 <th style="text-align:right;">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="approvals-table-body">
                             <tr>
-                                <td colspan="4" style="text-align:center; color:var(--text-muted);">
-                                    Click "Pending Approvals" to load.
+                                <td colspan="4" style="text-align:center; color:var(--text-muted); padding: 2rem;">
+                                    Loading...
                                 </td>
                             </tr>
                         </tbody>
@@ -792,70 +1183,41 @@
                 </div>
             </section>
 
-            <!-- Section: Audit Log -->
-            <section id="audit-section" class="admin-section">
-                <div class="dashboard-header">
-                    <h1>Audit Log</h1>
-                    <p>Full event history across all users, tenants, and admin actions.</p>
-                </div>
-
-                <!-- Filters -->
-                <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-bottom:1.5rem;align-items:flex-end;">
-                    <div>
-                        <label style="display:block;font-size:0.8rem;color:var(--text-muted);margin-bottom:0.25rem;">Action</label>
-                        <select id="audit-action-filter" style="padding:0.5rem;border:1px solid var(--border-color);border-radius:0.375rem;background:var(--bg-card);color:var(--text-color);">
-                            <option value="">All Actions</option>
-                            <option>CREATE_USER</option><option>RESET_PASSWORD</option>
-                            <option>UPDATE_PROFILE</option><option>UPDATE_PASSWORD</option><option>DELETE_USER</option>
-                            <option>CREATE_CLASS</option><option>DELETE_CLASS</option><option>ENROLL_CLASS</option>
-                            <option>CREATE_CHAPTER</option><option>DELETE_CHAPTER</option><option>IMPORT_CHAPTER</option>
-                            <option>CREATE_EXERCISE</option><option>DELETE_EXERCISE</option><option>EXERCISE_SUBMISSION</option>
-                            <option>IMPERSONATE_USER</option><option>CREATE_TENANT</option><option>UPDATE_TENANT</option>
-                            <option>DISABLE_USER</option><option>ENABLE_USER</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label style="display:block;font-size:0.8rem;color:var(--text-muted);margin-bottom:0.25rem;">Resource Type</label>
-                        <select id="audit-resource-filter" style="padding:0.5rem;border:1px solid var(--border-color);border-radius:0.375rem;background:var(--bg-card);color:var(--text-color);">
-                            <option value="">All</option>
-                            <option value="user">user</option><option value="chapter">chapter</option>
-                            <option value="class">class</option><option value="exercise">exercise</option>
-                            <option value="tenant">tenant</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label style="display:block;font-size:0.8rem;color:var(--text-muted);margin-bottom:0.25rem;">From</label>
-                        <input type="date" id="audit-from" style="padding:0.5rem;border:1px solid var(--border-color);border-radius:0.375rem;background:var(--bg-card);color:var(--text-color);" />
-                    </div>
-                    <div>
-                        <label style="display:block;font-size:0.8rem;color:var(--text-muted);margin-bottom:0.25rem;">To</label>
-                        <input type="date" id="audit-to" style="padding:0.5rem;border:1px solid var(--border-color);border-radius:0.375rem;background:var(--bg-card);color:var(--text-color);" />
-                    </div>
-                    <button class="btn btn-secondary" onclick="window.adminApp && window.adminApp.loadAuditLog(1)">Apply</button>
-                </div>
-
-                <div class="table-container">
-                    <table class="admin-table">
-                        <thead>
-                            <tr>
-                                <th>When</th>
-                                <th>Action</th>
-                                <th>Actor</th>
-                                <th>Resource</th>
-                                <th>IP</th>
-                            </tr>
-                        </thead>
-                        <tbody id="audit-table-body">
-                            <tr><td colspan="5" style="text-align:center;color:var(--text-muted);">Click "Audit Log" to load entries.</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-                <div id="audit-pagination" style="margin-top:1rem;display:flex;gap:0.5rem;align-items:center;"></div>
-            </section>
 
         </div>
     </div>
 </main>
+
+<!-- Change Role Modal -->
+<div id="changeRoleModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:2000;align-items:center;justify-content:center;">
+  <div role="dialog" aria-modal="true" style="background:var(--bg-card,rgba(26,34,53,0.97));backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.1);border-radius:0.75rem;padding:2rem;max-width:440px;width:90%;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+      <h2 style="margin:0;color:var(--text-primary,#f0f4ff);font-size:1.1rem;">Change User Role</h2>
+      <button onclick="document.getElementById('changeRoleModal').style.display='none'" class="modal-close-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <p id="changeRoleTargetLabel" style="color:var(--text-secondary,#94a3b8);margin-bottom:1.5rem;font-size:0.9rem;"></p>
+    <div style="margin-bottom:1.25rem;">
+      <label style="display:block;margin-bottom:0.5rem;color:var(--text-primary,#f0f4ff);font-weight:500;">New Role</label>
+      <select id="changeRoleSelect" onchange="window.adminApp && window.adminApp._onRoleSelectChange()"
+        style="width:100%;padding:0.75rem;border:1px solid var(--border-color,rgba(255,255,255,0.1));border-radius:0.375rem;background:rgba(17,24,39,0.7);color:var(--text-primary,#f0f4ff);font-size:0.95rem;">
+        <option value="student">Student</option>
+        <option value="professor">Professor</option>
+        <option value="tenant_admin">Tenant Admin</option>
+        <option value="superadmin">Super Admin</option>
+      </select>
+    </div>
+    <div id="tenantSelectSection" style="display:none;margin-bottom:1.25rem;">
+      <label style="display:block;margin-bottom:0.5rem;color:var(--text-primary,#f0f4ff);font-weight:500;">Institution / Tenant Name <span style="color:var(--color-error,#ef4444);">*</span></label>
+      <input type="text" id="changeRoleTenantName" placeholder="e.g. Hult International Business School"
+        style="width:100%;padding:0.75rem;border:1px solid var(--border-color,rgba(255,255,255,0.1));border-radius:0.375rem;background:rgba(17,24,39,0.7);color:var(--text-primary,#f0f4ff);font-size:0.95rem;box-sizing:border-box;" />
+      <small style="color:var(--text-secondary,#64748b);font-size:0.8rem;display:block;margin-top:0.4rem;">A new tenant will be created and the user will be assigned as its admin.</small>
+    </div>
+    <div style="display:flex;gap:1rem;justify-content:flex-end;">
+      <button class="btn btn-secondary" onclick="document.getElementById('changeRoleModal').style.display='none'">Cancel</button>
+      <button class="btn btn-primary" onclick="window.adminApp && window.adminApp._submitRoleChange()">Save Role</button>
+    </div>
+  </div>
+</div>
 
 {% endblock %}
 

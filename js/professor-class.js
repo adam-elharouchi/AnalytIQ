@@ -203,21 +203,45 @@ async function loadChapters() {
       uiStates.showEmpty(chaptersList, 'No chapters yet', 'Upload your first chapter to get started.');
     } else {
       chaptersList.innerHTML = chapters.map(chapter => `
-        <div class="chapter-card" style="background: var(--bg-card, #fff); border: 1px solid var(--border-color); border-radius: 0.5rem; padding: 1.5rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: start;">
-          <div style="flex: 1;">
-            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-              <span style="background: var(--color-primary); color: white; padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.875rem; font-weight: 600;">Chapter ${chapter.chapter_number}</span>
-              <h3 style="margin: 0;font-size: 1.25rem;">${escapeHtml(chapter.title)}</h3>
+        <div class="chapter-card bento-card" style="border-radius: 1rem; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 1.25rem; overflow: hidden; display: flex; flex-direction: column; transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 32px rgba(0,0,0,0.35)'; this.style.borderColor='rgba(255,255,255,0.18)';" onmouseout="this.style.transform=''; this.style.boxShadow=''; this.style.borderColor='rgba(255,255,255,0.1)';">
+          <!-- IDE Tab Header -->
+          <div style="background: rgba(0,0,0,0.2); padding: 0.65rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 0.75rem; font-family: var(--font-mono); font-size: 0.8rem; color: #64748b;">
+              <span style="color: var(--color-primary);">[module_${chapter.chapter_number || '0'}]</span>
+              <span>// ${chapter.created_at ? new Date(chapter.created_at).toLocaleDateString() : 'system_init'}</span>
             </div>
-            ${chapter.description ? `<p style="color: #64748b; margin-bottom: 0.5rem;">${escapeHtml(chapter.description)}</p>` : ''}
-            <div style="font-size: 0.875rem; color: #64748b;">
-              ${chapter.created_at ? `<span>Uploaded: ${new Date(chapter.created_at).toLocaleDateString()}</span>` : ''}
-            </div>
+            <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--color-success); opacity: 0.5;"></div>
           </div>
-          <div style="display: flex; gap: 0.5rem;">
-            ${chapter.pdf_url || chapter.pdf_filename ? `<a href="chapter-view.html?chapter_id=${encodeURIComponent(chapter.chapter_id)}&class_id=${encodeURIComponent(currentClassId)}" class="btn btn-primary" style="text-decoration: none;">View PDF</a>` : ''}
-            <button class="btn btn-secondary" onclick="showEditChapterModal('${chapter.chapter_id}')" style="background: var(--bg-card, #fff);border: 1px solid #cbd5e1; padding: 0.5rem 0.75rem;">Edit</button>
-            <button class="btn btn-secondary" onclick="showDeleteChapterModal('${chapter.chapter_id}')" style="background: var(--bg-card, #fff); color: #ef4444; border: 1px solid #fca5a5; padding: 0.5rem 0.75rem;">Delete</button>
+          <!-- Content -->
+          <div style="padding: 1.5rem 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem;">
+            <div style="flex: 1; min-width: 200px;">
+              <h3 style="margin: 0 0 0.35rem 0; color: #f8fafc; font-size: 1.3rem; font-weight: 600;">${escapeHtml(chapter.title)}</h3>
+              ${chapter.description ? `<p style="color: #94a3b8; margin: 0; line-height: 1.5; font-size: 0.875rem;">${escapeHtml(chapter.description)}</p>` : ''}
+            </div>
+            <div style="display: flex; gap: 0.5rem; flex-shrink: 0;">
+              ${chapter.pdf_url || chapter.pdf_filename ? `
+              <a href="chapter-view.html?chapter_id=${encodeURIComponent(chapter.chapter_id)}&class_id=${encodeURIComponent(currentClassId)}"
+                style="text-decoration: none; padding: 0.55rem 1rem; background: rgba(37,105,244,0.1); border: 1px solid var(--color-primary); color: var(--color-primary); border-radius: 0.5rem; font-family: var(--font-mono); font-size: 0.82rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.4rem; transition: background 0.2s;"
+                onmouseover="this.style.background='var(--color-primary)'; this.style.color='white';"
+                onmouseout="this.style.background='rgba(37,105,244,0.1)'; this.style.color='var(--color-primary)';">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                View PDF
+              </a>` : ''}
+              <button onclick="showEditChapterModal('${chapter.chapter_id}')"
+                style="padding: 0.55rem 0.85rem; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; border-radius: 0.5rem; font-size: 0.82rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem; transition: all 0.2s;"
+                onmouseover="this.style.borderColor='rgba(255,255,255,0.25)'; this.style.color='#f8fafc';"
+                onmouseout="this.style.borderColor='rgba(255,255,255,0.1)'; this.style.color='#94a3b8';">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                Edit
+              </button>
+              <button onclick="showDeleteChapterModal('${chapter.chapter_id}')"
+                style="padding: 0.55rem 0.85rem; background: transparent; border: 1px solid rgba(220,38,38,0.3); color: #ef4444; border-radius: 0.5rem; font-size: 0.82rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem; transition: all 0.2s;"
+                onmouseover="this.style.background='rgba(220,38,38,0.1)'; this.style.borderColor='rgba(220,38,38,0.5)';"
+                onmouseout="this.style.background='transparent'; this.style.borderColor='rgba(220,38,38,0.3)';">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                Delete
+              </button>
+            </div>
           </div>
         </div>
       `).join('');
@@ -225,8 +249,8 @@ async function loadChapters() {
   } catch (error) {
     console.error('Error loading chapters:', error);
     chaptersList.innerHTML = `
-      <div style="text-align: center; padding: 3rem; background: #fee2e2; border: 1px solid #ef4444; border-radius: 0.5rem;">
-        <p style="color: #991b1b;">Error loading chapters: ${escapeHtml(error.message)}</p>
+      <div style="text-align: center; padding: 3rem; background: rgba(220,38,38,0.1); border: 1px solid rgba(220,38,38,0.3); border-radius: 0.5rem;">
+        <p style="color: #f87171;">Error loading chapters: ${escapeHtml(error.message)}</p>
         <button class="btn btn-primary" onclick="loadChapters()" style="margin-top: 1rem;">Retry</button>
       </div>
     `;
@@ -304,7 +328,7 @@ async function loadStudents() {
       studentsList.innerHTML = `
         <div style="overflow-x: auto;">
           <table style="width: 100%; border-collapse: collapse; min-width: 700px;">
-            <thead style="background: var(--bg-secondary, #f8fafc); border-bottom: 2px solid var(--border-color);">
+            <thead style="background: var(--bg-secondary); border-bottom: 2px solid var(--border-color);">
               <tr>
                 <th style="text-align: left; padding: 1rem; color: #64748b; font-weight: 600;">Name</th>
                 <th style="text-align: left; padding: 1rem; color: #64748b; font-weight: 600;">Email</th>
@@ -316,7 +340,7 @@ async function loadStudents() {
               ${students.map(student => {
         const progress = progressData[student.user_id] || { completed: 0, avgScore: 0 };
         const percentage = totalExercises > 0 ? Math.round((progress.completed / totalExercises) * 100) : 0;
-        const barColor = percentage >= 80 ? '#10b981' : percentage >= 50 ? '#f59e0b' : '#64748b';
+        const barColor = percentage >= 80 ? 'var(--color-success,#10b981)' : percentage >= 50 ? 'var(--color-warning,#f59e0b)' : 'var(--text-secondary,#64748b)';
         return `
                 <tr style="border-bottom: 1px solid var(--border-color);">
                   <td style="padding: 1rem;font-weight: 500;">${escapeHtml(student.name)}</td>
@@ -364,7 +388,7 @@ async function loadProgress() {
 
     if (students.length === 0) {
       progressOverview.innerHTML = `
-        <div style="text-align: center; padding: 3rem; background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-color); border-radius: 0.5rem;">
+        <div style="text-align: center; padding: 3rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 0.5rem;">
           <p style="color: #64748b;">No student data available yet.</p>
         </div>
       `;
@@ -373,7 +397,7 @@ async function loadProgress() {
 
     if (exercises.length === 0) {
       progressOverview.innerHTML = `
-        <div style="text-align: center; padding: 3rem; background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-color); border-radius: 0.5rem;">
+        <div style="text-align: center; padding: 3rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 0.5rem;">
           <p style="color: #64748b;">No exercises defined yet.</p>
         </div>
       `;
@@ -386,9 +410,9 @@ async function loadProgress() {
     tableContainer.innerHTML = `
       <div style="overflow-x: auto;">
         <table style="width: 100%; border-collapse: collapse; min-width: 800px;">
-          <thead style="background: var(--bg-secondary, #f8fafc); border-bottom: 2px solid var(--border-color);">
+          <thead style="background: var(--bg-secondary); border-bottom: 2px solid var(--border-color);">
             <tr>
-              <th style="text-align: left; padding: 1rem; position: sticky; left: 0; background: var(--bg-secondary, #f8fafc); z-index: 10;">Student</th>
+              <th style="text-align: left; padding: 1rem; position: sticky; left: 0; background: var(--bg-secondary); z-index: 10;">Student</th>
               ${exercises.map(ex => `
                 <th style="padding: 1rem; text-align: center; min-width: 100px;">
                   <div style="font-size: 0.875rem; color: #64748b;">${escapeHtml(ex.title)}</div>
@@ -399,7 +423,7 @@ async function loadProgress() {
           <tbody>
             ${students.map(student => `
               <tr style="border-bottom: 1px solid var(--border-color);">
-                <td style="padding: 1rem; font-weight: 500; position: sticky; left: 0; background: var(--bg-card, #fff); border-right: 1px solid var(--border-color);">${escapeHtml(student.name)}</td>
+                <td style="padding: 1rem; font-weight: 500; position: sticky; left: 0; background: var(--bg-card); border-right: 1px solid var(--border-color);">${escapeHtml(student.name)}</td>
                 ${exercises.map(ex => {
       const progress = student.progress[ex.id];
       if (!progress) return '<td style="text-align: center; color: #cbd5e1;">-</td>';
@@ -483,9 +507,9 @@ async function loadAvgLeaderboard() {
     }
 
     container.innerHTML = `
-            <div style="background: var(--bg-card, #fff); border-radius: 0.5rem; border: 1px solid var(--border-color); overflow: hidden; max-width: 800px; margin: 0 auto;">
+            <div style="background: var(--bg-card); border-radius: 0.5rem; border: 1px solid var(--border-color); overflow: hidden; max-width: 800px; margin: 0 auto;">
                 <table style="width: 100%; border-collapse: collapse;">
-                    <thead style="background: var(--bg-secondary, #f8fafc); border-bottom: 2px solid var(--border-color);">
+                    <thead style="background: var(--bg-secondary); border-bottom: 2px solid var(--border-color);">
                          <tr>
                             <th style="padding: 1rem; text-align: center; width: 60px;">Rank</th>
                             <th style="padding: 1rem; text-align: left;">Student</th>
@@ -496,8 +520,8 @@ async function loadAvgLeaderboard() {
                     <tbody>
                         ${leaderboard.map(student => `
                             <tr style="border-bottom: 1px solid var(--border-color);">
-                                <td style="padding: 1rem; text-align: center; font-weight: bold; color: ${student.rank <= 3 ? '#eab308' : '#64748b'};">
-                                    ${student.rank === 1 ? '#1' : student.rank === 2 ? '#2' : student.rank === 3 ? '#3' : student.rank}
+                                <td style="padding: 1rem; text-align: center;">
+                                    ${student.rank === 1 ? '<span class="rank-gold">1</span>' : student.rank === 2 ? '<span class="rank-silver">2</span>' : student.rank === 3 ? '<span class="rank-bronze">3</span>' : '<span style="color:var(--text-secondary,#64748b);font-family:var(--font-mono);">#' + student.rank + '</span>'}
                                 </td>
                                 <td style="padding: 1rem; font-weight: 500;">${escapeHtml(student.name)}</td>
                                 <td style="padding: 1rem; text-align: center;">${student.exercises_completed}</td>
@@ -511,65 +535,6 @@ async function loadAvgLeaderboard() {
 
   } catch (error) {
     console.error("Error loading avg leaderboard", error);
-    container.innerHTML = `<div class="error-message">Error: ${escapeHtml(error.message)}</div>`;
-  }
-}
-
-// Load Exercise Leaderboard
-async function loadExerciseLeaderboard(exerciseId) {
-  const container = document.getElementById('exLeaderboardContent');
-  if (!exerciseId) {
-    container.innerHTML = '<div style="text-align: center; padding: 3rem; background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-color); border-radius: 0.5rem;"><p style="color: #64748b;">Select an exercise above to see the leaderboard.</p></div>';
-    return;
-  }
-
-  container.innerHTML = '<div style="text-align: center; padding: 2rem;">Loading leaderboard...</div>';
-
-  try {
-    const currentUser = getCurrentUser();
-    if (!currentUser) return;
-
-    const response = await authFetch(`${window.API_BASE_URL}/classes/${encodeURIComponent(currentClassId)}/leaderboard/exercise/${exerciseId}`);
-    const data = await response.json();
-
-    if (!response.ok) throw new Error(data.error);
-
-    const leaderboard = data.leaderboard || [];
-
-    if (leaderboard.length === 0) {
-      container.innerHTML = '<div style="text-align: center; padding: 2rem; color: #64748b;">No submissions yet for this exercise.</div>';
-      return;
-    }
-
-    container.innerHTML = `
-            <div style="background: var(--bg-card, #fff); border-radius: 0.5rem; border: 1px solid var(--border-color); overflow: hidden; max-width: 800px; margin: 0 auto;">
-                <table style="width: 100%; border-collapse: collapse;">
-                    <thead style="background: var(--bg-secondary, #f8fafc); border-bottom: 2px solid var(--border-color);">
-                         <tr>
-                            <th style="padding: 1rem; text-align: center; width: 60px;">Rank</th>
-                            <th style="padding: 1rem; text-align: left;">Student</th>
-                            <th style="padding: 1rem; text-align: right;">Best Score</th>
-                            <th style="padding: 1rem; text-align: right;">Submitted</th>
-                         </tr>
-                    </thead>
-                    <tbody>
-                        ${leaderboard.map(student => `
-                            <tr style="border-bottom: 1px solid var(--border-color);">
-                                <td style="padding: 1rem; text-align: center; font-weight: bold; color: ${student.rank <= 3 ? '#eab308' : '#64748b'};">
-                                    ${student.rank === 1 ? '#1' : student.rank === 2 ? '#2' : student.rank === 3 ? '#3' : student.rank}
-                                </td>
-                                <td style="padding: 1rem; font-weight: 500;">${escapeHtml(student.name)}</td>
-                                <td style="padding: 1rem; text-align: right; font-weight: 600; color: var(--color-primary);">${student.score}%</td>
-                                <td style="padding: 1rem; text-align: right; color: #64748b; font-size: 0.875rem;">${student.submitted_at ? new Date(student.submitted_at).toLocaleDateString() : '-'}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            </div>
-        `;
-
-  } catch (error) {
-    console.error("Error loading exercise leaderboard", error);
     container.innerHTML = `<div class="error-message">Error: ${escapeHtml(error.message)}</div>`;
   }
 }
@@ -636,33 +601,59 @@ async function loadExercises() {
         exercisesByChapter[ex.chapter_id].exercises.push(ex);
       });
 
-      // Render in practice grid style, grouped by chapter
+      // Render in bento grid style, grouped by chapter
       exercisesList.innerHTML = `
-        <div class="practice-grid">
+        <div style="display: grid; gap: 2.5rem;">
           ${Object.keys(exercisesByChapter).map(chapterId => {
         const chapterData = exercisesByChapter[chapterId];
         return `
-              <div class="chapter-section" style="grid-column: 1 / -1; margin-bottom: 2rem;">
-                <h2 style="margin-top: 2rem; margin-bottom: 0.5rem;font-size: 1.75rem; border-bottom: 2px solid var(--color-primary); padding-bottom: 0.5rem;">${escapeHtml(chapterData.chapter_title)}</h2>
-              </div>
-              ${chapterData.exercises.map(exercise => `
-                <div class="practice-card">
-                  <div class="practice-header">
-                    <h2>${escapeHtml(exercise.title)}</h2>
-                    <span class="difficulty-badge ${exercise.difficulty || 'medium'}">${escapeHtml((exercise.difficulty || 'medium').charAt(0).toUpperCase() + (exercise.difficulty || 'medium').slice(1))}</span>
-                  </div>
-                  <p class="practice-description">${exercise.description ? escapeHtml(exercise.description) : 'Practice exercise from ' + escapeHtml(chapterData.chapter_title)}</p>
-                  <div class="practice-progress" style="margin: 1rem 0;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
-                    </div>
-                  </div>
-                  <div class="practice-actions">
-                    <button class="btn btn-primary" onclick="startExerciseFromClass('${escapeHtml(exercise.exercise_id)}', '${escapeHtml(exercise.chapter_id)}', '${escapeHtml(exercise.title)}')">Start Exercise</button>
-                    <button class="btn btn-secondary" onclick="editExercise('${escapeHtml(exercise.exercise_id)}')" style="margin-left: 0.5rem;">Edit</button>
-                    <button class="btn btn-secondary" onclick="deleteExercise('${escapeHtml(exercise.exercise_id)}', '${escapeHtml(exercise.title)}')" style="margin-left: 0.5rem; color: #dc2626;">Delete</button>
-                  </div>
+              <div>
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+                  <h2 style="margin: 0; font-size: 1.1rem; font-family: var(--font-mono); color: #e2e8f0; font-weight: 500;">
+                    <span style="color: var(--color-primary);">~/</span>${escapeHtml(chapterData.chapter_title).toLowerCase().replace(/\s+/g, '_')}
+                  </h2>
+                  <div style="flex: 1; height: 1px; background: rgba(255,255,255,0.1);"></div>
                 </div>
-              `).join('')}
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
+                  ${chapterData.exercises.map(exercise => {
+            const diffColor = exercise.difficulty === 'hard' ? '#ef4444' : exercise.difficulty === 'medium' ? '#f59e0b' : '#10b981';
+            return `
+                    <div class="practice-card bento-card" style="background: rgba(30,41,59,0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 1rem; border: 1px solid rgba(255,255,255,0.1); overflow: hidden; display: flex; flex-direction: column; transition: all 0.2s;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 12px 40px rgba(0,0,0,0.4)'; this.style.borderColor='rgba(255,255,255,0.2)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'; this.style.borderColor='rgba(255,255,255,0.1)';">
+                      <div style="padding: 1.5rem; flex: 1; display: flex; flex-direction: column;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem; gap: 0.5rem;">
+                          <h3 style="margin: 0; color: #f8fafc; font-size: 1.05rem; font-weight: 600; line-height: 1.3;">${escapeHtml(exercise.title)}</h3>
+                          <span style="flex-shrink: 0; background: rgba(0,0,0,0.3); border: 1px solid ${diffColor}; color: ${diffColor}; padding: 0.2rem 0.5rem; border-radius: 0.25rem; font-family: var(--font-mono); font-size: 0.7rem; text-transform: uppercase;">${escapeHtml(exercise.difficulty || 'medium')}</span>
+                        </div>
+                        <p style="color: #94a3b8; font-size: 0.875rem; margin: 0 0 1.25rem 0; line-height: 1.5; flex: 1;">${exercise.description ? escapeHtml(exercise.description) : 'Practice exercise.'}</p>
+                        <div style="display: flex; gap: 0.5rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.06);">
+                          <button onclick="startExerciseFromClass('${escapeHtml(exercise.exercise_id)}', '${escapeHtml(exercise.chapter_id)}', '${escapeHtml(exercise.title)}')"
+                            style="flex: 1; background: rgba(37,105,244,0.1); border: 1px solid var(--color-primary); color: var(--color-primary); font-family: var(--font-mono); font-weight: 600; padding: 0.6rem; border-radius: 0.5rem; cursor: pointer; font-size: 0.82rem; display: flex; align-items: center; justify-content: center; gap: 0.4rem; transition: all 0.2s;"
+                            onmouseover="this.style.background='var(--color-primary)'; this.style.color='white';"
+                            onmouseout="this.style.background='rgba(37,105,244,0.1)'; this.style.color='var(--color-primary)';">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                            Execute
+                          </button>
+                          <button onclick="editExercise('${escapeHtml(exercise.exercise_id)}')"
+                            style="padding: 0.6rem 0.75rem; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; border-radius: 0.5rem; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 0.3rem; transition: all 0.2s; flex-shrink: 0;"
+                            onmouseover="this.style.borderColor='rgba(255,255,255,0.25)'; this.style.color='#f8fafc';"
+                            onmouseout="this.style.borderColor='rgba(255,255,255,0.1)'; this.style.color='#94a3b8';">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            Edit
+                          </button>
+                          <button onclick="deleteExercise('${escapeHtml(exercise.exercise_id)}', '${escapeHtml(exercise.title)}')"
+                            style="padding: 0.6rem 0.75rem; background: transparent; border: 1px solid rgba(220,38,38,0.3); color: #ef4444; border-radius: 0.5rem; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 0.3rem; transition: all 0.2s; flex-shrink: 0;"
+                            onmouseover="this.style.background='rgba(220,38,38,0.1)'; this.style.borderColor='rgba(220,38,38,0.5)';"
+                            onmouseout="this.style.background='transparent'; this.style.borderColor='rgba(220,38,38,0.3)';">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  `;
+          }).join('')}
+                </div>
+              </div>
             `;
       }).join('')}
         </div>
@@ -671,8 +662,8 @@ async function loadExercises() {
   } catch (error) {
     console.error('Error loading exercises:', error);
     exercisesList.innerHTML = `
-      <div style="text-align: center; padding: 3rem; background: #fee2e2; border: 1px solid #ef4444; border-radius: 0.5rem;">
-        <p style="color: #991b1b;">Error loading exercises: ${escapeHtml(error.message)}</p>
+      <div style="text-align: center; padding: 3rem; background: rgba(220,38,38,0.1); border: 1px solid rgba(220,38,38,0.3); border-radius: 0.5rem;">
+        <p style="color: #f87171;">Error loading exercises: ${escapeHtml(error.message)}</p>
         <button class="btn btn-primary" onclick="loadExercises()" style="margin-top: 1rem;">Retry</button>
       </div>
     `;
@@ -807,7 +798,7 @@ async function handleCreateExercise(event) {
     // Show success message
     const exercisesList = document.getElementById('exercisesList');
     const successMsg = document.createElement('div');
-    successMsg.style.cssText = 'padding: 1rem; margin-bottom: 1rem; background: #d1fae5; color: #065f46; border-radius: 0.5rem; border: 1px solid #10b981;';
+    successMsg.className = 'alert-success-dark';
     successMsg.textContent = isEdit ? 'Exercise updated successfully!' : 'Exercise created successfully!';
     exercisesList.insertBefore(successMsg, exercisesList.firstChild);
 
@@ -1016,7 +1007,7 @@ async function loadResources() {
 
     if (combinedResources.length === 0) {
       resourcesList.innerHTML = `
-        <div style="text-align: center; padding: 3rem; background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-color); border-radius: 0.5rem;">
+        <div style="text-align: center; padding: 3rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 0.5rem;">
           <p style="color: #64748b;">No resources added yet. Add helpful links, documents, or external resources for your students.</p>
         </div>
       `;
@@ -1094,7 +1085,7 @@ async function loadResources() {
           }
 
           return `
-                  <div class="resource-card" style="background: var(--bg-card, #fff); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.1)';">
+                  <div class="resource-card" style="background: var(--bg-card); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 1.5rem; box-shadow: var(--shadow-card, 0 4px 16px rgba(0,0,0,0.3)); transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 32px rgba(0,0,0,0.35)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow-card, 0 4px 16px rgba(0,0,0,0.3))';">
                     <div style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 0.75rem;">${typeLabel}</div>
                     <h3 style="margin: 0 0 0.5rem 0;font-size: 1.125rem;">${escapeHtml(resource.title)}</h3>
                     <p style="color: #64748b; margin: 0 0 1rem 0; font-size: 0.875rem; line-height: 1.5;">${escapeHtml(resource.description || '')}</p>
@@ -1105,7 +1096,7 @@ async function loadResources() {
                       ${!resource.is_default ? `
                         <div style="display: flex; gap: 0.25rem;">
                           ${!resource.is_chapter ? `<button class="btn btn-secondary edit-resource-btn" data-resource-id="${resource.resource_id}" style="padding: 0.375rem 0.75rem; font-size: 0.75rem;">Edit</button>` : ''}
-                          <button class="btn btn-secondary delete-resource-btn" data-resource-id="${resource.resource_id}" ${resource.is_chapter ? `data-chapter-id="${resource.chapter_id}"` : ''} style="padding: 0.375rem 0.75rem; font-size: 0.75rem; color: #dc2626;">Delete</button>
+                          <button class="btn btn-secondary delete-resource-btn" data-resource-id="${resource.resource_id}" ${resource.is_chapter ? `data-chapter-id="${resource.chapter_id}"` : ''} style="padding: 0.375rem 0.75rem; font-size: 0.75rem; color: var(--color-error, #ef4444);">Delete</button>
                         </div>
                       ` : ''}
                     </div>
@@ -1120,8 +1111,8 @@ async function loadResources() {
   } catch (error) {
     console.error('Error loading resources:', error);
     resourcesList.innerHTML = `
-      <div style="text-align: center; padding: 3rem; background: #fee2e2; border: 1px solid #ef4444; border-radius: 0.5rem;">
-        <p style="color: #991b1b;">Error loading resources: ${escapeHtml(error.message)}</p>
+      <div style="text-align: center; padding: 3rem; background: rgba(220,38,38,0.1); border: 1px solid rgba(220,38,38,0.3); border-radius: 0.5rem;">
+        <p style="color: #f87171;">Error loading resources: ${escapeHtml(error.message)}</p>
         <button class="btn btn-primary" onclick="loadResources()" style="margin-top: 1rem;">Retry</button>
       </div>
     `;
@@ -1195,7 +1186,7 @@ function toggleResourceInput() {
     fileInput.required = false;
     fileInput.value = ''; // Clear file selection
     linkLabel.style.borderColor = 'var(--color-primary)';
-    linkLabel.style.background = '#eff6ff';
+    linkLabel.style.background = 'rgba(37,105,244,0.12)';
     uploadLabel.style.borderColor = 'var(--border-color)';
     uploadLabel.style.background = 'transparent';
   } else {
@@ -1207,7 +1198,7 @@ function toggleResourceInput() {
     linkLabel.style.borderColor = 'var(--border-color)';
     linkLabel.style.background = 'transparent';
     uploadLabel.style.borderColor = 'var(--color-primary)';
-    uploadLabel.style.background = '#eff6ff';
+    uploadLabel.style.background = 'rgba(37,105,244,0.12)';
   }
 
   // Update file input accept attribute based on resource type
@@ -1565,7 +1556,7 @@ function openEditResourceModal(resourceId) {
 
   const note = document.createElement('div');
   note.id = 'editSourceNote';
-  note.style.cssText = 'margin-bottom: 1.5rem; padding: 0.75rem; background: #f1f5f9; color: #64748b; border-radius: 0.375rem; font-size: 0.875rem;';
+  note.style.cssText = 'margin-bottom: 1.5rem; padding: 0.75rem; background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255,255,255,0.08); color: #94a3b8; border-radius: 0.375rem; font-size: 0.875rem;';
   note.textContent = 'To change the file or URL, please delete this resource and create a new one.';
 
   const typeSection = document.getElementById('resourceInputTypeSection');
@@ -1645,7 +1636,7 @@ async function loadDetailedProgress() {
 
     if (!data.students || data.students.length === 0) {
       container.innerHTML = `
-        <div style="text-align: center; padding: 3rem; background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-color); border-radius: 0.5rem;">
+        <div style="text-align: center; padding: 3rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 0.5rem;">
           <p style="color: #64748b;">No students enrolled yet.</p>
         </div>
       `;
@@ -1657,7 +1648,7 @@ async function loadDetailedProgress() {
 
     if (exercises.length === 0) {
       container.innerHTML = `
-        <div style="text-align: center; padding: 3rem; background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-color); border-radius: 0.5rem;">
+        <div style="text-align: center; padding: 3rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 0.5rem;">
           <p style="color: #64748b;">No exercises created yet.</p>
         </div>
       `;
@@ -1669,8 +1660,8 @@ async function loadDetailedProgress() {
       <div style="overflow-x: auto; border: 1px solid var(--border-color); border-radius: 0.5rem;">
         <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
           <thead>
-            <tr style="background: var(--bg-secondary, #f8fafc); border-bottom: 2px solid var(--border-color);">
-              <th style="padding: 0.75rem 1rem; text-align: left; position: sticky; left: 0; background: var(--bg-secondary, #f8fafc); z-index: 10;">Student</th>
+            <tr style="background: var(--bg-secondary); border-bottom: 2px solid var(--border-color);">
+              <th style="padding: 0.75rem 1rem; text-align: left; position: sticky; left: 0; background: var(--bg-secondary); z-index: 10;">Student</th>
               <th style="padding: 0.75rem 1rem; text-align: center; border-right: 1px solid var(--border-color);">Avg Score</th>
     `;
 
@@ -1699,8 +1690,8 @@ async function loadDetailedProgress() {
       const avg = count > 0 ? (totalScore / count).toFixed(1) : '-';
 
       html += `
-        <tr style="border-bottom: 1px solid var(--border-color); background: var(--bg-card, #fff);">
-          <td style="padding: 0.75rem 1rem; font-weight: 500; color: #1e293b; position: sticky; left: 0; background: var(--bg-card, #fff); border-right: 1px solid var(--border-color);">${student.name}</td>
+        <tr style="border-bottom: 1px solid var(--border-color); background: var(--bg-card);">
+          <td style="padding: 0.75rem 1rem; font-weight: 500; color: var(--text-primary, #f0f4ff); position: sticky; left: 0; background: var(--bg-card); border-right: 1px solid var(--border-color);">${student.name}</td>
           <td style="padding: 0.75rem 1rem; text-align: center; font-weight: 600; color: var(--color-primary); border-right: 1px solid var(--border-color);">${avg}</td>
       `;
 
@@ -1708,28 +1699,18 @@ async function loadDetailedProgress() {
       exercises.forEach(ex => {
         const score = studentScores[ex.exercise_id];
         let cellContent = '-';
-        let cellStyle = 'color: #94a3b8;'; // gray for no data
-        let bgColor = '';
+        let heatClass = 'heatmap-neutral';
 
         if (score !== undefined) {
           cellContent = score;
           const scoreNum = parseFloat(score);
-          if (scoreNum >= 90) {
-            cellStyle = 'color: #059669; font-weight: 600;'; // green
-            bgColor = 'background-color: #ecfdf5;';
-          } else if (scoreNum >= 70) {
-            cellStyle = 'color: #0284c7; font-weight: 600;'; // blue
-            bgColor = 'background-color: #f0f9ff;';
-          } else if (scoreNum >= 50) {
-            cellStyle = 'color: #d97706; font-weight: 500;'; // orange
-            bgColor = 'background-color: #fffbeb;';
-          } else {
-            cellStyle = 'color: #dc2626; font-weight: 500;'; // red
-            bgColor = 'background-color: #fef2f2;';
-          }
+          if (scoreNum >= 90)      heatClass = 'heatmap-success';
+          else if (scoreNum >= 70) heatClass = 'heatmap-info';
+          else if (scoreNum >= 50) heatClass = 'heatmap-warning';
+          else                     heatClass = 'heatmap-danger';
         }
 
-        html += `<td style="padding: 0.5rem; text-align: center; ${cellStyle} ${bgColor} border-right: 1px solid #ebf0f5;">${cellContent}</td>`;
+        html += `<td class="${heatClass}" style="padding: 0.5rem; text-align: center; border-right: 1px solid var(--border-color, rgba(255,255,255,0.08));">${cellContent}</td>`;
       });
 
       html += `</tr>`;
@@ -1760,7 +1741,7 @@ async function loadAvgLeaderboard() {
 
     if (!data.leaderboard || data.leaderboard.length === 0) {
       container.innerHTML = `
-        <div style="text-align: center; padding: 3rem; background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-color); border-radius: 0.5rem;">
+        <div style="text-align: center; padding: 3rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 0.5rem;">
           <p style="color: #64748b;">No data available for leaderboard yet.</p>
         </div>
       `;
@@ -1771,7 +1752,7 @@ async function loadAvgLeaderboard() {
     let html = `
       <div style="max-width: 800px; margin: 0 auto; border: 1px solid var(--border-color); border-radius: 0.5rem; overflow: hidden;">
         <table style="width: 100%; border-collapse: collapse;">
-          <thead style="background: var(--bg-secondary, #f8fafc); border-bottom: 2px solid var(--border-color);">
+          <thead style="background: var(--bg-secondary); border-bottom: 2px solid var(--border-color);">
             <tr>
               <th style="padding: 1rem; text-align: center; width: 60px;">Rank</th>
               <th style="padding: 1rem; text-align: left;">Student</th>
@@ -1789,7 +1770,7 @@ async function loadAvgLeaderboard() {
       else if (entry.rank === 3) rankIcon = '#3';
 
       html += `
-        <tr style="border-bottom: 1px solid var(--border-color); background: var(--bg-card, #fff);">
+        <tr style="border-bottom: 1px solid var(--border-color); background: var(--bg-card);">
           <td style="padding: 1rem; text-align: center; font-size: 1.2rem; font-weight: 600;">${rankIcon}</td>
           <td style="padding: 1rem; font-weight: 500;">${entry.name}</td>
           <td style="padding: 1rem; text-align: center; color: #64748b;">${entry.exercises_completed}</td>
@@ -1847,7 +1828,7 @@ async function loadExerciseLeaderboard(exerciseId) {
   const currentUser = getCurrentUser();
 
   if (!exerciseId) {
-    container.innerHTML = `<div style="text-align: center; padding: 3rem; background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-color); border-radius: 0.5rem;"><p style="color: #64748b;">Select an exercise above to see the leaderboard.</p></div>`;
+    container.innerHTML = `<div style="text-align: center; padding: 3rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 0.5rem;"><p style="color: #64748b;">Select an exercise above to see the leaderboard.</p></div>`;
     return;
   }
 
@@ -1861,7 +1842,7 @@ async function loadExerciseLeaderboard(exerciseId) {
       // Handle the case where no scores exist for this exercise gracefully
       if (response.status === 404 || (data.message && data.message.includes('No scores'))) {
         container.innerHTML = `
-          <div style="text-align: center; padding: 3rem; background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-color); border-radius: 0.5rem;">
+          <div style="text-align: center; padding: 3rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 0.5rem;">
             <p style="color: #64748b;">No scores recorded for this exercise yet.</p>
           </div>
         `;
@@ -1872,7 +1853,7 @@ async function loadExerciseLeaderboard(exerciseId) {
 
     if (!data.leaderboard || data.leaderboard.length === 0) {
       container.innerHTML = `
-        <div style="text-align: center; padding: 3rem; background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-color); border-radius: 0.5rem;">
+        <div style="text-align: center; padding: 3rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 0.5rem;">
           <p style="color: #64748b;">No scores for this exercise yet.</p>
         </div>
       `;
@@ -1883,7 +1864,7 @@ async function loadExerciseLeaderboard(exerciseId) {
     let html = `
       <div style="max-width: 800px; margin: 0 auto; border: 1px solid var(--border-color); border-radius: 0.5rem; overflow: hidden;">
         <table style="width: 100%; border-collapse: collapse;">
-          <thead style="background: var(--bg-secondary, #f8fafc); border-bottom: 2px solid var(--border-color);">
+          <thead style="background: var(--bg-secondary); border-bottom: 2px solid var(--border-color);">
             <tr>
               <th style="padding: 1rem; text-align: center; width: 60px;">Rank</th>
               <th style="padding: 1rem; text-align: left;">Student</th>
@@ -1903,7 +1884,7 @@ async function loadExerciseLeaderboard(exerciseId) {
       const date = entry.submitted_at ? new Date(entry.submitted_at).toLocaleDateString() : '-';
 
       html += `
-        <tr style="border-bottom: 1px solid var(--border-color); background: var(--bg-card, #fff);">
+        <tr style="border-bottom: 1px solid var(--border-color); background: var(--bg-card);">
           <td style="padding: 1rem; text-align: center; font-size: 1.2rem; font-weight: 600;">${rankIcon}</td>
           <td style="padding: 1rem; font-weight: 500;">${entry.name}</td>
           <td style="padding: 1rem; text-align: center; color: #64748b;">${date}</td>

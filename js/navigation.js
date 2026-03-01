@@ -18,8 +18,9 @@ document.addEventListener('DOMContentLoaded', function () {
   const userRole = currentUser ? currentUser.role : null;
   const isProfessor = userRole === 'professor';
   const isSuperAdmin = userRole === 'superadmin';
+  const isTenantAdmin = userRole === 'tenant_admin';
 
-  // Build user menu
+  // Build user menu (lives outside nav-links for centering)
   let userMenu = '';
   if (isAuthenticated) {
     const userName = currentUser.name || currentUser.email || 'User';
@@ -61,7 +62,10 @@ document.addEventListener('DOMContentLoaded', function () {
   if (isAuthenticated) {
     if (isSuperAdmin) {
       // Superadmin: Management Portals
-      roleLinks = `<li><a href="superadmin-dashboard.html" ${currentPage === 'superadmin-dashboard.html' ? 'class="active"' : ''} style="color: #eab308; font-weight: bold;">Super Admin</a></li>`;
+      roleLinks = `<li><a href="superadmin-dashboard.html" ${currentPage === 'superadmin-dashboard.html' ? 'class="active"' : ''}>Super Admin</a></li>`;
+      commonLinks = '';
+    } else if (isTenantAdmin) {
+      roleLinks = `<li><a href="tenant-admin-dashboard.html" ${currentPage === 'tenant-admin-dashboard.html' ? 'class="active"' : ''}>Admin Dashboard</a></li>`;
       commonLinks = '';
     } else if (isProfessor) {
       // Professors: Dashboard, Code
