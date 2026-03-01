@@ -7,131 +7,251 @@
 
 <main class="container">
   <!-- Back Button -->
-  <div style="margin-bottom: 1rem;">
-    <a href="professor-dashboard.html"
-      style="color: var(--color-primary); text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;">
-      <span>←</span>
-      <span>Back to Dashboard</span>
+  <div style="margin-bottom: 1.5rem;">
+    <a href="professor-dashboard.html" class="btn-back">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="19" y1="12" x2="5" y2="12"></line>
+        <polyline points="12 19 5 12 12 5"></polyline>
+      </svg>
+      Back to Dashboard
     </a>
   </div>
 
   <!-- Loading State -->
-  <div id="loadingState" style="text-align: center; padding: 3rem;">
-    <p style="color: #64748b;">Loading class details...</p>
+  <div id="loadingState" class="terminal-loading-state">
+    <div class="terminal-loading-dots">
+      <span></span><span></span><span></span>
+    </div>
+    <p class="terminal-loading-text">Loading class details<span style="animation: blink 1s step-end infinite; display: inline-block;">_</span></p>
   </div>
 
-  <!-- Class Header -->
-  <div id="classHeader" style="display: none; margin-bottom: 2rem;">
-    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
-      <div style="flex: 1;">
-        <h1 id="className" style="margin-bottom: 0.5rem; color: var(--color-dark);"></h1>
-        <p id="classDescription" style="color: #64748b; margin-bottom: 0.5rem;"></p>
-        <div style="display: flex; gap: 1rem; align-items: center;">
-          <span
-            style="background: var(--color-primary); color: white; padding: 0.375rem 0.75rem; border-radius: 1rem; font-size: 0.875rem; font-weight: 600;"
-            id="classCode"></span>
-          <span style="color: #64748b; font-size: 0.875rem;">Class Code</span>
+  <!-- Class Header (Dark Bento Card) -->
+  <div id="classHeader" style="display: none; margin-bottom: 2.5rem;">
+    <div style="background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); border-radius: 1rem; padding: 2rem; box-shadow: 0 8px 32px rgba(0,0,0,0.25);">
+
+      <!-- Top row: identity + actions -->
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem;">
+        <div style="flex: 1; min-width: 0;">
+          <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem;">
+            <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--color-success); box-shadow: 0 0 8px var(--color-success); flex-shrink: 0;"></span>
+            <span style="font-family: var(--font-mono); color: var(--color-success); font-size: 0.8rem; letter-spacing: 0.05em; text-transform: uppercase;">Active Class</span>
+          </div>
+          <h1 id="className" style="margin: 0 0 0.5rem 0; color: var(--text-primary, #f8fafc); font-size: 2rem; font-weight: 700;"></h1>
+          <p id="classDescription" style="color: #94a3b8; font-size: 1rem; line-height: 1.6; margin-bottom: 1.25rem;"></p>
+          <div style="display: inline-flex; align-items: center; gap: 0.6rem; background: rgba(37, 105, 244, 0.12); padding: 0.4rem 0.9rem; border-radius: 0.5rem; border: 1px solid rgba(37, 105, 244, 0.25);">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
+            </svg>
+            <span style="font-family: var(--font-mono); color: var(--color-primary); font-size: 0.8rem; font-weight: 600; letter-spacing: 0.08em;" id="classCode"></span>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem; align-items: center; flex-shrink: 0; margin-left: 1.5rem;">
+          <button class="btn btn-secondary" onclick="copyClassCodeToClipboard()"
+            style="background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; font-size: 0.8rem; padding: 0.4rem 0.85rem; transition: all 0.2s;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 0.35rem; vertical-align: middle;">
+              <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>Copy Code
+          </button>
+          <button class="btn btn-primary" onclick="showEditClassModal()"
+            style="font-size: 0.8rem; padding: 0.4rem 0.85rem;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 0.35rem; vertical-align: middle;">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>Edit Class
+          </button>
         </div>
       </div>
-      <div style="display: flex; gap: 0.5rem;">
-        <button class="btn btn-secondary" onclick="copyClassCodeToClipboard()">Copy Code</button>
-        <button class="btn btn-secondary" onclick="showEditClassModal()">Edit Class</button>
-      </div>
-    </div>
 
-    <!-- Class Stats -->
-    <div
-      style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-top: 1.5rem; padding: 1.5rem; background: #f8fafc; border-radius: 0.5rem; text-align: center;">
-      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
-        <div style="font-size: 2rem; font-weight: 600; color: var(--color-primary);" id="studentCountStat">0</div>
-        <div style="font-size: 0.875rem; color: #64748b;">Students</div>
+      <!-- Stats row: fluid inline dividers -->
+      <div style="display: flex; border-top: 1px solid rgba(255,255,255,0.07); padding-top: 1.25rem;">
+        <div style="flex: 1; text-align: center; padding: 0.25rem 0.5rem; border-right: 1px solid rgba(255,255,255,0.07);">
+          <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary, #f8fafc); font-family: var(--font-mono); line-height: 1;" id="studentCountStat">0</div>
+          <div style="font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 0.35rem;">Students</div>
+        </div>
+        <div style="flex: 1; text-align: center; padding: 0.25rem 0.5rem; border-right: 1px solid rgba(255,255,255,0.07);">
+          <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary, #f8fafc); font-family: var(--font-mono); line-height: 1;" id="chapterCountStat">0</div>
+          <div style="font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 0.35rem;">Chapters</div>
+        </div>
+        <div style="flex: 1; text-align: center; padding: 0.25rem 0.5rem;">
+          <div style="font-size: 2rem; font-weight: 700; color: var(--color-primary); font-family: var(--font-mono); line-height: 1;" id="exerciseCountStat">0</div>
+          <div style="font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 0.35rem;">Exercises</div>
+        </div>
       </div>
-      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
-        <div style="font-size: 2rem; font-weight: 600; color: var(--color-primary);" id="chapterCountStat">0</div>
-        <div style="font-size: 0.875rem; color: #64748b;">Chapters</div>
-      </div>
-      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
-        <div style="font-size: 2rem; font-weight: 600; color: var(--color-primary);" id="exerciseCountStat">0</div>
-        <div style="font-size: 0.875rem; color: #64748b;">Exercises</div>
-      </div>
+
     </div>
   </div>
 
-  <!-- Tabs -->
-  <div id="tabsContainer" style="display: none; margin-bottom: 2rem;">
-    <div style="display: flex; gap: 0.5rem; border-bottom: 2px solid #e2e8f0;">
-      <button class="tab-button active" onclick="switchTab('chapters')" id="tabChapters">Chapters</button>
-      <button class="tab-button" onclick="switchTab('exercises')" id="tabExercises">Exercises</button>
-      <button class="tab-button" onclick="switchTab('resources')" id="tabResources">Resources</button>
-      <button class="tab-button" onclick="switchTab('students')" id="tabStudents">Students</button>
-      <button class="tab-button" onclick="switchTab('progress')" id="tabProgress">Leaderboards</button>
-    </div>
+  <!-- Tabs (Pill Style) -->
+  <div id="tabsContainer" style="display: none; margin-bottom: 2.5rem;">
+    <nav class="terminal-tab-nav">
+      <button class="tab-button terminal-tab-btn active" onclick="switchTab('chapters')" id="tabChapters">
+        <span class="terminal-tab-num">01</span> Chapters
+      </button>
+      <button class="tab-button terminal-tab-btn" onclick="switchTab('exercises')" id="tabExercises">
+        <span class="terminal-tab-num">02</span> Exercises
+      </button>
+      <button class="tab-button terminal-tab-btn" onclick="switchTab('resources')" id="tabResources">
+        <span class="terminal-tab-num">03</span> Resources
+      </button>
+      <button class="tab-button terminal-tab-btn" onclick="switchTab('students')" id="tabStudents">
+        <span class="terminal-tab-num">04</span> Students
+      </button>
+      <button class="tab-button terminal-tab-btn" onclick="switchTab('progress')" id="tabProgress">
+        <span class="terminal-tab-num">05</span> Leaderboards
+      </button>
+    </nav>
   </div>
+
+  <style>
+    /* ── Terminal tab active state ── */
+    .tab-button.active {
+      color: var(--color-primary) !important;
+      background: rgba(37, 105, 244, 0.1) !important;
+      border-color: rgba(37, 105, 244, 0.3) !important;
+      border-bottom-color: var(--bg-primary, #0f172a) !important;
+      box-shadow: 0 0 10px rgba(37, 105, 244, 0.2) !important;
+    }
+    .tab-button.active .terminal-tab-num {
+      color: rgba(37, 105, 244, 0.65) !important;
+    }
+    /* ── Dark-theme all modal dialogs ── */
+    [id$="Modal"] > [role="dialog"] {
+      background: rgba(15, 23, 42, 0.97) !important;
+      border: 1px solid rgba(255,255,255,0.1) !important;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6) !important;
+    }
+    [id$="Modal"] h2 { color: var(--text-primary) !important; }
+    [id$="Modal"] label { color: var(--text-primary) !important; }
+    [id$="Modal"] small { color: var(--text-secondary) !important; }
+    [id$="Modal"] > [role="dialog"] p { color: var(--text-secondary) !important; }
+    [id$="Modal"] input:not([type="radio"]):not([type="checkbox"]):not([type="file"]),
+    [id$="Modal"] textarea,
+    [id$="Modal"] select {
+      background: rgba(17, 24, 39, 0.7) !important;
+      border: 1px solid var(--border-color) !important;
+      color: var(--text-primary) !important;
+    }
+    [id$="Modal"] input:not([type="radio"]):not([type="checkbox"]):not([type="file"]):focus,
+    [id$="Modal"] textarea:focus,
+    [id$="Modal"] select:focus {
+      border-color: var(--color-primary) !important;
+      outline: none !important;
+      box-shadow: 0 0 0 3px rgba(37, 105, 244, 0.2) !important;
+    }
+    [id$="Modal"] option {
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+    [id$="Modal"] .error-message {
+      background: rgba(220,38,38,0.1) !important;
+      border: 1px solid rgba(220,38,38,0.3) !important;
+      color: #f87171 !important;
+    }
+    /* Radio-button wrapper labels (resource type, exercise mode) */
+    [id$="Modal"] label[id$="Label"],
+    #resourceInputTypeSection label {
+      border-color: rgba(255,255,255,0.1) !important;
+      color: #e2e8f0 !important;
+    }
+    /* File input styling */
+    [id$="Modal"] input[type="file"] {
+      background: rgba(30,41,59,0.5) !important;
+      border: 1px dashed rgba(255,255,255,0.15) !important;
+      color: #94a3b8 !important;
+      border-radius: 0.375rem !important;
+      padding: 0.5rem !important;
+    }
+    /* Delete/danger confirmation dialogs */
+    #deleteChapterModal > [role="dialog"] p { color: #94a3b8 !important; }
+
+    /* Import chapter modal specifics */
+    #importChapterModal .imp-tab-btn { color: #64748b !important; }
+    #importChapterModal .imp-tab-active { color: var(--color-primary) !important; }
+    #importChapterModal #impPreviewSection {
+      border-top-color: rgba(255,255,255,0.08) !important;
+    }
+    #importChapterModal #impPreviewTitle { color: var(--text-primary) !important; font-weight: 600; }
+    #importChapterModal #impPreviewSnippet { color: var(--text-secondary) !important; }
+    #importChapterModal h3 { color: var(--text-primary) !important; }
+    #importChapterModal p { color: var(--text-secondary) !important; }
+  </style>
 
   <!-- Chapters Tab -->
   <div id="tabContentChapters" class="tab-content" style="display: none;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-      <h2 style="margin: 0; color: var(--color-dark);">Chapters</h2>
-      <div style="display:flex;gap:0.5rem;">
-        <button class="btn btn-secondary" onclick="window.contentImporter && window.contentImporter.show()">Import from Web</button>
-        <button class="btn btn-primary" onclick="showUploadChapterModal()">Upload Chapter</button>
+    <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 1.5rem;">
+      <div style="display: flex; gap: 0.5rem;">
+        <button class="btn btn-secondary" onclick="window.contentImporter && window.contentImporter.show()"
+          style="display: flex; align-items: center; gap: 0.4rem;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>Import from Web
+        </button>
+        <button class="btn btn-primary" onclick="showUploadChapterModal()"
+          style="display: flex; align-items: center; gap: 0.4rem;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>Upload Chapter
+        </button>
       </div>
     </div>
 
     <div id="chaptersList">
-      <div
-        style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem;">
-        <p style="color: #64748b;">No chapters yet. Upload your first chapter to get started.</p>
+      <div style="text-align: center; padding: 3rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 0.75rem;">
+        <p style="color: #64748b; margin: 0;">No chapters yet. Upload your first chapter to get started.</p>
       </div>
     </div>
   </div>
 
   <!-- Exercises Tab -->
   <div id="tabContentExercises" class="tab-content" style="display: none;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-      <h2 style="margin: 0; color: var(--color-dark);">Exercises</h2>
+    <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 1.5rem;">
       <div style="display: flex; gap: 0.5rem;">
         <a href="#"
           onclick="window.location.href='upload-assistant.html?class_id=' + new URLSearchParams(window.location.search).get('class_id')"
-          class="btn btn-secondary" style="display: flex; align-items: center; gap: 0.5rem; text-decoration: none;">
-          Upload Assistant
+          class="btn btn-secondary" style="display: flex; align-items: center; gap: 0.4rem; text-decoration: none;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>Upload Assistant
         </a>
-        <button class="btn btn-primary" onclick="showCreateExerciseModal()">Create Exercise</button>
+        <button class="btn btn-primary" onclick="showCreateExerciseModal()"
+          style="display: flex; align-items: center; gap: 0.4rem;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>Create Exercise
+        </button>
       </div>
     </div>
 
     <div id="exercisesList">
-      <div
-        style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem;">
-        <p style="color: #64748b;">No exercises yet. Exercises will appear here once chapters are uploaded with
-          auto-generation enabled, or create them manually.</p>
+      <div style="text-align: center; padding: 3rem; background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.75rem;">
+        <p style="color: #64748b; margin: 0;">No exercises yet. Exercises will appear here once chapters are uploaded with auto-generation enabled, or create them manually.</p>
       </div>
     </div>
   </div>
 
   <!-- Resources Tab -->
   <div id="tabContentResources" class="tab-content" style="display: none;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-      <h2 style="margin: 0; color: var(--color-dark);">Course Resources</h2>
-      <button class="btn btn-primary" onclick="showAddResourceModal()">Add Resource</button>
+    <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 1.5rem;">
+      <button class="btn btn-primary" onclick="showAddResourceModal()"
+        style="display: flex; align-items: center; gap: 0.4rem;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 5v14M5 12h14"/>
+        </svg>Add Resource
+      </button>
     </div>
 
     <div id="resourcesList">
-      <div
-        style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem;">
-        <p style="color: #64748b;">No resources added yet. Add helpful links, documents, or external resources for
-          your students.</p>
+      <div style="text-align: center; padding: 3rem; background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.75rem;">
+        <p style="color: #64748b; margin: 0;">No resources added yet. Add helpful links, documents, or external resources for your students.</p>
       </div>
     </div>
   </div>
 
   <!-- Students Tab -->
   <div id="tabContentStudents" class="tab-content" style="display: none;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-      <h2 style="margin: 0; color: var(--color-dark);">Enrolled Students</h2>
+    <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 1.5rem;">
       <div style="display: flex; align-items: center; gap: 0.75rem;">
         <span style="color: #64748b; font-size: 0.875rem;" id="studentsCount">0 students</span>
-        <!-- Shown only when class is linked to an LMS context -->
         <button id="syncLmsBtn" class="btn btn-secondary"
           style="display: none; font-size: 0.85rem; padding: .4rem .9rem;" onclick="syncLmsRoster()">
           Sync from LMS
@@ -140,59 +260,44 @@
     </div>
 
     <div id="studentsList">
-      <div
-        style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem;">
-        <p style="color: #64748b;">No students enrolled yet.</p>
+      <div style="text-align: center; padding: 3rem; background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.75rem;">
+        <p style="color: #64748b; margin: 0;">No students enrolled yet.</p>
       </div>
     </div>
   </div>
 
   <!-- Progress Tab -->
   <div id="tabContentProgress" class="tab-content" style="display: none;">
-    <div style="margin-bottom: 1.5rem;">
-      <h2 style="margin: 0 0 1rem 0; color: var(--color-dark);">Class Leaderboards</h2>
-      <p style="color: #64748b;">See how students are performing in the class exercises.</p>
-    </div>
-
-    <!-- Progress View Tabs -->
-    <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 2px solid #e2e8f0;">
-      <button class="sub-tab-button active" onclick="switchProgressView('avgLeaderboard')" id="subTabAvg">Average
-        Score</button>
-      <button class="sub-tab-button" onclick="switchProgressView('exLeaderboard')" id="subTabEx">By
-        Exercise</button>
-      <button class="sub-tab-button" onclick="switchProgressView('table')" id="subTabTable">Detailed
-        Matrix</button>
+    <!-- Progress View Sub-Tabs -->
+    <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.08);">
+      <button class="sub-tab-button active" onclick="switchProgressView('avgLeaderboard')" id="subTabAvg">Average Score</button>
+      <button class="sub-tab-button" onclick="switchProgressView('exLeaderboard')" id="subTabEx">By Exercise</button>
+      <button class="sub-tab-button" onclick="switchProgressView('table')" id="subTabTable">Detailed Matrix</button>
     </div>
 
     <div id="progressOverview">
-      <!-- Main Table Content -->
       <div id="progressTableContainer">
-        <div
-          style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem;">
-            <p style="color: #64748b;">No progress data available yet.</p>
+        <div style="text-align: center; padding: 3rem; background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.75rem;">
+          <p style="color: #64748b; margin: 0;">No progress data available yet.</p>
         </div>
       </div>
 
-      <!-- Average Leaderboard Content -->
       <div id="avgLeaderboardContainer" style="display: none;">
-        <div style="text-align: center; padding: 2rem; color: #64748b;">Select "Average Leaderboard" to view rankings.
-        </div>
+        <div style="text-align: center; padding: 2rem; color: #64748b;">Select "Average Score" to view rankings.</div>
       </div>
 
-      <!-- Exercise Leaderboard Content -->
       <div id="exLeaderboardContainer" style="display: none;">
         <div style="margin-bottom: 1rem;">
           <label for="leaderboardExerciseSelect"
-            style="font-weight: 500; color: var(--color-dark); margin-right: 0.5rem;">Select Exercise:</label>
+            style="font-weight: 500; color: #94a3b8; margin-right: 0.5rem; font-size: 0.875rem;">Select Exercise:</label>
           <select id="leaderboardExerciseSelect" onchange="loadExerciseLeaderboard(this.value)"
-            style="padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 0.25rem;">
+            style="padding: 0.4rem 0.75rem; background: rgba(30,41,59,0.8); border: 1px solid rgba(255,255,255,0.1); border-radius: 0.375rem; color: #e2e8f0; font-size: 0.875rem;">
             <option value="">-- Choose an Exercise --</option>
           </select>
         </div>
         <div id="exLeaderboardContent">
-          <div
-            style="text-align: center; padding: 3rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem;">
-            <p style="color: #64748b;">Select an exercise above to see the leaderboard.</p>
+          <div style="text-align: center; padding: 3rem; background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.75rem;">
+            <p style="color: #64748b; margin: 0;">Select an exercise above to see the leaderboard.</p>
           </div>
         </div>
       </div>
@@ -203,41 +308,41 @@
   <div id="uploadChapterModal"
     style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center;">
     <div role="dialog" aria-modal="true" aria-labelledby="uploadChapterModalTitle"
-      style="background: white; border-radius: 0.5rem; padding: 2rem; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto;">
+      style="background: var(--bg-card, rgba(26,34,53,0.97)); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); border-radius: 0.75rem; padding: 2rem; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-        <h2 id="uploadChapterModalTitle" style="margin: 0; color: var(--color-dark);">Upload Chapter</h2>
+        <h2 id="uploadChapterModalTitle" style="margin: 0; color: var(--text-primary, #f8fafc);">Upload Chapter</h2>
         <button onclick="hideUploadChapterModal()" aria-label="Close dialog"
-          style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b;">&times;</button>
+          class="modal-close-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
 
       <form id="uploadChapterForm" onsubmit="handleUploadChapter(event)">
         <div style="margin-bottom: 1.5rem;">
           <label for="chapterTitle"
-            style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Chapter Title
+            style="display: block; margin-bottom: 0.5rem; color: var(--text-primary, #f8fafc); font-weight: 500;">Chapter Title
             *</label>
           <input type="text" id="chapterTitle" required placeholder="e.g., Chapter 2: Business Analytics Foundations"
-            style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;" />
+            style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.375rem; font-size: 1rem; background: rgba(17,24,39,0.7); color: var(--text-primary, #f8fafc);" />
         </div>
 
         <div style="margin-bottom: 1.5rem;">
           <label for="chapterDescription"
-            style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Description</label>
+            style="display: block; margin-bottom: 0.5rem; color: var(--text-primary, #f8fafc); font-weight: 500;">Description</label>
           <textarea id="chapterDescription" rows="3" placeholder="Optional: Add a description for this chapter..."
-            style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem; resize: vertical;"></textarea>
+            style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.375rem; font-size: 1rem; resize: vertical; background: rgba(17,24,39,0.7); color: var(--text-primary, #f8fafc);"></textarea>
         </div>
 
         <div style="margin-bottom: 1.5rem;">
           <label for="chapterPDF"
-            style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">PDF
+            style="display: block; margin-bottom: 0.5rem; color: var(--text-primary, #f8fafc); font-weight: 500;">PDF
             File *</label>
           <input type="file" id="chapterPDF" accept=".pdf" required
-            style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;" />
-          <small style="color: #64748b; font-size: 0.875rem; display: block; margin-top: 0.5rem;">Upload a PDF file
+            style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.375rem; font-size: 1rem; background: rgba(17,24,39,0.7); color: var(--text-primary, #f8fafc);" />
+          <small style="color: var(--text-secondary, #94a3b8); font-size: 0.875rem; display: block; margin-top: 0.5rem;">Upload a PDF file
             for this chapter</small>
         </div>
 
         <div style="margin-bottom: 1.5rem;">
-          <label style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Exercise
+          <label style="display: block; margin-bottom: 0.5rem; color: var(--text-primary, #f8fafc); font-weight: 500;">Exercise
             Generation</label>
           <div style="display: flex; flex-direction: column; gap: 0.75rem;">
             <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
@@ -265,27 +370,27 @@
   <div id="editClassModal"
     style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center;">
     <div role="dialog" aria-modal="true" aria-labelledby="editClassModalTitle"
-      style="background: white; border-radius: 0.5rem; padding: 2rem; max-width: 500px; width: 90%;">
+      style="background: var(--bg-card, rgba(26,34,53,0.97)); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); border-radius: 0.75rem; padding: 2rem; max-width: 500px; width: 90%;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-        <h2 id="editClassModalTitle" style="margin: 0; color: var(--color-dark);">Edit Class</h2>
+        <h2 id="editClassModalTitle" style="margin: 0; color: var(--text-primary, #f8fafc);">Edit Class</h2>
         <button onclick="hideEditClassModal()" aria-label="Close dialog"
-          style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b;">&times;</button>
+          class="modal-close-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
 
       <form id="editClassForm" onsubmit="handleEditClass(event)">
         <div style="margin-bottom: 1.5rem;">
           <label for="editClassName"
-            style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Class Name
+            style="display: block; margin-bottom: 0.5rem; color: var(--text-primary, #f8fafc); font-weight: 500;">Class Name
             *</label>
           <input type="text" id="editClassName" required
-            style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;" />
+            style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.375rem; font-size: 1rem; background: rgba(17,24,39,0.7); color: var(--text-primary, #f8fafc);" />
         </div>
 
         <div style="margin-bottom: 1.5rem;">
           <label for="editClassDescription"
-            style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Description</label>
+            style="display: block; margin-bottom: 0.5rem; color: var(--text-primary, #f8fafc); font-weight: 500;">Description</label>
           <textarea id="editClassDescription" rows="4"
-            style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem; resize: vertical;"></textarea>
+            style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.375rem; font-size: 1rem; background: rgba(17,24,39,0.7); color: var(--text-primary, #f8fafc); resize: vertical;"></textarea>
         </div>
 
         <div id="editClassError" class="error-message" style="display: none; margin-bottom: 1rem;"></div>
@@ -340,35 +445,35 @@
 <div id="addResourceModal"
   style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center;">
   <div role="dialog" aria-modal="true" aria-labelledby="addResourceModalTitle"
-    style="background: white; border-radius: 0.5rem; padding: 2rem; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto;">
+    style="background: var(--bg-card, rgba(26,34,53,0.97)); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); border-radius: 0.75rem; padding: 2rem; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-      <h2 id="addResourceModalTitle" style="margin: 0; color: var(--color-dark);">Add Resource</h2>
+      <h2 id="addResourceModalTitle" style="margin: 0; color: var(--text-primary, #f8fafc);">Add Resource</h2>
       <button onclick="hideAddResourceModal()" aria-label="Close dialog"
-        style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b;">&times;</button>
+        class="modal-close-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
 
     <form id="addResourceForm" onsubmit="handleAddResource(event)">
       <div style="margin-bottom: 1.5rem;">
         <label for="resourceTitle"
-          style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Resource Title
+          style="display: block; margin-bottom: 0.5rem; color: var(--text-primary, #f8fafc); font-weight: 500;">Resource Title
           *</label>
         <input type="text" id="resourceTitle" required placeholder="e.g., Python Documentation"
-          style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;" />
+          style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.375rem; font-size: 1rem; background: rgba(17,24,39,0.7); color: var(--text-primary, #f8fafc);" />
       </div>
 
       <div style="margin-bottom: 1.5rem;">
         <label for="resourceDescription"
-          style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Description</label>
+          style="display: block; margin-bottom: 0.5rem; color: var(--text-primary, #f8fafc); font-weight: 500;">Description</label>
         <textarea id="resourceDescription" rows="3" placeholder="Describe this resource and how it helps students..."
-          style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem; resize: vertical;"></textarea>
+          style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.375rem; font-size: 1rem; background: rgba(17,24,39,0.7); color: var(--text-primary, #f8fafc); resize: vertical;"></textarea>
       </div>
 
       <div style="margin-bottom: 1.5rem;">
         <label for="resourceType"
-          style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Resource Type
+          style="display: block; margin-bottom: 0.5rem; color: var(--text-primary, #f8fafc); font-weight: 500;">Resource Type
           *</label>
         <select id="resourceType" required
-          style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;"
+          style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.375rem; font-size: 1rem; background: rgba(17,24,39,0.7); color: var(--text-primary, #f8fafc);"
           onchange="updateResourceInputType()">
           <option value="link">Link</option>
           <option value="tool">Tool</option>
@@ -384,19 +489,19 @@
 
       <!-- Resource Input Type Selection (Link or Upload) -->
       <div id="resourceInputTypeSection" style="margin-bottom: 1.5rem; display: none;">
-        <label style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Resource
+        <label style="display: block; margin-bottom: 0.5rem; color: var(--text-primary, #f8fafc); font-weight: 500;">Resource
           Source
           *</label>
         <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
           <label
-            style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 1rem; border: 2px solid #e2e8f0; border-radius: 0.375rem; flex: 1; transition: all 0.2s;"
+            style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 1rem; border: 2px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.375rem; flex: 1; transition: all 0.2s;"
             id="linkOptionLabel">
             <input type="radio" name="resourceInputType" value="link" checked onchange="toggleResourceInput()"
               id="resourceMethodLink" style="cursor: pointer;" />
             <span>Link/URL</span>
           </label>
           <label
-            style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 1rem; border: 2px solid #e2e8f0; border-radius: 0.375rem; flex: 1; transition: all 0.2s;"
+            style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 1rem; border: 2px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.375rem; flex: 1; transition: all 0.2s;"
             id="uploadOptionLabel">
             <input type="radio" name="resourceInputType" value="upload" onchange="toggleResourceInput()"
               id="resourceMethodUpload" style="cursor: pointer;" />
@@ -408,10 +513,10 @@
       <!-- Link/URL Input -->
       <div id="resourceUrlSection" style="margin-bottom: 1.5rem;">
         <label for="resourceUrl"
-          style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Resource URL
+          style="display: block; margin-bottom: 0.5rem; color: var(--text-primary, #f8fafc); font-weight: 500;">Resource URL
           *</label>
         <input type="url" id="resourceUrl" placeholder="https://example.com or code-assistant.html"
-          style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;" />
+          style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.375rem; font-size: 1rem; background: rgba(17,24,39,0.7); color: var(--text-primary, #f8fafc);" />
         <small style="color: #64748b; font-size: 0.875rem; display: block; margin-top: 0.5rem;">Enter a full URL
           (https://...) or a relative path (e.g., code-assistant.html)</small>
       </div>
@@ -419,10 +524,10 @@
       <!-- File Upload Input -->
       <div id="resourceFileSection" style="margin-bottom: 1.5rem; display: none;">
         <label for="resourceFile"
-          style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Upload File
+          style="display: block; margin-bottom: 0.5rem; color: var(--text-primary, #f8fafc); font-weight: 500;">Upload File
           *</label>
         <input type="file" id="resourceFile" accept=".pdf,.csv,.xlsx,.xls,.txt,.json,.ipynb"
-          style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;" />
+          style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.375rem; font-size: 1rem; background: rgba(17,24,39,0.7); color: var(--text-primary, #f8fafc);" />
         <small style="color: #64748b; font-size: 0.875rem; display: block; margin-top: 0.5rem;">Supported formats:
           PDF, CSV, Excel, TXT, JSON, Jupyter Notebook (.ipynb)</small>
         <small id="resourceFileInfo"
@@ -445,44 +550,44 @@
 <div id="createExerciseModal"
   style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center;">
   <div role="dialog" aria-modal="true" aria-labelledby="createExerciseModalTitle"
-    style="background: white; border-radius: 0.5rem; padding: 2rem; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto;">
+    style="background: var(--bg-card, rgba(26,34,53,0.97)); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); border-radius: 0.75rem; padding: 2rem; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-      <h2 id="createExerciseModalTitle" style="margin: 0; color: var(--color-dark);">Create New Exercise</h2>
+      <h2 id="createExerciseModalTitle" style="margin: 0; color: var(--text-primary, #f8fafc);">Create New Exercise</h2>
       <button onclick="hideCreateExerciseModal()" aria-label="Close dialog"
-        style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b;">&times;</button>
+        class="modal-close-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
 
     <form id="createExerciseForm" onsubmit="handleCreateExercise(event)">
       <div style="margin-bottom: 1.5rem;">
         <label for="exerciseChapter"
-          style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Chapter *</label>
+          style="display: block; margin-bottom: 0.5rem; color: var(--text-primary, #f8fafc); font-weight: 500;">Chapter *</label>
         <select id="exerciseChapter" required
-          style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;">
+          style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.375rem; font-size: 1rem; background: rgba(17,24,39,0.7); color: var(--text-primary, #f8fafc);">
           <option value="">Select a chapter...</option>
         </select>
       </div>
 
       <div style="margin-bottom: 1.5rem;">
         <label for="exerciseTitle"
-          style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Exercise Title
+          style="display: block; margin-bottom: 0.5rem; color: var(--text-primary, #f8fafc); font-weight: 500;">Exercise Title
           *</label>
         <input type="text" id="exerciseTitle" required placeholder="e.g., Calculate mean and median"
-          style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;" />
+          style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.375rem; font-size: 1rem; background: rgba(17,24,39,0.7); color: var(--text-primary, #f8fafc);" />
       </div>
 
       <div style="margin-bottom: 1.5rem;">
         <label for="exerciseDescription"
-          style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Description</label>
+          style="display: block; margin-bottom: 0.5rem; color: var(--text-primary, #f8fafc); font-weight: 500;">Description</label>
         <textarea id="exerciseDescription" rows="3" placeholder="Describe what students should do in this exercise..."
-          style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem; resize: vertical;"></textarea>
+          style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.375rem; font-size: 1rem; background: rgba(17,24,39,0.7); color: var(--text-primary, #f8fafc); resize: vertical;"></textarea>
       </div>
 
       <div style="margin-bottom: 1.5rem;">
         <label for="exerciseDifficulty"
-          style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Difficulty
+          style="display: block; margin-bottom: 0.5rem; color: var(--text-primary, #f8fafc); font-weight: 500;">Difficulty
           *</label>
         <select id="exerciseDifficulty" required
-          style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;">
+          style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.375rem; font-size: 1rem; background: rgba(17,24,39,0.7); color: var(--text-primary, #f8fafc);">
           <option value="easy">Easy</option>
           <option value="medium" selected>Medium</option>
           <option value="hard">Hard</option>
@@ -491,11 +596,11 @@
 
       <div style="margin-bottom: 1.5rem;">
         <label for="exerciseSolution"
-          style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Solution
+          style="display: block; margin-bottom: 0.5rem; color: var(--text-primary, #f8fafc); font-weight: 500;">Solution
           Code</label>
         <textarea id="exerciseSolution" rows="6"
           placeholder="# Enter the solution code here...&#10;# Example:&#10;import pandas as pd&#10;df = pd.read_csv('data.csv')&#10;print(df.head())"
-          style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 0.875rem; font-family: 'Courier New', monospace; resize: vertical;"></textarea>
+          style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.375rem; font-size: 0.875rem; font-family: 'Courier New', monospace; resize: vertical; background: rgba(17,24,39,0.7); color: var(--text-primary, #f8fafc);"></textarea>
         <small style="color: #64748b; font-size: 0.875rem; display: block; margin-top: 0.5rem;">This code will be used
           to validate student submissions</small>
       </div>
@@ -517,27 +622,27 @@
 <div id="editChapterModal"
   style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center;">
   <div role="dialog" aria-modal="true" aria-labelledby="editChapterModalTitle"
-    style="background: white; border-radius: 0.5rem; padding: 2rem; max-width: 600px; width: 90%;">
+    style="background: var(--bg-card, rgba(26,34,53,0.97)); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); border-radius: 0.75rem; padding: 2rem; max-width: 600px; width: 90%;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-      <h2 id="editChapterModalTitle" style="margin: 0; color: var(--color-dark);">Edit Chapter</h2>
+      <h2 id="editChapterModalTitle" style="margin: 0; color: var(--text-primary, #f8fafc);">Edit Chapter</h2>
       <button onclick="hideEditChapterModal()" aria-label="Close dialog"
-        style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b;">&times;</button>
+        class="modal-close-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
 
     <form id="editChapterForm" onsubmit="handleEditChapter(event)">
       <div style="margin-bottom: 1.5rem;">
         <label for="editChapterTitle"
-          style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Chapter Title
+          style="display: block; margin-bottom: 0.5rem; color: var(--text-primary, #f8fafc); font-weight: 500;">Chapter Title
           *</label>
         <input type="text" id="editChapterTitle" required
-          style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem;" />
+          style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.375rem; font-size: 1rem; background: rgba(17,24,39,0.7); color: var(--text-primary, #f8fafc);" />
       </div>
 
       <div style="margin-bottom: 1.5rem;">
         <label for="editChapterDescription"
-          style="display: block; margin-bottom: 0.5rem; color: var(--color-dark); font-weight: 500;">Description</label>
+          style="display: block; margin-bottom: 0.5rem; color: var(--text-primary, #f8fafc); font-weight: 500;">Description</label>
         <textarea id="editChapterDescription" rows="4"
-          style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 1rem; resize: vertical;"></textarea>
+          style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.375rem; font-size: 1rem; background: rgba(17,24,39,0.7); color: var(--text-primary, #f8fafc); resize: vertical;"></textarea>
       </div>
 
       <div id="editChapterError" class="error-message" style="display: none; margin-bottom: 1rem;"></div>
@@ -554,9 +659,9 @@
 <div id="deleteChapterModal"
   style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center;">
   <div role="dialog" aria-modal="true" aria-labelledby="deleteChapterModalTitle"
-    style="background: white; border-radius: 0.5rem; padding: 2rem; max-width: 500px; width: 90%; text-align: center;">
-    <h2 id="deleteChapterModalTitle" style="margin: 0 0 1rem 0; color: var(--color-dark);">Delete Chapter?</h2>
-    <p style="color: #64748b; margin-bottom: 2rem;">Are you sure you want to delete this chapter? All associated
+    style="background: var(--bg-card, rgba(26,34,53,0.97)); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); border-radius: 0.75rem; padding: 2rem; max-width: 500px; width: 90%; text-align: center;">
+    <h2 id="deleteChapterModalTitle" style="margin: 0 0 1rem 0; color: var(--text-primary, #f8fafc);">Delete Chapter?</h2>
+    <p style="color: var(--text-secondary, #94a3b8); margin-bottom: 2rem;">Are you sure you want to delete this chapter? All associated
       exercises will also be deleted. This action cannot be undone.</p>
 
     <div style="display: flex; gap: 1rem; justify-content: center;">
@@ -570,35 +675,38 @@
 <!-- Import Chapter Modal (LIB-7 unified import UI) -->
 <style>
   .imp-tab-btn {
-    padding: 0.5rem 1rem; border: none; background: none; cursor: pointer;
-    font-size: 0.9rem; color: #64748b; border-bottom: 2px solid transparent; white-space: nowrap;
+    padding: 0.55rem 1rem; border: none; background: none; cursor: pointer;
+    font-size: var(--font-size-sm, 0.875rem); color: var(--text-secondary, #64748b);
+    border-bottom: 2px solid transparent; white-space: nowrap;
+    transition: color 0.2s, border-color 0.2s; font-family: var(--font-mono);
   }
+  .imp-tab-btn:hover { color: var(--text-primary, #f8fafc); }
   .imp-tab-active { color: var(--color-primary); border-bottom-color: var(--color-primary); font-weight: 600; }
   .imp-tab-content { display: none; }
   .imp-card {
-    padding: 0.75rem 1rem; border: 1px solid #e2e8f0; border-radius: 0.375rem;
-    margin-bottom: 0.5rem; cursor: pointer; transition: background 0.15s;
+    padding: 0.75rem 1rem; border: 1px solid rgba(255,255,255,0.08); border-radius: 0.375rem;
+    margin-bottom: 0.5rem; cursor: pointer; transition: background 0.15s; color: #e2e8f0;
   }
-  .imp-card:hover { background: #f1f5f9; }
+  .imp-card:hover { background: rgba(37,105,244,0.1); border-color: rgba(37,105,244,0.3); }
   .imp-card-desc { font-size: 0.82em; color: #64748b; margin: 0.25rem 0 0; }
-  .imp-badge { font-size: 0.75em; background: #e0e7ff; color: #4338ca; padding: 0.1em 0.4em; border-radius: 0.25rem; }
-  .imp-scroll { max-height: 300px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 0.375rem; padding: 0.5rem; }
+  .imp-badge { font-size: 0.75em; background: rgba(37,105,244,0.15); color: var(--color-primary); padding: 0.1em 0.4em; border-radius: 0.25rem; border: 1px solid rgba(37,105,244,0.25); }
+  .imp-scroll { max-height: 300px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.08); border-radius: 0.375rem; padding: 0.5rem; }
 </style>
 
 <div id="importChapterModal"
   style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.55); z-index: 1100; align-items: center; justify-content: center;">
   <div role="dialog" aria-modal="true" aria-labelledby="importChapterModalTitle"
-    style="background: white; border-radius: 0.5rem; padding: 2rem; max-width: 780px; width: 95%; max-height: 92vh; overflow-y: auto;">
+    style="background: var(--bg-card, rgba(26,34,53,0.97)); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); border-radius: 0.75rem; padding: 2rem; max-width: 780px; width: 95%; max-height: 92vh; overflow-y: auto;">
 
     <!-- Header -->
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
-      <h2 id="importChapterModalTitle" style="margin:0; color:var(--color-dark);">Import Chapter from Web</h2>
+      <h2 id="importChapterModalTitle" style="margin:0; color:var(--text-primary, #f0f4ff);">Import Chapter from Web</h2>
       <button onclick="window.contentImporter && window.contentImporter.hide()" aria-label="Close"
-        style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#64748b;">&times;</button>
+        class="modal-close-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
 
     <!-- Source tabs -->
-    <div style="display:flex; gap:0; border-bottom:2px solid #e2e8f0; margin-bottom:1.5rem; overflow-x:auto;">
+    <div style="display:flex; gap:0; border-bottom:1px solid rgba(255,255,255,0.08); margin-bottom:1.5rem; overflow-x:auto;">
       <button class="imp-tab-btn imp-tab-active" data-tab="url"
         onclick="window.contentImporter && window.contentImporter.switchTab('url')">Paste URL</button>
       <button class="imp-tab-btn" data-tab="pypi"
@@ -616,7 +724,7 @@
       <p style="color:#64748b;font-size:0.9em;margin-top:0;">Paste any public URL — GitHub README, blog post, article, OpenStax page, LibreTexts chapter, etc.</p>
       <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;">
         <input type="url" id="impUrlInput" placeholder="https://..."
-          style="flex:1;padding:0.65rem;border:1px solid #e2e8f0;border-radius:0.375rem;font-size:0.95rem;"
+          style="flex:1;padding:0.65rem;border:1px solid var(--border-color,rgba(255,255,255,0.1));border-radius:0.375rem;font-size:0.95rem;background:rgba(17,24,39,0.7);color:var(--text-primary,#f0f4ff);"
           onkeydown="if(event.key==='Enter') window.contentImporter && window.contentImporter.previewUrl()" />
         <button class="btn btn-secondary"
           onclick="window.contentImporter && window.contentImporter.previewUrl()">Preview</button>
@@ -629,7 +737,7 @@
       <p style="color:#64748b;font-size:0.9em;margin-top:0;">Enter a PyPI package name to import its documentation as a chapter.</p>
       <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;">
         <input type="text" id="impPypiPackage" placeholder="e.g. pandas, numpy, scikit-learn"
-          style="flex:1;padding:0.65rem;border:1px solid #e2e8f0;border-radius:0.375rem;font-size:0.95rem;"
+          style="flex:1;padding:0.65rem;border:1px solid var(--border-color,rgba(255,255,255,0.1));border-radius:0.375rem;font-size:0.95rem;background:rgba(17,24,39,0.7);color:var(--text-primary,#f0f4ff);"
           onkeydown="if(event.key==='Enter') window.contentImporter && window.contentImporter.previewPypi()" />
         <button class="btn btn-secondary"
           onclick="window.contentImporter && window.contentImporter.previewPypi()">Fetch Docs</button>
@@ -651,11 +759,11 @@
       <p style="color:#64748b;font-size:0.9em;margin-top:0;">Search LibreTexts open textbooks by keyword and subject library.</p>
       <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem;flex-wrap:wrap;">
         <select id="impLtLibrary"
-          style="padding:0.65rem;border:1px solid #e2e8f0;border-radius:0.375rem;font-size:0.9rem;">
+          style="padding:0.65rem;border:1px solid var(--border-color,rgba(255,255,255,0.1));border-radius:0.375rem;font-size:0.9rem;background:rgba(17,24,39,0.7);color:var(--text-primary,#f0f4ff);">
           <option value="">All Libraries</option>
         </select>
         <input type="text" id="impLtQuery" placeholder="e.g. machine learning, statistics"
-          style="flex:1;min-width:160px;padding:0.65rem;border:1px solid #e2e8f0;border-radius:0.375rem;font-size:0.9rem;"
+          style="flex:1;min-width:160px;padding:0.65rem;border:1px solid var(--border-color,rgba(255,255,255,0.1));border-radius:0.375rem;font-size:0.9rem;background:rgba(17,24,39,0.7);color:var(--text-primary,#f0f4ff);"
           onkeydown="if(event.key==='Enter') window.contentImporter && window.contentImporter.searchLibretexts()" />
         <button class="btn btn-secondary"
           onclick="window.contentImporter && window.contentImporter.searchLibretexts()">Search</button>
@@ -668,7 +776,7 @@
       <p style="color:#64748b;font-size:0.9em;margin-top:0;">Search OER Commons for open educational resources.</p>
       <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem;">
         <input type="text" id="impOerQuery" placeholder="e.g. data science, business analytics"
-          style="flex:1;padding:0.65rem;border:1px solid #e2e8f0;border-radius:0.375rem;font-size:0.9rem;"
+          style="flex:1;padding:0.65rem;border:1px solid var(--border-color,rgba(255,255,255,0.1));border-radius:0.375rem;font-size:0.9rem;background:rgba(17,24,39,0.7);color:var(--text-primary,#f0f4ff);"
           onkeydown="if(event.key==='Enter') window.contentImporter && window.contentImporter.searchOer()" />
         <button class="btn btn-secondary"
           onclick="window.contentImporter && window.contentImporter.searchOer()">Search</button>
@@ -680,21 +788,21 @@
     <div id="impError" class="error-message" style="display:none;margin:1rem 0;"></div>
 
     <!-- Preview & chapter settings (shared) -->
-    <div id="impPreviewSection" style="display:none;border-top:1px solid #e2e8f0;margin-top:1.5rem;padding-top:1.5rem;">
-      <h3 style="margin:0 0 0.5rem;color:var(--color-dark);font-size:1rem;">Selected Content</h3>
-      <div id="impPreviewTitle" style="font-weight:600;color:#0f172a;margin-bottom:0.25rem;"></div>
+    <div id="impPreviewSection" style="display:none;border-top:1px solid rgba(255,255,255,0.08);margin-top:1.5rem;padding-top:1.5rem;">
+      <h3 style="margin:0 0 0.5rem;color:var(--text-primary,#f0f4ff);font-size:1rem;">Selected Content</h3>
+      <div id="impPreviewTitle" style="font-weight:600;color:var(--text-primary,#f0f4ff);margin-bottom:0.25rem;"></div>
       <div id="impPreviewSnippet"
-        style="font-size:0.82em;color:#64748b;max-height:80px;overflow:hidden;margin-bottom:1rem;"></div>
+        style="font-size:0.82em;color:#94a3b8;max-height:80px;overflow:hidden;margin-bottom:1rem;"></div>
 
       <div style="margin-bottom:1rem;">
         <label style="display:block;margin-bottom:0.4rem;font-weight:500;">Chapter Title *</label>
         <input type="text" id="impChapterTitle"
-          style="width:100%;padding:0.65rem;border:1px solid #e2e8f0;border-radius:0.375rem;font-size:0.95rem;" />
+          style="width:100%;padding:0.65rem;border:1px solid var(--border-color,rgba(255,255,255,0.1));border-radius:0.375rem;font-size:0.95rem;background:rgba(17,24,39,0.7);color:var(--text-primary,#f0f4ff);" />
       </div>
       <div style="margin-bottom:1rem;">
         <label style="display:block;margin-bottom:0.4rem;font-weight:500;">Description</label>
         <textarea id="impChapterDesc" rows="2"
-          style="width:100%;padding:0.65rem;border:1px solid #e2e8f0;border-radius:0.375rem;font-size:0.95rem;resize:vertical;"></textarea>
+          style="width:100%;padding:0.65rem;border:1px solid var(--border-color,rgba(255,255,255,0.1));border-radius:0.375rem;font-size:0.95rem;resize:vertical;background:rgba(17,24,39,0.7);color:var(--text-primary,#f0f4ff);"></textarea>
       </div>
       <div style="margin-bottom:1.5rem;">
         <label style="display:block;margin-bottom:0.4rem;font-weight:500;">Exercise Generation</label>

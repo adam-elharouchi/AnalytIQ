@@ -33,67 +33,16 @@
     }
 
     // ══════════════════════════════════════════════════════════════
-    // FAR LAYER — faint drifting character columns
+    // FAR LAYER — intentionally left empty (drifting columns removed)
     // ══════════════════════════════════════════════════════════════
     const farLayer = document.getElementById('heroBgFar');
-    if (farLayer) {
-        clearLayer(farLayer);
-        const chars = '01abcdefghijklmnopqrstuvwxyz=()[]{}#.,_<>+-*/|&%$@!?';
-        const colCount = Math.floor(window.innerWidth / 60);
-
-        for (let i = 0; i < colCount; i++) {
-            const col = document.createElement('div');
-            col.className = 'hero-bg-col';
-            col.style.left = (i * 60 + Math.random() * 30) + 'px';
-            col.style.animationDuration = (18 + Math.random() * 20) + 's';
-            col.style.animationDelay = (-Math.random() * 20) + 's';
-            col.style.opacity = (0.025 + Math.random() * 0.025).toFixed(3);
-
-            // Build a column of random characters
-            let content = '';
-            const rows = 20 + Math.floor(Math.random() * 15);
-            for (let r = 0; r < rows; r++) {
-                content += chars[Math.floor(Math.random() * chars.length)] + '\n';
-            }
-            col.textContent = content;
-            farLayer.appendChild(col);
-        }
-    }
+    if (farLayer) clearLayer(farLayer);
 
     // ══════════════════════════════════════════════════════════════
-    // MID LAYER — ghost code blocks scrolling upward
+    // MID LAYER — intentionally left empty (ghost code blocks removed)
     // ══════════════════════════════════════════════════════════════
     const midLayer = document.getElementById('heroBgMid');
     clearLayer(midLayer);
-
-    const ghostSnippets = [
-        `import pandas as pd\nimport numpy as np\n\ndf = pd.read_csv('data.csv')\nprint(df.shape)`,
-        `from sklearn.preprocessing import StandardScaler\n\nscaler = StandardScaler()\nX_scaled = scaler.fit_transform(X)`,
-        `# Split the dataset\nX_train, X_test, y_train, y_test =\n  train_test_split(X, y, test_size=0.2,\n                   random_state=42)`,
-        `model = RandomForestClassifier(\n  n_estimators=100,\n  max_depth=5\n)\nmodel.fit(X_train, y_train)`,
-        `accuracy = model.score(X_test, y_test)\nprint(f'Accuracy: {accuracy:.2%}')`,
-        `plt.figure(figsize=(10, 6))\nplt.plot(df['date'], df['value'])\nplt.title('Trend Analysis')\nplt.show()`,
-        `corr = df.corr()\nsns.heatmap(corr, annot=True,\n  cmap='coolwarm')`,
-        `df.groupby('category')['value']\n  .agg(['mean', 'std', 'count'])\n  .reset_index()`,
-    ];
-
-    if (midLayer) {
-        const ghostCount = 7;
-        for (let i = 0; i < ghostCount; i++) {
-            const ghost = document.createElement('div');
-            ghost.className = 'hero-bg-ghost';
-            ghost.textContent = ghostSnippets[i % ghostSnippets.length];
-
-            // Random horizontal position
-            ghost.style.left = (5 + Math.random() * 75) + '%';
-            ghost.style.top = (10 + Math.random() * 80) + '%';
-            ghost.style.animationDuration = (25 + Math.random() * 20) + 's';
-            ghost.style.animationDelay = (-Math.random() * 25) + 's';
-            ghost.style.opacity = (0.07 + Math.random() * 0.06).toFixed(3);
-
-            midLayer.appendChild(ghost);
-        }
-    }
 
     // ══════════════════════════════════════════════════════════════
     // FOREGROUND LAYER — floating IDE windows with live typing
@@ -164,6 +113,47 @@ plt.title('Feature Importance')
 plt.tight_layout()
 plt.savefig('feature_importance.png', dpi=150)
 plt.show()`,
+        },
+        {
+            filename: 'pipeline.py',
+            floatClass: 'hero-bg-float-d',
+            snippet: `from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+
+pipe = Pipeline([
+    ('scaler', StandardScaler()),
+    ('pca', PCA(n_components=0.95)),
+    ('clf', RandomForestClassifier(
+        n_estimators=200,
+        max_depth=8
+    ))
+])
+
+pipe.fit(X_train, y_train)
+score = pipe.score(X_test, y_test)
+print(f'Pipeline score: {score:.3f}')`,
+        },
+        {
+            filename: 'explore.py',
+            floatClass: 'hero-bg-float-e',
+            snippet: `import pandas as pd
+
+df = pd.read_csv('dataset.csv')
+
+# Summary statistics
+summary = df.describe()
+print(summary)
+
+# Detect outliers via IQR
+Q1 = df.quantile(0.25)
+Q3 = df.quantile(0.75)
+IQR = Q3 - Q1
+outliers = df[
+    ((df < Q1 - 1.5 * IQR) |
+     (df > Q3 + 1.5 * IQR)).any(axis=1)
+]
+print(f'Outliers found: {len(outliers)}')`,
         },
     ];
 

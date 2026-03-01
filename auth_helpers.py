@@ -97,18 +97,25 @@ def detect_role_from_email(email):
 
 
 def create_jwt_token(
-    user_id, role="student", name=None, email=None, impersonator_id=None, expires_hours=None
+    user_id,
+    role="student",
+    name=None,
+    email=None,
+    impersonator_id=None,
+    expires_hours=None,
+    tenant_id=None,
 ):
     """
     Create a JWT token for an authenticated user.
 
     Args:
         user_id: The user's ID
-        role: The user's role (student/professor/superadmin)
+        role: The user's role (student/professor/tenant_admin/superadmin)
         name: The user's name (optional, included in token for convenience)
         email: The user's email (optional, included in token for convenience)
         impersonator_id: If impersonating, the user_id of the super admin
         expires_hours: Override default expiry (e.g. 1 for short-lived impersonation tokens)
+        tenant_id: For tenant_admin users, their scoped tenant (optional)
 
     Returns:
         str: Encoded JWT token
@@ -126,6 +133,8 @@ def create_jwt_token(
         payload["email"] = email
     if impersonator_id:
         payload["impersonator_id"] = impersonator_id
+    if tenant_id:
+        payload["tenant_id"] = tenant_id
 
     return jwt.encode(payload, config.JWT_SECRET_KEY, algorithm=config.JWT_ALGORITHM)
 
@@ -273,6 +282,7 @@ def require_auth(f):
             g.user_id = str(payload["user_id"])
             g.user_role = payload.get("role", "student")
             g.impersonator_id = payload.get("impersonator_id")
+            g.tenant_id = payload.get("tenant_id")
         except jwt.ExpiredSignatureError:
             return jsonify({"error": "Token expired. Please sign in again."}), 401
         except jwt.InvalidTokenError:
@@ -345,6 +355,29 @@ def require_super_admin(f):
         user_role = getattr(g, "user_role", None)
         if user_role != "superadmin":
             return jsonify({"error": "Forbidden: super admin access required"}), 403
+        return f(*args, **kwargs)
+
+    return decorated
+
+
+def require_tenant_admin(f):
+    """
+    Decorator that allows access for 'tenant_admin' or 'superadmin' roles.
+    Must be applied AFTER @require_auth.
+
+    Usage:
+        @app.route('/api/sso/admin/providers')
+        @require_auth
+        @require_tenant_admin
+        def manage_sso_providers():
+            tenant_id = g.tenant_id  # set for tenant_admin; None for superadmin
+    """
+
+    @functools.wraps(f)
+    def decorated(*args, **kwargs):
+        user_role = getattr(g, "user_role", None)
+        if user_role not in ("tenant_admin", "superadmin"):
+            return jsonify({"error": "Forbidden: tenant admin access required"}), 403
         return f(*args, **kwargs)
 
     return decorated

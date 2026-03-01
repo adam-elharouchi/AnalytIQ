@@ -335,6 +335,8 @@ from blueprints.lti import bp as lti_bp  # noqa: E402
 from blueprints.superadmin import bp as superadmin_bp  # noqa: E402
 from blueprints.content_import import bp as content_import_bp  # noqa: E402
 from blueprints.platform import bp as platform_bp  # noqa: E402
+from blueprints.sso import bp as sso_bp  # noqa: E402
+from blueprints.tenant_admin import bp as tenant_admin_bp  # noqa: E402
 from middleware import check_ip_blocklist, check_maintenance_mode  # noqa: E402
 
 app.register_blueprint(health_bp)
@@ -348,6 +350,8 @@ app.register_blueprint(lti_bp)
 app.register_blueprint(superadmin_bp)
 app.register_blueprint(content_import_bp)
 app.register_blueprint(platform_bp)
+app.register_blueprint(sso_bp)
+app.register_blueprint(tenant_admin_bp)
 
 # Platform-level request guards (IP blocklist + maintenance mode)
 app.before_request(check_ip_blocklist)

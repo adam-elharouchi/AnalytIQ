@@ -19,15 +19,15 @@
         _stylesInjected = true;
         const style = document.createElement('style');
         style.textContent = [
-            '.ui-skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);',
+            '.ui-skeleton { background: linear-gradient(90deg, rgba(255,255,255,0.06) 25%, rgba(255,255,255,0.10) 50%, rgba(255,255,255,0.06) 75%);',
             '  background-size: 200% 100%; animation: ui-shimmer 1.5s infinite; border-radius: 8px; }',
             '@keyframes ui-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }',
-            '.ui-skeleton-card { padding: 16px; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 12px; }',
+            '.ui-skeleton-card { padding: 16px; border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 8px; margin-bottom: 12px; }',
             '.ui-skeleton-line { height: 14px; margin-bottom: 8px; border-radius: 4px; }',
             '.ui-skeleton-line.wide  { width: 75%; }',
             '.ui-skeleton-line.narrow { width: 40%; }',
             '.ui-empty-state { text-align: center; padding: 48px 24px; color: #64748b; }',
-            '.ui-empty-state h3 { font-size: 1.1rem; font-weight: 600; color: #374151; margin: 0 0 8px; }',
+            '.ui-empty-state h3 { font-size: 1.1rem; font-weight: 600; color: var(--text-primary, #f0f4ff); margin: 0 0 8px; }',
             '.ui-empty-state p { margin: 0 0 20px; font-size: 0.9rem; }',
             '.ui-error-state { text-align: center; padding: 32px 24px; color: #ef4444; }',
             '.ui-error-state p { margin: 0 0 16px; font-size: 0.9rem; }',
@@ -42,14 +42,14 @@
         style.textContent = [
             '.ui-confirm-backdrop { position: fixed; inset: 0; z-index: 9000; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; animation: ui-fade-in 0.15s ease; }',
             '@keyframes ui-fade-in { from { opacity: 0; } to { opacity: 1; } }',
-            '.ui-confirm-card { background: #fff; border-radius: var(--radius-lg, 12px); padding: 24px 36px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); max-width: 420px; width: 90%; text-align: center; animation: ui-slide-up 0.18s ease; }',
+            '.ui-confirm-card { background: var(--bg-card, rgba(26,34,53,0.97)); border-radius: var(--radius-lg, 12px); padding: 24px 36px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); border: 1px solid var(--border-color, rgba(255,255,255,0.1)); max-width: 420px; width: 90%; text-align: center; animation: ui-slide-up 0.18s ease; }',
             '@keyframes ui-slide-up { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }',
-            '.ui-confirm-message { font-size: 0.95rem; color: var(--color-dark, #1e293b); line-height: 1.55; margin: 0 0 24px; }',
+            '.ui-confirm-message { font-size: 0.95rem; color: var(--text-primary, #f0f4ff); line-height: 1.55; margin: 0 0 24px; }',
             '.ui-confirm-actions { display: flex; gap: 12px; justify-content: center; }',
             '.ui-confirm-btn { padding: 9px 22px; border: none; border-radius: 6px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: opacity 0.15s; }',
             '.ui-confirm-btn:hover { opacity: 0.85; }',
             '.ui-confirm-btn-danger { background: var(--color-error, #ef4444); color: #fff; }',
-            '.ui-confirm-btn-cancel { background: #e5e7eb; color: var(--color-dark, #1e293b); }',
+            '.ui-confirm-btn-cancel { background: rgba(255,255,255,0.1); color: var(--text-primary, #f0f4ff); border: 1px solid var(--border-color, rgba(255,255,255,0.1)); }',
         ].join('\n');
         document.head.appendChild(style);
     }

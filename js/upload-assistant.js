@@ -43,17 +43,17 @@ function toggleChapterSource(source) {
         newSection.style.display = 'none';
         existingActions.style.display = 'block';
         existingOption.style.borderColor = 'var(--color-primary)';
-        existingOption.style.background = '#eff6ff';
+        existingOption.style.background = 'rgba(37,105,244,0.12)';
         newOption.style.borderColor = 'var(--border-color)';
-        newOption.style.background = 'white';
+        newOption.style.background = '';
     } else {
         existingSection.style.display = 'none';
         newSection.style.display = 'block';
         existingActions.style.display = 'none';
         newOption.style.borderColor = 'var(--color-primary)';
-        newOption.style.background = '#eff6ff';
+        newOption.style.background = 'rgba(37,105,244,0.12)';
         existingOption.style.borderColor = 'var(--border-color)';
-        existingOption.style.background = 'white';
+        existingOption.style.background = '';
     }
 }
 
@@ -219,12 +219,13 @@ function showProcessError(message) {
     const errorDiv = document.createElement('div');
     errorDiv.style.marginTop = '2rem';
     errorDiv.style.padding = '1rem';
-    errorDiv.style.background = '#fee2e2';
-    errorDiv.style.color = '#dc2626';
+    errorDiv.style.background = 'var(--color-error-bg, rgba(239,68,68,0.15))';
+    errorDiv.style.color = 'var(--color-error-text, #fca5a5)';
     errorDiv.style.borderRadius = '0.5rem';
+    errorDiv.style.border = '1px solid var(--color-error-border, #ef4444)';
     errorDiv.innerHTML = `
         <strong>Error:</strong> ${message}<br>
-        <button onclick="location.reload()" class="btn btn-secondary" style="margin-top: 1rem; background: white;">Try Again</button>
+        <button onclick="location.reload()" class="btn btn-secondary" style="margin-top: 1rem;">Try Again</button>
     `;
     processView.appendChild(errorDiv);
 
@@ -234,7 +235,7 @@ function showProcessError(message) {
         const el = document.getElementById(id);
         if (el && el.classList.contains('active')) {
             el.classList.remove('active');
-            el.querySelector('.status-icon').innerHTML = '❌';
+            el.querySelector('.status-icon').innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
             el.style.borderColor = '#dc2626';
         }
     });
@@ -245,7 +246,7 @@ function updateStep(step) {
         if (idx + 1 < step) {
             el.classList.remove('active');
             el.classList.add('completed');
-            el.innerHTML = '✓<span class="step-label">' + el.querySelector('.step-label').innerText + '</span>';
+            el.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span class="step-label">' + el.querySelector('.step-label').innerText + '</span>';
         } else if (idx + 1 === step) {
             el.classList.add('active');
             el.classList.remove('completed');
@@ -264,7 +265,7 @@ function updateStage(stageId, status) {
     } else if (status === 'completed') {
         el.classList.remove('active');
         el.classList.add('completed');
-        el.querySelector('.status-icon').innerHTML = '✓';
+        el.querySelector('.status-icon').innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-success,#10b981)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
     }
 }
 

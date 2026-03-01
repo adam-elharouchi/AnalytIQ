@@ -836,12 +836,22 @@ def delete_tenant(tenant_id):
 @require_auth
 @require_super_admin
 def change_user_role(user_id):
-    """Change a user's role (student / professor / superadmin) and is_super_admin flag."""
+    """
+    Change a user's role and optionally their tenant_id.
+
+    Body:
+      role (required): student | professor | tenant_admin | superadmin
+      tenant_id (optional): required when promoting to tenant_admin
+    """
     data = request.json or {}
     new_role = data.get("role")
-    valid_roles = {"student", "professor", "superadmin"}
+    new_tenant_id = data.get("tenant_id")  # required for tenant_admin
+    valid_roles = {"student", "professor", "tenant_admin", "superadmin"}
     if new_role not in valid_roles:
         return jsonify({"error": f"Role must be one of: {', '.join(sorted(valid_roles))}"}), 400
+
+    if new_role == "tenant_admin" and not new_tenant_id:
+        return jsonify({"error": "tenant_id is required when assigning the tenant_admin role"}), 400
 
     try:
         conn = get_db_connection()
@@ -852,11 +862,12 @@ def change_user_role(user_id):
             UPDATE users
             SET role = %s,
                 is_super_admin = %s,
+                tenant_id = CASE WHEN %s IS NOT NULL THEN %s ELSE tenant_id END,
                 updated_at = CURRENT_TIMESTAMP
             WHERE user_id = %s
             RETURNING user_id, name, email
             """,
-            (new_role, new_role == "superadmin", user_id),
+            (new_role, new_role == "superadmin", new_tenant_id, new_tenant_id, user_id),
         )
         row = cur.fetchone()
         if not row:
@@ -867,7 +878,7 @@ def change_user_role(user_id):
             "UPDATE_USER_ROLE",
             resource_type="user",
             resource_id=user_id,
-            details={"new_role": new_role},
+            details={"new_role": new_role, "tenant_id": new_tenant_id},
         )
         conn.commit()
         cur.close()
@@ -1049,19 +1060,23 @@ def list_all_classes():
             where += " AND (c.name ILIKE %s OR u.name ILIKE %s OR u.email ILIKE %s)"
             params.extend([f"%{q}%", f"%{q}%", f"%{q}%"])
 
+        # Total count (separate query to avoid window-function + GROUP BY complexity)
+        cur.execute(
+            f"SELECT COUNT(*) FROM classes c LEFT JOIN users u ON u.user_id = c.professor_id {where}",
+            params,
+        )
+        total = cur.fetchone()[0]
+
+        # Page data — subqueries for counts (same pattern as class_repository.py)
         cur.execute(
             f"""
             SELECT c.class_id, c.name, c.description, c.created_at,
                    u.user_id AS prof_id, u.name AS prof_name, u.email AS prof_email,
-                   COUNT(DISTINCT ce.student_id) AS student_count,
-                   COUNT(DISTINCT cc.chapter_id) AS chapter_count,
-                   COUNT(*) OVER() AS total_count
+                   (SELECT COUNT(*) FROM class_enrollments WHERE class_id = c.class_id) AS student_count,
+                   (SELECT COUNT(*) FROM class_chapters    WHERE class_id = c.class_id) AS chapter_count
             FROM classes c
             LEFT JOIN users u ON u.user_id = c.professor_id
-            LEFT JOIN class_enrollments ce ON ce.class_id = c.class_id
-            LEFT JOIN class_chapters    cc ON cc.class_id = c.class_id
             {where}
-            GROUP BY c.class_id, u.user_id
             ORDER BY c.created_at DESC
             LIMIT %s OFFSET %s
             """,
@@ -1070,7 +1085,6 @@ def list_all_classes():
         rows = cur.fetchall()
         cur.close()
 
-        total = rows[0][9] if rows else 0
         classes = [
             {
                 "class_id": r[0],
@@ -1336,8 +1350,8 @@ def create_announcement():
         cur = conn.cursor()
         cur.execute(
             """
-            INSERT INTO announcements (title, message, type, target_roles, expires_at, created_by)
-            VALUES (%s, %s, %s, %s, %s, %s)
+            INSERT INTO announcements (title, message, type, target_roles, expires_at, created_by, is_active)
+            VALUES (%s, %s, %s, %s, %s, %s, TRUE)
             RETURNING announcement_id
             """,
             (title, message, atype, target or [], expires, g.user_id),

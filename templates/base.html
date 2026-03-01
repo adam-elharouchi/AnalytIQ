@@ -6,13 +6,11 @@
   <title>{% block title %}AnalytIQ{% endblock %} - AnalytIQ</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="css/styles.css?v=2.6" />
-  <link rel="stylesheet" href="css/local-dev-dark-theme.css?v=2.6" />
   <script src="js/api-helper.js?v=2.6"></script>
   <script src="js/constants.js?v=2.6"></script>
   <script src="js/api-client.js?v=2.6"></script>
   <script src="js/ui-states.js?v=2.6"></script>
   <script src="js/offline-detector.js?v=2.6"></script>
-  <script src="js/local-dev-dark-theme.js?v=2.6" defer></script>
   {% block extra_head %}{% endblock %}
 </head>
 <body{% block body_attrs %}{% endblock %}>
@@ -22,7 +20,7 @@
        Persists across navigation because original_token is in localStorage.  -->
   <div id="impersonation-bar"
        style="display:none; position:fixed; top:0; left:0; right:0; z-index:9999;
-              background:#d97706; color:#fff; padding:0.55rem 1.5rem;
+              background:var(--color-warning, #d97706); color:#fff; padding:0.55rem 1.5rem;
               font-size:0.875rem; align-items:center; gap:1rem;
               box-shadow:0 2px 8px rgba(0,0,0,0.35);">
     <span style="flex:1;">Impersonating: <strong id="impersonation-bar-name"></strong></span>
@@ -117,12 +115,17 @@
   <script>
     /* Fetch active announcements and render dismissible toast banners */
     (function () {
-      var role = '';
+      var role = '', tenantId = '';
       try {
-        role = (JSON.parse(localStorage.getItem('currentUser') || '{}').role) || '';
+        var _cu = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        role     = _cu.role      || '';
+        tenantId = _cu.tenant_id || '';
       } catch (e) {}
 
-      var url = '/api/platform/status' + (role ? '?role=' + encodeURIComponent(role) : '');
+      var _params = [];
+      if (role)     _params.push('role='      + encodeURIComponent(role));
+      if (tenantId) _params.push('tenant_id=' + encodeURIComponent(tenantId));
+      var url = '/api/platform/status' + (_params.length ? '?' + _params.join('&') : '');
       fetch(url)
         .then(function (r) { return r.json(); })
         .then(function (data) {
@@ -144,11 +147,20 @@
           var container = document.getElementById('announcement-banners');
           if (!container || !data.announcements || !data.announcements.length) return;
 
+          var _cs = getComputedStyle(document.documentElement);
           var bgMap = {
-            info:    { bg: '#dbeafe', color: '#1e40af', border: '#93c5fd' },
-            warning: { bg: '#fef9c3', color: '#854d0e', border: '#fde047' },
-            danger:  { bg: '#fee2e2', color: '#991b1b', border: '#fca5a5' },
-            success: { bg: '#dcfce7', color: '#166534', border: '#86efac' },
+            info:    { bg: _cs.getPropertyValue('--color-info-bg').trim()       || 'rgba(37,105,244,0.15)',
+                        color: _cs.getPropertyValue('--color-info-text').trim()   || '#93c5fd',
+                        border: _cs.getPropertyValue('--color-info-border').trim() || '#2569f4' },
+            warning: { bg: _cs.getPropertyValue('--color-warning-bg').trim()    || 'rgba(245,158,11,0.15)',
+                        color: _cs.getPropertyValue('--color-warning-text').trim() || '#fcd34d',
+                        border: _cs.getPropertyValue('--color-warning-border').trim() || '#f59e0b' },
+            danger:  { bg: _cs.getPropertyValue('--color-error-bg').trim()      || 'rgba(239,68,68,0.15)',
+                        color: _cs.getPropertyValue('--color-error-text').trim()   || '#fca5a5',
+                        border: _cs.getPropertyValue('--color-error-border').trim() || '#ef4444' },
+            success: { bg: _cs.getPropertyValue('--color-success-bg').trim()    || 'rgba(5,150,105,0.15)',
+                        color: _cs.getPropertyValue('--color-success-text').trim() || '#6ee7b7',
+                        border: _cs.getPropertyValue('--color-success-border').trim() || '#059669' },
           };
 
           data.announcements.forEach(function (ann) {
