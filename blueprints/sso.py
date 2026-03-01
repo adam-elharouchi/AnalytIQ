@@ -22,6 +22,7 @@ import json
 import logging
 import secrets
 import uuid
+from urllib.parse import urlencode
 from typing import Optional
 
 import requests as http_client
@@ -326,9 +327,7 @@ def sso_init(provider_id):
             "scope": "openid email profile",
             "state": state,
         }
-        # Build query string manually to avoid extra dependencies
-        qs = "&".join(f"{k}={v}" for k, v in params.items())
-        auth_url = f"{auth_endpoint}?{qs}"
+        auth_url = f"{auth_endpoint}?{urlencode(params)}"
 
         return jsonify({"auth_url": auth_url}), 200
 

@@ -429,8 +429,12 @@ def change_user_role(user_id):
 
     try:
         conn = get_db_connection()
-        if not _assert_user_in_tenant(conn, user_id, tenant_id):
+        target = _assert_user_in_tenant(conn, user_id, tenant_id)
+        if not target:
             return jsonify({"error": "User not found in your tenant"}), 404
+        _, _, _, target_role = target
+        if target_role == "superadmin":
+            return jsonify({"error": "Cannot modify a superadmin account"}), 403
 
         cur = conn.cursor()
         cur.execute(
@@ -597,10 +601,10 @@ def delete_user(user_id):
             return jsonify({"error": "User not found in your tenant"}), 404
 
         _, name, email, role = target
-        if role in ("superadmin", "tenant_admin") and role == g.user_role:
-            # Prevent self-deletion or deleting peers of equal/higher role
-            if user_id == g.user_id:
-                return jsonify({"error": "Cannot delete your own account"}), 400
+        if role == "superadmin":
+            return jsonify({"error": "Cannot delete a superadmin account"}), 403
+        if user_id == g.user_id:
+            return jsonify({"error": "Cannot delete your own account"}), 400
 
         cur = conn.cursor()
 
@@ -1196,7 +1200,7 @@ def create_tenant_announcement():
         new_id = cur.fetchone()[0]
         conn.commit()
         cur.close()
-        audit("CREATE_ANNOUNCEMENT", resource_type="announcement", resource_id=str(new_id))
+        audit(conn, "CREATE_ANNOUNCEMENT", resource_type="announcement", resource_id=str(new_id))
         return jsonify({"success": True, "id": new_id}), 201
     except Exception as e:
         logger.error("create_tenant_announcement failed: %s", e)
@@ -1261,7 +1265,7 @@ def delete_tenant_announcement(announcement_id):
             return jsonify({"error": "Announcement not found"}), 404
         conn.commit()
         cur.close()
-        audit("DELETE_ANNOUNCEMENT", resource_type="announcement", resource_id=announcement_id)
+        audit(conn, "DELETE_ANNOUNCEMENT", resource_type="announcement", resource_id=announcement_id)
         return jsonify({"success": True}), 200
     except Exception as e:
         logger.error("delete_tenant_announcement failed: %s", e)
