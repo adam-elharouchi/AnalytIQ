@@ -1350,8 +1350,8 @@ def create_announcement():
         cur = conn.cursor()
         cur.execute(
             """
-            INSERT INTO announcements (title, message, type, target_roles, expires_at, created_by)
-            VALUES (%s, %s, %s, %s, %s, %s)
+            INSERT INTO announcements (title, message, type, target_roles, expires_at, created_by, is_active)
+            VALUES (%s, %s, %s, %s, %s, %s, TRUE)
             RETURNING announcement_id
             """,
             (title, message, atype, target or [], expires, g.user_id),
