@@ -25,7 +25,6 @@ Routes:
 """
 
 import logging
-import psycopg2
 from flask import Blueprint, jsonify, request, g
 
 from auth_helpers import require_auth, require_tenant_admin, create_jwt_token
