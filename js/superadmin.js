@@ -218,18 +218,14 @@ class SuperAdminDashboard {
         };
 
         try {
-            const _base = window.API_BASE_URL || '/api';
-            const healthUrl = _base.startsWith('http')
-                ? `${_base}/health`
-                : `${window.location.protocol}//${window.location.host}${_base}/health`;
-            const res = await fetch(healthUrl);
-            if (!res.ok) throw new Error('Health check failed');
+            const res = await authFetch('/api/health/detail');
+            // Parse regardless of status — services may be degraded but data still present
             const data = await res.json();
 
             const svc = data.services || {};
-            setService('postgres', svc.database);
-            setService('redis', svc.redis);
-            setService('storage', svc.storage);
+            setService('postgres', svc.database?.status);
+            setService('redis', svc.cache?.status);
+            setService('storage', svc.storage?.status);
 
             const ts = document.getElementById('overview-health-timestamp');
             if (ts) ts.textContent = `Last check: ${new Date().toLocaleTimeString()}`;
