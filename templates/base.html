@@ -107,13 +107,32 @@
   </script>
 
   <!-- ===== Announcement Banners =====
-       Loaded from /api/platform/status on every page. -->
-  <div id="announcement-banners" style="position:fixed; bottom:1rem; right:1rem;
-       z-index:8000; display:flex; flex-direction:column; gap:0.5rem; max-width:420px;">
+       Full-width top bars, stacked below the impersonation bar when active. -->
+  <div id="announcement-banners"
+       style="position:fixed; top:0; left:0; right:0; z-index:8900;
+              display:flex; flex-direction:column; pointer-events:none;">
   </div>
 
   <script>
-    /* Fetch active announcements and render dismissible toast banners */
+    /* Reposition announcement container below the impersonation bar (if shown),
+       and update body paddingTop to keep page content clear of both bars. */
+    function _updatePageTopOffset() {
+      var impBar   = document.getElementById('impersonation-bar');
+      var annWrap  = document.getElementById('announcement-banners');
+      var impH = (impBar && impBar.style.display === 'flex')
+                 ? (impBar.offsetHeight || 44) : 0;
+      if (annWrap) annWrap.style.top = impH + 'px';
+      var annH = annWrap ? annWrap.offsetHeight : 0;
+      document.body.style.paddingTop = (impH + annH) + 'px';
+    }
+
+    function _dismissAnnouncement(btn) {
+      var el = btn.closest('[data-ann-id]');
+      if (el) el.remove();
+      _updatePageTopOffset();
+    }
+
+    /* Fetch active announcements and render full-width top banner bars */
     (function () {
       var role = '', tenantId = '';
       try {
@@ -131,7 +150,6 @@
         .then(function (data) {
           // --- Maintenance redirect ---
           if (data.maintenance) {
-            // Superadmins may stay; everyone else sees a maintenance page
             var isSuperAdmin = (role === 'superadmin');
             if (!isSuperAdmin && !window.location.pathname.includes('login')) {
               document.body.innerHTML =
@@ -147,39 +165,37 @@
           var container = document.getElementById('announcement-banners');
           if (!container || !data.announcements || !data.announcements.length) return;
 
-          var _cs = getComputedStyle(document.documentElement);
-          var bgMap = {
-            info:    { bg: _cs.getPropertyValue('--color-info-bg').trim()       || 'rgba(37,105,244,0.15)',
-                        color: _cs.getPropertyValue('--color-info-text').trim()   || '#93c5fd',
-                        border: _cs.getPropertyValue('--color-info-border').trim() || '#2569f4' },
-            warning: { bg: _cs.getPropertyValue('--color-warning-bg').trim()    || 'rgba(245,158,11,0.15)',
-                        color: _cs.getPropertyValue('--color-warning-text').trim() || '#fcd34d',
-                        border: _cs.getPropertyValue('--color-warning-border').trim() || '#f59e0b' },
-            danger:  { bg: _cs.getPropertyValue('--color-error-bg').trim()      || 'rgba(239,68,68,0.15)',
-                        color: _cs.getPropertyValue('--color-error-text').trim()   || '#fca5a5',
-                        border: _cs.getPropertyValue('--color-error-border').trim() || '#ef4444' },
-            success: { bg: _cs.getPropertyValue('--color-success-bg').trim()    || 'rgba(5,150,105,0.15)',
-                        color: _cs.getPropertyValue('--color-success-text').trim() || '#6ee7b7',
-                        border: _cs.getPropertyValue('--color-success-border').trim() || '#059669' },
+          var colorMap = {
+            info:    '#2569f4',
+            warning: '#f59e0b',
+            danger:  '#dc2626',
+            success: '#059669',
           };
 
           data.announcements.forEach(function (ann) {
-            var style = bgMap[ann.type] || bgMap.info;
+            var bg = colorMap[ann.type] || colorMap.info;
             var el = document.createElement('div');
             el.setAttribute('data-ann-id', ann.id);
             el.style.cssText =
-              'background:' + style.bg + ';color:' + style.color
-              + ';border:1px solid ' + style.border
-              + ';border-radius:0.5rem;padding:0.75rem 1rem;font-size:0.875rem;'
-              + 'box-shadow:0 4px 12px rgba(0,0,0,0.15);position:relative;';
+              'background:' + bg + ';color:#fff;'
+              + 'padding:0.55rem 1.5rem;font-size:0.875rem;'
+              + 'display:flex;align-items:center;gap:1rem;width:100%;'
+              + 'box-shadow:0 2px 8px rgba(0,0,0,0.35);pointer-events:auto;';
             el.innerHTML =
-              '<button onclick="this.parentElement.remove()" '
-              + 'style="position:absolute;top:0.4rem;right:0.6rem;background:none;border:none;'
-              + 'cursor:pointer;font-size:1rem;color:inherit;line-height:1;" aria-label="Dismiss">×</button>'
+              '<span style="flex:1;">'
               + '<strong>' + escapeAnnHtml(ann.title) + '</strong>'
-              + '<div style="margin-top:0.25rem;">' + escapeAnnHtml(ann.message) + '</div>';
+              + ' \u2014 ' + escapeAnnHtml(ann.message)
+              + '</span>'
+              + '<button onclick="_dismissAnnouncement(this)"'
+              + ' style="background:rgba(255,255,255,0.15);color:#fff;'
+              + 'border:1px solid rgba(255,255,255,0.45);padding:0.3rem 0.9rem;'
+              + 'border-radius:0.375rem;cursor:pointer;font-weight:600;white-space:nowrap;"'
+              + ' aria-label="Dismiss">\u00d7</button>';
             container.appendChild(el);
           });
+
+          // Position below impersonation bar and push page content down
+          _updatePageTopOffset();
         })
         .catch(function () { /* fail silently */ });
 
