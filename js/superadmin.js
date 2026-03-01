@@ -541,7 +541,12 @@ class SuperAdminDashboard {
                             role:    payload.role
                         };
                         localStorage.setItem('currentUser', JSON.stringify(targetUserObj));
-                        dest = (payload.role === 'professor') ? '/professor-dashboard.html' : '/student-classes.html';
+                        const roleDestMap = {
+                            professor:    '/professor-dashboard.html',
+                            tenant_admin: '/tenant-admin-dashboard.html',
+                            superadmin:   '/superadmin-dashboard.html',
+                        };
+                        dest = roleDestMap[payload.role] || '/student-classes.html';
                     } catch (e) { console.error("JWT decode failed:", e); }
 
                     // Record when the session started so the floating bar can enforce
