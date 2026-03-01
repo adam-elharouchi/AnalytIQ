@@ -223,9 +223,11 @@ class SuperAdminDashboard {
             const data = await res.json();
 
             const svc = data.services || {};
+            // database returns {status: "healthy"/"unhealthy"}
+            // cache/storage return {healthy: bool} — use the boolean directly
             setService('postgres', svc.database?.status);
-            setService('redis', svc.cache?.status);
-            setService('storage', svc.storage?.status);
+            setService('redis', svc.cache?.healthy);
+            setService('storage', svc.storage?.healthy);
 
             const ts = document.getElementById('overview-health-timestamp');
             if (ts) ts.textContent = `Last check: ${new Date().toLocaleTimeString()}`;
