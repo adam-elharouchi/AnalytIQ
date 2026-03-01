@@ -827,26 +827,33 @@ class SuperAdminDashboard {
         const newBtn      = document.getElementById('tenantModeNewBtn');
         const existingSec = document.getElementById('tenantExistingSection');
         const newSec      = document.getElementById('tenantNewSection');
-        const active   = 'background:var(--color-primary,#2569f4);color:#fff;';
-        const inactive = 'background:rgba(17,24,39,0.7);color:var(--text-secondary,#94a3b8);';
-        if (existingBtn) existingBtn.style.cssText += mode === 'existing' ? active : inactive;
-        if (newBtn)      newBtn.style.cssText      += mode === 'new'      ? active : inactive;
-        if (existingSec) existingSec.style.display  = mode === 'existing' ? 'block' : 'none';
-        if (newSec)      newSec.style.display       = mode === 'new'      ? 'block' : 'none';
+        if (existingBtn) {
+            existingBtn.style.background = mode === 'existing' ? 'var(--color-primary,#2569f4)' : 'rgba(17,24,39,0.7)';
+            existingBtn.style.color      = mode === 'existing' ? '#fff' : 'var(--text-secondary,#94a3b8)';
+        }
+        if (newBtn) {
+            newBtn.style.background = mode === 'new' ? 'var(--color-primary,#2569f4)' : 'rgba(17,24,39,0.7)';
+            newBtn.style.color      = mode === 'new' ? '#fff' : 'var(--text-secondary,#94a3b8)';
+        }
+        if (existingSec) existingSec.style.display = mode === 'existing' ? 'block' : 'none';
+        if (newSec)      newSec.style.display      = mode === 'new'      ? 'block' : 'none';
     }
 
     async _loadTenantsDropdown() {
         const sel = document.getElementById('changeRoleTenantSelect');
         if (!sel) return;
+        sel.innerHTML = '<option value="">Loading tenants…</option>';
         try {
-            const res  = await authFetch(`${this.baseAdminUrl}/tenants`);
-            const data = await res.json();
+            const res = await authFetch(`${this.baseAdminUrl}/tenants`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data    = await res.json();
             const tenants = data.tenants || [];
             sel.innerHTML = tenants.length
                 ? '<option value="">— Select a tenant —</option>'
                   + tenants.map(t => `<option value="${t.tenant_id}">${escapeHtml(t.name)}</option>`).join('')
                 : '<option value="">No tenants found</option>';
-        } catch (_) {
+        } catch (err) {
+            console.error('Failed to load tenants dropdown:', err);
             sel.innerHTML = '<option value="">Failed to load tenants</option>';
         }
     }
