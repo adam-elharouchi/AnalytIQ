@@ -678,7 +678,10 @@ class SuperAdminDashboard {
     async loadPendingApprovals(renderTable = true) {
         try {
             const res = await authFetch(`${this.baseAdminUrl}/pending-approvals`);
-            if (!res.ok) return;
+            if (!res.ok) {
+                if (renderTable) showError('Failed to load pending approvals. Please refresh.');
+                return;
+            }
             const data = await res.json();
 
             const count = data.count || 0;
@@ -707,6 +710,9 @@ class SuperAdminDashboard {
 
             tbody.innerHTML = (data.pending || []).map(u => {
                 const date = u.created_at ? new Date(u.created_at).toLocaleDateString() : '—';
+                // JSON.stringify produces a safely-quoted JS string; replace " with &quot; so
+                // it doesn't terminate the surrounding HTML double-quoted attribute.
+                const nameArg = JSON.stringify(u.name).replace(/"/g, '&quot;');
                 return `<tr style="border-bottom:1px solid var(--border-color);">
                     <td style="padding:1rem;">
                         <div style="font-weight:500;">${escapeHtml(u.name)}</div>
@@ -719,11 +725,11 @@ class SuperAdminDashboard {
                     <td style="padding:1rem;text-align:right;display:flex;gap:0.5rem;justify-content:flex-end;">
                         <button class="btn btn-sm btn-success"
                             style="background:var(--color-success, #10b981);color:#fff;border:none;"
-                            onclick="window.adminApp.approveAdmin('${u.user_id}', '${escapeHtml(u.name)}')">
+                            onclick="window.adminApp.approveAdmin('${u.user_id}', ${nameArg})">
                             Approve
                         </button>
                         <button class="btn btn-sm btn-danger"
-                            onclick="window.adminApp.denyAdmin('${u.user_id}', '${escapeHtml(u.name)}')">
+                            onclick="window.adminApp.denyAdmin('${u.user_id}', ${nameArg})">
                             Deny
                         </button>
                     </td>
