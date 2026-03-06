@@ -44,5 +44,13 @@ celery_app.conf.task_routes = {
     "tasks.send_email_async": {"queue": "emails"},
 }
 
+# Periodic task schedule (requires celery beat)
+celery_app.conf.beat_schedule = {
+    "cleanup-expired-lti-sessions-daily": {
+        "task": "tasks.cleanup_expired_lti_sessions",
+        "schedule": 86400,  # once per day (seconds)
+    },
+}
+
 if __name__ == "__main__":
     celery_app.start()

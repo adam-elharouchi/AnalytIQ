@@ -19,7 +19,6 @@ from db import get_db_connection
 from extensions import csrf_exempt
 from repositories import chapter_repository as chapter_repo
 from repositories import class_repository as class_repo
-from repositories.exercise_repository import ensure_exercises_table
 
 logger = logging.getLogger(__name__)
 bp = Blueprint("chapters", __name__)
@@ -581,7 +580,6 @@ def create_exercise(class_id, chapter_id):
     """Manually create a new exercise"""
     try:
         conn = get_db_connection()
-        ensure_exercises_table(conn)
 
         if request.content_type and "multipart/form-data" in request.content_type:
             data = request.form

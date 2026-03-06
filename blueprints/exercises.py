@@ -15,16 +15,6 @@ logger = logging.getLogger(__name__)
 bp = Blueprint("exercises", __name__)
 
 
-# Re-export for callers that import ensure_exercises_table from this module
-def ensure_exercises_table():
-    """Wrapper that gets a connection and delegates to the repository."""
-    try:
-        conn = get_db_connection()
-        exercise_repo.ensure_exercises_table(conn)
-    except Exception as e:
-        logger.warning("Error checking exercises table: %s", e)
-
-
 @bp.route("/api/exercises/progress", methods=["GET"])
 @require_auth
 def get_all_progress():
@@ -158,8 +148,6 @@ def update_exercise(exercise_id):
     """Update an existing exercise"""
     try:
         conn = get_db_connection()
-        exercise_repo.ensure_exercises_table(conn)
-
         data = request.json or {}
         user_id = g.user_id
 

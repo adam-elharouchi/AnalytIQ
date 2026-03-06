@@ -11,34 +11,6 @@ logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
-# Schema migration (lazy)
-# ---------------------------------------------------------------------------
-
-
-def ensure_exercises_table(conn):
-    """Add any missing columns to class_exercises (lazy migration)."""
-    cur = conn.cursor()
-
-    for col, ddl in [
-        ("solution_code", "ALTER TABLE class_exercises ADD COLUMN solution_code TEXT"),
-        (
-            "exercise_number",
-            "ALTER TABLE class_exercises ADD COLUMN exercise_number INTEGER DEFAULT 1",
-        ),
-        ("created_by", "ALTER TABLE class_exercises ADD COLUMN created_by VARCHAR(255)"),
-    ]:
-        try:
-            cur.execute(f"SELECT {col} FROM class_exercises LIMIT 1")
-        except Exception:
-            conn.rollback()
-            logger.info("Adding missing column '%s' to class_exercises", col)
-            cur.execute(ddl)
-
-    conn.commit()
-    cur.close()
-
-
-# ---------------------------------------------------------------------------
 # Exercise CRUD
 # ---------------------------------------------------------------------------
 
