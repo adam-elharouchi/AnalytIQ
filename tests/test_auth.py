@@ -166,7 +166,7 @@ class TestSignin:
         password_hash = _make_bcrypt_hash("correctPass1")
         cursor = mock_db.cursor()
         cursor.fetchone.return_value = (
-            "user123", "Alice", "alice@example.com", password_hash, "student"
+            "user123", "Alice", "alice@example.com", password_hash, "student", None
         )
 
         resp = client.post(
@@ -184,7 +184,7 @@ class TestSignin:
         password_hash = _make_bcrypt_hash("correctPass1")
         cursor = mock_db.cursor()
         cursor.fetchone.return_value = (
-            "user123", "Alice", "alice@example.com", password_hash, "student"
+            "user123", "Alice", "alice@example.com", password_hash, "student", None
         )
 
         resp = client.post(
@@ -232,7 +232,7 @@ class TestSignin:
         password_hash = _make_bcrypt_hash("pass12345")
         cursor = mock_db.cursor()
         cursor.fetchone.return_value = (
-            "usr-abc", "Bob", "bob@example.com", password_hash, "professor"
+            "usr-abc", "Bob", "bob@example.com", password_hash, "professor", None
         )
 
         resp = client.post(
