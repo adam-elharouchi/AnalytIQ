@@ -246,8 +246,8 @@ def require_auth(f):
         if request.method == "OPTIONS":
             return f(*args, **kwargs)
 
-        # Bypass auth in test mode only — never in production
-        if current_app.config.get("TESTING") and config.ENV != "production":
+        # Bypass auth only when BOTH the TESTING flag is set AND env is explicitly "testing"
+        if current_app.config.get("TESTING") is True and config.ENV == "testing":
             # Check for explicit test user ID or user_id in request
             test_user_id = request.headers.get("X-Test-User-ID")
             if not test_user_id:

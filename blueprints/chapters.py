@@ -101,8 +101,8 @@ def validate_pdf_file(file):
                 return False, "PDF contains potentially unsafe content"
 
     except Exception as e:
-        logger.error("PDF validation error", extra={"error": str(e)})
-        return False, f"PDF validation error: {str(e)}"
+        logger.error("PDF validation error", exc_info=True)
+        return False, "PDF validation error"
 
     logger.info("PDF validation passed", extra={"size_mb": file_size / 1024 / 1024})
     return True, None
@@ -244,7 +244,7 @@ def upload_chapter(class_id):
                 pdf_text = content_extractor.extract_text(file_bytes, filename)
             except ValueError as e:
                 logger.warning("Content extraction rejected: %s", e)
-                return jsonify({"error": str(e)}), 400
+                return jsonify({"error": "Content extraction failed. Please try a different file."}), 400
             except Exception as e:
                 logger.warning("Could not extract text from file: %s", e)
                 pdf_text = None

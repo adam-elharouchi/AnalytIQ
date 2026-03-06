@@ -749,9 +749,8 @@ def get_class_average_leaderboard(class_id):
                 "rank": rank,
                 "student_id": student[0],
                 "name": student[1],
-                "email": student[2],
-                "average_score": round(float(student[3]), 1),
-                "exercises_completed": int(student[4]),
+                "average_score": round(float(student[2]), 1),
+                "exercises_completed": int(student[3]),
             }
             for rank, student in enumerate(students, 1)
         ]
@@ -790,9 +789,8 @@ def get_exercise_leaderboard_for_class(class_id, exercise_id):
                 "rank": rank,
                 "student_id": student[0],
                 "name": student[1],
-                "email": student[2],
-                "score": round(float(student[3]), 1),
-                "submitted_at": student[4].isoformat() if student[4] else None,
+                "score": round(float(student[2]), 1),
+                "submitted_at": student[3].isoformat() if student[3] else None,
             }
             for rank, student in enumerate(students, 1)
         ]

@@ -447,7 +447,7 @@ def get_class_average_leaderboard(conn, class_id):
     cur.execute(
         """
         SELECT
-            u.user_id, u.name, u.email,
+            u.user_id, u.name,
             COALESCE(AVG(pp.best_score), 0) AS average_score,
             COUNT(DISTINCT pp.exercise_id)  AS exercises_completed
         FROM class_enrollments ce
@@ -455,7 +455,7 @@ def get_class_average_leaderboard(conn, class_id):
         LEFT JOIN practice_progress pp
             ON pp.user_id = u.user_id AND pp.class_id = %s AND pp.completed = true
         WHERE ce.class_id = %s
-        GROUP BY u.user_id, u.name, u.email
+        GROUP BY u.user_id, u.name
         ORDER BY average_score DESC, u.name ASC
         """,
         (class_id, class_id),
@@ -470,7 +470,7 @@ def get_exercise_leaderboard_for_class(conn, class_id, exercise_id):
     cur.execute(
         """
         SELECT
-            u.user_id, u.name, u.email,
+            u.user_id, u.name,
             COALESCE(pp.best_score, 0) AS score,
             pp.last_completed_at
         FROM class_enrollments ce
