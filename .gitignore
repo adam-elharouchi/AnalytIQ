@@ -23,6 +23,8 @@ node_modules/
 .coverage
 coverage.xml
 htmlcov/
+.pytest_cache/
+bandit-report.json
 
 # Sensitive documents (credentials removed from history)
 docs/SECURITY_AUDIT_COMPLETE.md

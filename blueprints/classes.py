@@ -32,25 +32,14 @@ def generate_class_code():
     return letters + numbers
 
 
-# Re-export for callers that import ensure_resources_table from this module
-def ensure_resources_table():
-    """Wrapper that gets a connection and delegates to the repository."""
-    try:
-        conn = get_db_connection()
-        class_repo.ensure_resources_table(conn)
-    except Exception as e:
-        logger.warning("Error checking resources table: %s", e)
-
-
 # ---------------------------------------------------------------------------
 # Private helpers
 # ---------------------------------------------------------------------------
 
 
 def _get_other_resources(conn, class_id):
-    """Fetch non-chapter resources for a class. Returns [] on error (table may not exist yet)."""
+    """Fetch non-chapter resources for a class. Returns [] on error."""
     try:
-        class_repo.ensure_resources_table(conn)
         return class_repo.get_class_other_resources(conn, class_id)
     except Exception as e:
         logger.warning("Error fetching class_resources: %s", e)
@@ -814,7 +803,7 @@ def add_class_resource(class_id):
     """Add a new resource (link) to the class"""
     try:
         conn = get_db_connection()
-        class_repo.ensure_resources_table(conn)
+
 
         data = request.json
         user_id = g.user_id
@@ -846,7 +835,7 @@ def upload_class_resource(class_id):
     """Upload a file as a resource"""
     try:
         conn = get_db_connection()
-        class_repo.ensure_resources_table(conn)
+
 
         if "file" not in request.files:
             return jsonify({"error": "No file part"}), 400
@@ -937,7 +926,7 @@ def manage_resource(class_id, resource_id):
     """Update or Delete a resource"""
     try:
         conn = get_db_connection()
-        class_repo.ensure_resources_table(conn)
+
 
         if request.method == "DELETE":
             class_repo.delete_resource(conn, resource_id)
