@@ -13,7 +13,7 @@ from werkzeug.routing import BaseConverter
 
 import config
 from db import close_db_connection  # teardown handler registered below
-from extensions import limiter, mail
+from extensions import limiter
 
 
 # Early logger — handlers are added below after JSON formatter is configured.
@@ -97,11 +97,6 @@ logger.info(
         "port": os.getenv("PORT", "5001"),
     },
 )
-
-# Email configuration (Flask-Mail)
-# Email configuration has moved to Resend in tasks.py
-if mail is not None:
-    logger.warning("Mail initialization removed. Using Resend now.")
 
 # Rate limiting — configured via extensions.py
 try:

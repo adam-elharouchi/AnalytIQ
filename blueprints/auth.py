@@ -310,7 +310,6 @@ def forgot_password():
             from datetime import timedelta
 
             token = secrets.token_urlsafe(32)
-            auth_repo.ensure_password_resets_table(conn)
             expires_at = datetime.utcnow() + timedelta(hours=1)
             auth_repo.insert_password_reset_token(conn, email, token, expires_at)
             conn.commit()
@@ -368,8 +367,6 @@ def reset_password():
             )
 
         conn = get_db_connection()
-
-        auth_repo.ensure_password_resets_table(conn)
 
         row = auth_repo.validate_reset_token(conn, email, token, datetime.utcnow())
         if not row:
