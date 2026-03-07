@@ -382,7 +382,6 @@ def impersonate_user(user_id):
 @require_super_admin
 def get_contact_submissions():
     """Get all contact form submissions, ordered by most recent."""
-    conn = None
     try:
         page = request.args.get("page", 1, type=int)
         limit = request.args.get("limit", 50, type=int)
@@ -435,11 +434,8 @@ def get_contact_submissions():
         )
 
     except Exception as e:
-        logger.error(f"Error fetching contact submissions: {e}", exc_info=True)
+        logger.error("Error fetching contact submissions: %s", e, exc_info=True)
         return jsonify({"error": "Failed to fetch contact submissions"}), 500
-    finally:
-        if conn:
-            conn.close()
 
 
 @bp.route("/api/superadmin/contact-submissions/<submission_id>", methods=["PATCH"])

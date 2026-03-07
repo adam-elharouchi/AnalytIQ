@@ -50,16 +50,15 @@ def validate_pdf_file(file):
     Comprehensive PDF file validation without external dependencies.
     Returns (is_valid, error_message)
     """
-    MAX_PDF_SIZE = 50 * 1024 * 1024  # 50MB
     file.seek(0, 2)
     file_size = file.tell()
     file.seek(0)
 
-    if file_size > MAX_PDF_SIZE:
+    if file_size > config.MAX_PDF_SIZE_BYTES:
         logger.warning(
             "File upload rejected: too large", extra={"size_mb": file_size / 1024 / 1024}
         )
-        return False, f"File too large: {file_size / 1024 / 1024:.1f}MB (max 50MB)"
+        return False, f"File too large: {file_size / 1024 / 1024:.1f}MB (max {config.MAX_PDF_SIZE_MB}MB)"
 
     if file_size == 0:
         logger.warning("File upload rejected: empty file")

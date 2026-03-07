@@ -219,7 +219,7 @@ def send_email_async(recipient, subject, body):
         # Default sender (MUST match verified domain in Resend)
         from_email = os.getenv("MAIL_DEFAULT_SENDER", "techsupport@myanalytiq.org")
 
-        logger.info(f"📧 Sending email FROM: {from_email} TO: {recipient}")
+        logger.info("Sending email FROM: %s TO: %s", from_email, recipient)
 
         response = resend.Emails.send({
             "from": f"AnalytIQ Support <{from_email}>",
@@ -228,12 +228,12 @@ def send_email_async(recipient, subject, body):
             "html": body,
         })
 
-        logger.info(f"✅ Resend success: {response}")
+        logger.info("Resend success: %s", response)
 
         return {"success": True, "recipient": recipient}
 
     except Exception as e:
-        logger.error(f"❌ Resend error: {repr(e)}")
+        logger.error("Resend error: %s", repr(e))
         return {"success": False, "error": str(e), "recipient": recipient}
 
 
