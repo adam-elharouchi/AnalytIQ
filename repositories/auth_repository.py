@@ -11,31 +11,6 @@ logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
-# Schema migration (lazy)
-# ---------------------------------------------------------------------------
-
-
-def ensure_password_resets_table(conn):
-    """Create password_resets table and indexes if missing."""
-    cur = conn.cursor()
-    cur.execute(
-        """
-        CREATE TABLE IF NOT EXISTS password_resets (
-            id SERIAL PRIMARY KEY,
-            email VARCHAR(255) NOT NULL,
-            token VARCHAR(255) NOT NULL,
-            expires_at TIMESTAMP NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-        """
-    )
-    cur.execute("CREATE INDEX IF NOT EXISTS idx_password_resets_token ON password_resets(token);")
-    cur.execute("CREATE INDEX IF NOT EXISTS idx_password_resets_email ON password_resets(email);")
-    conn.commit()
-    cur.close()
-
-
-# ---------------------------------------------------------------------------
 # Signup
 # ---------------------------------------------------------------------------
 
