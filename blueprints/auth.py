@@ -96,23 +96,23 @@ def signup():
 
         try:
             auth_repo.create_default_profile(conn, created_user_id)
-        except Exception as e:
-            logger.warning("Failed to create user_profiles", extra={"error": str(e)})
+        except Exception:
+            logger.warning("Failed to create user_profiles", exc_info=True)
 
         try:
             auth_repo.create_default_settings(conn, created_user_id)
-        except Exception as e:
-            logger.warning("Failed to create user_settings", extra={"error": str(e)})
+        except Exception:
+            logger.warning("Failed to create user_settings", exc_info=True)
 
         try:
             auth_repo.create_default_preferences(conn, created_user_id)
-        except Exception as e:
-            logger.warning("Failed to create user_preferences", extra={"error": str(e)})
+        except Exception:
+            logger.warning("Failed to create user_preferences", exc_info=True)
 
         try:
             auth_repo.create_default_ai_digest(conn, created_user_id)
-        except Exception as e:
-            logger.warning("Failed to create ai_agent_digest", extra={"error": str(e)})
+        except Exception:
+            logger.warning("Failed to create ai_agent_digest", exc_info=True)
 
         audit(
             conn,
@@ -204,10 +204,8 @@ def signin():
                     "Password migrated to bcrypt",
                     extra={"user_email": email, "migration": "legacy_to_bcrypt"},
                 )
-            except Exception as e:
-                logger.warning(
-                    "Password migration failed", extra={"user_email": email, "error": str(e)}
-                )
+            except Exception:
+                logger.warning("Password migration failed for %s", email, exc_info=True)
                 conn.rollback()
 
         # Check account status before issuing a token.

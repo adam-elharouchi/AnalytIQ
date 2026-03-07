@@ -67,8 +67,8 @@ def _run_health_checks():
         logger.info("Health check: database healthy")
     except Exception as e:
         all_healthy = False
-        health_status["services"]["database"] = {"status": "unhealthy", "error": str(e)[:200]}
-        logger.error("Health check: database unhealthy", extra={"error": str(e)})
+        health_status["services"]["database"] = {"status": "unhealthy"}
+        logger.error("Health check: database unhealthy", exc_info=True)
 
     # 2. Gemini API (NON-CRITICAL)
     gemini_api_key = os.getenv("GEMINI_API_KEY")
@@ -102,10 +102,9 @@ def _run_health_checks():
     except Exception as e:
         health_status["services"]["email"] = {
             "status": "degraded",
-            "error": str(e)[:200],
             "impact": "Email features may be unavailable",
         }
-        logger.warning("Health check: Email service degraded", extra={"error": str(e)})
+        logger.warning("Health check: Email service degraded", exc_info=True)
 
     # 4. Redis Cache (NON-CRITICAL)
     if os.getenv("FEATURE_CACHING") == "True":
@@ -113,10 +112,10 @@ def _run_health_checks():
             cache_status = cache_health_check()
             health_status["services"]["cache"] = cache_status
             if not cache_status.get("healthy", False):
-                logger.warning(f"Health check: Cache unhealthy: {cache_status.get('message')}")
+                logger.warning("Health check: Cache unhealthy: %s", cache_status.get("message"))
         except Exception as e:
-            health_status["services"]["cache"] = {"status": "error", "error": str(e)}
-            logger.error(f"Health check: Cache error: {e}")
+            health_status["services"]["cache"] = {"status": "error"}
+            logger.error("Health check: Cache error", exc_info=True)
     else:
         health_status["services"]["cache"] = {
             "status": "disabled",
@@ -130,8 +129,8 @@ def _run_health_checks():
         if not storage_status.get("healthy", False):
             logger.warning("Health check: Storage unhealthy: %s", storage_status.get("message"))
     except Exception as e:
-        health_status["services"]["storage"] = {"status": "error", "error": str(e)[:200]}
-        logger.warning("Health check: Storage error: %s", e)
+        health_status["services"]["storage"] = {"status": "error"}
+        logger.warning("Health check: Storage error", exc_info=True)
 
     status_code = 200
     if not all_healthy:
@@ -197,7 +196,7 @@ def get_csrf_token():
         else:
             return jsonify({"csrf_enabled": False, "error": "CSRF module not available"}), 500
     except Exception as e:
-        logger.error("Failed to generate CSRF token", extra={"error": str(e)})
+        logger.error("Failed to generate CSRF token", exc_info=True)
         return jsonify({"error": "Failed to generate CSRF token"}), 500
 
 
@@ -230,7 +229,7 @@ def get_task_status(task_id):
             response["result"] = task.result
             response["message"] = "Task completed successfully"
         elif task.state == "FAILURE":
-            response["error"] = str(task.info)
+            logger.error("Async task failed: task_id=%s info=%s", task_id, task.info)
             response["message"] = "Task failed"
         elif task.state == "RETRY":
             response["message"] = "Task is being retried"
@@ -240,7 +239,7 @@ def get_task_status(task_id):
         return jsonify(response), 200
 
     except Exception as e:
-        logger.error("Failed to get task status", extra={"error": str(e), "task_id": task_id})
+        logger.error("Failed to get task status: task_id=%s", task_id, exc_info=True)
         return (
             jsonify(
                 {"error": "Failed to retrieve task status. Please try again.", "task_id": task_id}
