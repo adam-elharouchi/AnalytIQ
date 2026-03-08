@@ -250,7 +250,9 @@ def signin():
         except Exception:
             conn.rollback()
 
-        token = create_jwt_token(user_id, role=role, name=name, email=user_email, tenant_id=tenant_id)
+        token = create_jwt_token(
+            user_id, role=role, name=name, email=user_email, tenant_id=tenant_id
+        )
         resp = {
             "id": user_id,
             "user_id": user_id,

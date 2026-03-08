@@ -63,6 +63,12 @@ class AuthManager {
       // Extract user ID - use user_id if available, otherwise fall back to id
       const userId = data.user_id || data.id || data.user?.user_id || data.user?.id || Date.now().toString();
 
+      // Pending-approval accounts must not be logged in automatically —
+      // they can't use the platform until a superadmin approves them.
+      if (data.pending_approval) {
+        return { ...data, pending_approval: true };
+      }
+
       // Save JWT token
       if (data.token) {
         this.saveToken(data.token);
@@ -79,8 +85,7 @@ class AuthManager {
 
       this.saveUser(userData);
 
-      // Flag pending accounts so the caller can show the appropriate message.
-      return { ...data, user: userData, pending_approval: !!data.pending_approval };
+      return { ...data, user: userData, pending_approval: false };
     } catch (error) {
       throw error;
     }

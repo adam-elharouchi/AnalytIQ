@@ -22,6 +22,7 @@ import json
 import logging
 import secrets
 import uuid
+from urllib.parse import urlencode
 from typing import Optional
 
 import requests as http_client
@@ -326,9 +327,7 @@ def sso_init(provider_id):
             "scope": "openid email profile",
             "state": state,
         }
-        # Build query string manually to avoid extra dependencies
-        qs = "&".join(f"{k}={v}" for k, v in params.items())
-        auth_url = f"{auth_endpoint}?{qs}"
+        auth_url = f"{auth_endpoint}?{urlencode(params)}"
 
         return jsonify({"auth_url": auth_url}), 200
 
@@ -395,9 +394,7 @@ def sso_callback(provider_id):
             timeout=15,
         )
         if not token_resp.ok:
-            logger.error(
-                "Token exchange failed for provider %s: %s", provider_id, token_resp.text
-            )
+            logger.error("Token exchange failed for provider %s: %s", provider_id, token_resp.text)
             return redirect(f"{login_page}?sso_error=Token+exchange+failed")
 
         tokens = token_resp.json()
@@ -433,14 +430,14 @@ def sso_callback(provider_id):
         user_id, name, email, role, tenant_id = _upsert_sso_user(conn, provider, claims)
         conn.commit()
 
-        token = create_jwt_token(
-            user_id, role=role, name=name, email=email, tenant_id=tenant_id
-        )
+        token = create_jwt_token(user_id, role=role, name=name, email=email, tenant_id=tenant_id)
         return redirect(f"{login_page}?sso_token={token}")
 
     except PermissionError as exc:
         logger.warning("SSO domain restriction for provider %s: %s", provider_id, exc)
-        return redirect(f"{login_page}?sso_error=Your+email+domain+is+not+allowed+for+this+provider")
+        return redirect(
+            f"{login_page}?sso_error=Your+email+domain+is+not+allowed+for+this+provider"
+        )
     except Exception as exc:
         if conn:
             conn.rollback()
@@ -513,7 +510,14 @@ def admin_create_provider():
     if not provider_name:
         return jsonify({"error": "provider_name is required"}), 400
     if provider_type not in _VALID_PROVIDER_TYPES:
-        return jsonify({"error": f"provider_type must be one of: {', '.join(sorted(_VALID_PROVIDER_TYPES))}"}), 400
+        return (
+            jsonify(
+                {
+                    "error": f"provider_type must be one of: {', '.join(sorted(_VALID_PROVIDER_TYPES))}"
+                }
+            ),
+            400,
+        )
     if not tenant_id:
         return jsonify({"error": "tenant_id is required"}), 400
     if not client_id or not client_secret:
@@ -533,7 +537,9 @@ def admin_create_provider():
         if provider_type == "google":
             resolved_discovery = _GOOGLE_DISCOVERY_URL
         elif provider_type == "microsoft":
-            resolved_discovery = discovery_url or _MICROSOFT_DISCOVERY_TEMPLATE.format(tenant="common")
+            resolved_discovery = discovery_url or _MICROSOFT_DISCOVERY_TEMPLATE.format(
+                tenant="common"
+            )
         else:
             resolved_discovery = discovery_url
 
@@ -595,9 +601,17 @@ def admin_update_provider(provider_id):
             return jsonify({"error": "Forbidden: you cannot manage SSO for this tenant"}), 403
 
         updates = {}
-        for field in ("provider_name", "provider_type", "client_id", "discovery_url",
-                      "allowed_domains", "role_mapping_attribute", "role_mapping",
-                      "default_role", "is_enabled"):
+        for field in (
+            "provider_name",
+            "provider_type",
+            "client_id",
+            "discovery_url",
+            "allowed_domains",
+            "role_mapping_attribute",
+            "role_mapping",
+            "default_role",
+            "is_enabled",
+        ):
             if field in data:
                 updates[field] = data[field]
 
@@ -605,7 +619,14 @@ def admin_update_provider(provider_id):
             updates["client_secret"] = _encrypt_secret(data["client_secret"])
 
         if "provider_type" in updates and updates["provider_type"] not in _VALID_PROVIDER_TYPES:
-            return jsonify({"error": f"provider_type must be one of: {', '.join(sorted(_VALID_PROVIDER_TYPES))}"}), 400
+            return (
+                jsonify(
+                    {
+                        "error": f"provider_type must be one of: {', '.join(sorted(_VALID_PROVIDER_TYPES))}"
+                    }
+                ),
+                400,
+            )
 
         if not updates:
             return jsonify({"error": "No updatable fields provided"}), 400

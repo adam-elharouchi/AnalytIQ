@@ -14,6 +14,7 @@ import logging
 import psycopg2
 from flask import Blueprint, jsonify, request, g
 
+import config
 from auth_helpers import require_auth, require_super_admin, create_jwt_token
 from audit import audit
 from db import get_db_connection
@@ -323,7 +324,7 @@ def impersonate_user(user_id):
         cur = conn.cursor()
 
         cur.execute(
-            "SELECT user_id, name, email, role FROM users WHERE user_id = %s",
+            "SELECT user_id, name, email, role, tenant_id FROM users WHERE user_id = %s",
             (user_id,),
         )
         target_user = cur.fetchone()
@@ -331,7 +332,10 @@ def impersonate_user(user_id):
         if not target_user:
             return jsonify({"error": "User not found"}), 404
 
-        if target_user[3] == "superadmin":  # role
+        caller_email = getattr(g, "user_email", "")
+        is_owner = caller_email == config.PLATFORM_OWNER_EMAIL
+
+        if target_user[3] == "superadmin" and not is_owner:  # role
             return jsonify({"error": "Cannot impersonate another Super Admin"}), 403
 
         impersonator_id = getattr(g, "user_id", None)
@@ -348,6 +352,7 @@ def impersonate_user(user_id):
             email=target_user[2],
             impersonator_id=impersonator_id,
             expires_hours=1,
+            tenant_id=target_user[4],  # carry tenant_id so tenant_admin dashboard works
         )
 
         return (
@@ -703,8 +708,19 @@ def delete_user(user_id):
         target = cur.fetchone()
         if not target:
             return jsonify({"error": "User not found"}), 404
-        if target[2] == "superadmin":
+
+        caller_email = getattr(g, "user_email", "")
+        is_owner = caller_email == config.PLATFORM_OWNER_EMAIL
+
+        # Protect the platform owner from being deleted by anyone
+        if target[1] == config.PLATFORM_OWNER_EMAIL:
+            return jsonify({"error": "The platform owner account cannot be deleted"}), 403
+        # Only the platform owner can delete other superadmin accounts
+        if target[2] == "superadmin" and not is_owner:
             return jsonify({"error": "Cannot delete another superadmin account"}), 403
+        # Prevent self-deletion
+        if user_id == g.user_id:
+            return jsonify({"error": "Cannot delete your own account"}), 400
 
         # Cascade: remove enrollments, profile data, then the user
         cur.execute("DELETE FROM class_enrollments WHERE user_id = %s", (user_id,))
