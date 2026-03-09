@@ -15,16 +15,6 @@ logger = logging.getLogger(__name__)
 bp = Blueprint("exercises", __name__)
 
 
-# Re-export for callers that import ensure_exercises_table from this module
-def ensure_exercises_table():
-    """Wrapper that gets a connection and delegates to the repository."""
-    try:
-        conn = get_db_connection()
-        exercise_repo.ensure_exercises_table(conn)
-    except Exception as e:
-        logger.warning("Error checking exercises table: %s", e)
-
-
 @bp.route("/api/exercises/progress", methods=["GET"])
 @require_auth
 def get_all_progress():
@@ -69,10 +59,10 @@ def get_exercise_leaderboard(exercise_id):
             {
                 "rank": rank,
                 "name": row[0],
-                "best_score": row[2],
-                "best_accuracy": float(row[3]) if row[3] else 0,
-                "best_time": row[4],
-                "total_attempts": row[5] or 0,
+                "best_score": row[1],
+                "best_accuracy": float(row[2]) if row[2] else 0,
+                "best_time": row[3],
+                "total_attempts": row[4] or 0,
             }
             for rank, row in enumerate(rows, 1)
         ]
@@ -99,9 +89,9 @@ def get_grand_leaderboard():
                 "rank": rank,
                 "user_id": row[0],
                 "name": row[1],
-                "exercises_completed": row[3],
-                "average_score": float(row[4]) if row[4] else 0,
-                "total_score": int(row[5]) if row[5] else 0,
+                "exercises_completed": row[2],
+                "average_score": float(row[3]) if row[3] else 0,
+                "total_score": int(row[4]) if row[4] else 0,
             }
             for rank, row in enumerate(rows, 1)
         ]
@@ -119,10 +109,6 @@ def get_grand_leaderboard():
 def get_exercise_details(exercise_id):
     """Get details of a single exercise"""
     try:
-        user_id = g.user_id
-        if not user_id:
-            return jsonify({"error": "Missing user_id"}), 400
-
         conn = get_db_connection()
         row = exercise_repo.get_exercise_detail(conn, exercise_id)
 
@@ -158,8 +144,6 @@ def update_exercise(exercise_id):
     """Update an existing exercise"""
     try:
         conn = get_db_connection()
-        exercise_repo.ensure_exercises_table(conn)
-
         data = request.json or {}
         user_id = g.user_id
 

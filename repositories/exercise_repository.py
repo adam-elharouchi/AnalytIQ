@@ -11,34 +11,6 @@ logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
-# Schema migration (lazy)
-# ---------------------------------------------------------------------------
-
-
-def ensure_exercises_table(conn):
-    """Add any missing columns to class_exercises (lazy migration)."""
-    cur = conn.cursor()
-
-    for col, ddl in [
-        ("solution_code", "ALTER TABLE class_exercises ADD COLUMN solution_code TEXT"),
-        (
-            "exercise_number",
-            "ALTER TABLE class_exercises ADD COLUMN exercise_number INTEGER DEFAULT 1",
-        ),
-        ("created_by", "ALTER TABLE class_exercises ADD COLUMN created_by VARCHAR(255)"),
-    ]:
-        try:
-            cur.execute(f"SELECT {col} FROM class_exercises LIMIT 1")
-        except Exception:
-            conn.rollback()
-            logger.info("Adding missing column '%s' to class_exercises", col)
-            cur.execute(ddl)
-
-    conn.commit()
-    cur.close()
-
-
-# ---------------------------------------------------------------------------
 # Exercise CRUD
 # ---------------------------------------------------------------------------
 
@@ -138,7 +110,7 @@ def get_exercise_leaderboard(conn, exercise_id, limit):
     cur = conn.cursor()
     cur.execute(
         """
-        SELECT u.name, u.email, pp.best_score, pp.best_accuracy,
+        SELECT u.name, pp.best_score, pp.best_accuracy,
                pp.best_time, pp.total_attempts, pp.last_completed_at
         FROM practice_progress pp
         JOIN users u ON pp.user_id = u.user_id
@@ -157,7 +129,7 @@ def get_grand_leaderboard(conn, limit):
     cur = conn.cursor()
     cur.execute(
         """
-        SELECT u.user_id, u.name, u.email,
+        SELECT u.user_id, u.name,
                COUNT(DISTINCT pp.exercise_id) AS exercises_completed,
                AVG(pp.best_score)             AS average_score,
                SUM(pp.best_score)             AS total_score,
@@ -165,7 +137,7 @@ def get_grand_leaderboard(conn, limit):
         FROM users u
         JOIN practice_progress pp ON u.user_id = pp.user_id
         WHERE pp.completed = true AND pp.best_score >= 50
-        GROUP BY u.user_id, u.name, u.email
+        GROUP BY u.user_id, u.name
         HAVING COUNT(DISTINCT pp.exercise_id) > 0
         ORDER BY average_score DESC, exercises_completed DESC
         LIMIT %s

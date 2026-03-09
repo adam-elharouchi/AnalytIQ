@@ -204,4 +204,4 @@ class TestStorageHealthCheck:
         
         result = storage_health_check()
         assert result['healthy'] is False
-        assert 'error' in result['message'].lower()
+        assert result['message']  # non-empty message

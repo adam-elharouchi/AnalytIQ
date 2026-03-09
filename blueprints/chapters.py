@@ -19,7 +19,6 @@ from db import get_db_connection
 from extensions import csrf_exempt
 from repositories import chapter_repository as chapter_repo
 from repositories import class_repository as class_repo
-from repositories.exercise_repository import ensure_exercises_table
 
 logger = logging.getLogger(__name__)
 bp = Blueprint("chapters", __name__)
@@ -51,16 +50,15 @@ def validate_pdf_file(file):
     Comprehensive PDF file validation without external dependencies.
     Returns (is_valid, error_message)
     """
-    MAX_PDF_SIZE = 50 * 1024 * 1024  # 50MB
     file.seek(0, 2)
     file_size = file.tell()
     file.seek(0)
 
-    if file_size > MAX_PDF_SIZE:
+    if file_size > config.MAX_PDF_SIZE_BYTES:
         logger.warning(
             "File upload rejected: too large", extra={"size_mb": file_size / 1024 / 1024}
         )
-        return False, f"File too large: {file_size / 1024 / 1024:.1f}MB (max 50MB)"
+        return False, f"File too large: {file_size / 1024 / 1024:.1f}MB (max {config.MAX_PDF_SIZE_MB}MB)"
 
     if file_size == 0:
         logger.warning("File upload rejected: empty file")
@@ -101,8 +99,8 @@ def validate_pdf_file(file):
                 return False, "PDF contains potentially unsafe content"
 
     except Exception as e:
-        logger.error("PDF validation error", extra={"error": str(e)})
-        return False, f"PDF validation error: {str(e)}"
+        logger.error("PDF validation error", exc_info=True)
+        return False, "PDF validation error"
 
     logger.info("PDF validation passed", extra={"size_mb": file_size / 1024 / 1024})
     return True, None
@@ -244,7 +242,7 @@ def upload_chapter(class_id):
                 pdf_text = content_extractor.extract_text(file_bytes, filename)
             except ValueError as e:
                 logger.warning("Content extraction rejected: %s", e)
-                return jsonify({"error": str(e)}), 400
+                return jsonify({"error": "Content extraction failed. Please try a different file."}), 400
             except Exception as e:
                 logger.warning("Could not extract text from file: %s", e)
                 pdf_text = None
@@ -581,7 +579,6 @@ def create_exercise(class_id, chapter_id):
     """Manually create a new exercise"""
     try:
         conn = get_db_connection()
-        ensure_exercises_table(conn)
 
         if request.content_type and "multipart/form-data" in request.content_type:
             data = request.form

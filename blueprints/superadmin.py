@@ -18,18 +18,7 @@ import config
 from auth_helpers import require_auth, require_super_admin, create_jwt_token
 from audit import audit
 from db import get_db_connection
-from extensions import csrf_exempt, limiter
-
-
-def _rate_limit(rate: str):
-    """Apply a Flask-Limiter rate limit only when the limiter is available."""
-
-    def decorator(f):
-        if limiter is not None:
-            return limiter.limit(rate)(f)
-        return f
-
-    return decorator
+from extensions import csrf_exempt, rate_limit
 
 
 logger = logging.getLogger(__name__)
@@ -327,7 +316,7 @@ def update_user_status(user_id):
 @csrf_exempt
 @require_auth
 @require_super_admin
-@_rate_limit("10 per minute")
+@rate_limit("10 per minute")
 def impersonate_user(user_id):
     """Generate a short-lived token to impersonate another user."""
     try:
@@ -387,7 +376,6 @@ def impersonate_user(user_id):
 @require_super_admin
 def get_contact_submissions():
     """Get all contact form submissions, ordered by most recent."""
-    conn = None
     try:
         page = request.args.get("page", 1, type=int)
         limit = request.args.get("limit", 50, type=int)
@@ -440,11 +428,8 @@ def get_contact_submissions():
         )
 
     except Exception as e:
-        logger.error(f"Error fetching contact submissions: {e}", exc_info=True)
+        logger.error("Error fetching contact submissions: %s", e, exc_info=True)
         return jsonify({"error": "Failed to fetch contact submissions"}), 500
-    finally:
-        if conn:
-            conn.close()
 
 
 @bp.route("/api/superadmin/contact-submissions/<submission_id>", methods=["PATCH"])

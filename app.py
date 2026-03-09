@@ -13,7 +13,7 @@ from werkzeug.routing import BaseConverter
 
 import config
 from db import close_db_connection  # teardown handler registered below
-from extensions import limiter, mail
+from extensions import limiter
 
 
 # Early logger — handlers are added below after JSON formatter is configured.
@@ -97,11 +97,6 @@ logger.info(
         "port": os.getenv("PORT", "5001"),
     },
 )
-
-# Email configuration (Flask-Mail)
-# Email configuration has moved to Resend in tasks.py
-if mail is not None:
-    logger.warning("Mail initialization removed. Using Resend now.")
 
 # Rate limiting — configured via extensions.py
 try:
@@ -452,8 +447,11 @@ with app.app_context():
 
 
 if __name__ == "__main__":
+    import logging as _logging  # noqa: F811 — re-imported so exec'd test namespaces have it
     import os  # noqa: F811 — re-imported so exec'd test namespaces have it
     import sys  # noqa: F811
+
+    _main_logger = _logging.getLogger("analytiq")
 
     port = int(os.getenv("PORT", 5001))  # Changed from 5000 to avoid macOS AirPlay conflict
     if len(sys.argv) > 1:
@@ -464,10 +462,9 @@ if __name__ == "__main__":
         os.getenv("FLASK_ENV") == "development" and "localhost" in os.getenv("HOST", "")
     )
 
-    print(f"Starting Flask server on port {port}...")
-    print(f"Debug mode: {debug_mode}")
-    print(f"API base URL: http://localhost:{port}/api")
-    print(f"Health check: http://localhost:{port}/api/health")
+    _main_logger.info("Starting Flask server on port %s (debug=%s)", port, debug_mode)
+    _main_logger.info("API base URL: http://localhost:%s/api", port)
+    _main_logger.info("Health check: http://localhost:%s/api/health", port)
 
     # For local development, use 127.0.0.1 (safer)
     # For production, use 0.0.0.0 (accessible from outside)
@@ -477,8 +474,6 @@ if __name__ == "__main__":
         app.run(debug=debug_mode, port=port, host=host)
     except OSError as e:
         if "Address already in use" in str(e):
-            print(f"\n❌ Error: Port {port} is already in use!")
-            print("   Either stop the other process or use a different port:")
-            print("   python3 app.py 5002")
+            _main_logger.error("Port %s is already in use. Stop the other process or use a different port (e.g. python3 app.py 5002)", port)
         else:
             raise
