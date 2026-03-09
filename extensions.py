@@ -5,14 +5,6 @@ and later configured via init_app() in app.py.
 """
 
 # ---------------------------------------------------------------------------
-# Email (Flask-Mail)
-# ---------------------------------------------------------------------------
-
-# Removed Flask-Mail
-mail = None
-Message = None
-
-# ---------------------------------------------------------------------------
 # Rate Limiting
 # ---------------------------------------------------------------------------
 
@@ -23,6 +15,18 @@ try:
     limiter = Limiter(key_func=get_remote_address)
 except ImportError:
     limiter = None
+
+
+def rate_limit(rate: str):
+    """Apply a Flask-Limiter rate limit only when the limiter is available."""
+
+    def decorator(f):
+        if limiter is not None:
+            return limiter.limit(rate)(f)
+        return f
+
+    return decorator
+
 
 # ---------------------------------------------------------------------------
 # CSRF Protection

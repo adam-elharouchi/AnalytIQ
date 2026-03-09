@@ -463,7 +463,7 @@ class TestLeaderboards:
         cursor = mock_db.cursor()
         cursor.fetchone.return_value = ("prof-user-id",)  # owner = user
         cursor.fetchall.return_value = [
-            ("stu-1", "Alice", "alice@example.com", 85.5, 3),
+            ("stu-1", "Alice", 85.5, 3),
         ]
 
         resp = client.get(
@@ -498,7 +498,7 @@ class TestLeaderboards:
         cursor = mock_db.cursor()
         cursor.fetchone.return_value = ("prof-user-id",)  # owner
         cursor.fetchall.return_value = [
-            ("stu-1", "Alice", "alice@example.com", 90.0, None),
+            ("stu-1", "Alice", 90.0, None),
         ]
 
         resp = client.get(

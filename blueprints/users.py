@@ -238,7 +238,6 @@ def delete_user():
 
 
 @bp.route("/api/users/conversations", methods=["GET"])
-@csrf_exempt
 @require_auth
 def get_conversations():
     """Get all conversations for a user"""

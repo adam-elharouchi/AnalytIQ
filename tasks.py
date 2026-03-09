@@ -219,7 +219,7 @@ def send_email_async(recipient, subject, body):
         # Default sender (MUST match verified domain in Resend)
         from_email = os.getenv("MAIL_DEFAULT_SENDER", "techsupport@myanalytiq.org")
 
-        logger.info(f"📧 Sending email FROM: {from_email} TO: {recipient}")
+        logger.info("Sending email FROM: %s TO: %s", from_email, recipient)
 
         response = resend.Emails.send({
             "from": f"AnalytIQ Support <{from_email}>",
@@ -228,12 +228,12 @@ def send_email_async(recipient, subject, body):
             "html": body,
         })
 
-        logger.info(f"✅ Resend success: {response}")
+        logger.info("Resend success: %s", response)
 
         return {"success": True, "recipient": recipient}
 
     except Exception as e:
-        logger.error(f"❌ Resend error: {repr(e)}")
+        logger.error("Resend error: %s", repr(e))
         return {"success": False, "error": str(e), "recipient": recipient}
 
 
@@ -291,3 +291,34 @@ def process_chapter_upload(
     except Exception as e:
         result["error"] = str(e)
         return result
+
+
+@celery_app.task(name="tasks.cleanup_expired_lti_sessions")
+def cleanup_expired_lti_sessions():
+    """
+    Delete expired LTI sessions from the database.
+    Scheduled daily via Celery beat.
+
+    Returns:
+        dict: {'deleted': int} — number of rows removed
+    """
+    try:
+        import psycopg2
+
+        database_url = os.getenv("DATABASE_URL")
+        if not database_url:
+            logger.error("cleanup_expired_lti_sessions: DATABASE_URL not set")
+            return {"deleted": 0}
+
+        conn = psycopg2.connect(database_url, connect_timeout=10)
+        cur = conn.cursor()
+        cur.execute("DELETE FROM lti_sessions WHERE expires_at < NOW()")
+        deleted = cur.rowcount
+        conn.commit()
+        cur.close()
+        conn.close()
+        logger.info("cleanup_expired_lti_sessions: deleted %d expired sessions", deleted)
+        return {"deleted": deleted}
+    except Exception as e:
+        logger.error("cleanup_expired_lti_sessions failed: %s", e, exc_info=True)
+        return {"deleted": 0}

@@ -30,18 +30,7 @@ from flask import Blueprint, jsonify, request, g
 from auth_helpers import require_auth, require_tenant_admin, create_jwt_token
 from audit import audit
 from db import get_db_connection
-from extensions import csrf_exempt, limiter
-
-
-def _rate_limit(rate: str):
-    """Apply a Flask-Limiter rate limit only when the limiter is available."""
-
-    def decorator(f):
-        if limiter is not None:
-            return limiter.limit(rate)(f)
-        return f
-
-    return decorator
+from extensions import csrf_exempt, rate_limit
 
 
 logger = logging.getLogger(__name__)
@@ -657,7 +646,7 @@ def delete_user(user_id):
 @require_auth
 @require_tenant_admin
 @csrf_exempt
-@_rate_limit("10/minute")
+@rate_limit("10/minute")
 def impersonate_user(user_id):
     """Issue a 1-hour impersonation token for a user within the tenant."""
     tenant_id = _scoped_tenant_id()
