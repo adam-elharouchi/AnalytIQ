@@ -209,7 +209,7 @@ Return your response as a JSON array with ONLY this structure — no markdown, n
                 "language": exercise.get("language", "Unknown"),
                 "title": exercise.get("title", "Untitled Exercise"),
                 "description": exercise.get("description", ""),
-                "difficulty": exercise.get("difficulty", "medium").lower(),
+                "difficulty": difficulty,
                 "solution_code": exercise.get("solution_code", ""),
                 "test_cases":    validated_cases,
             }
