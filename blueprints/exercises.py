@@ -258,20 +258,25 @@ def grade_exercise(exercise_id):
 
         # Exercise predates test-case generation — no automated grading available
         if not test_cases:
-            return jsonify({
-                "has_test_cases": False,
-                "total_score": 0,
-                "correctness_score": 0,
-                "quality_score": 0,
-                "tests_passed": 0,
-                "tests_total": 0,
-                "results": [],
-                "quality_details": {},
-                "message": (
-                    "This exercise does not have test cases yet. "
-                    "Ask your professor to regenerate it."
+            return (
+                jsonify(
+                    {
+                        "has_test_cases": False,
+                        "total_score": 0,
+                        "correctness_score": 0,
+                        "quality_score": 0,
+                        "tests_passed": 0,
+                        "tests_total": 0,
+                        "results": [],
+                        "quality_details": {},
+                        "message": (
+                            "This exercise does not have test cases yet. "
+                            "Ask your professor to regenerate it."
+                        ),
+                    }
                 ),
-            }), 200
+                200,
+            )
 
         # Run the code against every test case in the sandbox
         result = run_test_cases(
