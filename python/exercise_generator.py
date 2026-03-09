@@ -80,11 +80,12 @@ COMMENT EVERY LINE
   • Every single line of code must have an inline comment explaining what it does.
   • Use the comment style native to the detected language (e.g. # for Python/R, -- for SQL, // for JavaScript/Java).
 
-SQL EXCEPTION
-  • SQL exercises do not define functions. Instead:
-      – solution_code is a SELECT query the student must write.
-      – function_name should be "query".
-      – Each test case input must include a "setup" key with the DDL + INSERT statements.
+OUTPUT THE RESULT
+  • The last statement of every exercise must output/print the result with a label using the idiom of the detected language.
+  • Python: `print("Mean age:", mean_age)`
+  • R: `cat("Mean age:", mean_age, "\\n")`
+  • SQL: the SELECT result is the output — end with a meaningful SELECT.
+  • JavaScript: `console.log("Mean age:", meanAge)`
 
 KEEP IT BEGINNER-FRIENDLY
   • No deeply nested logic — use guard clauses or split into separate exercises.
@@ -94,30 +95,20 @@ KEEP IT BEGINNER-FRIENDLY
 NAMED INTERMEDIATE VARIABLES
   • Never compute and use a value in the same expression.
   • Bad (Python):  `print(df["age"].mean())`
-  • Good (Python): `mean_age = df["age"].mean()` then `print("Mean age:", mean_age)` then `return mean_age`
+  • Good (Python): `mean_age = df["age"].mean()` then `print("Mean age:", mean_age)`
 
 IMPORTS / DEPENDENCIES
   • Include only the imports or library calls actually used in that exercise.
   • Use standard aliases/conventions for the detected language and ecosystem.
 
 DATA
-  • Use small synthetic data defined inline as default parameter values, OR reference a well-known public dataset.
+  • Use small synthetic data defined inline, OR reference a well-known public dataset appropriate for the language (e.g. seaborn "tips"/"iris" for Python, built-in datasets for R, a simple CREATE TABLE + INSERT for SQL).
   • Do NOT reference external files that may not exist on the student's machine.
-  • Test cases must supply their own data via the input parameters — do not rely on globals.
 
 DIFFICULTY
   • First 2–3 exercises: "easy" (single operation, one function/method call).
   • Remaining exercises: "medium" (combine two concepts, still one idea per exercise).
   • Never use "hard".
-
-TEST CASES
-  • Generate 5 to 8 test cases per exercise to verify correctness.
-  • Include basic cases AND edge cases (empty input, zeros, negatives, boundary values).
-  • Edge cases should have higher weight (2) than basic cases (1).
-  • The "input" must match the function's parameter names exactly.
-  • The "expected_output" must be the value the function RETURNS (not prints).
-  • For SQL exercises: "input" = {{"setup": "<DDL + INSERT SQL>"}} and
-    "expected_output" = list of rows e.g. [[1, "Alice"], [2, "Bob"]].
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -128,22 +119,7 @@ Return your response as a JSON array with ONLY this structure — no markdown, n
     "title": "Exercise title",
     "description": "One or two sentences telling the student exactly what to do. Name the function they must define and what it must return.",
     "difficulty": "easy|medium",
-    "function_name": "the_function_name",
-    "solution_code": "Code in the detected language — defines function_name, every line commented, prints AND returns result",
-    "test_cases": [
-      {{
-        "description": "basic case — short description",
-        "input": {{"param_name": value}},
-        "expected_output": value,
-        "weight": 1
-      }},
-      {{
-        "description": "edge case — short description",
-        "input": {{"param_name": value}},
-        "expected_output": value,
-        "weight": 2
-      }}
-    ]
+    "solution_code": "Code in the detected language — every line commented, result output at end, 5-10 lines max"
   }}
 ]"""
 
@@ -230,11 +206,10 @@ Return your response as a JSON array with ONLY this structure — no markdown, n
                     })
 
             validated_exercise = {
-                "language":      exercise.get("language", "Unknown"),
-                "title":         exercise.get("title", "Untitled Exercise"),
-                "description":   exercise.get("description", ""),
-                "difficulty":    difficulty,
-                "function_name": exercise.get("function_name", "solution"),
+                "language": exercise.get("language", "Unknown"),
+                "title": exercise.get("title", "Untitled Exercise"),
+                "description": exercise.get("description", ""),
+                "difficulty": exercise.get("difficulty", "medium").lower(),
                 "solution_code": exercise.get("solution_code", ""),
                 "test_cases":    validated_cases,
             }
