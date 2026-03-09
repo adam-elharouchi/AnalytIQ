@@ -63,15 +63,13 @@ class TestAppImportErrorExerciseGenerator:
 
 
 class TestAppImportErrorFlaskMail:
-    """Flask-Mail is now initialized in extensions.py — verify app still loads."""
+    """Flask-Mail is not used — verify app still loads without it."""
 
     def test_flask_mail_import_fails(self):
-        # mail now comes from extensions.py; blocking flask_mail after extensions
-        # is already cached doesn't change the mail object on app reload.
-        # Just verify the app module still has a mail attribute.
+        # Flask-Mail is not part of the codebase; just verify the app
+        # module loads successfully when flask_mail is unavailable.
         import app as app_module
-        import extensions
-        assert hasattr(app_module, "mail") or hasattr(extensions, "mail")
+        assert app_module.app is not None
 
 
 class TestAppImportErrorFlaskLimiter:

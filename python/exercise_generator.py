@@ -20,7 +20,8 @@ def generate_exercises_from_pdf_content(pdf_text, chapter_title, api_key=None):
         api_key: Google Gemini API key (optional, can use env var)
 
     Returns:
-        list: Array of exercise dictionaries with title, description, difficulty, solution_code
+        list: Array of exercise dicts with title, description, difficulty,
+              function_name, solution_code, and test_cases
     """
     if not api_key:
         api_key = os.getenv("GEMINI_API_KEY")
@@ -57,6 +58,19 @@ STRICT RULES — follow every one of these exactly:
 ONE CONCEPT PER EXERCISE
   • Each exercise teaches exactly one thing (e.g. "compute the mean", NOT "compute the mean, std, and percentage above average").
   • If a topic naturally has three sub-steps, make three separate exercises.
+
+FUNCTION STRUCTURE (critical for automated grading)
+  • Every exercise solution MUST define a named function that:
+      – accepts named parameters (not hardcoded data)
+      – returns the result (not just prints it)
+      – also prints the result with a label for human readability
+  • The function name must be short, descriptive, and in snake_case for Python/R
+    or camelCase for JavaScript/Java.
+  • Example (Python):
+      def calculate_mean(numbers):
+          mean = sum(numbers) / len(numbers)  # compute the average
+          print("Mean:", mean)                 # display for student
+          return mean                          # return for automated testing
 
 SOLUTION CODE SIZE
   • 5 to 10 lines of actual code (import/library lines do not count toward the limit).
@@ -103,7 +117,7 @@ Return your response as a JSON array with ONLY this structure — no markdown, n
   {{
     "language": "The detected language name, e.g. Python, R, SQL, JavaScript",
     "title": "Exercise title",
-    "description": "One or two sentences telling the student exactly what to do, naming the function/method to use.",
+    "description": "One or two sentences telling the student exactly what to do. Name the function they must define and what it must return.",
     "difficulty": "easy|medium",
     "solution_code": "Code in the detected language — every line commented, result output at end, 5-10 lines max"
   }}
@@ -171,17 +185,34 @@ Return your response as a JSON array with ONLY this structure — no markdown, n
             if not isinstance(exercise, dict):
                 continue
 
+            difficulty = exercise.get("difficulty", "medium").lower()
+            if difficulty not in ["easy", "medium", "hard"]:
+                difficulty = "medium"
+
+            # Validate test_cases structure
+            raw_cases = exercise.get("test_cases", [])
+            validated_cases = []
+            if isinstance(raw_cases, list):
+                for tc in raw_cases:
+                    if not isinstance(tc, dict):
+                        continue
+                    if "input" not in tc or "expected_output" not in tc:
+                        continue
+                    validated_cases.append({
+                        "description":     tc.get("description", ""),
+                        "input":           tc["input"],
+                        "expected_output": tc["expected_output"],
+                        "weight":          int(tc.get("weight", 1)),
+                    })
+
             validated_exercise = {
                 "language": exercise.get("language", "Unknown"),
                 "title": exercise.get("title", "Untitled Exercise"),
                 "description": exercise.get("description", ""),
                 "difficulty": exercise.get("difficulty", "medium").lower(),
                 "solution_code": exercise.get("solution_code", ""),
+                "test_cases":    validated_cases,
             }
-
-            # Validate difficulty
-            if validated_exercise["difficulty"] not in ["easy", "medium", "hard"]:
-                validated_exercise["difficulty"] = "medium"
 
             validated_exercises.append(validated_exercise)
 

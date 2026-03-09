@@ -65,7 +65,7 @@ def _run_health_checks():
             "connection_pool": {"max_connections": 25, "min_connections": 2},
         }
         logger.info("Health check: database healthy")
-    except Exception as e:
+    except Exception:
         all_healthy = False
         health_status["services"]["database"] = {"status": "unhealthy"}
         logger.error("Health check: database unhealthy", exc_info=True)
@@ -99,7 +99,7 @@ def _run_health_checks():
                 "note": "Resend API key missing",
                 "impact": "Password reset emails unavailable",
             }
-    except Exception as e:
+    except Exception:
         health_status["services"]["email"] = {
             "status": "degraded",
             "impact": "Email features may be unavailable",
@@ -113,7 +113,7 @@ def _run_health_checks():
             health_status["services"]["cache"] = cache_status
             if not cache_status.get("healthy", False):
                 logger.warning("Health check: Cache unhealthy: %s", cache_status.get("message"))
-        except Exception as e:
+        except Exception:
             health_status["services"]["cache"] = {"status": "error"}
             logger.error("Health check: Cache error", exc_info=True)
     else:
@@ -128,7 +128,7 @@ def _run_health_checks():
         health_status["services"]["storage"] = storage_status
         if not storage_status.get("healthy", False):
             logger.warning("Health check: Storage unhealthy: %s", storage_status.get("message"))
-    except Exception as e:
+    except Exception:
         health_status["services"]["storage"] = {"status": "error"}
         logger.warning("Health check: Storage error", exc_info=True)
 
@@ -195,7 +195,7 @@ def get_csrf_token():
             return jsonify({"csrf_enabled": True, "csrf_token": token}), 200
         else:
             return jsonify({"csrf_enabled": False, "error": "CSRF module not available"}), 500
-    except Exception as e:
+    except Exception:
         logger.error("Failed to generate CSRF token", exc_info=True)
         return jsonify({"error": "Failed to generate CSRF token"}), 500
 
@@ -238,7 +238,7 @@ def get_task_status(task_id):
 
         return jsonify(response), 200
 
-    except Exception as e:
+    except Exception:
         logger.error("Failed to get task status: task_id=%s", task_id, exc_info=True)
         return (
             jsonify(

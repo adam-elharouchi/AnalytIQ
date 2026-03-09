@@ -474,6 +474,9 @@ if __name__ == "__main__":
         app.run(debug=debug_mode, port=port, host=host)
     except OSError as e:
         if "Address already in use" in str(e):
-            _main_logger.error("Port %s is already in use. Stop the other process or use a different port (e.g. python3 app.py 5002)", port)
+            _main_logger.error(
+                "Port %s is already in use. Stop the other process or use a different port (e.g. python3 app.py 5002)",
+                port,
+            )
         else:
             raise

@@ -58,7 +58,10 @@ def validate_pdf_file(file):
         logger.warning(
             "File upload rejected: too large", extra={"size_mb": file_size / 1024 / 1024}
         )
-        return False, f"File too large: {file_size / 1024 / 1024:.1f}MB (max {config.MAX_PDF_SIZE_MB}MB)"
+        return (
+            False,
+            f"File too large: {file_size / 1024 / 1024:.1f}MB (max {config.MAX_PDF_SIZE_MB}MB)",
+        )
 
     if file_size == 0:
         logger.warning("File upload rejected: empty file")
@@ -98,7 +101,7 @@ def validate_pdf_file(file):
                 )
                 return False, "PDF contains potentially unsafe content"
 
-    except Exception as e:
+    except Exception:
         logger.error("PDF validation error", exc_info=True)
         return False, "PDF validation error"
 
@@ -134,6 +137,9 @@ def _auto_generate_exercises(conn, pdf_text, chapter_id, chapter_title, class_id
                 exercise["difficulty"],
                 exercise["solution_code"],
                 idx,
+                function_name=exercise.get("function_name", "solution"),
+                test_cases=exercise.get("test_cases") or [],
+                language=exercise.get("language", "Python"),
             )
         conn.commit()
         return len(exercises)
@@ -242,7 +248,10 @@ def upload_chapter(class_id):
                 pdf_text = content_extractor.extract_text(file_bytes, filename)
             except ValueError as e:
                 logger.warning("Content extraction rejected: %s", e)
-                return jsonify({"error": "Content extraction failed. Please try a different file."}), 400
+                return (
+                    jsonify({"error": "Content extraction failed. Please try a different file."}),
+                    400,
+                )
             except Exception as e:
                 logger.warning("Could not extract text from file: %s", e)
                 pdf_text = None
@@ -500,6 +509,9 @@ def generate_exercises_for_chapter(chapter_id):
                 exercise["difficulty"],
                 exercise["solution_code"],
                 idx,
+                function_name=exercise.get("function_name", "solution"),
+                test_cases=exercise.get("test_cases") or [],
+                language=exercise.get("language", "Python"),
             )
             exercises_generated += 1
 

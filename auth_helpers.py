@@ -5,6 +5,7 @@ Extracted from app.py as Phase 1 of Blueprint extraction.
 """
 
 import logging
+import os
 import re
 import functools
 from datetime import datetime, timedelta
@@ -246,8 +247,10 @@ def require_auth(f):
         if request.method == "OPTIONS":
             return f(*args, **kwargs)
 
-        # Bypass auth only when BOTH the TESTING flag is set AND env is explicitly "testing"
-        if current_app.config.get("TESTING") is True and config.ENV == "testing":
+        # Bypass auth only when BOTH the TESTING flag is set AND env is explicitly "testing".
+        # Read FLASK_ENV from os.environ at request time (not config.ENV) to avoid a
+        # stale cached value caused by module-level imports during pytest collection.
+        if current_app.config.get("TESTING") is True and os.environ.get("FLASK_ENV") == "testing":
             # Check for explicit test user ID or user_id in request
             test_user_id = request.headers.get("X-Test-User-ID")
             if not test_user_id:
