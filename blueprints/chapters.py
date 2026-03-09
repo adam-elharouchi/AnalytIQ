@@ -137,6 +137,9 @@ def _auto_generate_exercises(conn, pdf_text, chapter_id, chapter_title, class_id
                 exercise["difficulty"],
                 exercise["solution_code"],
                 idx,
+                function_name=exercise.get("function_name", "solution"),
+                test_cases=exercise.get("test_cases") or [],
+                language=exercise.get("language", "Python"),
             )
         conn.commit()
         return len(exercises)
@@ -506,6 +509,9 @@ def generate_exercises_for_chapter(chapter_id):
                 exercise["difficulty"],
                 exercise["solution_code"],
                 idx,
+                function_name=exercise.get("function_name", "solution"),
+                test_cases=exercise.get("test_cases") or [],
+                language=exercise.get("language", "Python"),
             )
             exercises_generated += 1
 
