@@ -98,7 +98,7 @@ def validate_pdf_file(file):
                 )
                 return False, "PDF contains potentially unsafe content"
 
-    except Exception as e:
+    except Exception:
         logger.error("PDF validation error", exc_info=True)
         return False, "PDF validation error"
 
