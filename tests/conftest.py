@@ -101,6 +101,12 @@ def mock_db(mock_db_connection, monkeypatch):
         'blueprints.chapters',
         'blueprints.exercises',
         'blueprints.classes',
+        'blueprints.superadmin',
+        'blueprints.tenant_admin',
+        'blueprints.sso',
+        'blueprints.platform',
+        'blueprints.lti',
+        'blueprints.content_import',
     ]:
         try:
             monkeypatch.setattr(f'{module}.get_db_connection', mock_get_db)

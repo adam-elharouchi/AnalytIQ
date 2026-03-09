@@ -65,7 +65,9 @@ def platform_status():
                     """
                 )
         except Exception:
-            # Fallback if tenant_id column doesn't exist yet (pre-migration)
+            # Fallback if tenant_id column doesn't exist yet (pre-migration).
+            # Must rollback first — psycopg2 aborts the transaction on any error.
+            conn.rollback()
             cur.execute(
                 """
                 SELECT announcement_id, title, message, type, target_roles

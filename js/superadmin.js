@@ -218,18 +218,16 @@ class SuperAdminDashboard {
         };
 
         try {
-            const _base = window.API_BASE_URL || '/api';
-            const healthUrl = _base.startsWith('http')
-                ? `${_base}/health`
-                : `${window.location.protocol}//${window.location.host}${_base}/health`;
-            const res = await fetch(healthUrl);
-            if (!res.ok) throw new Error('Health check failed');
+            const res = await authFetch('/api/health/detail');
+            // Parse regardless of status — services may be degraded but data still present
             const data = await res.json();
 
             const svc = data.services || {};
-            setService('postgres', svc.database);
-            setService('redis', svc.redis);
-            setService('storage', svc.storage);
+            // database returns {status: "healthy"/"unhealthy"}
+            // cache/storage return {healthy: bool} — use the boolean directly
+            setService('postgres', svc.database?.status);
+            setService('redis', svc.cache?.healthy);
+            setService('storage', svc.storage?.healthy);
 
             const ts = document.getElementById('overview-health-timestamp');
             if (ts) ts.textContent = `Last check: ${new Date().toLocaleTimeString()}`;
@@ -543,7 +541,12 @@ class SuperAdminDashboard {
                             role:    payload.role
                         };
                         localStorage.setItem('currentUser', JSON.stringify(targetUserObj));
-                        dest = (payload.role === 'professor') ? '/professor-dashboard.html' : '/student-classes.html';
+                        const roleDestMap = {
+                            professor:    '/professor-dashboard.html',
+                            tenant_admin: '/tenant-admin-dashboard.html',
+                            superadmin:   '/superadmin-dashboard.html',
+                        };
+                        dest = roleDestMap[payload.role] || '/student-classes.html';
                     } catch (e) { console.error("JWT decode failed:", e); }
 
                     // Record when the session started so the floating bar can enforce
@@ -675,7 +678,10 @@ class SuperAdminDashboard {
     async loadPendingApprovals(renderTable = true) {
         try {
             const res = await authFetch(`${this.baseAdminUrl}/pending-approvals`);
-            if (!res.ok) return;
+            if (!res.ok) {
+                if (renderTable) showError('Failed to load pending approvals. Please refresh.');
+                return;
+            }
             const data = await res.json();
 
             const count = data.count || 0;
@@ -704,6 +710,9 @@ class SuperAdminDashboard {
 
             tbody.innerHTML = (data.pending || []).map(u => {
                 const date = u.created_at ? new Date(u.created_at).toLocaleDateString() : '—';
+                // JSON.stringify produces a safely-quoted JS string; replace " with &quot; so
+                // it doesn't terminate the surrounding HTML double-quoted attribute.
+                const nameArg = JSON.stringify(u.name).replace(/"/g, '&quot;');
                 return `<tr style="border-bottom:1px solid var(--border-color);">
                     <td style="padding:1rem;">
                         <div style="font-weight:500;">${escapeHtml(u.name)}</div>
@@ -716,11 +725,11 @@ class SuperAdminDashboard {
                     <td style="padding:1rem;text-align:right;display:flex;gap:0.5rem;justify-content:flex-end;">
                         <button class="btn btn-sm btn-success"
                             style="background:var(--color-success, #10b981);color:#fff;border:none;"
-                            onclick="window.adminApp.approveAdmin('${u.user_id}', '${escapeHtml(u.name)}')">
+                            onclick="window.adminApp.approveAdmin('${u.user_id}', ${nameArg})">
                             Approve
                         </button>
                         <button class="btn btn-sm btn-danger"
-                            onclick="window.adminApp.denyAdmin('${u.user_id}', '${escapeHtml(u.name)}')">
+                            onclick="window.adminApp.denyAdmin('${u.user_id}', ${nameArg})">
                             Deny
                         </button>
                     </td>
@@ -809,9 +818,10 @@ class SuperAdminDashboard {
         document.getElementById('changeRoleTargetLabel').textContent = `Current role: ${currentRole}`;
         const sel = document.getElementById('changeRoleSelect');
         sel.value = currentRole;
-        // Clear tenant name input on open
         const nameInput = document.getElementById('changeRoleTenantName');
         if (nameInput) nameInput.value = '';
+        // Default to "existing" mode each time the modal opens
+        this._onTenantModeChange('existing');
         this._onRoleSelectChange();
         document.getElementById('changeRoleModal').style.display = 'flex';
     }
@@ -819,33 +829,77 @@ class SuperAdminDashboard {
     _onRoleSelectChange() {
         const isTenantAdmin = document.getElementById('changeRoleSelect').value === 'tenant_admin';
         document.getElementById('tenantSelectSection').style.display = isTenantAdmin ? 'block' : 'none';
+        if (isTenantAdmin) this._loadTenantsDropdown();
+    }
+
+    _onTenantModeChange(mode) {
+        this._tenantMode = mode;
+        const existingBtn = document.getElementById('tenantModeExistingBtn');
+        const newBtn      = document.getElementById('tenantModeNewBtn');
+        const existingSec = document.getElementById('tenantExistingSection');
+        const newSec      = document.getElementById('tenantNewSection');
+        if (existingBtn) {
+            existingBtn.style.background = mode === 'existing' ? 'var(--color-primary,#2569f4)' : 'rgba(17,24,39,0.7)';
+            existingBtn.style.color      = mode === 'existing' ? '#fff' : 'var(--text-secondary,#94a3b8)';
+        }
+        if (newBtn) {
+            newBtn.style.background = mode === 'new' ? 'var(--color-primary,#2569f4)' : 'rgba(17,24,39,0.7)';
+            newBtn.style.color      = mode === 'new' ? '#fff' : 'var(--text-secondary,#94a3b8)';
+        }
+        if (existingSec) existingSec.style.display = mode === 'existing' ? 'block' : 'none';
+        if (newSec)      newSec.style.display      = mode === 'new'      ? 'block' : 'none';
+    }
+
+    async _loadTenantsDropdown() {
+        const sel = document.getElementById('changeRoleTenantSelect');
+        if (!sel) return;
+        sel.innerHTML = '<option value="">Loading tenants…</option>';
+        try {
+            const res = await authFetch(`${this.baseAdminUrl}/tenants`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data    = await res.json();
+            const tenants = data.tenants || [];
+            sel.innerHTML = tenants.length
+                ? '<option value="">— Select a tenant —</option>'
+                  + tenants.map(t => `<option value="${t.tenant_id}">${escapeHtml(t.name)}</option>`).join('')
+                : '<option value="">No tenants found</option>';
+        } catch (err) {
+            console.error('Failed to load tenants dropdown:', err);
+            sel.innerHTML = '<option value="">Failed to load tenants</option>';
+        }
     }
 
     async _submitRoleChange() {
-        const role = document.getElementById('changeRoleSelect').value;
+        const role    = document.getElementById('changeRoleSelect').value;
         const saveBtn = document.querySelector('#changeRoleModal .btn-primary');
 
         try {
             let tenantId = null;
 
             if (role === 'tenant_admin') {
-                const tenantName = (document.getElementById('changeRoleTenantName').value || '').trim();
-                if (!tenantName) { showError('Please enter an institution / tenant name.'); return; }
-
-                // Step 1: Create the new tenant
-                if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Creating tenant…'; }
-                const tRes = await authFetch(`${this.baseAdminUrl}/tenants`, {
-                    method: 'POST',
-                    body: JSON.stringify({ name: tenantName })
-                });
-                const tData = await tRes.json();
-                if (!tRes.ok) throw new Error(tData.error || 'Failed to create tenant');
-                tenantId = tData.tenant.tenant_id;
+                if (this._tenantMode === 'existing') {
+                    // Use the selected existing tenant
+                    const sel = document.getElementById('changeRoleTenantSelect');
+                    tenantId = sel ? sel.value : '';
+                    if (!tenantId) { showError('Please select a tenant.'); return; }
+                } else {
+                    // Create a new tenant first
+                    const tenantName = (document.getElementById('changeRoleTenantName').value || '').trim();
+                    if (!tenantName) { showError('Please enter an institution / tenant name.'); return; }
+                    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Creating tenant…'; }
+                    const tRes  = await authFetch(`${this.baseAdminUrl}/tenants`, {
+                        method: 'POST',
+                        body: JSON.stringify({ name: tenantName })
+                    });
+                    const tData = await tRes.json();
+                    if (!tRes.ok) throw new Error(tData.error || 'Failed to create tenant');
+                    tenantId = tData.tenant.tenant_id;
+                }
             }
 
-            // Step 2: Assign the role (with new tenant_id if tenant_admin)
+            // Assign the role (with tenant_id if tenant_admin)
             if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving…'; }
-            const res = await authFetch(`${this.baseAdminUrl}/users/${this._pendingRoleUserId}/role`, {
+            const res  = await authFetch(`${this.baseAdminUrl}/users/${this._pendingRoleUserId}/role`, {
                 method: 'PATCH',
                 body: JSON.stringify({ role, ...(tenantId && { tenant_id: tenantId }) })
             });
