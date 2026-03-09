@@ -303,6 +303,6 @@ def submit_contact():
 
         return jsonify({"success": True, "message": "Contact message submitted successfully"}), 201
 
-    except Exception:
+    except Exception as e:
         logger.error("Unexpected error: %s", e, exc_info=True)
         return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
