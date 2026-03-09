@@ -253,62 +253,76 @@ class SuperAdminDashboard {
         }
 
         tenants.forEach(t => {
+            const isActive = t.is_active;
+            const issuer = escapeHtml(t.lti_issuer || 'local');
+            const issuerShort = issuer.length > 30 ? issuer.substring(0, 30) + '…' : issuer;
+            const safeName = escapeHtml(t.name).replace(/'/g, "\\'");
+            const statusDot = isActive
+                ? 'background: var(--color-success); box-shadow: 0 0 6px rgba(34,197,94,0.6);'
+                : 'background: #64748b;';
+
             const card = document.createElement('div');
-            card.style.background = 'var(--bg-card)';
-            card.style.border = '1px solid var(--border-color)';
-            card.style.borderRadius = '0.75rem';
-            card.style.padding = '1.5rem';
-            card.style.display = 'flex';
-            card.style.flexDirection = 'column';
-            card.style.gap = '1.25rem';
-            card.style.transition = 'transform 0.2s, box-shadow 0.2s';
-            card.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
-
-            // Hover effect
-            card.addEventListener('mouseenter', () => { card.style.transform = 'translateY(-2px)'; card.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1)'; });
-            card.addEventListener('mouseleave', () => { card.style.transform = 'translateY(0)'; card.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)'; });
-
-            const badgeClass = t.is_active ? 'status-badge active' : 'status-badge disabled';
-            const badgeText = t.is_active ? 'Active' : 'Disabled';
+            card.className = 'class-card bento-card neon-hover';
+            card.style.cssText = 'display: flex; flex-direction: column; overflow: hidden; padding: 0; cursor: default;';
 
             card.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                    <div style="display: flex; gap: 1rem; align-items: center;">
-                        <div style="width: 48px; height: 48px; border-radius: 0.5rem; background: var(--bg-dark); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); letter-spacing: 0.05em; border: 1px solid var(--border-color);">
-                            ORG
-                        </div>
-                        <div>
-                            <h3 style="margin: 0 0 0.25rem 0; font-size: 1.1rem; color: var(--text-color);">${escapeHtml(t.name)}</h3>
-                            <span class="${badgeClass}" style="display: inline-block;">${badgeText}</span>
-                        </div>
+                <!-- IDE-style tab header -->
+                <div style="background: rgba(0,0,0,0.25); padding: 0.6rem 1.1rem; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; font-family: var(--font-mono); font-size: 0.72rem; color: #64748b;">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6M9 12h6M9 15h4"/>
+                        </svg>
+                        ${escapeHtml(t.tenant_id)}.org
                     </div>
-                </div>
-                
-                <div style="background: rgba(255, 255, 255, 0.02); padding: 1rem; border-radius: 0.5rem; border: 1px solid var(--border-color); font-size: 0.875rem;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; align-items: center;">
-                        <span style="color: var(--text-muted);">LTI Issuer</span>
-                        <span style="color: var(--primary-color); font-family: monospace; background: rgba(59, 130, 246, 0.1); padding: 2px 6px; border-radius: 4px;" title="${escapeHtml(t.lti_issuer)}">${escapeHtml(t.lti_issuer).length > 25 ? escapeHtml(t.lti_issuer).substring(0, 25) + '...' : escapeHtml(t.lti_issuer)}</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                        <span style="color: var(--text-muted);">Total Users</span>
-                        <span style="font-weight: 600; color: var(--text-color);">${t.total_users}</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="color: var(--text-muted);">Total Classes</span>
-                        <span style="font-weight: 600; color: var(--text-color);">${t.total_classes || 0}</span>
+                    <div style="display: flex; align-items: center; gap: 0.6rem;">
+                        <span style="font-family: var(--font-mono); font-size: 0.65rem; color: ${isActive ? 'rgba(34,197,94,0.8)' : '#64748b'}; background: ${isActive ? 'rgba(34,197,94,0.08)' : 'rgba(100,116,139,0.1)'}; border: 1px solid ${isActive ? 'rgba(34,197,94,0.25)' : 'rgba(100,116,139,0.2)'}; padding: 0.1rem 0.4rem; border-radius: 0.25rem; text-transform: uppercase; letter-spacing: 0.05em;">${isActive ? 'ACTIVE' : 'DISABLED'}</span>
+                        <div style="width: 8px; height: 8px; border-radius: 50%; ${statusDot}"></div>
                     </div>
                 </div>
 
-                <div style="display: flex; gap: 0.75rem; margin-top: auto; padding-top: 0.5rem; flex-wrap:wrap;">
-                    <button class="btn btn-sm ${t.is_active ? 'btn-danger' : 'btn-success'}" style="flex: 1; padding: 0.5rem;" onclick="window.adminApp.toggleTenantStatus('${t.tenant_id}', ${!t.is_active})">
-                        ${t.is_active ? 'Disable' : 'Enable'}
-                    </button>
-                    <button class="btn btn-sm btn-secondary" style="flex: 1; padding: 0.5rem;" onclick="document.getElementById('user-search-input').value = ''; window.adminApp.loadUsers(1, '${t.tenant_id}'); document.querySelector('[data-target=users-section]').click();">
-                        Users
-                    </button>
-                    <button class="btn btn-sm btn-danger" style="padding: 0.5rem 0.75rem;" onclick="window.adminApp.deleteTenant('${t.tenant_id}', '${escapeHtml(t.name).replace(/'/g,"\\'")}')">
-                        Delete
-                    </button>
+                <!-- Body -->
+                <div style="padding: 1.25rem 1.5rem; flex: 1; display: flex; flex-direction: column; gap: 1rem;">
+                    <h3 style="margin: 0; font-size: 1.1rem; color: #f8fafc; font-weight: 700; line-height: 1.2;">${escapeHtml(t.name)}</h3>
+
+                    <!-- Stats row -->
+                    <div style="display: flex; border: 1px solid rgba(255,255,255,0.06); border-radius: 0.5rem; overflow: hidden; background: rgba(0,0,0,0.15);">
+                        <div style="flex: 1; text-align: center; padding: 0.7rem 0.5rem; border-right: 1px solid rgba(255,255,255,0.06);">
+                            <div style="font-size: 1.3rem; font-family: var(--font-mono); color: #f8fafc; font-weight: 700; line-height: 1;">${t.total_users || 0}</div>
+                            <div style="font-size: 0.62rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 0.2rem;">Users</div>
+                        </div>
+                        <div style="flex: 1; text-align: center; padding: 0.7rem 0.5rem;">
+                            <div style="font-size: 1.3rem; font-family: var(--font-mono); color: #f8fafc; font-weight: 700; line-height: 1;">${t.total_classes || 0}</div>
+                            <div style="font-size: 0.62rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 0.2rem;">Classes</div>
+                        </div>
+                    </div>
+
+                    <!-- LTI issuer pill -->
+                    <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.78rem;">
+                        <span style="color: #64748b; flex-shrink: 0;">LTI</span>
+                        <span style="font-family: var(--font-mono); font-size: 0.75rem; color: rgba(99,102,241,0.9); background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.2); padding: 0.15rem 0.55rem; border-radius: 0.3rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${issuer}">${issuerShort}</span>
+                    </div>
+
+                    <!-- Actions -->
+                    <div style="display: flex; gap: 0.5rem; margin-top: auto; padding-top: 0.25rem; border-top: 1px solid rgba(255,255,255,0.05);">
+                        <button class="btn btn-primary" style="flex: 1; font-size: 0.82rem; display: flex; align-items: center; justify-content: center; gap: 0.35rem;"
+                            onclick="document.getElementById('user-search-input').value=''; window.adminApp.loadUsers(1,'${t.tenant_id}'); document.querySelector('[data-target=users-section]').click();">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="pointer-events:none;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                            Users
+                        </button>
+                        <button class="btn btn-secondary" style="font-size: 0.82rem; padding: 0.5rem 0.75rem; background: transparent; border-color: rgba(255,255,255,0.1); color: #94a3b8;"
+                            onclick="window.adminApp.toggleTenantStatus('${t.tenant_id}', ${!isActive})"
+                            title="${isActive ? 'Disable tenant' : 'Enable tenant'}">
+                            ${isActive
+                                ? '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="pointer-events:none;"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>'
+                                : '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="pointer-events:none;"><polyline points="20 6 9 17 4 12"/></svg>'
+                            }
+                        </button>
+                        <button class="btn btn-secondary" style="font-size: 0.82rem; padding: 0.5rem 0.75rem; background: transparent; border-color: rgba(239,68,68,0.25); color: rgba(239,68,68,0.7);"
+                            onclick="window.adminApp.deleteTenant('${t.tenant_id}', '${safeName}')"
+                            title="Delete tenant">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="pointer-events:none;"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                        </button>
+                    </div>
                 </div>
             `;
             grid.appendChild(card);
@@ -475,14 +489,26 @@ class SuperAdminDashboard {
     }
 
     showCreateTenantModal() {
-        // For MVP, a prompt is functional. A real modal is better for production.
-        const name = prompt("Enter Tenant/Institution Name:");
-        if (!name) return;
-        const issuer = prompt("Enter LTI Issuer URL (e.g. https://canvas.instructure.com) or leave blank for local:");
-
-        if (name) {
-            this.createTenant(name, issuer || `local-${Date.now()}`);
+        const nameInput = document.getElementById('newTenantName');
+        const issuerInput = document.getElementById('newTenantIssuer');
+        if (nameInput) nameInput.value = '';
+        if (issuerInput) issuerInput.value = '';
+        const modal = document.getElementById('createTenantModal');
+        if (modal) {
+            modal.style.display = 'flex';
+            if (nameInput) nameInput.focus();
         }
+    }
+
+    async submitCreateTenant() {
+        const name = (document.getElementById('newTenantName')?.value || '').trim();
+        const issuer = (document.getElementById('newTenantIssuer')?.value || '').trim();
+        if (!name) {
+            showError('Institution name is required.');
+            return;
+        }
+        document.getElementById('createTenantModal').style.display = 'none';
+        await this.createTenant(name, issuer || `local-${Date.now()}`);
     }
 
     async createTenant(name, issuer) {
