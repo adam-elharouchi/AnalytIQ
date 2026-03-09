@@ -289,7 +289,7 @@ def lti_login():
         return oidc_login.enable_check_cookies().redirect(target_link_uri)
     except OIDCException as e:
         logger.warning("LTI OIDC login error: %s", e)
-        return jsonify({"error": "OIDC login failed", "detail": str(e)}), 400
+        return jsonify({"error": "OIDC login failed"}), 400
     except Exception as e:
         logger.error("LTI login unexpected error: %s", e, exc_info=True)
         return jsonify({"error": "LTI login error"}), 500
@@ -320,7 +320,7 @@ def lti_launch():
         launch_data = message_launch.get_launch_data()
     except Exception as e:
         logger.warning("LTI launch validation failed: %s", e)
-        return render_template("lti-launch-error.html", error=str(e)), 400
+        return render_template("lti-launch-error.html", error="LTI launch validation failed"), 400
 
     # Deep linking launch — professor selecting content to embed in LMS
     if message_launch.is_deep_link_launch():
@@ -654,7 +654,7 @@ def sync_roster(class_id):
         members_response = nrps_service.get_members()
     except Exception as e:
         logger.error("NRPS sync failed for class %s: %s", class_id, e, exc_info=True)
-        return jsonify({"error": "Failed to fetch roster from LMS", "detail": str(e)}), 502
+        return jsonify({"error": "Failed to fetch roster from LMS"}), 502
 
     members = (
         members_response
@@ -785,7 +785,7 @@ def submit_grade(class_id, exercise_id):
 
     except Exception as e:
         logger.error("AGS grade submission failed: %s", e, exc_info=True)
-        return jsonify({"error": "Grade submission to LMS failed", "detail": str(e)}), 502
+        return jsonify({"error": "Grade submission to LMS failed"}), 502
 
 
 # ---------------------------------------------------------------------------

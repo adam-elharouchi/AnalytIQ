@@ -176,4 +176,5 @@ def storage_health_check():
         return {"healthy": True, "message": "Supabase Storage accessible"}
 
     except Exception as e:
-        return {"healthy": False, "message": f"Supabase Storage error: {str(e)}"}
+        logger.error("Supabase Storage health check failed: %s", e)
+        return {"healthy": False, "message": "Supabase Storage unavailable"}
