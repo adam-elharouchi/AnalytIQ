@@ -447,7 +447,7 @@ def get_class_average_leaderboard(conn, class_id):
     cur.execute(
         """
         SELECT
-            u.user_id, u.name, u.email,
+            u.user_id, u.name,
             COALESCE(AVG(pp.best_score), 0) AS average_score,
             COUNT(DISTINCT pp.exercise_id)  AS exercises_completed
         FROM class_enrollments ce
@@ -455,7 +455,7 @@ def get_class_average_leaderboard(conn, class_id):
         LEFT JOIN practice_progress pp
             ON pp.user_id = u.user_id AND pp.class_id = %s AND pp.completed = true
         WHERE ce.class_id = %s
-        GROUP BY u.user_id, u.name, u.email
+        GROUP BY u.user_id, u.name
         ORDER BY average_score DESC, u.name ASC
         """,
         (class_id, class_id),
@@ -470,7 +470,7 @@ def get_exercise_leaderboard_for_class(conn, class_id, exercise_id):
     cur.execute(
         """
         SELECT
-            u.user_id, u.name, u.email,
+            u.user_id, u.name,
             COALESCE(pp.best_score, 0) AS score,
             pp.last_completed_at
         FROM class_enrollments ce
@@ -491,58 +491,6 @@ def get_exercise_leaderboard_for_class(conn, class_id, exercise_id):
 # ---------------------------------------------------------------------------
 # Resources
 # ---------------------------------------------------------------------------
-
-
-def ensure_resources_table(conn):
-    """Create class_resources table if missing and migrate legacy columns."""
-    cur = conn.cursor()
-
-    cur.execute(
-        """
-        CREATE TABLE IF NOT EXISTS class_resources (
-            resource_id VARCHAR(255) PRIMARY KEY,
-            class_id VARCHAR(255) NOT NULL,
-            user_id VARCHAR(255) NOT NULL,
-            title VARCHAR(255) NOT NULL,
-            description TEXT,
-            resource_type VARCHAR(50) NOT NULL,
-            resource_url TEXT,
-            file_data BYTEA,
-            filename VARCHAR(255),
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-        """
-    )
-
-    columns_to_check = ["user_id", "resource_type", "file_data", "filename"]
-    for col in columns_to_check:
-        try:
-            cur.execute(f"SELECT {col} FROM class_resources LIMIT 1")
-        except Exception:
-            conn.rollback()
-            if col == "user_id":
-                cur.execute(
-                    f"ALTER TABLE class_resources ADD COLUMN {col} VARCHAR(255) NOT NULL DEFAULT 'admin'"
-                )
-            elif col == "file_data":
-                cur.execute(f"ALTER TABLE class_resources ADD COLUMN {col} BYTEA")
-            else:
-                cur.execute(f"ALTER TABLE class_resources ADD COLUMN {col} VARCHAR(255)")
-            conn.commit()
-
-    try:
-        cur.execute("SELECT type FROM class_resources LIMIT 1")
-        cur.execute(
-            "UPDATE class_resources SET resource_type = type WHERE (resource_type IS NULL OR resource_type = '')"
-        )
-        cur.execute("ALTER TABLE class_resources DROP COLUMN type")
-        conn.commit()
-    except Exception:
-        conn.rollback()
-
-    conn.commit()
-    cur.close()
 
 
 def get_class_chapters_as_resources(conn, class_id):
