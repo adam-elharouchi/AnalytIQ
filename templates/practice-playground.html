@@ -1156,46 +1156,66 @@
       // Mark as submitted
       hasSubmitted = true;
 
-      // Calculate accuracy and score (use solution_code if available from API, otherwise use code)
-      const solutionCode = exerciseData.solution_code || exerciseData.code || '';
-      let comparison, accuracy, score;
+      // ── Grade via backend (output-based — no Levenshtein, no time bonus) ──
+      showSubmissionMessage('Grading your code…', 'info');
 
-      if (solutionCode) {
-        comparison = compareCode(userCode, solutionCode);
-        accuracy = comparison.accuracy;
-        score = calculateScore(elapsedSeconds, accuracy, hintInteractions);
-      } else {
-        // No solution code available - just mark as submitted
-        accuracy = 0;
-        score = 0;
-        comparison = { accuracy: 0, userLines: [], solutionLines: [] };
+      let score = 0;
+      let accuracy = 0;
+      let gradingResult = null;
+
+      try {
+        const apiUrl = window.API_BASE_URL || '/api';
+        const gradeResp = await authFetch(
+          `${apiUrl}/exercises/${exerciseData.id}/grade`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code: userCode }),
+          }
+        );
+
+        if (gradeResp.ok) {
+          gradingResult = await gradeResp.json();
+          score    = gradingResult.total_score || 0;
+          accuracy = gradingResult.tests_total > 0
+            ? Math.round((gradingResult.tests_passed / gradingResult.tests_total) * 100)
+            : 0;
+        } else {
+          console.error('Grading request failed:', gradeResp.status);
+        }
+      } catch (gradeErr) {
+        console.error('Error calling grade endpoint:', gradeErr);
       }
 
       // Update stats display
-      document.getElementById('accuracyDisplay').textContent = `${Math.round(accuracy)}%`;
+      document.getElementById('accuracyDisplay').textContent = `${accuracy}%`;
       document.getElementById('scoreDisplay').textContent = score;
 
-      // Hide code editor and show formatted code display
+      // Hide editor, show test results panel
       codeEditor.style.display = 'none';
       const codeDisplay = document.getElementById('codeDisplay');
       codeDisplay.classList.add('show');
 
-      // Render formatted code with highlighting
-      renderFormattedCode(comparison);
+      renderTestResults(gradingResult);
 
       // Update title
-      document.getElementById('codeEditorTitle').textContent = 'Solution Comparison';
+      document.getElementById('codeEditorTitle').textContent = 'Test Results';
 
       // Disable submit button
       const submitBtn = document.getElementById('submitBtn');
       submitBtn.disabled = true;
       submitBtn.textContent = 'Submitted';
 
-      // Show submission message with score
-      let submissionMessage = `Solution submitted! Accuracy: ${Math.round(accuracy)}% | Score: ${score} | Time: ${formatTime(elapsedSeconds)}`;
-      if (hintInteractions > 0) {
-        submissionMessage += ` | Hints used: ${hintInteractions}`;
+      // Show submission message
+      let submissionMessage;
+      if (gradingResult && gradingResult.has_test_cases === false) {
+        submissionMessage = `Submitted! No test cases available yet. Time: ${formatTime(elapsedSeconds)}`;
+      } else if (gradingResult) {
+        submissionMessage = `Graded! ${gradingResult.tests_passed}/${gradingResult.tests_total} tests passed · Score: ${score}/100 · Time: ${formatTime(elapsedSeconds)}`;
+      } else {
+        submissionMessage = `Submitted. Score: ${score} · Time: ${formatTime(elapsedSeconds)}`;
       }
+      if (hintInteractions > 0) submissionMessage += ` · Hints: ${hintInteractions}`;
       showSubmissionMessage(submissionMessage, 'success');
 
       // Save score to backend
@@ -1264,366 +1284,67 @@
       }
     }
 
-    function compareCode(userCode, solutionCode) {
-      // Filter out comments from code — handles both standalone comment lines
-      // (# at start) and inline comments (code # explanation).
-      const filterComments = (code) => {
-        return code
-          .split('\n')
-          .map(line => {
-            const trimmed = line.trim();
-            if (trimmed.startsWith('#')) return ''; // standalone comment line
-            const hashIdx = trimmed.indexOf('#');
-            // Strip inline comment (everything from # onward)
-            return hashIdx !== -1 ? trimmed.substring(0, hashIdx).trim() : trimmed;
-          })
-          .filter(line => line.length > 0)
-          .join('\n');
-      };
-
-      // Normalize code for comparison (without comments) - format-agnostic
-      const normalizeCode = (code) => {
-        const codeWithoutComments = filterComments(code);
-        return codeWithoutComments
-          .split('\n')
-          .map(line => line.trim())
-          .filter(line => line.length > 0)
-          .map(line => {
-            // Remove all formatting - focus only on code logic
-            return line
-              .replace(/\s+/g, '') // Remove ALL whitespace
-              .replace(/[=(),\[\]{}:]/g, '|') // Normalize operators/punctuation to single separator
-              .toLowerCase();
-          })
-          .join('|') // Use separator between lines
-          .replace(/\|+/g, '|') // Collapse multiple separators
-          .trim();
-      };
-
-      // Split into lines for detailed comparison (excluding comments)
-      const userLines = filterComments(userCode)
-        .split('\n')
-        .map(line => line.trim())
-        .filter(line => line.length > 0);
-
-      const solutionLines = filterComments(solutionCode)
-        .split('\n')
-        .map(line => line.trim())
-        .filter(line => line.length > 0);
-
-      // Line-by-line comparison
-      const comparison = {
-        userLines: [],
-        solutionLines: [],
-        matchedLines: 0,
-        totalSolutionLines: solutionLines.length,
-        accuracy: 0
-      };
-
-      // Normalize for similarity check
-      const normalizedUser = normalizeCode(userCode);
-      const normalizedSolution = normalizeCode(solutionCode);
-
-      // Calculate accuracy using multiple methods and average them
-      let accuracyMethods = [];
-
-      // Method 1: Overall code similarity using Levenshtein distance
-      if (normalizedSolution.length > 0) {
-        const distance = levenshteinDistance(normalizedUser, normalizedSolution);
-        const maxLength = Math.max(normalizedUser.length, normalizedSolution.length);
-        const similarity1 = maxLength > 0 ? (1 - (distance / maxLength)) * 100 : 0;
-        accuracyMethods.push(similarity1);
-      }
-
-      // Method 2: Line-by-line comparison (more accurate for code structure)
-      let matchedLines = 0;
-      let totalLineSimilarity = 0;
-      const maxLines = Math.max(userLines.length, solutionLines.length);
-
-      for (let i = 0; i < maxLines; i++) {
-        const userLine = i < userLines.length ? userLines[i] : null;
-        const solutionLine = i < solutionLines.length ? solutionLines[i] : null;
-
-        const normalizedUserLine = userLine ? normalizeCode(userLine) : '';
-        const normalizedSolutionLine = solutionLine ? normalizeCode(solutionLine) : '';
-
-        let matchStatus = 'missing';
-        let lineSimilarity = 0;
-
-        if (userLine && solutionLine) {
-          // Normalize lines for format-agnostic comparison
-          const normalizeLine = (line) => {
-            return line
-              .trim()
-              .replace(/\s+/g, '') // Remove ALL whitespace
-              .replace(/[=(),\[\]{}:]/g, '|') // Normalize operators/punctuation
-              .toLowerCase()
-              .replace(/\|+/g, '|'); // Collapse separators
-          };
-
-          const normalizedUserLineNoFormat = normalizeLine(userLine);
-          const normalizedSolutionLineNoFormat = normalizeLine(solutionLine);
-
-          // Check if lines are identical when formatting is ignored
-          if (normalizedUserLineNoFormat === normalizedSolutionLineNoFormat) {
-            matchStatus = 'correct';
-            matchedLines++;
-            lineSimilarity = 1.0;
-          } else {
-            // Check similarity (more lenient now that formatting is normalized)
-            lineSimilarity = calculateLineSimilarity(normalizedUserLineNoFormat, normalizedSolutionLineNoFormat);
-
-            // Very lenient matching: 75% similarity = correct (only logical differences matter now)
-            if (lineSimilarity >= 0.75) {
-              matchStatus = 'correct';
-              matchedLines++;
-            } else if (lineSimilarity > 0.5) {
-              matchStatus = 'incorrect'; // Partial match
-            } else {
-              matchStatus = 'incorrect';
-            }
-          }
-          totalLineSimilarity += lineSimilarity;
-        } else if (!userLine && solutionLine) {
-          matchStatus = 'missing';
-          lineSimilarity = 0;
-        } else if (userLine && !solutionLine) {
-          matchStatus = 'extra';
-          lineSimilarity = 0;
-        }
-
-        comparison.userLines.push({
-          text: userLine || '',
-          status: matchStatus === 'correct' ? 'correct' : matchStatus === 'incorrect' ? 'incorrect' : 'extra'
-        });
-
-        comparison.solutionLines.push({
-          text: solutionLine || '',
-          status: matchStatus === 'missing' ? 'missing' : matchStatus === 'correct' ? 'correct' : 'incorrect'
-        });
-      }
-
-      // Calculate line-based accuracy
-      if (solutionLines.length > 0) {
-        const lineAccuracy = (matchedLines / solutionLines.length) * 100;
-        accuracyMethods.push(lineAccuracy);
-
-        // Also use average line similarity
-        const avgLineSimilarity = totalLineSimilarity / Math.max(maxLines, 1) * 100;
-        accuracyMethods.push(avgLineSimilarity);
-      }
-
-      // Weighted average: Prioritize line matching (most accurate for code)
-      // 30% overall similarity, 50% line matching, 20% average line similarity
-      if (accuracyMethods.length > 0) {
-        let weightedSum = 0;
-        if (accuracyMethods.length >= 3) {
-          // Line matching is most important (50%), then overall similarity (30%), then avg similarity (20%)
-          weightedSum = (accuracyMethods[0] * 0.3) + (accuracyMethods[1] * 0.5) + (accuracyMethods[2] * 0.2);
-        } else if (accuracyMethods.length === 2) {
-          // If we have line matching, prioritize it more (60%)
-          weightedSum = (accuracyMethods[0] * 0.4) + (accuracyMethods[1] * 0.6);
-        } else {
-          weightedSum = accuracyMethods[0];
-        }
-        comparison.accuracy = Math.min(100, Math.max(0, weightedSum));
-        comparison.matchedLines = matchedLines;
-      } else {
-        comparison.accuracy = 0;
-      }
-
-      return comparison;
-    }
-
-    function calculateLineSimilarity(line1, line2) {
-      if (line1 === line2) return 1.0;
-      if (line1.length === 0 || line2.length === 0) return 0.0;
-
-      // Calculate Levenshtein distance similarity
-      const maxLength = Math.max(line1.length, line2.length);
-      const distance = levenshteinDistance(line1, line2);
-      return 1 - (distance / maxLength);
-    }
-
-    function levenshteinDistance(str1, str2) {
-      const m = str1.length;
-      const n = str2.length;
-      const dp = Array(m + 1).fill(null).map(() => Array(n + 1).fill(0));
-
-      for (let i = 0; i <= m; i++) dp[i][0] = i;
-      for (let j = 0; j <= n; j++) dp[0][j] = j;
-
-      for (let i = 1; i <= m; i++) {
-        for (let j = 1; j <= n; j++) {
-          if (str1[i - 1] === str2[j - 1]) {
-            dp[i][j] = dp[i - 1][j - 1];
-          } else {
-            dp[i][j] = Math.min(
-              dp[i - 1][j] + 1,
-              dp[i][j - 1] + 1,
-              dp[i - 1][j - 1] + 1
-            );
-          }
-        }
-      }
-
-      return dp[m][n];
-    }
-
-    function renderFormattedCode(comparison) {
+    // ── renderTestResults ─────────────────────────────────────────────────────
+    // Replaces the old compareCode / Levenshtein display.
+    // Shows pass/fail for each test case returned by the grading endpoint.
+    function renderTestResults(gradingResult) {
       const codeDisplay = document.getElementById('codeDisplay');
-      const solutionCode = exerciseData.solution_code || exerciseData.code || '';
-      const userCode = document.getElementById('codeEditor').value.trim();
 
-      // Filter out comment lines from solution
-      const solutionLines = solutionCode
-        .split('\n')
-        .filter(line => {
-          const trimmed = line.trim();
-          return trimmed.length > 0 && !trimmed.startsWith('#');
-        });
+      if (!gradingResult) {
+        codeDisplay.innerHTML = '<div class="code-line">Grading failed — please try again.</div>';
+        return;
+      }
 
-      // Filter out comment lines from user code
-      const userLines = userCode
-        .split('\n')
-        .filter(line => {
-          const trimmed = line.trim();
-          return trimmed.length > 0 && !trimmed.startsWith('#');
-        })
-        .map(line => line.trim());
+      if (gradingResult.has_test_cases === false) {
+        codeDisplay.innerHTML =
+          `<div class="code-line" style="color:#f5a623;">
+             ${gradingResult.message || 'No test cases available for this exercise.'}
+           </div>`;
+        return;
+      }
+
+      const results = gradingResult.results || [];
+      const quality = gradingResult.quality_details || {};
 
       let html = '';
 
-      // Compare line by line and highlight text
-      for (let i = 0; i < solutionLines.length; i++) {
-        const solutionLine = solutionLines[i].trim();
-        const userLine = i < userLines.length ? userLines[i] : null;
+      // Test cases
+      results.forEach((r, i) => {
+        const icon    = r.passed ? '✓' : '✗';
+        const colour  = r.passed ? '#4caf50' : '#f44336';
+        const desc    = escapeHtml(r.description || `Test ${i + 1}`);
+        const detail  = r.error
+          ? `<span style="color:#f5a623;font-size:0.85em;"> — ${escapeHtml(r.error)}</span>`
+          : (!r.passed && r.expected !== undefined
+              ? `<span style="color:#aaa;font-size:0.85em;"> — expected ${escapeHtml(String(r.expected))}, got ${escapeHtml(String(r.actual ?? r.printed ?? 'nothing'))}</span>`
+              : '');
+        html += `<div class="code-line">
+          <span style="color:${colour};font-weight:bold;">${icon}</span>
+          <span style="margin-left:8px;">${desc}</span>${detail}
+        </div>`;
+      });
 
-        if (userLine) {
-          // Compare characters/words in the line
-          const highlighted = highlightLineComparison(solutionLine, userLine);
-          html += `<div class="code-line">${highlighted}</div>`;
-        } else {
-          // Missing line - show in orange
-          html += `<div class="code-line"><span class="code-text-missing">${escapeHtml(solutionLine)}</span></div>`;
-        }
+      // Quality breakdown
+      if (Object.keys(quality).length) {
+        html += `<div class="code-line" style="margin-top:12px;color:#aaa;font-size:0.85em;">
+          Quality: runs cleanly ${quality.runs_cleanly}/10
+          · no hardcoded answers ${quality.no_hardcoded_answers}/5
+          · style ${quality.basic_style}/5
+        </div>`;
       }
 
       codeDisplay.innerHTML = html;
-      updateLineNumbers();
     }
 
-    function highlightLineComparison(solutionLine, userLine) {
-      // Normalize for comparison (remove extra whitespace, convert to lowercase)
-      const normalize = (str) => str.replace(/\s+/g, ' ').trim().toLowerCase();
-
-      const normalizedSolution = normalize(solutionLine);
-      const normalizedUser = normalize(userLine);
-
-      // Simple approach: if lines are very similar, mark as correct
-      if (normalizedSolution === normalizedUser) {
-        // Exact match - all green
-        return `<span class="code-text-correct">${escapeHtml(solutionLine)}</span>`;
-      } else {
-        // Compare word by word
-        const solutionWords = solutionLine.split(/(\s+)/);
-        const userWords = userLine.split(/(\s+)/);
-
-        let result = '';
-        let userWordIndex = 0;
-
-        for (let i = 0; i < solutionWords.length; i++) {
-          const solutionWord = solutionWords[i];
-
-          // Skip whitespace-only tokens but preserve them
-          if (/^\s+$/.test(solutionWord)) {
-            result += solutionWord;
-            continue;
-          }
-
-          // Find matching word in user code
-          let found = false;
-          let matchType = 'missing';
-
-          // Look ahead in user code for matching word
-          for (let j = userWordIndex; j < Math.min(userWordIndex + 3, userWords.length); j++) {
-            const normalizedSolutionWord = normalize(solutionWord);
-            const normalizedUserWord = normalize(userWords[j]);
-
-            if (normalizedSolutionWord === normalizedUserWord) {
-              found = true;
-              matchType = 'correct';
-              userWordIndex = j + 1;
-              break;
-            } else if (normalizedSolutionWord.includes(normalizedUserWord) || normalizedUserWord.includes(normalizedSolutionWord)) {
-              // Partial match - could be correct or incorrect
-              matchType = 'incorrect';
-            }
-          }
-
-          if (!found) {
-            // Check if this word appears later in user code (misordered)
-            const normalizedSolutionWord = normalize(solutionWord);
-            for (let j = userWordIndex; j < userWords.length; j++) {
-              if (normalize(userWords[j]) === normalizedSolutionWord) {
-                matchType = 'incorrect'; // Wrong position
-                break;
-              }
-            }
-          }
-
-          // Apply appropriate highlighting
-          if (matchType === 'correct') {
-            result += `<span class="code-text-correct">${escapeHtml(solutionWord)}</span>`;
-          } else if (matchType === 'incorrect') {
-            result += `<span class="code-text-incorrect">${escapeHtml(solutionWord)}</span>`;
-          } else {
-            result += `<span class="code-text-missing">${escapeHtml(solutionWord)}</span>`;
-          }
-
-          if (!found && matchType !== 'incorrect') {
-            // Word not found - don't advance user index
-            continue;
-          }
-        }
-
-        return result;
-      }
-    }
+    // ── Legacy code-comparison functions removed ───────────────────────────
+    // compareCode, calculateLineSimilarity, levenshteinDistance, and
+    // calculateScore (with time bonus) have all been removed.
+    // Grading is now done server-side via POST /api/exercises/<id>/grade.
 
     function escapeHtml(text) {
       const div = document.createElement('div');
       div.textContent = text;
       return div.innerHTML;
-    }
-
-    function calculateScore(timeSeconds, accuracy, hintPenalty = 0) {
-      // Base score from accuracy (0-70 points)
-      // Accuracy is already a percentage (0-100)
-      const accuracyScore = Math.max(0, Math.min(70, (accuracy / 100) * 70));
-
-      // Time bonus (faster = more points, max 30 points)
-      // Base time for bonus calculation: 5 minutes (300 seconds)
-      const baseTime = 300;
-      let timeBonus = 0;
-
-      if (timeSeconds > 0 && timeSeconds <= baseTime) {
-        // Linear bonus from 30 points at 0 seconds to 0 points at baseTime
-        timeBonus = 30 * (1 - (timeSeconds / baseTime));
-      }
-
-      // Cap time bonus at 30 points
-      timeBonus = Math.max(0, Math.min(30, timeBonus));
-
-      // Hint penalty: reduce score by 2 points per interaction (max 20 points reduction)
-      const maxHintPenalty = 20;
-      const penalty = Math.min(hintPenalty * 2, maxHintPenalty);
-
-      // Total score: accuracy (0-70) + time bonus (0-30) - hint penalty (0-20) = 0-100 points
-      const totalScore = accuracyScore + timeBonus - penalty;
-
-      // Round to nearest integer, ensure non-negative
-      return Math.max(0, Math.round(totalScore));
     }
 
     function resetCode() {

@@ -127,6 +127,9 @@ CREATE TABLE IF NOT EXISTS class_exercises (
     solution_code   TEXT,
     exercise_number INTEGER,
     created_by      VARCHAR(255),
+    function_name   VARCHAR(255) DEFAULT 'solution',
+    language        VARCHAR(50)  DEFAULT 'Python',
+    test_cases      JSONB,
     created_at      TIMESTAMP   DEFAULT CURRENT_TIMESTAMP,
     updated_at      TIMESTAMP   DEFAULT CURRENT_TIMESTAMP
 );
