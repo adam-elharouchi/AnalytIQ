@@ -5,6 +5,7 @@ Every function receives a DB *connection* and returns plain Python data.
 The caller (blueprint) is responsible for commit / rollback / connection lifecycle.
 """
 
+import json
 import logging
 
 import psycopg2
@@ -75,14 +76,18 @@ def insert_exercise(
     difficulty,
     solution_code,
     exercise_number,
+    function_name=None,
+    test_cases=None,
+    language=None,
 ):
     """Insert a single exercise row (used during auto-generation from PDF)."""
     cur = conn.cursor()
     cur.execute(
         """
         INSERT INTO class_exercises
-            (exercise_id, chapter_id, class_id, title, description, difficulty, solution_code, exercise_number)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            (exercise_id, chapter_id, class_id, title, description, difficulty,
+             solution_code, exercise_number, function_name, test_cases, language)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """,
         (
             exercise_id,
@@ -93,6 +98,9 @@ def insert_exercise(
             difficulty,
             solution_code,
             exercise_number,
+            function_name or "solution",
+            json.dumps(test_cases) if test_cases else None,
+            language or "Python",
         ),
     )
     cur.close()

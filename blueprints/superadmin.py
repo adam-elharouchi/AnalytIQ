@@ -722,12 +722,19 @@ def delete_user(user_id):
         if user_id == g.user_id:
             return jsonify({"error": "Cannot delete your own account"}), 400
 
-        # Cascade: remove enrollments, profile data, then the user
-        cur.execute("DELETE FROM class_enrollments WHERE user_id = %s", (user_id,))
-        cur.execute("DELETE FROM user_profiles     WHERE user_id = %s", (user_id,))
-        cur.execute("DELETE FROM user_settings     WHERE user_id = %s", (user_id,))
-        cur.execute("DELETE FROM user_preferences  WHERE user_id = %s", (user_id,))
-        cur.execute("DELETE FROM users             WHERE user_id = %s", (user_id,))
+        # Remove all data referencing this user before deleting the user row.
+        # Ordered so child rows are removed before parent rows.
+        cur.execute("DELETE FROM class_enrollments  WHERE student_id  = %s", (user_id,))
+        cur.execute("DELETE FROM classes            WHERE professor_id = %s", (user_id,))
+        cur.execute("DELETE FROM conversations      WHERE user_id     = %s", (user_id,))
+        cur.execute("DELETE FROM exercise_attempts  WHERE user_id     = %s", (user_id,))
+        cur.execute("DELETE FROM practice_progress  WHERE user_id     = %s", (user_id,))
+        cur.execute("DELETE FROM ai_agent_memory    WHERE user_id     = %s", (user_id,))
+        cur.execute("DELETE FROM ai_agent_digest    WHERE user_id     = %s", (user_id,))
+        cur.execute("DELETE FROM user_profiles      WHERE user_id     = %s", (user_id,))
+        cur.execute("DELETE FROM user_settings      WHERE user_id     = %s", (user_id,))
+        cur.execute("DELETE FROM user_preferences   WHERE user_id     = %s", (user_id,))
+        cur.execute("DELETE FROM users              WHERE user_id     = %s", (user_id,))
 
         audit(
             conn,
