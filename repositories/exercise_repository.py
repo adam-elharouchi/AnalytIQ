@@ -5,6 +5,7 @@ Every function receives a DB *connection* and returns plain Python data.
 The caller (blueprint) is responsible for commit / rollback / connection lifecycle.
 """
 
+import json
 import logging
 
 logger = logging.getLogger(__name__)
@@ -29,6 +30,48 @@ def get_exercise_detail(conn, exercise_id):
     row = cur.fetchone()
     cur.close()
     return row
+
+
+def get_exercise_test_cases(conn, exercise_id):
+    """
+    Return (function_name, language, test_cases) for the given exercise,
+    or (None, None, None) when the exercise does not exist.
+
+    test_cases is a list of dicts:
+      [{description, input, expected_output, weight}, ...]
+    """
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT function_name, language, test_cases FROM class_exercises WHERE exercise_id = %s",
+        (exercise_id,),
+    )
+    row = cur.fetchone()
+    cur.close()
+    if not row:
+        return None, None, None
+    function_name, language, test_cases_raw = row
+    # psycopg2 returns JSONB as a Python object already; guard against string
+    if isinstance(test_cases_raw, str):
+        try:
+            test_cases_raw = json.loads(test_cases_raw)
+        except (json.JSONDecodeError, TypeError):
+            test_cases_raw = None
+    return function_name or "solution", language or "Python", test_cases_raw or []
+
+
+def save_exercise_test_cases(conn, exercise_id, function_name, test_cases):
+    """Persist function_name and test_cases for an existing exercise."""
+    cur = conn.cursor()
+    cur.execute(
+        """
+        UPDATE class_exercises
+        SET function_name = %s,
+            test_cases    = %s
+        WHERE exercise_id = %s
+        """,
+        (function_name, json.dumps(test_cases), exercise_id),
+    )
+    cur.close()
 
 
 def get_exercise_owner(conn, exercise_id):
