@@ -524,12 +524,39 @@ def _match(actual: Any, expected: Any) -> bool:
     return actual == expected
 
 
+def _strip_comments(code: str, lang: str) -> str:
+    """Strip inline comments line-by-line.
+
+    Simplified: does not handle comment markers inside string literals,
+    which is acceptable for heuristic quality scoring.
+    """
+    markers = {
+        "python":     ("#",),
+        "r":          ("#",),
+        "javascript": ("//",),
+        "java":       ("//",),
+        "sql":        ("--",),
+    }
+    comment_chars = markers.get(lang, ("#",))
+    stripped = []
+    for line in code.splitlines():
+        for marker in comment_chars:
+            idx = line.find(marker)
+            if idx != -1:
+                line = line[:idx]
+        stripped.append(line)
+    return "\n".join(stripped)
+
+
 def _quality(code: str, lang: str, any_ran: bool, compile_error) -> dict:
     """Quality score 0-20: runs(10) + no-hardcode(5) + style(5)."""
     runs = 10 if (any_ran and compile_error is None) else 0
 
-    # Hardcode check: all substantive lines are bare literal outputs
-    lines = [ln.strip() for ln in code.splitlines()
+    code_no_comments = _strip_comments(code, lang)
+
+    # Hardcode check: all substantive lines are bare literal outputs.
+    # Uses comment-stripped lines so inline comments don't mask hardcoded returns.
+    lines = [ln.strip() for ln in code_no_comments.splitlines()
              if ln.strip() and not re.match(r'^\s*(#|//|--|/\*|\*)', ln)]
     code_lines = [ln for ln in lines
                   if not re.match(r'^(import|from|using|require|library|package|def\s|function\s|public\s)', ln)]
@@ -544,7 +571,8 @@ def _quality(code: str, lang: str, any_ran: bool, compile_error) -> dict:
                      all(re.match(pat, ln, re.IGNORECASE) for ln in code_lines))
     no_hc = 0 if hardcoded else 5
 
-    # Style: at least one variable assignment with a meaningful name (>1 char)
+    # Style: at least one variable assignment with a meaningful name (>1 char).
+    # Uses comment-stripped code so commented-out assignments don't award points.
     _assign_pat = {
         "python":     r'\b[a-zA-Z_]{2,}\w*\s*=(?!=)',
         "javascript": r'\b(let|const|var)\s+[a-zA-Z_]{2,}',
@@ -553,7 +581,7 @@ def _quality(code: str, lang: str, any_ran: bool, compile_error) -> dict:
         "sql":        None,
     }
     ap = _assign_pat.get(lang, r'\b[a-zA-Z_]{2,}\w*\s*=(?!=)')
-    style = 5 if (ap is None or re.search(ap, code)) else 0
+    style = 5 if (ap is None or re.search(ap, code_no_comments)) else 0
 
     return {"total": runs + no_hc + style,
             "runs_cleanly": runs,
