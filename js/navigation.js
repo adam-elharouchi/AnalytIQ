@@ -191,34 +191,7 @@ function exitImpersonation() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', function () {
-  const originalToken = localStorage.getItem('original_token');
-  if (originalToken) {
-    let currentUser = {};
-    try {
-      currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-      // Sometimes stored as 'user' depending on the auth flow
-      if (!currentUser.name) {
-        currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-      }
-    } catch (e) { }
-
-    const userName = currentUser.name || currentUser.email || 'User';
-
-    const banner = document.createElement('div');
-    banner.id = 'global-impersonation-banner';
-    banner.style.cssText = 'background: linear-gradient(90deg, #f59e0b, #d97706); color: white; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3); text-align: center; padding: 12px; font-weight: 600; z-index: 9999; display: flex; justify-content: center; align-items: center; gap: 1rem; position: relative; width: 100%;';
-
-    banner.innerHTML = `
-            <span>You are currently impersonating <span>${userName}</span>.</span>
-            <button onclick="exitImpersonation()" class="btn btn-secondary btn-sm"
-                style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: white; cursor: pointer; padding: 0.25rem 0.75rem; border-radius: 0.25rem;">Exit
-                Impersonation</button>
-        `;
-
-    document.body.prepend(banner);
-  }
-});
+// Impersonation banner is handled globally by templates/base.html
 
 function toggleMobileMenu() {
   const navLinks = document.getElementById('navLinks');

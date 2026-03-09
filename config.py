@@ -77,6 +77,14 @@ RATE_LIMIT_FORGOT_PASSWORD_PER_HOUR = int(os.getenv("RATE_LIMIT_FORGOT_PW", 3))
 RATE_LIMIT_RESET_PASSWORD_PER_HOUR = int(os.getenv("RATE_LIMIT_RESET_PW", 5))
 
 # ============================================================================
+# PLATFORM OWNER
+# ============================================================================
+
+# The platform owner has unrestricted superadmin access (can delete/impersonate
+# any account including other superadmins). Override via env var if needed.
+PLATFORM_OWNER_EMAIL = os.getenv("PLATFORM_OWNER_EMAIL", "aelharouchi@myanalytiq.org")
+
+# ============================================================================
 # SECURITY
 # ============================================================================
 
