@@ -804,7 +804,6 @@ def add_class_resource(class_id):
     try:
         conn = get_db_connection()
 
-
         data = request.json
         user_id = g.user_id
         resource_id = f"res_{str(uuid.uuid4())}"
@@ -835,7 +834,6 @@ def upload_class_resource(class_id):
     """Upload a file as a resource"""
     try:
         conn = get_db_connection()
-
 
         if "file" not in request.files:
             return jsonify({"error": "No file part"}), 400
@@ -926,7 +924,6 @@ def manage_resource(class_id, resource_id):
     """Update or Delete a resource"""
     try:
         conn = get_db_connection()
-
 
         if request.method == "DELETE":
             class_repo.delete_resource(conn, resource_id)
