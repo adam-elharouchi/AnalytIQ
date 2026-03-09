@@ -10,6 +10,7 @@ from auth_helpers import require_auth, validate_fields
 from db import get_db_connection
 from extensions import csrf_exempt
 from repositories import exercise_repository as exercise_repo
+from python.code_runner import run_test_cases
 
 logger = logging.getLogger(__name__)
 bp = Blueprint("exercises", __name__)
@@ -208,4 +209,94 @@ def delete_exercise(exercise_id):
 
     except Exception as e:
         logger.error("Unexpected error: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
+
+
+@bp.route("/api/exercises/<exercise_id>/grade", methods=["POST"])
+@csrf_exempt
+@require_auth
+def grade_exercise(exercise_id):
+    """
+    Grade a student's code submission against pre-generated test cases.
+
+    Body:
+      { "code": "<student source code>" }
+      (language is read from the DB, not trusted from the client)
+
+    Returns:
+      {
+        "total_score":       int,   // 0-100  ← store this as the submission score
+        "correctness_score": int,   // 0-80
+        "quality_score":     int,   // 0-20
+        "tests_passed":      int,
+        "tests_total":       int,
+        "results":           [...], // per-test detail
+        "quality_details":   {...},
+        "has_test_cases":    bool   // false when exercise was generated before migration
+      }
+
+    Grading is purely output-based — no Levenshtein, no time bonus.
+    The frontend should store total_score via PUT /api/users/practice-progress.
+    """
+    try:
+        conn = get_db_connection()
+        data = request.json or {}
+
+        student_code = (data.get("code") or "").strip()
+        if not student_code:
+            return jsonify({"error": "No code submitted."}), 400
+
+        # Retrieve test cases stored at generation time.
+        # Language comes from the DB (set at generation time) — we do NOT trust
+        # the client-supplied language to select the sandbox runner.
+        function_name, language, test_cases = exercise_repo.get_exercise_test_cases(
+            conn, exercise_id
+        )
+
+        if function_name is None:
+            return jsonify({"error": "Exercise not found."}), 404
+
+        # Exercise predates test-case generation — no automated grading available
+        if not test_cases:
+            return jsonify({
+                "has_test_cases": False,
+                "total_score": 0,
+                "correctness_score": 0,
+                "quality_score": 0,
+                "tests_passed": 0,
+                "tests_total": 0,
+                "results": [],
+                "quality_details": {},
+                "message": (
+                    "This exercise does not have test cases yet. "
+                    "Ask your professor to regenerate it."
+                ),
+            }), 200
+
+        # Run the code against every test case in the sandbox
+        result = run_test_cases(
+            student_code=student_code,
+            language=language,
+            function_name=function_name,
+            test_cases=test_cases,
+            timeout=5,
+        )
+
+        audit(
+            conn,
+            "GRADE_EXERCISE",
+            resource_type="exercise",
+            resource_id=exercise_id,
+            details={
+                "score": result["total_score"],
+                "tests_passed": result["tests_passed"],
+                "tests_total": result["tests_total"],
+                "language": language,
+            },
+        )
+
+        return jsonify({**result, "has_test_cases": True}), 200
+
+    except Exception as e:
+        logger.error("Unexpected error grading exercise %s: %s", exercise_id, e, exc_info=True)
         return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
