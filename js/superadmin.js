@@ -310,6 +310,11 @@ class SuperAdminDashboard {
                             Users
                         </button>
                         <button class="btn btn-secondary" style="font-size: 0.82rem; padding: 0.5rem 0.75rem; background: transparent; border-color: rgba(255,255,255,0.1); color: #94a3b8;"
+                            onclick="window.adminApp.editTenant('${t.tenant_id}', '${safeName}', '${issuer}')"
+                            title="Edit tenant">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="pointer-events:none;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        </button>
+                        <button class="btn btn-secondary" style="font-size: 0.82rem; padding: 0.5rem 0.75rem; background: transparent; border-color: rgba(255,255,255,0.1); color: #94a3b8;"
                             onclick="window.adminApp.toggleTenantStatus('${t.tenant_id}', ${!isActive})"
                             title="${isActive ? 'Disable tenant' : 'Enable tenant'}">
                             ${isActive
@@ -463,6 +468,38 @@ class SuperAdminDashboard {
         } catch (error) {
             console.error("Failed to toggle tenant:", error);
             showError(error.message || "Failed to update tenant status");
+        }
+    }
+
+    editTenant(tenantId, currentName, currentIssuer) {
+        document.getElementById('editTenantId').value = tenantId;
+        document.getElementById('editTenantName').value = currentName;
+        document.getElementById('editTenantIssuer').value = currentIssuer === 'local' ? '' : currentIssuer;
+        document.getElementById('editTenantModal').style.display = 'flex';
+    }
+
+    async submitEditTenant() {
+        const tenantId = document.getElementById('editTenantId').value;
+        const name = (document.getElementById('editTenantName').value || '').trim();
+        const issuer = (document.getElementById('editTenantIssuer').value || '').trim();
+
+        if (!name) { showError('Institution name is required'); return; }
+
+        document.getElementById('editTenantModal').style.display = 'none';
+        try {
+            const res = await authFetch(`${this.baseAdminUrl}/tenants/${tenantId}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ name, lti_issuer: issuer || null })
+            });
+            if (res.ok) {
+                showSuccess('Tenant updated successfully');
+                this.loadTenants();
+            } else {
+                const err = await res.json();
+                showError(err.error || 'Failed to update tenant');
+            }
+        } catch (error) {
+            showError(error.message || 'Failed to update tenant');
         }
     }
 
