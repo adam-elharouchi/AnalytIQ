@@ -525,29 +525,222 @@ class SuperAdminDashboard {
         }
     }
 
-    showCreateTenantModal() {
-        const nameInput = document.getElementById('newTenantName');
-        const issuerInput = document.getElementById('newTenantIssuer');
-        if (nameInput) nameInput.value = '';
-        if (issuerInput) issuerInput.value = '';
-        const modal = document.getElementById('createTenantModal');
-        if (modal) {
-            modal.style.display = 'flex';
-            if (nameInput) nameInput.focus();
+    // -----------------------------------------------------------------------
+    // New Tenant Setup Wizard
+    // -----------------------------------------------------------------------
+
+    showTenantWizard() {
+        this._wz = { step: 1 };
+        const ids = ['wzInstitutionName','wzPlatformName','wzIssuer','wzClientId',
+                     'wzDeploymentIds','wzAuthLoginUrl','wzAuthTokenUrl','wzKeySetUrl',
+                     'wzSsoName','wzSsoClientId','wzSsoSecret','wzSsoDiscovery','wzSsoDomains'];
+        ids.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+        ['wzLtiEnable','wzSsoEnable'].forEach(id => {
+            const el = document.getElementById(id); if (el) el.checked = false;
+        });
+        const roleEl = document.getElementById('wzSsoDefaultRole');
+        if (roleEl) roleEl.value = 'student';
+        const typeEl = document.getElementById('wzSsoType');
+        if (typeEl) typeEl.value = 'google';
+        this._wzToggleLti(false);
+        this._wzToggleSso(false);
+        this._wzGoTo(1);
+        document.getElementById('tenantWizardModal').style.display = 'flex';
+        setTimeout(() => document.getElementById('wzInstitutionName')?.focus(), 50);
+    }
+
+    _wzGoTo(step) {
+        this._wz.step = step;
+        ['1','2','3','done'].forEach(s => {
+            const el = document.getElementById(`wz-step-${s}`);
+            if (el) el.style.display = (s == step) ? 'block' : 'none';
+        });
+        const isDone = step === 'done';
+        [1,2,3].forEach(s => {
+            const ind = document.getElementById(`wz-ind-${s}`);
+            const lbl = document.getElementById(`wz-lbl-${s}`);
+            if (!ind) return;
+            const past = !isDone && s < step;
+            const active = !isDone && s === step;
+            ind.style.background = past ? 'var(--color-success,#22c55e)' : active ? 'var(--color-primary,#2569f4)' : 'rgba(255,255,255,0.05)';
+            ind.style.borderColor = past ? 'var(--color-success,#22c55e)' : active ? 'var(--color-primary,#2569f4)' : 'rgba(255,255,255,0.2)';
+            ind.style.color = (past || active) ? '#fff' : '#64748b';
+            ind.innerHTML = past ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>' : s;
+            if (lbl) lbl.style.color = active ? 'var(--text-primary,#f0f4ff)' : past ? 'var(--color-success,#22c55e)' : '#64748b';
+        });
+        const footer = document.getElementById('wz-step-footer');
+        if (footer) footer.style.display = isDone ? 'none' : 'flex';
+        const back = document.getElementById('wz-btn-back');
+        if (back) back.style.display = (!isDone && step > 1) ? 'inline-block' : 'none';
+        const skip = document.getElementById('wz-btn-skip');
+        if (skip) skip.style.display = (!isDone && (step === 2 || step === 3)) ? 'inline-block' : 'none';
+        const next = document.getElementById('wz-btn-next');
+        if (next) next.style.display = (!isDone && step < 3) ? 'inline-block' : 'none';
+        const finish = document.getElementById('wz-btn-finish');
+        if (finish) finish.style.display = (!isDone && step === 3) ? 'inline-block' : 'none';
+    }
+
+    _wzToggleLti(show) {
+        const el = document.getElementById('wz-lti-fields');
+        if (el) el.style.display = show ? 'block' : 'none';
+    }
+
+    _wzToggleSso(show) {
+        const el = document.getElementById('wz-sso-fields');
+        if (el) el.style.display = show ? 'block' : 'none';
+        this._wzOnSsoTypeChange();
+    }
+
+    _wzOnSsoTypeChange() {
+        const type = document.getElementById('wzSsoType')?.value;
+        const row = document.getElementById('wz-sso-discovery-row');
+        if (row) row.style.display = type === 'oidc' ? 'block' : 'none';
+    }
+
+    wzNext() {
+        if (this._wz.step === 1) {
+            const name = (document.getElementById('wzInstitutionName')?.value || '').trim();
+            if (!name) { showError('Institution name is required.'); return; }
+            this._wzGoTo(2);
+        } else if (this._wz.step === 2) {
+            this._wzGoTo(3);
         }
     }
 
-    async submitCreateTenant() {
-        const name = (document.getElementById('newTenantName')?.value || '').trim();
-        const issuer = (document.getElementById('newTenantIssuer')?.value || '').trim();
-        if (!name) {
-            showError('Institution name is required.');
-            return;
+    wzSkip() {
+        if (this._wz.step === 2) {
+            document.getElementById('wzLtiEnable').checked = false;
+            this._wzToggleLti(false);
+            this._wzGoTo(3);
+        } else if (this._wz.step === 3) {
+            document.getElementById('wzSsoEnable').checked = false;
+            this._wzToggleSso(false);
+            this.wzFinish();
         }
-        document.getElementById('createTenantModal').style.display = 'none';
-        await this.createTenant(name, issuer || `local-${Date.now()}`);
     }
 
+    wzBack() {
+        if (this._wz.step > 1) this._wzGoTo(this._wz.step - 1);
+    }
+
+    async wzFinish() {
+        const name = (document.getElementById('wzInstitutionName')?.value || '').trim();
+        const ltiEnabled = document.getElementById('wzLtiEnable')?.checked;
+        const ssoEnabled = document.getElementById('wzSsoEnable')?.checked;
+
+        const ltiIssuer = ltiEnabled ? (document.getElementById('wzIssuer')?.value || '').trim() : '';
+
+        // Validate LTI fields if enabled
+        if (ltiEnabled) {
+            const required = { 'Platform Name': 'wzPlatformName', 'Issuer URL': 'wzIssuer',
+                               'Client ID': 'wzClientId', 'Auth Login URL': 'wzAuthLoginUrl',
+                               'Auth Token URL': 'wzAuthTokenUrl', 'Key Set URL': 'wzKeySetUrl' };
+            for (const [label, id] of Object.entries(required)) {
+                if (!(document.getElementById(id)?.value || '').trim()) {
+                    showError(`${label} is required for LTI configuration.`);
+                    this._wzGoTo(2); return;
+                }
+            }
+        }
+
+        // Validate SSO fields if enabled
+        if (ssoEnabled) {
+            const ssoRequired = { 'Provider Name': 'wzSsoName', 'Client ID': 'wzSsoClientId', 'Client Secret': 'wzSsoSecret' };
+            for (const [label, id] of Object.entries(ssoRequired)) {
+                if (!(document.getElementById(id)?.value || '').trim()) {
+                    showError(`${label} is required for SSO configuration.`);
+                    this._wzGoTo(3); return;
+                }
+            }
+            if (document.getElementById('wzSsoType')?.value === 'oidc') {
+                if (!(document.getElementById('wzSsoDiscovery')?.value || '').trim()) {
+                    showError('Discovery URL is required for Generic OIDC providers.');
+                    this._wzGoTo(3); return;
+                }
+            }
+        }
+
+        const finishBtn = document.getElementById('wz-btn-finish');
+        if (finishBtn) { finishBtn.disabled = true; finishBtn.textContent = 'Creating…'; }
+
+        const summaryLines = [];
+        try {
+            // 1. Create tenant
+            const tenantRes = await authFetch(`${this.baseAdminUrl}/tenants`, {
+                method: 'POST',
+                body: JSON.stringify({ name, lti_issuer: ltiIssuer || `local-${Date.now()}` })
+            });
+            if (!tenantRes.ok) {
+                const err = await tenantRes.json();
+                throw new Error(err.error || 'Failed to create tenant');
+            }
+            const tenantData = await tenantRes.json();
+            const tenantId = tenantData.tenant_id;
+            summaryLines.push(`✓ Tenant <strong>${escapeHtml(name)}</strong> created`);
+
+            // 2. LTI config
+            if (ltiEnabled) {
+                const deployRaw = (document.getElementById('wzDeploymentIds')?.value || '').trim();
+                const deployIds = deployRaw ? deployRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
+                const ltiRes = await authFetch('/api/lti/config', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        platform_name: document.getElementById('wzPlatformName').value.trim(),
+                        issuer: document.getElementById('wzIssuer').value.trim(),
+                        client_id: document.getElementById('wzClientId').value.trim(),
+                        auth_login_url: document.getElementById('wzAuthLoginUrl').value.trim(),
+                        auth_token_url: document.getElementById('wzAuthTokenUrl').value.trim(),
+                        key_set_url: document.getElementById('wzKeySetUrl').value.trim(),
+                        deployment_ids: deployIds,
+                    })
+                });
+                if (ltiRes.ok) {
+                    summaryLines.push(`✓ LTI platform <strong>${escapeHtml(document.getElementById('wzPlatformName').value.trim())}</strong> registered`);
+                } else {
+                    const e = await ltiRes.json();
+                    summaryLines.push(`⚠ LTI config failed: ${escapeHtml(e.error || 'unknown error')}`);
+                }
+            }
+
+            // 3. SSO provider
+            if (ssoEnabled) {
+                const ssoType = document.getElementById('wzSsoType').value;
+                const domainsRaw = (document.getElementById('wzSsoDomains')?.value || '').trim();
+                const domains = domainsRaw ? domainsRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
+                const ssoPayload = {
+                    tenant_id: tenantId,
+                    provider_name: document.getElementById('wzSsoName').value.trim(),
+                    provider_type: ssoType,
+                    client_id: document.getElementById('wzSsoClientId').value.trim(),
+                    client_secret: document.getElementById('wzSsoSecret').value.trim(),
+                    discovery_url: ssoType === 'oidc' ? document.getElementById('wzSsoDiscovery').value.trim() : '',
+                    allowed_domains: domains,
+                    default_role: document.getElementById('wzSsoDefaultRole').value,
+                };
+                const ssoRes = await authFetch('/api/sso/admin/providers', {
+                    method: 'POST',
+                    body: JSON.stringify(ssoPayload)
+                });
+                if (ssoRes.ok) {
+                    summaryLines.push(`✓ SSO provider <strong>${escapeHtml(document.getElementById('wzSsoName').value.trim())}</strong> configured`);
+                } else {
+                    const e = await ssoRes.json();
+                    summaryLines.push(`⚠ SSO setup failed: ${escapeHtml(e.error || 'unknown error')}`);
+                }
+            }
+
+            document.getElementById('wz-done-summary').innerHTML = summaryLines.join('<br>');
+            this._wzGoTo('done');
+            this.loadTenants();
+
+        } catch (err) {
+            showError(err.message || 'Setup failed. Please try again.');
+        } finally {
+            if (finishBtn) { finishBtn.disabled = false; finishBtn.textContent = 'Finish'; }
+        }
+    }
+
+    // kept for backward compatibility (e.g. Change Role modal new-tenant flow)
     async createTenant(name, issuer) {
         try {
             const res = await authFetch(`${this.baseAdminUrl}/tenants`, {

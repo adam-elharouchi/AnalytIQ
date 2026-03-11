@@ -721,29 +721,12 @@
                     </div>
                     <button class="btn btn-primary"
                         style="white-space: nowrap; display: flex; align-items: center; gap: 0.5rem; height: fit-content;"
-                        onclick="window.adminApp && window.adminApp.showCreateTenantModal()">
+                        onclick="window.adminApp && window.adminApp.showTenantWizard()">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="pointer-events:none;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                         Add New Tenant
                     </button>
                 </div>
 
-                <!-- LTI Setup Wizard Card -->
-                <div
-                    style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(124, 58, 237, 0.05)); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 0.75rem; padding: 2rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-                    <div>
-                        <h2
-                            style="font-size: 1.25rem; font-weight: 600; color: var(--text-color); margin-bottom: 0.5rem;">
-                            LTI 1.3 Advantage Integration</h2>
-                        <p style="color: var(--text-muted); max-width: 600px; margin: 0;">Connect AnalytIQ directly to
-                            an institution's Learning Management System (Canvas, Blackboard, Moodle) to enable seamless
-                            roster syncing and Single Sign-On (SSO).</p>
-                    </div>
-                    <button class="btn btn-primary"
-                        style="white-space: nowrap; display: flex; align-items: center; gap: 0.5rem; height: fit-content;"
-                        onclick="window.location.href='/lti-setup.html'">
-                        Configure New LMS
-                    </button>
-                </div>
 
                 <!-- Tenants Grid -->
                 <div id="tenants-grid"
@@ -1191,34 +1174,186 @@
     </div>
 </main>
 
-<!-- Add New Tenant Modal -->
-<div id="createTenantModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:2000;align-items:center;justify-content:center;">
-  <div role="dialog" aria-modal="true" style="background:var(--bg-card,rgba(26,34,53,0.97));backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.1);border-radius:0.75rem;padding:2rem;max-width:440px;width:90%;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
-      <h2 style="margin:0;color:var(--text-primary,#f0f4ff);font-size:1.1rem;">Add New Tenant</h2>
-      <button onclick="document.getElementById('createTenantModal').style.display='none'" class="modal-close-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+<!-- New Tenant Setup Wizard -->
+<div id="tenantWizardModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:2000;align-items:center;justify-content:center;padding:1rem;">
+  <div role="dialog" aria-modal="true" style="background:var(--bg-card,rgba(26,34,53,0.97));backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.1);border-radius:0.875rem;padding:2rem;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-sizing:border-box;">
+
+    <!-- Header -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.75rem;">
+      <h2 style="margin:0;color:var(--text-primary,#f0f4ff);font-size:1.15rem;font-weight:700;">New Tenant Setup</h2>
+      <button onclick="document.getElementById('tenantWizardModal').style.display='none'" class="modal-close-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
-    <div style="margin-bottom:1.25rem;">
-      <label style="display:block;margin-bottom:0.5rem;color:var(--text-primary,#f0f4ff);font-weight:500;">Institution Name <span style="color:var(--color-error,#ef4444);">*</span></label>
-      <input type="text" id="newTenantName" placeholder="e.g. Hult International Business School"
-        style="width:100%;padding:0.75rem;border:1px solid var(--border-color,rgba(255,255,255,0.1));border-radius:0.375rem;background:rgba(17,24,39,0.7);color:var(--text-primary,#f0f4ff);font-size:0.95rem;box-sizing:border-box;" />
+
+    <!-- Step indicators -->
+    <div id="wz-indicators" style="display:flex;align-items:center;gap:0;margin-bottom:2rem;">
+      <div style="display:flex;align-items:center;gap:0.5rem;flex:1;">
+        <div id="wz-ind-1" style="width:28px;height:28px;border-radius:50%;border:2px solid;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;flex-shrink:0;transition:all .2s;">1</div>
+        <span id="wz-lbl-1" style="font-size:0.82rem;font-weight:500;white-space:nowrap;transition:color .2s;">Institution</span>
+      </div>
+      <div style="flex:1;height:1px;background:rgba(255,255,255,0.1);margin:0 0.5rem;"></div>
+      <div style="display:flex;align-items:center;gap:0.5rem;flex:1;">
+        <div id="wz-ind-2" style="width:28px;height:28px;border-radius:50%;border:2px solid;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;flex-shrink:0;transition:all .2s;">2</div>
+        <span id="wz-lbl-2" style="font-size:0.82rem;font-weight:500;white-space:nowrap;transition:color .2s;">LMS / LTI</span>
+      </div>
+      <div style="flex:1;height:1px;background:rgba(255,255,255,0.1);margin:0 0.5rem;"></div>
+      <div style="display:flex;align-items:center;gap:0.5rem;flex:1;">
+        <div id="wz-ind-3" style="width:28px;height:28px;border-radius:50%;border:2px solid;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;flex-shrink:0;transition:all .2s;">3</div>
+        <span id="wz-lbl-3" style="font-size:0.82rem;font-weight:500;white-space:nowrap;transition:color .2s;">SSO</span>
+      </div>
     </div>
-    <div style="margin-bottom:1.5rem;">
-      <label style="display:block;margin-bottom:0.5rem;color:var(--text-primary,#f0f4ff);font-weight:500;">LTI Issuer URL <span style="color:var(--text-secondary,#94a3b8);font-weight:400;font-size:0.85rem;">(optional)</span></label>
-      <input type="text" id="newTenantIssuer" placeholder="e.g. https://canvas.instructure.com"
-        style="width:100%;padding:0.75rem;border:1px solid var(--border-color,rgba(255,255,255,0.1));border-radius:0.375rem;background:rgba(17,24,39,0.7);color:var(--text-primary,#f0f4ff);font-size:0.95rem;box-sizing:border-box;" />
-      <small style="color:var(--text-secondary,#64748b);font-size:0.8rem;display:block;margin-top:0.4rem;">Leave blank to create a local tenant without LMS integration.</small>
+
+    <!-- Step 1: Institution -->
+    <div id="wz-step-1">
+      <p style="color:var(--text-secondary,#94a3b8);font-size:0.875rem;margin:0 0 1.5rem;">Start by naming the institution. You can configure LMS and SSO in the next steps.</p>
+      <div style="margin-bottom:1.25rem;">
+        <label style="display:block;margin-bottom:0.4rem;color:var(--text-primary,#f0f4ff);font-weight:500;font-size:0.9rem;">Institution Name <span style="color:var(--color-error,#ef4444);">*</span></label>
+        <input type="text" id="wzInstitutionName" placeholder="e.g. Hult International Business School"
+          style="width:100%;padding:0.75rem;border:1px solid var(--border-color,rgba(255,255,255,0.1));border-radius:0.375rem;background:rgba(17,24,39,0.7);color:var(--text-primary,#f0f4ff);font-size:0.95rem;box-sizing:border-box;" />
+      </div>
     </div>
-    <div style="display:flex;gap:1rem;justify-content:flex-end;">
-      <button onclick="document.getElementById('createTenantModal').style.display='none'"
-        style="padding:0.6rem 1.2rem;border:1px solid var(--border-color,rgba(255,255,255,0.1));border-radius:0.375rem;background:transparent;color:var(--text-secondary,#94a3b8);cursor:pointer;font-size:0.9rem;">
-        Cancel
+
+    <!-- Step 2: LMS / LTI -->
+    <div id="wz-step-2" style="display:none;">
+      <p style="color:var(--text-secondary,#94a3b8);font-size:0.875rem;margin:0 0 1.25rem;">Connect this tenant to a Learning Management System (Moodle, Canvas, Blackboard, D2L). <strong style="color:var(--text-primary,#f0f4ff);">Optional — skip if not needed.</strong></p>
+      <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;margin-bottom:1.25rem;">
+        <input type="checkbox" id="wzLtiEnable" onchange="window.adminApp && window.adminApp._wzToggleLti(this.checked)"
+          style="width:16px;height:16px;accent-color:var(--color-primary,#2569f4);cursor:pointer;" />
+        <span style="color:var(--text-primary,#f0f4ff);font-weight:500;font-size:0.9rem;">Configure LMS / LTI 1.3 for this tenant</span>
+      </label>
+      <div id="wz-lti-fields" style="display:none;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.85rem;margin-bottom:0.85rem;">
+          <div style="grid-column:1/-1;">
+            <label style="display:block;margin-bottom:0.3rem;color:var(--text-primary,#f0f4ff);font-size:0.85rem;font-weight:500;">Platform Name <span style="color:var(--color-error,#ef4444);">*</span></label>
+            <input type="text" id="wzPlatformName" placeholder="e.g. Moodle Classes"
+              style="width:100%;padding:0.65rem;border:1px solid var(--border-color,rgba(255,255,255,0.1));border-radius:0.375rem;background:rgba(17,24,39,0.7);color:var(--text-primary,#f0f4ff);font-size:0.9rem;box-sizing:border-box;" />
+          </div>
+          <div style="grid-column:1/-1;">
+            <label style="display:block;margin-bottom:0.3rem;color:var(--text-primary,#f0f4ff);font-size:0.85rem;font-weight:500;">Issuer (OIDC Issuer URL) <span style="color:var(--color-error,#ef4444);">*</span></label>
+            <input type="text" id="wzIssuer" placeholder="e.g. http://localhost:8888/moodle502"
+              style="width:100%;padding:0.65rem;border:1px solid var(--border-color,rgba(255,255,255,0.1));border-radius:0.375rem;background:rgba(17,24,39,0.7);color:var(--text-primary,#f0f4ff);font-size:0.9rem;box-sizing:border-box;" />
+            <small style="color:var(--text-secondary,#64748b);font-size:0.78rem;margin-top:0.2rem;display:block;">Found in your LMS developer key / tool config. Also used as the tenant's LTI issuer.</small>
+          </div>
+          <div>
+            <label style="display:block;margin-bottom:0.3rem;color:var(--text-primary,#f0f4ff);font-size:0.85rem;font-weight:500;">Client ID <span style="color:var(--color-error,#ef4444);">*</span></label>
+            <input type="text" id="wzClientId" placeholder="Assigned by the LMS"
+              style="width:100%;padding:0.65rem;border:1px solid var(--border-color,rgba(255,255,255,0.1));border-radius:0.375rem;background:rgba(17,24,39,0.7);color:var(--text-primary,#f0f4ff);font-size:0.9rem;box-sizing:border-box;" />
+          </div>
+          <div>
+            <label style="display:block;margin-bottom:0.3rem;color:var(--text-primary,#f0f4ff);font-size:0.85rem;font-weight:500;">Deployment ID <span style="color:var(--text-secondary,#94a3b8);font-weight:400;">(optional)</span></label>
+            <input type="text" id="wzDeploymentIds" placeholder="e.g. 1"
+              style="width:100%;padding:0.65rem;border:1px solid var(--border-color,rgba(255,255,255,0.1));border-radius:0.375rem;background:rgba(17,24,39,0.7);color:var(--text-primary,#f0f4ff);font-size:0.9rem;box-sizing:border-box;" />
+          </div>
+          <div>
+            <label style="display:block;margin-bottom:0.3rem;color:var(--text-primary,#f0f4ff);font-size:0.85rem;font-weight:500;">Auth Login URL <span style="color:var(--color-error,#ef4444);">*</span></label>
+            <input type="url" id="wzAuthLoginUrl" placeholder="https://…/mod/lti/auth.php"
+              style="width:100%;padding:0.65rem;border:1px solid var(--border-color,rgba(255,255,255,0.1));border-radius:0.375rem;background:rgba(17,24,39,0.7);color:var(--text-primary,#f0f4ff);font-size:0.9rem;box-sizing:border-box;" />
+          </div>
+          <div>
+            <label style="display:block;margin-bottom:0.3rem;color:var(--text-primary,#f0f4ff);font-size:0.85rem;font-weight:500;">Auth Token URL <span style="color:var(--color-error,#ef4444);">*</span></label>
+            <input type="url" id="wzAuthTokenUrl" placeholder="https://…/mod/lti/token.php"
+              style="width:100%;padding:0.65rem;border:1px solid var(--border-color,rgba(255,255,255,0.1));border-radius:0.375rem;background:rgba(17,24,39,0.7);color:var(--text-primary,#f0f4ff);font-size:0.9rem;box-sizing:border-box;" />
+          </div>
+          <div style="grid-column:1/-1;">
+            <label style="display:block;margin-bottom:0.3rem;color:var(--text-primary,#f0f4ff);font-size:0.85rem;font-weight:500;">Key Set URL (JWKS) <span style="color:var(--color-error,#ef4444);">*</span></label>
+            <input type="url" id="wzKeySetUrl" placeholder="https://…/mod/lti/certs.php"
+              style="width:100%;padding:0.65rem;border:1px solid var(--border-color,rgba(255,255,255,0.1));border-radius:0.375rem;background:rgba(17,24,39,0.7);color:var(--text-primary,#f0f4ff);font-size:0.9rem;box-sizing:border-box;" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: SSO -->
+    <div id="wz-step-3" style="display:none;">
+      <p style="color:var(--text-secondary,#94a3b8);font-size:0.875rem;margin:0 0 1.25rem;">Set up Single Sign-On so users can log in with Google, Microsoft, or any OIDC provider. <strong style="color:var(--text-primary,#f0f4ff);">Optional — skip if not needed.</strong></p>
+      <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;margin-bottom:1.25rem;">
+        <input type="checkbox" id="wzSsoEnable" onchange="window.adminApp && window.adminApp._wzToggleSso(this.checked)"
+          style="width:16px;height:16px;accent-color:var(--color-primary,#2569f4);cursor:pointer;" />
+        <span style="color:var(--text-primary,#f0f4ff);font-weight:500;font-size:0.9rem;">Configure SSO for this tenant</span>
+      </label>
+      <div id="wz-sso-fields" style="display:none;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.85rem;">
+          <div>
+            <label style="display:block;margin-bottom:0.3rem;color:var(--text-primary,#f0f4ff);font-size:0.85rem;font-weight:500;">Provider Name <span style="color:var(--color-error,#ef4444);">*</span></label>
+            <input type="text" id="wzSsoName" placeholder="e.g. Google Workspace"
+              style="width:100%;padding:0.65rem;border:1px solid var(--border-color,rgba(255,255,255,0.1));border-radius:0.375rem;background:rgba(17,24,39,0.7);color:var(--text-primary,#f0f4ff);font-size:0.9rem;box-sizing:border-box;" />
+          </div>
+          <div>
+            <label style="display:block;margin-bottom:0.3rem;color:var(--text-primary,#f0f4ff);font-size:0.85rem;font-weight:500;">Provider Type <span style="color:var(--color-error,#ef4444);">*</span></label>
+            <select id="wzSsoType" onchange="window.adminApp && window.adminApp._wzOnSsoTypeChange()"
+              style="width:100%;padding:0.65rem;border:1px solid var(--border-color,rgba(255,255,255,0.1));border-radius:0.375rem;background:rgba(17,24,39,0.7);color:var(--text-primary,#f0f4ff);font-size:0.9rem;">
+              <option value="google">Google</option>
+              <option value="microsoft">Microsoft</option>
+              <option value="oidc">Generic OIDC</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block;margin-bottom:0.3rem;color:var(--text-primary,#f0f4ff);font-size:0.85rem;font-weight:500;">Client ID <span style="color:var(--color-error,#ef4444);">*</span></label>
+            <input type="text" id="wzSsoClientId" placeholder="OAuth2 client ID"
+              style="width:100%;padding:0.65rem;border:1px solid var(--border-color,rgba(255,255,255,0.1));border-radius:0.375rem;background:rgba(17,24,39,0.7);color:var(--text-primary,#f0f4ff);font-size:0.9rem;box-sizing:border-box;" />
+          </div>
+          <div>
+            <label style="display:block;margin-bottom:0.3rem;color:var(--text-primary,#f0f4ff);font-size:0.85rem;font-weight:500;">Client Secret <span style="color:var(--color-error,#ef4444);">*</span></label>
+            <input type="password" id="wzSsoSecret" placeholder="OAuth2 client secret"
+              style="width:100%;padding:0.65rem;border:1px solid var(--border-color,rgba(255,255,255,0.1));border-radius:0.375rem;background:rgba(17,24,39,0.7);color:var(--text-primary,#f0f4ff);font-size:0.9rem;box-sizing:border-box;" />
+          </div>
+          <div id="wz-sso-discovery-row" style="grid-column:1/-1;display:none;">
+            <label style="display:block;margin-bottom:0.3rem;color:var(--text-primary,#f0f4ff);font-size:0.85rem;font-weight:500;">Discovery URL <span style="color:var(--color-error,#ef4444);">*</span></label>
+            <input type="url" id="wzSsoDiscovery" placeholder="https://…/.well-known/openid-configuration"
+              style="width:100%;padding:0.65rem;border:1px solid var(--border-color,rgba(255,255,255,0.1));border-radius:0.375rem;background:rgba(17,24,39,0.7);color:var(--text-primary,#f0f4ff);font-size:0.9rem;box-sizing:border-box;" />
+          </div>
+          <div style="grid-column:1/-1;">
+            <label style="display:block;margin-bottom:0.3rem;color:var(--text-primary,#f0f4ff);font-size:0.85rem;font-weight:500;">Allowed Domains <span style="color:var(--text-secondary,#94a3b8);font-weight:400;">(optional)</span></label>
+            <input type="text" id="wzSsoDomains" placeholder="e.g. hult.edu, faculty.hult.edu"
+              style="width:100%;padding:0.65rem;border:1px solid var(--border-color,rgba(255,255,255,0.1));border-radius:0.375rem;background:rgba(17,24,39,0.7);color:var(--text-primary,#f0f4ff);font-size:0.9rem;box-sizing:border-box;" />
+            <small style="color:var(--text-secondary,#64748b);font-size:0.78rem;margin-top:0.2rem;display:block;">Comma-separated. Leave blank to allow all domains.</small>
+          </div>
+          <div style="grid-column:1/-1;">
+            <label style="display:block;margin-bottom:0.3rem;color:var(--text-primary,#f0f4ff);font-size:0.85rem;font-weight:500;">Default Role</label>
+            <select id="wzSsoDefaultRole"
+              style="width:100%;padding:0.65rem;border:1px solid var(--border-color,rgba(255,255,255,0.1));border-radius:0.375rem;background:rgba(17,24,39,0.7);color:var(--text-primary,#f0f4ff);font-size:0.9rem;">
+              <option value="student">Student</option>
+              <option value="professor">Professor</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Done -->
+    <div id="wz-step-done" style="display:none;text-align:center;padding:1rem 0;">
+      <div style="width:56px;height:56px;border-radius:50%;background:rgba(34,197,94,0.15);border:2px solid rgba(34,197,94,0.4);display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <h3 style="margin:0 0 0.5rem;color:var(--text-primary,#f0f4ff);font-size:1.1rem;">Tenant Created</h3>
+      <p id="wz-done-summary" style="color:var(--text-secondary,#94a3b8);font-size:0.875rem;margin:0 0 1.75rem;line-height:1.6;"></p>
+      <button onclick="document.getElementById('tenantWizardModal').style.display='none'"
+        style="padding:0.65rem 1.75rem;border:none;border-radius:0.375rem;background:var(--color-primary,#2569f4);color:#fff;cursor:pointer;font-size:0.9rem;font-weight:600;">
+        Done
       </button>
-      <button onclick="window.adminApp && window.adminApp.submitCreateTenant()"
-        style="padding:0.6rem 1.4rem;border:none;border-radius:0.375rem;background:var(--color-primary,#2569f4);color:#fff;cursor:pointer;font-size:0.9rem;font-weight:600;">
-        Create Tenant
-      </button>
     </div>
+
+    <!-- Footer nav -->
+    <div id="wz-step-footer" style="display:flex;justify-content:space-between;align-items:center;margin-top:1.75rem;padding-top:1.25rem;border-top:1px solid rgba(255,255,255,0.07);">
+      <button id="wz-btn-back" onclick="window.adminApp && window.adminApp.wzBack()"
+        style="display:none;padding:0.6rem 1.1rem;border:1px solid rgba(255,255,255,0.1);border-radius:0.375rem;background:transparent;color:var(--text-secondary,#94a3b8);cursor:pointer;font-size:0.875rem;">
+        ← Back
+      </button>
+      <div style="display:flex;gap:0.75rem;margin-left:auto;">
+        <button id="wz-btn-skip" onclick="window.adminApp && window.adminApp.wzSkip()"
+          style="display:none;padding:0.6rem 1.1rem;border:1px solid rgba(255,255,255,0.1);border-radius:0.375rem;background:transparent;color:var(--text-secondary,#94a3b8);cursor:pointer;font-size:0.875rem;">
+          Skip
+        </button>
+        <button id="wz-btn-next" onclick="window.adminApp && window.adminApp.wzNext()"
+          style="padding:0.6rem 1.4rem;border:none;border-radius:0.375rem;background:var(--color-primary,#2569f4);color:#fff;cursor:pointer;font-size:0.875rem;font-weight:600;">
+          Next →
+        </button>
+        <button id="wz-btn-finish" onclick="window.adminApp && window.adminApp.wzFinish()"
+          style="display:none;padding:0.6rem 1.4rem;border:none;border-radius:0.375rem;background:var(--color-primary,#2569f4);color:#fff;cursor:pointer;font-size:0.875rem;font-weight:600;">
+          Finish
+        </button>
+      </div>
+    </div>
+
   </div>
 </div>
 
