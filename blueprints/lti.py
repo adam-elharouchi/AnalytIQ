@@ -6,9 +6,9 @@ Routes:
   POST /lti/login                         — OIDC login initiation
   POST /lti/launch                        — LTI resource launch (main entry point)
   GET  /lti/setup                         — Serve professor setup UI
-  GET  /lti/config                        — List registered LMS platforms  [professor]
-  POST /lti/config                        — Register a new LMS platform    [professor]
-  DELETE /lti/config/<config_id>          — Remove a platform registration [professor]
+  GET  /api/lti/config                    — List registered LMS platforms  [professor]
+  POST /api/lti/config                    — Register a new LMS platform    [professor]
+  DELETE /api/lti/config/<config_id>      — Remove a platform registration [professor]
   POST /lti/deep-link/return              — Return signed deep-link response to LMS
   POST /api/lti/sync-roster/<class_id>    — NRPS: sync students from LMS   [professor]
   POST /api/lti/ags/<class_id>/<ex_id>    — AGS: submit grade to LMS       [internal]
@@ -445,7 +445,7 @@ def lti_setup():
     return render_template("lti-setup.html")
 
 
-@bp.route("/lti/config", methods=["GET"])
+@bp.route("/api/lti/config", methods=["GET"])
 @csrf_exempt
 @require_auth
 @require_role("professor", "superadmin")
@@ -471,7 +471,7 @@ def list_lti_configs():
     return jsonify({"configs": public_configs})
 
 
-@bp.route("/lti/config", methods=["POST"])
+@bp.route("/api/lti/config", methods=["POST"])
 @csrf_exempt
 @require_auth
 @require_role("professor", "superadmin")
@@ -525,7 +525,7 @@ def create_lti_config():
         return jsonify({"error": "Failed to save configuration"}), 500
 
 
-@bp.route("/lti/config/<config_id>", methods=["DELETE"])
+@bp.route("/api/lti/config/<config_id>", methods=["DELETE"])
 @csrf_exempt
 @require_auth
 @require_role("professor", "superadmin")
