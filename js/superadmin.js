@@ -127,6 +127,37 @@ class SuperAdminDashboard {
         }
     }
 
+    viewTenantUsers(tenantId, tenantName) {
+        this._activeUserTenantFilter = tenantId || null;
+        this._activeUserTenantName  = tenantName || null;
+        document.getElementById('user-search-input').value = '';
+        document.getElementById('user-filter-role').value  = '';
+        document.getElementById('user-filter-status').value = '';
+        document.querySelector('[data-target=users-section]')?.click();
+        this.loadUsers(1);
+    }
+
+    _clearTenantUserFilter() {
+        this._activeUserTenantFilter = null;
+        this._activeUserTenantName   = null;
+        document.getElementById('user-search-input').value  = '';
+        document.getElementById('user-filter-role').value   = '';
+        document.getElementById('user-filter-status').value = '';
+        this.loadUsers(1);
+    }
+
+    _updateTenantFilterBadge() {
+        const badge = document.getElementById('user-tenant-filter-badge');
+        const label = document.getElementById('user-tenant-filter-name');
+        if (!badge) return;
+        if (this._activeUserTenantFilter) {
+            if (label) label.textContent = this._activeUserTenantName || this._activeUserTenantFilter;
+            badge.style.display = 'flex';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+
     async loadUsers(page = 1) {
         try {
             const searchInput = document.getElementById('user-search-input');
@@ -143,6 +174,8 @@ class SuperAdminDashboard {
             if (query) url.searchParams.append('q', query);
             if (role) url.searchParams.append('role', role);
             if (status) url.searchParams.append('status', status);
+            if (this._activeUserTenantFilter) url.searchParams.append('tenant_id', this._activeUserTenantFilter);
+            this._updateTenantFilterBadge();
 
             const res = await authFetch(url.toString());
             if (res.ok) {
@@ -263,7 +296,11 @@ class SuperAdminDashboard {
 
             const card = document.createElement('div');
             card.className = 'class-card bento-card neon-hover';
-            card.style.cssText = 'display: flex; flex-direction: column; overflow: hidden; padding: 0; cursor: default;';
+            card.style.cssText = 'display: flex; flex-direction: column; overflow: hidden; padding: 0; cursor: pointer;';
+            card.addEventListener('click', (e) => {
+                if (e.target.closest('button')) return; // let button clicks bubble normally
+                window.adminApp.openTenantDetail(t.tenant_id, 'details');
+            });
 
             card.innerHTML = `
                 <!-- IDE-style tab header -->
@@ -305,12 +342,12 @@ class SuperAdminDashboard {
                     <!-- Actions -->
                     <div style="display: flex; gap: 0.5rem; margin-top: auto; padding-top: 0.25rem; border-top: 1px solid rgba(255,255,255,0.05);">
                         <button class="btn btn-primary" style="flex: 1; font-size: 0.82rem; display: flex; align-items: center; justify-content: center; gap: 0.35rem;"
-                            onclick="document.getElementById('user-search-input').value=''; window.adminApp.loadUsers(1,'${t.tenant_id}'); document.querySelector('[data-target=users-section]').click();">
+                            onclick="window.adminApp.viewTenantUsers('${t.tenant_id}', '${safeName}')">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="pointer-events:none;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                             Users
                         </button>
                         <button class="btn btn-secondary" style="font-size: 0.82rem; padding: 0.5rem 0.75rem; background: transparent; border-color: rgba(255,255,255,0.1); color: #94a3b8;"
-                            onclick="window.adminApp.editTenant('${t.tenant_id}', '${safeName}', '${issuer}')"
+                            onclick="window.adminApp.openTenantDetail('${t.tenant_id}', 'details')"
                             title="Edit tenant">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="pointer-events:none;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                         </button>
@@ -471,11 +508,46 @@ class SuperAdminDashboard {
         }
     }
 
+    // Keep legacy alias for any remaining inline calls
     editTenant(tenantId, currentName, currentIssuer) {
+        this.openTenantDetail(tenantId, 'details', currentName, currentIssuer);
+    }
+
+    openTenantDetail(tenantId, tab = 'details', preloadName = null, preloadIssuer = null) {
         document.getElementById('editTenantId').value = tenantId;
-        document.getElementById('editTenantName').value = currentName;
-        document.getElementById('editTenantIssuer').value = currentIssuer === 'local' ? '' : currentIssuer;
-        document.getElementById('editTenantModal').style.display = 'flex';
+        // Populate header
+        const titleEl    = document.getElementById('tenantDetailTitle');
+        const subtitleEl = document.getElementById('tenantDetailSubtitle');
+        if (titleEl)    titleEl.textContent    = preloadName || 'Tenant Details';
+        if (subtitleEl) subtitleEl.textContent = `${tenantId}.org`;
+        // Pre-fill details tab if we have the values
+        if (preloadName !== null)   document.getElementById('editTenantName').value   = preloadName;
+        if (preloadIssuer !== null) document.getElementById('editTenantIssuer').value = preloadIssuer === 'local' ? '' : preloadIssuer;
+        // Switch to the requested tab
+        this._switchTenantTab(tab);
+        // Show modal
+        document.getElementById('tenantDetailModal').style.display = 'flex';
+        // If opening SSO tab, load providers
+        if (tab === 'sso') this._loadTenantSSOProviders(tenantId);
+    }
+
+    _switchTenantTab(tab) {
+        ['details', 'sso'].forEach(t => {
+            const btn   = document.getElementById(`tdTab-${t}`);
+            const panel = document.getElementById(`tdPanel-${t}`);
+            const active = t === tab;
+            if (btn) {
+                btn.style.borderBottom = active ? '2px solid var(--color-primary,#2569f4)' : '2px solid transparent';
+                btn.style.color        = active ? 'var(--text-primary,#f0f4ff)' : '#64748b';
+                btn.style.fontWeight   = active ? '600' : '500';
+            }
+            if (panel) panel.style.display = active ? 'block' : 'none';
+        });
+        // Lazy-load SSO list when switching to that tab
+        if (tab === 'sso') {
+            const tenantId = document.getElementById('editTenantId')?.value;
+            if (tenantId) this._loadTenantSSOProviders(tenantId);
+        }
     }
 
     async submitEditTenant() {
@@ -485,7 +557,6 @@ class SuperAdminDashboard {
 
         if (!name) { showError('Institution name is required'); return; }
 
-        document.getElementById('editTenantModal').style.display = 'none';
         try {
             const res = await authFetch(`${this.baseAdminUrl}/tenants/${tenantId}`, {
                 method: 'PATCH',
@@ -493,6 +564,7 @@ class SuperAdminDashboard {
             });
             if (res.ok) {
                 showSuccess('Tenant updated successfully');
+                document.getElementById('tenantDetailModal').style.display = 'none';
                 this.loadTenants();
             } else {
                 const err = await res.json();
@@ -501,6 +573,172 @@ class SuperAdminDashboard {
         } catch (error) {
             showError(error.message || 'Failed to update tenant');
         }
+    }
+
+    // -----------------------------------------------------------------------
+    // SSO Provider Management (within Tenant Detail)
+    // -----------------------------------------------------------------------
+
+    async _loadTenantSSOProviders(tenantId) {
+        const container = document.getElementById('td-sso-providers-list');
+        if (!container) return;
+        container.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:2rem;">Loading…</div>';
+        const ssoBase = this.baseAdminUrl.replace('/superadmin', '/sso/admin');
+        try {
+            const res  = await authFetch(`${ssoBase}/providers?tenant_id=${encodeURIComponent(tenantId)}`);
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to load SSO providers');
+            this._renderTenantSSOProviders(data.providers || []);
+        } catch (err) {
+            container.innerHTML = `<div style="color:#fca5a5;text-align:center;padding:1.5rem;">${escapeHtml(err.message)}</div>`;
+        }
+    }
+
+    _renderTenantSSOProviders(providers) {
+        const container = document.getElementById('td-sso-providers-list');
+        if (!container) return;
+        if (!providers.length) {
+            container.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:2.5rem;border:1px dashed rgba(255,255,255,0.08);border-radius:0.5rem;">No SSO providers configured yet. Click "Add Provider" to get started.</div>';
+            return;
+        }
+        container.innerHTML = providers.map(p => {
+            const typeBadge   = `<span style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.25);color:#a5b4fc;padding:1px 7px;border-radius:4px;font-size:0.78rem;text-transform:capitalize;">${escapeHtml(p.provider_type)}</span>`;
+            const statusBadge = p.is_enabled
+                ? '<span style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);color:#86efac;padding:1px 7px;border-radius:4px;font-size:0.78rem;">Enabled</span>'
+                : '<span style="background:rgba(100,116,139,0.1);border:1px solid rgba(100,116,139,0.2);color:#64748b;padding:1px 7px;border-radius:4px;font-size:0.78rem;">Disabled</span>';
+            const domains = (p.allowed_domains || []).length
+                ? escapeHtml(p.allowed_domains.join(', '))
+                : '<span style="color:#475569;">all domains</span>';
+            return `
+            <div style="background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.07);border-radius:0.5rem;padding:1rem 1.1rem;margin-bottom:0.75rem;">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.75rem;">
+                <div style="min-width:0;">
+                  <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.4rem;">
+                    <span style="font-weight:600;color:#f0f4ff;font-size:0.95rem;">${escapeHtml(p.provider_name)}</span>
+                    ${typeBadge} ${statusBadge}
+                  </div>
+                  <div style="font-size:0.8rem;color:#64748b;">Domains: ${domains}</div>
+                  ${p.discovery_url ? `<div style="font-size:0.78rem;color:#475569;font-family:var(--font-mono);margin-top:0.2rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(p.discovery_url)}">${escapeHtml(p.discovery_url.length > 55 ? p.discovery_url.substring(0,55)+'…' : p.discovery_url)}</div>` : ''}
+                </div>
+                <div style="display:flex;gap:0.4rem;flex-shrink:0;">
+                  <button onclick="window.adminApp.openTenantSSOForm('${p.provider_id}')"
+                    style="padding:0.4rem 0.75rem;border:1px solid rgba(255,255,255,0.1);border-radius:0.35rem;background:transparent;color:#94a3b8;cursor:pointer;font-size:0.8rem;">Edit</button>
+                  <button onclick="window.adminApp.deleteTenantSSOProvider('${p.provider_id}','${escapeHtml(p.provider_name).replace(/'/g,"\\'")}','${document.getElementById('editTenantId').value}')"
+                    style="padding:0.4rem 0.75rem;border:1px solid rgba(239,68,68,0.25);border-radius:0.35rem;background:transparent;color:rgba(239,68,68,0.7);cursor:pointer;font-size:0.8rem;">Delete</button>
+                </div>
+              </div>
+            </div>`;
+        }).join('');
+    }
+
+    async openTenantSSOForm(providerId = null) {
+        // Reset form
+        document.getElementById('tdSsoProviderId').value    = '';
+        document.getElementById('tdSsoName').value          = '';
+        document.getElementById('tdSsoType').value          = 'google';
+        document.getElementById('tdSsoDefaultRole').value   = 'student';
+        document.getElementById('tdSsoClientId').value      = '';
+        document.getElementById('tdSsoClientSecret').value  = '';
+        document.getElementById('tdSsoDiscovery').value     = '';
+        document.getElementById('tdSsoDomains').value       = '';
+        document.getElementById('tdSsoError').style.display = 'none';
+        document.getElementById('tdSsoSecretOptNote').style.display = 'none';
+        document.getElementById('tenantSSOModalTitle').textContent  = providerId ? 'Edit SSO Provider' : 'Add SSO Provider';
+        this._tdSsoOnTypeChange();
+
+        if (providerId) {
+            document.getElementById('tdSsoSecretOptNote').style.display = '';
+            document.getElementById('tenantSSOModal').style.display = 'flex';
+            const ssoBase = this.baseAdminUrl.replace('/superadmin', '/sso/admin');
+            try {
+                const res  = await authFetch(`${ssoBase}/providers/${providerId}`);
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Failed to load provider');
+                const p = data.provider || data;
+                document.getElementById('tdSsoProviderId').value   = p.provider_id || providerId;
+                document.getElementById('tdSsoName').value         = p.provider_name || '';
+                document.getElementById('tdSsoType').value         = p.provider_type || 'oidc';
+                document.getElementById('tdSsoDefaultRole').value  = p.default_role || 'student';
+                document.getElementById('tdSsoClientId').value     = p.client_id || '';
+                document.getElementById('tdSsoDiscovery').value    = p.discovery_url || '';
+                document.getElementById('tdSsoDomains').value      = (p.allowed_domains || []).join(', ');
+                this._tdSsoOnTypeChange();
+            } catch (err) {
+                document.getElementById('tdSsoError').textContent     = err.message;
+                document.getElementById('tdSsoError').style.display   = 'block';
+            }
+        } else {
+            document.getElementById('tenantSSOModal').style.display = 'flex';
+        }
+    }
+
+    _tdSsoOnTypeChange() {
+        const type = document.getElementById('tdSsoType')?.value;
+        const row  = document.getElementById('tdSsoDiscoveryRow');
+        if (row) row.style.display = type === 'oidc' ? 'block' : 'none';
+    }
+
+    closeTenantSSOForm() {
+        document.getElementById('tenantSSOModal').style.display = 'none';
+    }
+
+    async saveTenantSSOProvider() {
+        const errEl       = document.getElementById('tdSsoError');
+        errEl.style.display = 'none';
+
+        const providerId    = document.getElementById('tdSsoProviderId').value.trim();
+        const providerName  = document.getElementById('tdSsoName').value.trim();
+        const providerType  = document.getElementById('tdSsoType').value;
+        const defaultRole   = document.getElementById('tdSsoDefaultRole').value;
+        const clientId      = document.getElementById('tdSsoClientId').value.trim();
+        const clientSecret  = document.getElementById('tdSsoClientSecret').value;
+        const discoveryUrl  = document.getElementById('tdSsoDiscovery').value.trim();
+        const domainsRaw    = document.getElementById('tdSsoDomains').value;
+        const tenantId      = document.getElementById('editTenantId').value;
+
+        if (!providerName) { errEl.textContent = 'Provider name is required.'; errEl.style.display = 'block'; return; }
+        if (!clientId)     { errEl.textContent = 'Client ID is required.'; errEl.style.display = 'block'; return; }
+        if (providerType === 'oidc' && !discoveryUrl) { errEl.textContent = 'Discovery URL is required for Generic OIDC.'; errEl.style.display = 'block'; return; }
+        if (!providerId && !clientSecret) { errEl.textContent = 'Client secret is required for new providers.'; errEl.style.display = 'block'; return; }
+
+        const body = {
+            tenant_id:     tenantId,
+            provider_name: providerName,
+            provider_type: providerType,
+            client_id:     clientId,
+            discovery_url: discoveryUrl,
+            allowed_domains: domainsRaw.split(',').map(d => d.trim()).filter(Boolean),
+            default_role:  defaultRole,
+        };
+        if (clientSecret) body.client_secret = clientSecret;
+
+        const ssoBase = this.baseAdminUrl.replace('/superadmin', '/sso/admin');
+        try {
+            const res = await authFetch(
+                providerId ? `${ssoBase}/providers/${providerId}` : `${ssoBase}/providers`,
+                { method: providerId ? 'PUT' : 'POST', body: JSON.stringify(body) }
+            );
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to save provider');
+            showSuccess(data.message || 'SSO provider saved.');
+            this.closeTenantSSOForm();
+            this._loadTenantSSOProviders(tenantId);
+        } catch (err) {
+            errEl.textContent   = err.message;
+            errEl.style.display = 'block';
+        }
+    }
+
+    async deleteTenantSSOProvider(providerId, providerName, tenantId) {
+        if (!confirm(`Delete SSO provider "${providerName}"?\n\nUsers who sign in via this provider will lose their SSO link.`)) return;
+        const ssoBase = this.baseAdminUrl.replace('/superadmin', '/sso/admin');
+        try {
+            const res  = await authFetch(`${ssoBase}/providers/${providerId}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Delete failed');
+            showSuccess(data.message || 'Provider deleted.');
+            this._loadTenantSSOProviders(tenantId);
+        } catch (err) { showError(err.message); }
     }
 
     async toggleUserStatus(userId, newStatus) {
