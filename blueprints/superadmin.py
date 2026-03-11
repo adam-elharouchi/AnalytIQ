@@ -136,7 +136,7 @@ def update_tenant(tenant_id):
     """Update tenant (e.g. enable/disable)."""
     try:
         data = request.json or {}
-        if "is_active" not in data and "name" not in data:
+        if "is_active" not in data and "name" not in data and "lti_issuer" not in data:
             return jsonify({"error": "No update fields provided"}), 400
 
         conn = get_db_connection()
@@ -150,6 +150,9 @@ def update_tenant(tenant_id):
         if "name" in data:
             updates.append("name = %s")
             params.append(data["name"])
+        if "lti_issuer" in data:
+            updates.append("lti_issuer = %s")
+            params.append(data["lti_issuer"] or None)
 
         params.append(tenant_id)
 
