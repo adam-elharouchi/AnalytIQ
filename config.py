@@ -95,7 +95,10 @@ BCRYPT_LOG_ROUNDS = int(os.getenv("BCRYPT_ROUNDS", 12))
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key-change-in-production")
 SESSION_COOKIE_SECURE = ENV == "production"
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SAMESITE = "Lax"
+# "None" required for LTI 1.3: the tool runs inside an LMS iframe (cross-origin),
+# so SameSite=Lax/Strict blocks the session cookie entirely.
+# SameSite=None is safe here because SESSION_COOKIE_SECURE=True in production.
+SESSION_COOKIE_SAMESITE = "None" if ENV == "production" else "Lax"
 
 # JWT Authentication
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", SECRET_KEY)
