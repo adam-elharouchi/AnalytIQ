@@ -40,20 +40,24 @@ bp = Blueprint("lti", __name__)
 # ---------------------------------------------------------------------------
 
 
-class _RedisLtiStorage:
-    """Redis-backed launch data storage for pylti1p3.
+try:
+    from pylti1p3.launch_data_storage.base import LaunchDataStorage as _LtiStorageBase
+except ImportError:
+    _LtiStorageBase = object  # type: ignore[assignment,misc]
 
-    Implements the duck-typed protocol pylti1p3 v2.x expects:
-      get_value(key)               → stored value or None
-      set_value(key, value, exp)   → persist value (exp in seconds)
 
-    No pylti1p3 submodule imports needed — just implement the interface.
-    Falls back silently if Redis is unavailable so that a Redis outage
-    causes a graceful error rather than a crash.
+class _RedisLtiStorage(_LtiStorageBase):
+    """Redis-backed launch data storage for pylti1p3 v2.x.
+
+    Extends LaunchDataStorage to inherit set_request / set_session_id /
+    _prepare_key / etc., then stores state in Redis so the OIDC flow works
+    inside LMS iframes where SameSite=Lax cookies are blocked.
     """
 
-    _PREFIX = "lti1p3:"
     _DEFAULT_TTL = 7200  # 2 hours
+
+    def can_set_keys_expiration(self):
+        return True
 
     def get_value(self, key):
         try:
@@ -61,7 +65,7 @@ class _RedisLtiStorage:
 
             if not redis_client:
                 return None
-            raw = redis_client.get(self._PREFIX + key)
+            raw = redis_client.get(self._prepare_key(key))
             return json.loads(raw) if raw else None
         except Exception as exc:
             logger.debug("LTI storage get error: %s", exc)
@@ -74,18 +78,24 @@ class _RedisLtiStorage:
             if not redis_client:
                 return
             ttl = int(exp) if exp else self._DEFAULT_TTL
-            redis_client.setex(self._PREFIX + key, ttl, json.dumps(value))
+            redis_client.setex(self._prepare_key(key), ttl, json.dumps(value))
         except Exception as exc:
             logger.debug("LTI storage set error: %s", exc)
 
+    def check_value(self, key):
+        try:
+            from cache import redis_client
+
+            if not redis_client:
+                return False
+            return redis_client.exists(self._prepare_key(key)) > 0
+        except Exception as exc:
+            logger.debug("LTI storage check error: %s", exc)
+            return False
+
 
 def _get_lti_storage():
-    """Return a Redis-backed LTI storage instance.
-
-    Always returns an instance — Redis unavailability is handled gracefully
-    inside get_value/set_value.  Never returns None so pylti1p3 v2.x won't
-    raise 'Cache is not set'.
-    """
+    """Return a Redis-backed LTI storage instance for pylti1p3."""
     return _RedisLtiStorage()
 
 
