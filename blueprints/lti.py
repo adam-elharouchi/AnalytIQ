@@ -255,12 +255,19 @@ def _store_lti_session(conn, launch_data, user_id, class_id):
     return session_id
 
 
+_LTI_ENDPOINTS = ("/lti/jwks", "/lti/login", "/lti/launch")
+
+
 def _resolve_target_url(launch_data, class_id):
     """Return the AnalytIQ page to redirect to after a successful launch."""
     target_link_uri = launch_data.get(
         "https://purl.imsglobal.org/spec/lti/claim/target_link_uri", ""
     )
-    if target_link_uri and target_link_uri.startswith(config.LTI_TOOL_URL):
+    # Reject LTI infrastructure endpoints — they are not valid landing pages.
+    # Moodle may send the old Tool URL as target_link_uri if the tool config
+    # was previously set to /lti/jwks, which would cause an infinite loop.
+    _is_lti_endpoint = any(target_link_uri.rstrip("/").endswith(ep) for ep in _LTI_ENDPOINTS)
+    if target_link_uri and target_link_uri.startswith(config.LTI_TOOL_URL) and not _is_lti_endpoint:
         return target_link_uri
 
     roles = launch_data.get("https://purl.imsglobal.org/spec/lti/claim/roles", [])
