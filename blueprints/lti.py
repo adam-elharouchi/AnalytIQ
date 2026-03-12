@@ -39,42 +39,51 @@ bp = Blueprint("lti", __name__)
 # Avoids SameSite cookie issues when AnalytIQ is embedded in LMS iframes.
 # ---------------------------------------------------------------------------
 
-class _RedisCacheAdapter:
-    """Minimal adapter around AnalytIQ's raw redis_client.
+class _RedisLtiStorage:
+    """Redis-backed launch data storage for pylti1p3.
 
-    Exposes the `get(key)` / `set(key, value, timeout)` interface that
-    pylti1p3's CacheDataStorage (and FlaskCacheDataStorage) expects.
+    Implements the duck-typed protocol pylti1p3 v2.x expects:
+      get_value(key)               → stored value or None
+      set_value(key, value, exp)   → persist value (exp in seconds)
+
+    No pylti1p3 submodule imports needed — just implement the interface.
+    Falls back silently if Redis is unavailable so that a Redis outage
+    causes a graceful error rather than a crash.
     """
 
-    def get(self, key):
+    _PREFIX = "lti1p3:"
+    _DEFAULT_TTL = 7200  # 2 hours
+
+    def get_value(self, key):
         try:
             from cache import redis_client
             if not redis_client:
                 return None
-            raw = redis_client.get(key)
+            raw = redis_client.get(self._PREFIX + key)
             return json.loads(raw) if raw else None
         except Exception as exc:
-            logger.debug("LTI cache get error: %s", exc)
+            logger.debug("LTI storage get error: %s", exc)
             return None
 
-    def set(self, key, value, timeout=None):
+    def set_value(self, key, value, exp=None):
         try:
             from cache import redis_client
             if not redis_client:
                 return
-            redis_client.setex(key, timeout or 7200, json.dumps(value))
+            ttl = int(exp) if exp else self._DEFAULT_TTL
+            redis_client.setex(self._PREFIX + key, ttl, json.dumps(value))
         except Exception as exc:
-            logger.debug("LTI cache set error: %s", exc)
+            logger.debug("LTI storage set error: %s", exc)
 
 
 def _get_lti_storage():
-    """Return a pylti1p3 CacheDataStorage backed by Redis, or None if unavailable."""
-    try:
-        from pylti1p3.launch_data_storage.cache import CacheDataStorage
-        return CacheDataStorage(_RedisCacheAdapter())
-    except ImportError:
-        # Older pylti1p3 builds — fall back to cookie-based session storage
-        return None
+    """Return a Redis-backed LTI storage instance.
+
+    Always returns an instance — Redis unavailability is handled gracefully
+    inside get_value/set_value.  Never returns None so pylti1p3 v2.x won't
+    raise 'Cache is not set'.
+    """
+    return _RedisLtiStorage()
 
 
 # ---------------------------------------------------------------------------
@@ -329,9 +338,7 @@ def lti_login():
     try:
         flask_req = FlaskRequest()
         target_link_uri = flask_req.get_param("target_link_uri") or f"{config.LTI_TOOL_URL}/"
-        storage = _get_lti_storage()
-        kwargs = {"launch_data_storage": storage} if storage is not None else {}
-        oidc_login = FlaskOIDCLogin(flask_req, tool_conf, **kwargs)
+        oidc_login = FlaskOIDCLogin(flask_req, tool_conf, launch_data_storage=_get_lti_storage())
         # enable_check_cookies() is intentionally omitted: it requires
         # third-party cookie support, which browsers block in LMS iframes.
         # Redis-backed storage makes the cookie check unnecessary.
@@ -365,9 +372,7 @@ def lti_launch():
 
     try:
         flask_req = FlaskRequest()
-        storage = _get_lti_storage()
-        kwargs = {"launch_data_storage": storage} if storage is not None else {}
-        message_launch = FlaskMessageLaunch(flask_req, tool_conf, **kwargs)
+        message_launch = FlaskMessageLaunch(flask_req, tool_conf, launch_data_storage=_get_lti_storage())
         launch_data = message_launch.get_launch_data()
     except Exception as e:
         logger.warning("LTI launch validation failed: %s", e)
