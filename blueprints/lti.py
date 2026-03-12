@@ -39,6 +39,7 @@ bp = Blueprint("lti", __name__)
 # Avoids SameSite cookie issues when AnalytIQ is embedded in LMS iframes.
 # ---------------------------------------------------------------------------
 
+
 class _RedisLtiStorage:
     """Redis-backed launch data storage for pylti1p3.
 
@@ -57,6 +58,7 @@ class _RedisLtiStorage:
     def get_value(self, key):
         try:
             from cache import redis_client
+
             if not redis_client:
                 return None
             raw = redis_client.get(self._PREFIX + key)
@@ -68,6 +70,7 @@ class _RedisLtiStorage:
     def set_value(self, key, value, exp=None):
         try:
             from cache import redis_client
+
             if not redis_client:
                 return
             ttl = int(exp) if exp else self._DEFAULT_TTL
@@ -372,11 +375,16 @@ def lti_launch():
 
     try:
         flask_req = FlaskRequest()
-        message_launch = FlaskMessageLaunch(flask_req, tool_conf, launch_data_storage=_get_lti_storage())
+        message_launch = FlaskMessageLaunch(
+            flask_req, tool_conf, launch_data_storage=_get_lti_storage()
+        )
         launch_data = message_launch.get_launch_data()
     except Exception as e:
         logger.warning("LTI launch validation failed: %s", e)
-        return render_template("lti-launch-error.html", error=f"LTI launch validation failed: {e}"), 400
+        return (
+            render_template("lti-launch-error.html", error=f"LTI launch validation failed: {e}"),
+            400,
+        )
 
     # Deep linking launch — professor selecting content to embed in LMS
     if message_launch.is_deep_link_launch():
