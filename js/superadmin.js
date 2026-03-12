@@ -525,6 +525,8 @@ class SuperAdminDashboard {
         if (preloadIssuer !== null) document.getElementById('editTenantIssuer').value = preloadIssuer === 'local' ? '' : preloadIssuer;
         // Switch to the requested tab
         this._switchTenantTab(tab);
+        // Populate LTI registration URLs panel
+        this._fillLtiRegUrls('td-lti-reg-urls');
         // Show modal
         document.getElementById('tenantDetailModal').style.display = 'flex';
         // If opening SSO tab, load providers
@@ -821,6 +823,29 @@ class SuperAdminDashboard {
     _wzToggleLti(show) {
         const el = document.getElementById('wz-lti-fields');
         if (el) el.style.display = show ? 'block' : 'none';
+        if (show) this._fillLtiRegUrls('wz-lti-reg-urls');
+    }
+
+    _fillLtiRegUrls(containerId) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        const origin = window.location.origin;
+        const rows = [
+            { label: 'Tool URL (Launch URL)',    value: `${origin}/lti/launch` },
+            { label: 'Public keyset (JWKS URL)', value: `${origin}/lti/jwks`   },
+            { label: 'Initiate login URL',       value: `${origin}/lti/login`  },
+            { label: 'Redirection URI(s)',        value: `${origin}/lti/launch` },
+        ];
+        const inputStyle = 'flex:1;padding:0.45rem 0.6rem;border:1px solid rgba(255,255,255,0.08);border-radius:0.3rem;background:rgba(0,0,0,0.25);color:#bfdbfe;font-family:var(--font-mono);font-size:0.78rem;min-width:0;cursor:text;';
+        container.innerHTML = rows.map(r => `
+            <div>
+              <div style="font-size:0.73rem;color:#64748b;margin-bottom:0.18rem;">${r.label}</div>
+              <div style="display:flex;gap:0.4rem;align-items:center;">
+                <input readonly value="${r.value}" style="${inputStyle}" onclick="this.select();" />
+                <button onclick="navigator.clipboard.writeText('${r.value}').then(()=>{this.textContent='✓';setTimeout(()=>this.textContent='Copy',1300);})"
+                  style="flex-shrink:0;padding:0.38rem 0.6rem;border:1px solid rgba(255,255,255,0.1);border-radius:0.3rem;background:transparent;color:#64748b;cursor:pointer;font-size:0.73rem;">Copy</button>
+              </div>
+            </div>`).join('');
     }
 
     _wzToggleSso(show) {
