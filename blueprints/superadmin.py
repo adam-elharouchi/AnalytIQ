@@ -806,7 +806,7 @@ def delete_class_admin(class_id):
 @require_auth
 @require_super_admin
 def delete_tenant(tenant_id):
-    """Delete a tenant. Nullifies tenant_id on associated users/classes (not cascade-delete)."""
+    """Permanently delete a tenant and all associated data."""
     try:
         conn = get_db_connection()
         cur = conn.cursor()
@@ -815,10 +815,44 @@ def delete_tenant(tenant_id):
         row = cur.fetchone()
         if not row:
             return jsonify({"error": "Tenant not found"}), 404
+        tenant_name = row[0]
 
-        # Detach users and classes rather than deleting them
-        cur.execute("UPDATE users   SET tenant_id = NULL WHERE tenant_id = %s", (tenant_id,))
-        cur.execute("UPDATE classes SET tenant_id = NULL WHERE tenant_id = %s", (tenant_id,))
+        # Collect IDs scoped to this tenant
+        cur.execute("SELECT user_id FROM users WHERE tenant_id = %s", (tenant_id,))
+        user_ids = [r[0] for r in cur.fetchall()]
+
+        cur.execute("SELECT class_id FROM classes WHERE tenant_id = %s", (tenant_id,))
+        class_ids = [r[0] for r in cur.fetchall()]
+
+        # --- Delete class data ---
+        if class_ids:
+            cur.execute("DELETE FROM class_exercises   WHERE class_id = ANY(%s)", (class_ids,))
+            cur.execute("DELETE FROM class_chapters    WHERE class_id = ANY(%s)", (class_ids,))
+            cur.execute("DELETE FROM class_enrollments WHERE class_id = ANY(%s)", (class_ids,))
+
+        # --- Delete user data ---
+        if user_ids:
+            cur.execute("DELETE FROM class_enrollments WHERE student_id   = ANY(%s)", (user_ids,))
+            cur.execute("DELETE FROM conversations     WHERE user_id      = ANY(%s)", (user_ids,))
+            cur.execute("DELETE FROM exercise_attempts WHERE user_id      = ANY(%s)", (user_ids,))
+            cur.execute("DELETE FROM practice_progress WHERE user_id      = ANY(%s)", (user_ids,))
+            cur.execute("DELETE FROM ai_agent_memory   WHERE user_id      = ANY(%s)", (user_ids,))
+            cur.execute("DELETE FROM ai_agent_digest   WHERE user_id      = ANY(%s)", (user_ids,))
+            cur.execute("DELETE FROM user_profiles     WHERE user_id      = ANY(%s)", (user_ids,))
+            cur.execute("DELETE FROM user_settings     WHERE user_id      = ANY(%s)", (user_ids,))
+            cur.execute("DELETE FROM user_preferences  WHERE user_id      = ANY(%s)", (user_ids,))
+            cur.execute("DELETE FROM lti_sessions      WHERE user_id      = ANY(%s)", (user_ids,))
+            cur.execute("DELETE FROM lti_configurations WHERE created_by  = ANY(%s)", (user_ids,))
+
+        # --- Delete classes and users ---
+        if class_ids:
+            cur.execute("DELETE FROM classes WHERE class_id = ANY(%s)", (class_ids,))
+        if user_ids:
+            cur.execute("DELETE FROM users   WHERE user_id  = ANY(%s)", (user_ids,))
+
+        # --- Delete tenant-level records ---
+        cur.execute("DELETE FROM tenant_sso_providers WHERE tenant_id = %s", (tenant_id,))
+        cur.execute("DELETE FROM announcements WHERE tenant_id = %s", (tenant_id,))
         cur.execute("DELETE FROM tenants WHERE tenant_id = %s", (tenant_id,))
 
         audit(
@@ -826,12 +860,26 @@ def delete_tenant(tenant_id):
             "DELETE_TENANT",
             resource_type="tenant",
             resource_id=tenant_id,
-            details={"name": row[0]},
+            details={
+                "name": tenant_name,
+                "users_deleted": len(user_ids),
+                "classes_deleted": len(class_ids),
+            },
         )
         conn.commit()
         cur.close()
 
-        return jsonify({"success": True, "message": f"Tenant '{row[0]}' deleted."}), 200
+        return (
+            jsonify(
+                {
+                    "success": True,
+                    "message": f"Tenant '{tenant_name}' and all associated data deleted.",
+                    "users_deleted": len(user_ids),
+                    "classes_deleted": len(class_ids),
+                }
+            ),
+            200,
+        )
     except Exception as e:
         logger.error("Failed to delete tenant: %s", e)
         return jsonify({"error": "Failed to delete tenant"}), 500
