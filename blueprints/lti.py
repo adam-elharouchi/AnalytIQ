@@ -16,6 +16,7 @@ Routes:
   PUT  /api/lti/ags-toggle/<class_id>     — Toggle AGS on/off for a class  [professor]
 """
 
+import json
 import logging
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -31,6 +32,49 @@ from repositories import lti_repository as lti_repo
 
 logger = logging.getLogger(__name__)
 bp = Blueprint("lti", __name__)
+
+
+# ---------------------------------------------------------------------------
+# Redis-backed state storage for PyLTI1p3
+# Avoids SameSite cookie issues when AnalytIQ is embedded in LMS iframes.
+# ---------------------------------------------------------------------------
+
+class _RedisCacheAdapter:
+    """Minimal adapter around AnalytIQ's raw redis_client.
+
+    Exposes the `get(key)` / `set(key, value, timeout)` interface that
+    pylti1p3's CacheDataStorage (and FlaskCacheDataStorage) expects.
+    """
+
+    def get(self, key):
+        try:
+            from cache import redis_client
+            if not redis_client:
+                return None
+            raw = redis_client.get(key)
+            return json.loads(raw) if raw else None
+        except Exception as exc:
+            logger.debug("LTI cache get error: %s", exc)
+            return None
+
+    def set(self, key, value, timeout=None):
+        try:
+            from cache import redis_client
+            if not redis_client:
+                return
+            redis_client.setex(key, timeout or 7200, json.dumps(value))
+        except Exception as exc:
+            logger.debug("LTI cache set error: %s", exc)
+
+
+def _get_lti_storage():
+    """Return a pylti1p3 CacheDataStorage backed by Redis, or None if unavailable."""
+    try:
+        from pylti1p3.launch_data_storage.cache import CacheDataStorage
+        return CacheDataStorage(_RedisCacheAdapter())
+    except ImportError:
+        # Older pylti1p3 builds — fall back to cookie-based session storage
+        return None
 
 
 # ---------------------------------------------------------------------------
@@ -285,14 +329,19 @@ def lti_login():
     try:
         flask_req = FlaskRequest()
         target_link_uri = flask_req.get_param("target_link_uri") or f"{config.LTI_TOOL_URL}/"
-        oidc_login = FlaskOIDCLogin(flask_req, tool_conf)
-        return oidc_login.enable_check_cookies().redirect(target_link_uri)
+        storage = _get_lti_storage()
+        kwargs = {"launch_data_storage": storage} if storage is not None else {}
+        oidc_login = FlaskOIDCLogin(flask_req, tool_conf, **kwargs)
+        # enable_check_cookies() is intentionally omitted: it requires
+        # third-party cookie support, which browsers block in LMS iframes.
+        # Redis-backed storage makes the cookie check unnecessary.
+        return oidc_login.redirect(target_link_uri)
     except OIDCException as e:
         logger.warning("LTI OIDC login error: %s", e)
-        return jsonify({"error": "OIDC login failed"}), 400
+        return jsonify({"error": "OIDC login failed", "detail": str(e)}), 400
     except Exception as e:
         logger.error("LTI login unexpected error: %s", e, exc_info=True)
-        return jsonify({"error": "LTI login error"}), 500
+        return jsonify({"error": "LTI login error", "detail": str(e)}), 500
 
 
 # ---------------------------------------------------------------------------
@@ -316,11 +365,13 @@ def lti_launch():
 
     try:
         flask_req = FlaskRequest()
-        message_launch = FlaskMessageLaunch(flask_req, tool_conf)
+        storage = _get_lti_storage()
+        kwargs = {"launch_data_storage": storage} if storage is not None else {}
+        message_launch = FlaskMessageLaunch(flask_req, tool_conf, **kwargs)
         launch_data = message_launch.get_launch_data()
     except Exception as e:
         logger.warning("LTI launch validation failed: %s", e)
-        return render_template("lti-launch-error.html", error="LTI launch validation failed"), 400
+        return render_template("lti-launch-error.html", error=f"LTI launch validation failed: {e}"), 400
 
     # Deep linking launch — professor selecting content to embed in LMS
     if message_launch.is_deep_link_launch():

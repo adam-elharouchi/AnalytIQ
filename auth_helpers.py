@@ -85,10 +85,6 @@ def detect_role_from_email(email):
     email_lower = email.lower()
     if email_lower.endswith("@myanalytiq.org"):
         return "superadmin"
-    if email_lower.endswith("@hult.edu") or email_lower.endswith("@faculty.hult.edu"):
-        return "professor"
-    elif email_lower.endswith("@student.hult.edu"):
-        return "student"
     return "student"  # Default to student
 
 

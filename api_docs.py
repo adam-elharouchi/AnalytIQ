@@ -138,10 +138,7 @@ def create_api_spec() -> APISpec:
             post=dict(
                 tags=["Auth"],
                 summary="Register a new user",
-                description=(
-                    "Role is inferred from email domain: `@hult.edu` → professor, "
-                    "`@student.hult.edu` → student. Password: 8–72 chars."
-                ),
+                description="Register a new user. All email addresses are accepted; role defaults to student. Password: 8–72 chars.",
                 requestBody=dict(
                     required=True,
                     content={
@@ -151,7 +148,7 @@ def create_api_spec() -> APISpec:
                                 "required": ["name", "email", "password"],
                                 "properties": {
                                     "name": {"type": "string", "example": "Ada Lovelace"},
-                                    "email": {"type": "string", "format": "email", "example": "ada@hult.edu"},
+                                    "email": {"type": "string", "format": "email", "example": "ada@example.com"},
                                     "password": {"type": "string", "format": "password", "minLength": 8, "maxLength": 72},
                                 },
                             }
