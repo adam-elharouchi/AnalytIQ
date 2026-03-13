@@ -11,6 +11,7 @@ from db import get_db_connection
 from extensions import csrf_exempt
 from repositories import exercise_repository as exercise_repo
 from python.code_runner import run_test_cases
+from python.exercise_generator import generate_test_cases_for_exercise
 
 logger = logging.getLogger(__name__)
 bp = Blueprint("exercises", __name__)
@@ -256,27 +257,45 @@ def grade_exercise(exercise_id):
         if function_name is None:
             return jsonify({"error": "Exercise not found."}), 404
 
-        # Exercise predates test-case generation — no automated grading available
+        # Exercise predates test-case generation — auto-generate now
         if not test_cases:
-            return (
-                jsonify(
-                    {
-                        "has_test_cases": False,
-                        "total_score": 0,
-                        "correctness_score": 0,
-                        "quality_score": 0,
-                        "tests_passed": 0,
-                        "tests_total": 0,
-                        "results": [],
-                        "quality_details": {},
-                        "message": (
-                            "This exercise does not have test cases yet. "
-                            "Ask your professor to regenerate it."
-                        ),
-                    }
-                ),
-                200,
-            )
+            row = exercise_repo.get_exercise_detail(conn, exercise_id)
+            if not row:
+                return jsonify({"error": "Exercise not found."}), 404
+            title, description, solution_code = row[3], row[4], row[6]
+            try:
+                generated = generate_test_cases_for_exercise(
+                    title=title,
+                    description=description,
+                    solution_code=solution_code,
+                    language=language,
+                )
+                function_name = generated["function_name"]
+                test_cases = generated["test_cases"]
+                exercise_repo.save_exercise_test_cases(
+                    conn, exercise_id, function_name, test_cases
+                )
+                conn.commit()
+            except Exception as gen_err:
+                logger.error(
+                    "Auto test-case generation failed for %s: %s", exercise_id, gen_err
+                )
+                return (
+                    jsonify(
+                        {
+                            "has_test_cases": False,
+                            "total_score": 0,
+                            "correctness_score": 0,
+                            "quality_score": 0,
+                            "tests_passed": 0,
+                            "tests_total": 0,
+                            "results": [],
+                            "quality_details": {},
+                            "message": "Could not generate test cases. Please try again.",
+                        }
+                    ),
+                    200,
+                )
 
         # Run the code against every test case in the sandbox
         result = run_test_cases(

@@ -1298,7 +1298,7 @@
       if (gradingResult.has_test_cases === false) {
         codeDisplay.innerHTML =
           `<div class="code-line" style="color:#f5a623;">
-             ${gradingResult.message || 'No test cases available for this exercise.'}
+             ${gradingResult.message || 'Could not generate test cases. Please try again.'}
            </div>`;
         return;
       }

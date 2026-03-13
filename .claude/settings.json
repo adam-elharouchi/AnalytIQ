@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -c \":*)",
+      "Bash(grep -A 30 \"class_exercises\" /Users/aelharouchi/Documents/GitHub/AnalytIQ/migrations/*.sql)",
+      "Bash(wc -l /Users/aelharouchi/Documents/GitHub/AnalytIQ/tests/test_*.py)",
+      "Bash(grep -rn \"regenerate\\\\|generate-test\\\\|generate_test\" blueprints/*.py)"
+    ]
+  }
+}
