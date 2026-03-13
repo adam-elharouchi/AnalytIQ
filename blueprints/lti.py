@@ -56,6 +56,12 @@ class _RedisLtiStorage(_LtiStorageBase):
 
     _DEFAULT_TTL = 7200  # 2 hours
 
+    def get_session_cookie_name(self):
+        # Returning None tells pylti1p3 to skip cookie-based session_id lookup.
+        # Keys are already unique per nonce/state so no session prefix is needed,
+        # and cookies are blocked anyway when AnalytIQ is embedded in an LMS iframe.
+        return None
+
     def can_set_keys_expiration(self):
         return True
 
