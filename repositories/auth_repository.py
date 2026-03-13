@@ -24,14 +24,31 @@ def email_exists(conn, email):
     return exists
 
 
-def insert_user(conn, user_id, name, email, password_hash, role):
+def find_tenant_by_email_domain(conn, domain):
+    """Return tenant_id for an active tenant whose email_domain matches, or None."""
+    cur = conn.cursor()
+    try:
+        cur.execute(
+            "SELECT tenant_id FROM tenants WHERE email_domain = %s AND is_active = true",
+            (domain.lower(),),
+        )
+        row = cur.fetchone()
+        cur.close()
+        return row[0] if row else None
+    except Exception:
+        conn.rollback()
+        cur.close()
+        return None
+
+
+def insert_user(conn, user_id, name, email, password_hash, role, tenant_id=None):
     """Insert a new user and return (user_id, name, email, role)."""
     cur = conn.cursor()
     cur.execute(
-        """INSERT INTO users (user_id, name, email, password_hash, role)
-           VALUES (%s, %s, %s, %s, %s)
+        """INSERT INTO users (user_id, name, email, password_hash, role, tenant_id)
+           VALUES (%s, %s, %s, %s, %s, %s)
            RETURNING user_id, name, email, COALESCE(role, 'student')""",
-        (user_id, name, email, password_hash, role),
+        (user_id, name, email, password_hash, role, tenant_id),
     )
     row = cur.fetchone()
     cur.close()

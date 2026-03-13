@@ -299,7 +299,7 @@ class SuperAdminDashboard {
             card.style.cssText = 'display: flex; flex-direction: column; overflow: hidden; padding: 0; cursor: pointer;';
             card.addEventListener('click', (e) => {
                 if (e.target.closest('button')) return; // let button clicks bubble normally
-                window.adminApp.openTenantDetail(t.tenant_id, 'details');
+                window.adminApp.openTenantDetail(t.tenant_id, 'details', t.name, t.lti_issuer, t.email_domain);
             });
 
             card.innerHTML = `
@@ -347,7 +347,7 @@ class SuperAdminDashboard {
                             Users
                         </button>
                         <button class="btn btn-secondary" style="font-size: 0.82rem; padding: 0.5rem 0.75rem; background: transparent; border-color: rgba(255,255,255,0.1); color: #94a3b8;"
-                            onclick="window.adminApp.openTenantDetail('${t.tenant_id}', 'details')"
+                            onclick="window.adminApp.openTenantDetail('${t.tenant_id}', 'details', ${JSON.stringify(t.name)}, ${JSON.stringify(t.lti_issuer)}, ${JSON.stringify(t.email_domain)})"
                             title="Edit tenant">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="pointer-events:none;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                         </button>
@@ -513,7 +513,7 @@ class SuperAdminDashboard {
         this.openTenantDetail(tenantId, 'details', currentName, currentIssuer);
     }
 
-    openTenantDetail(tenantId, tab = 'details', preloadName = null, preloadIssuer = null) {
+    openTenantDetail(tenantId, tab = 'details', preloadName = null, preloadIssuer = null, preloadEmailDomain = null) {
         document.getElementById('editTenantId').value = tenantId;
         // Populate header
         const titleEl    = document.getElementById('tenantDetailTitle');
@@ -523,6 +523,8 @@ class SuperAdminDashboard {
         // Pre-fill details tab if we have the values
         if (preloadName !== null)   document.getElementById('editTenantName').value   = preloadName;
         if (preloadIssuer !== null) document.getElementById('editTenantIssuer').value = preloadIssuer === 'local' ? '' : preloadIssuer;
+        const emailDomainEl = document.getElementById('editTenantEmailDomain');
+        if (emailDomainEl) emailDomainEl.value = preloadEmailDomain || '';
         // Switch to the requested tab
         this._switchTenantTab(tab);
         // Populate LTI registration URLs panel
@@ -556,13 +558,14 @@ class SuperAdminDashboard {
         const tenantId = document.getElementById('editTenantId').value;
         const name = (document.getElementById('editTenantName').value || '').trim();
         const issuer = (document.getElementById('editTenantIssuer').value || '').trim();
+        const emailDomain = (document.getElementById('editTenantEmailDomain')?.value || '').trim();
 
         if (!name) { showError('Institution name is required'); return; }
 
         try {
             const res = await authFetch(`${this.baseAdminUrl}/tenants/${tenantId}`, {
                 method: 'PATCH',
-                body: JSON.stringify({ name, lti_issuer: issuer || null })
+                body: JSON.stringify({ name, lti_issuer: issuer || null, email_domain: emailDomain || null })
             });
             if (res.ok) {
                 showSuccess('Tenant updated successfully');

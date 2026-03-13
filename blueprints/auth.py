@@ -73,7 +73,15 @@ def signup():
         password_hash = hash_password(password)
         role = detect_role_from_email(email)
 
-        user = auth_repo.insert_user(conn, user_id, name, email, password_hash, role)
+        # Auto-assign tenant based on email domain
+        email_domain = email.split("@", 1)[-1].lower() if "@" in email else None
+        tenant_id = (
+            auth_repo.find_tenant_by_email_domain(conn, email_domain) if email_domain else None
+        )
+
+        user = auth_repo.insert_user(
+            conn, user_id, name, email, password_hash, role, tenant_id=tenant_id
+        )
         if not user:
             return jsonify({"error": "Failed to create user"}), 500
 

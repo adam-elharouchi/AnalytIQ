@@ -43,7 +43,8 @@ def list_tenants():
             SELECT
                 t.tenant_id, t.name, t.lti_issuer, t.is_active, t.created_at,
                 (SELECT COUNT(*) FROM users u WHERE u.tenant_id = t.tenant_id) as total_users,
-                (SELECT COUNT(*) FROM classes c WHERE c.tenant_id = t.tenant_id) as total_classes
+                (SELECT COUNT(*) FROM classes c WHERE c.tenant_id = t.tenant_id) as total_classes,
+                t.email_domain
             FROM tenants t
             ORDER BY t.created_at DESC
         """
@@ -62,6 +63,7 @@ def list_tenants():
                     "created_at": r[4].isoformat() if r[4] else None,
                     "total_users": r[5],
                     "total_classes": r[6],
+                    "email_domain": r[7],
                 }
             )
 
@@ -81,6 +83,7 @@ def create_tenant():
         data = request.json or {}
         name = data.get("name")
         lti_issuer = data.get("lti_issuer")
+        email_domain = (data.get("email_domain") or "").strip().lower() or None
 
         if not name:
             return jsonify({"error": "Tenant name is required"}), 400
@@ -90,11 +93,11 @@ def create_tenant():
         try:
             cur.execute(
                 """
-                INSERT INTO tenants (name, lti_issuer)
-                VALUES (%s, %s)
-                RETURNING tenant_id, name, lti_issuer, is_active, created_at
+                INSERT INTO tenants (name, lti_issuer, email_domain)
+                VALUES (%s, %s, %s)
+                RETURNING tenant_id, name, lti_issuer, is_active, created_at, email_domain
                 """,
-                (name, lti_issuer),
+                (name, lti_issuer, email_domain),
             )
             row = cur.fetchone()
 
@@ -113,6 +116,7 @@ def create_tenant():
                 "lti_issuer": row[2],
                 "is_active": row[3],
                 "created_at": row[4].isoformat() if row[4] else None,
+                "email_domain": row[5],
                 "total_users": 0,
                 "total_classes": 0,
             }
@@ -136,7 +140,12 @@ def update_tenant(tenant_id):
     """Update tenant (e.g. enable/disable)."""
     try:
         data = request.json or {}
-        if "is_active" not in data and "name" not in data and "lti_issuer" not in data:
+        if (
+            "is_active" not in data
+            and "name" not in data
+            and "lti_issuer" not in data
+            and "email_domain" not in data
+        ):
             return jsonify({"error": "No update fields provided"}), 400
 
         conn = get_db_connection()
@@ -153,6 +162,9 @@ def update_tenant(tenant_id):
         if "lti_issuer" in data:
             updates.append("lti_issuer = %s")
             params.append(data["lti_issuer"] or None)
+        if "email_domain" in data:
+            updates.append("email_domain = %s")
+            params.append((data["email_domain"] or "").strip().lower() or None)
 
         params.append(tenant_id)
 
