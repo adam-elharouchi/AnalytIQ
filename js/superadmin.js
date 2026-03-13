@@ -1346,9 +1346,21 @@ class SuperAdminDashboard {
     }
 
     _onRoleSelectChange() {
-        const isTenantAdmin = document.getElementById('changeRoleSelect').value === 'tenant_admin';
-        document.getElementById('tenantSelectSection').style.display = isTenantAdmin ? 'block' : 'none';
-        if (isTenantAdmin) this._loadTenantsDropdown();
+        const role = document.getElementById('changeRoleSelect').value;
+        const isTenantAdmin = role === 'tenant_admin';
+        const isSuperAdmin  = role === 'superadmin';
+        // Show tenant section for every role except superadmin (superadmin has no tenant)
+        document.getElementById('tenantSelectSection').style.display = isSuperAdmin ? 'none' : 'block';
+        // "New Tenant" creation mode only makes sense when assigning a tenant_admin
+        const modeToggle = document.getElementById('tenantModeExistingBtn')?.parentElement;
+        if (modeToggle) modeToggle.style.display = isTenantAdmin ? 'flex' : 'none';
+        if (!isTenantAdmin) this._onTenantModeChange('existing');
+        this._loadTenantsDropdown();
+        // Update label hint
+        const hint = document.getElementById('tenantAssignHint');
+        if (hint) hint.textContent = isTenantAdmin
+            ? 'Required — select or create the tenant this admin will manage.'
+            : 'Optional — leave blank to keep current tenant.';
     }
 
     _onTenantModeChange(mode) {
@@ -1393,15 +1405,14 @@ class SuperAdminDashboard {
         const saveBtn = document.querySelector('#changeRoleModal .btn-primary');
 
         try {
-            let tenantId = null;
+            let tenantId = null;       // null = "don't change"
+            let tenantInBody = false;  // only send tenant_id key if user interacted
 
-            if (role === 'tenant_admin') {
-                if (this._tenantMode === 'existing') {
-                    // Use the selected existing tenant
-                    const sel = document.getElementById('changeRoleTenantSelect');
-                    tenantId = sel ? sel.value : '';
-                    if (!tenantId) { showError('Please select a tenant.'); return; }
-                } else {
+            const isSuperAdmin  = role === 'superadmin';
+            const isTenantAdmin = role === 'tenant_admin';
+
+            if (!isSuperAdmin) {
+                if (isTenantAdmin && this._tenantMode === 'new') {
                     // Create a new tenant first
                     const tenantName = (document.getElementById('changeRoleTenantName').value || '').trim();
                     if (!tenantName) { showError('Please enter an institution / tenant name.'); return; }
@@ -1413,14 +1424,24 @@ class SuperAdminDashboard {
                     const tData = await tRes.json();
                     if (!tRes.ok) throw new Error(tData.error || 'Failed to create tenant');
                     tenantId = tData.tenant.tenant_id;
+                    tenantInBody = true;
+                } else {
+                    // Use selected existing tenant (may be "" = no tenant)
+                    const sel = document.getElementById('changeRoleTenantSelect');
+                    const selVal = sel ? sel.value : '';
+                    if (isTenantAdmin && !selVal) { showError('Please select a tenant.'); return; }
+                    tenantId = selVal || null;  // "" → null (clear tenant)
+                    tenantInBody = true;
                 }
             }
 
-            // Assign the role (with tenant_id if tenant_admin)
+            // Assign the role; include tenant_id key only when we want to change it
             if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving…'; }
+            const body = { role };
+            if (tenantInBody) body.tenant_id = tenantId;
             const res  = await authFetch(`${this.baseAdminUrl}/users/${this._pendingRoleUserId}/role`, {
                 method: 'PATCH',
-                body: JSON.stringify({ role, ...(tenantId && { tenant_id: tenantId }) })
+                body: JSON.stringify(body)
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Role update failed');
