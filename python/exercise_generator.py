@@ -225,3 +225,125 @@ Return your response as a JSON array with ONLY this structure — no markdown, n
     except Exception as e:
         logger.error("Error generating exercises: %s", e)
         raise
+
+
+def generate_test_cases_for_exercise(title, description, solution_code, language, api_key=None):
+    """
+    Generate test cases for an existing exercise using its description and solution code.
+
+    Args:
+        title: Exercise title
+        description: Exercise description (what the student must do)
+        solution_code: Reference solution code
+        language: Programming language (Python, R, SQL, etc.)
+        api_key: Google Gemini API key (optional, falls back to env var)
+
+    Returns:
+        dict: {"function_name": str, "test_cases": [...]}
+              test_cases shape: [{description, input, expected_output, weight}, ...]
+    """
+    if not api_key:
+        api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        raise Exception("GEMINI_API_KEY is not configured.")
+
+    prompt = f"""You are a coding tutor. Generate automated test cases for the exercise below.
+
+Language: {language}
+Title: {title}
+Description: {description}
+
+Reference solution:
+```{language.lower()}
+{solution_code}
+```
+
+Your job:
+1. Identify the single function the student must write (look at the description and solution).
+2. Generate 3–5 test cases that verify correct behaviour.
+
+Rules:
+- Each test case calls the function with specific inputs and checks the output.
+- "input" must be a JSON-serialisable value (string, number, list, dict, or null).
+  For no-argument functions use null.
+- "expected_output" must be the exact string that the function PRINTS (not returns),
+  or the string representation of what it returns if it prints nothing.
+- Keep inputs small and self-contained (no file I/O, no external state).
+- If the exercise uses pandas/numpy/etc., use small inline data (5 rows max).
+- "weight" is 1 for every test case.
+
+Return ONLY a JSON object (no markdown):
+{{
+  "function_name": "the_function_name",
+  "test_cases": [
+    {{
+      "description": "short human-readable label",
+      "input": <JSON value>,
+      "expected_output": "exact expected string",
+      "weight": 1
+    }}
+  ]
+}}"""
+
+    try:
+        import requests
+
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+        response = requests.post(
+            url,
+            headers={"Content-Type": "application/json"},
+            json={
+                "contents": [{"parts": [{"text": prompt}]}],
+                "generationConfig": {
+                    "temperature": 0.3,
+                    "maxOutputTokens": 2048,
+                    "responseMimeType": "application/json",
+                },
+            },
+            timeout=45,
+        )
+
+        if not response.ok:
+            error_msg = response.json().get("error", {}).get("message", "Gemini API error")
+            raise Exception(f"Gemini API error: {error_msg}")
+
+        data = response.json()
+        if "candidates" not in data or not data["candidates"]:
+            raise Exception("No response from Gemini API")
+
+        content = data["candidates"][0]["content"]["parts"][0]["text"].strip()
+
+        # Strip markdown fences if present
+        if "```json" in content:
+            content = content.split("```json")[1].split("```")[0].strip()
+        elif "```" in content:
+            content = content.split("```")[1].split("```")[0].strip()
+
+        parsed = json.loads(content)
+        function_name = parsed.get("function_name", "solution")
+        raw_cases = parsed.get("test_cases", [])
+
+        validated = []
+        for tc in raw_cases:
+            if not isinstance(tc, dict):
+                continue
+            if "input" not in tc or "expected_output" not in tc:
+                continue
+            validated.append({
+                "description":     tc.get("description", ""),
+                "input":           tc["input"],
+                "expected_output": str(tc["expected_output"]),
+                "weight":          int(tc.get("weight", 1)),
+            })
+
+        if not validated:
+            raise Exception("Gemini returned no valid test cases.")
+
+        return {"function_name": function_name, "test_cases": validated}
+
+    except json.JSONDecodeError as e:
+        logger.error("Failed to parse test-case JSON from Gemini: %s", e)
+        raise Exception("Failed to parse test cases from AI. Please try again.")
+    except Exception as e:
+        logger.error("Error generating test cases: %s", e)
+        raise
