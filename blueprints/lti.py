@@ -258,18 +258,35 @@ def _store_lti_session(conn, launch_data, user_id, class_id):
 _LTI_ENDPOINTS = ("/lti/jwks", "/lti/login", "/lti/launch")
 
 
+_CONTENT_PAGES = (
+    "/student-chapter.html",
+    "/student-classes.html",
+    "/student-class.html",
+    "/professor-class.html",
+    "/professor-dashboard.html",
+)
+
+
 def _resolve_target_url(launch_data, class_id):
-    """Return the AnalytIQ page to redirect to after a successful launch."""
+    """Return the AnalytIQ page to redirect to after a successful launch.
+
+    target_link_uri is only trusted when it points to a known content page
+    (e.g. a deep-linked chapter or class URL). Generic tool launches, admin
+    pages, and LTI infrastructure endpoints all fall back to role-based routing
+    so Moodle cannot accidentally send users to the wrong dashboard.
+    """
     target_link_uri = launch_data.get(
         "https://purl.imsglobal.org/spec/lti/claim/target_link_uri", ""
     )
-    # Reject LTI infrastructure endpoints — they are not valid landing pages.
-    # Moodle may send the old Tool URL as target_link_uri if the tool config
-    # was previously set to /lti/jwks, which would cause an infinite loop.
-    _is_lti_endpoint = any(target_link_uri.rstrip("/").endswith(ep) for ep in _LTI_ENDPOINTS)
-    if target_link_uri and target_link_uri.startswith(config.LTI_TOOL_URL) and not _is_lti_endpoint:
+    from urllib.parse import urlparse
+
+    parsed = urlparse(target_link_uri)
+    is_same_origin = bool(target_link_uri and target_link_uri.startswith(config.LTI_TOOL_URL))
+    is_content_page = any(parsed.path.startswith(p.split("?")[0]) for p in _CONTENT_PAGES)
+    if is_same_origin and is_content_page:
         return target_link_uri
 
+    # Role-based routing (always used for standard / generic launches)
     roles = launch_data.get("https://purl.imsglobal.org/spec/lti/claim/roles", [])
     if any("Instructor" in r or "Administrator" in r for r in roles):
         if class_id:
