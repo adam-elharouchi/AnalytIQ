@@ -1546,7 +1546,9 @@
       </select>
     </div>
     <div id="tenantSelectSection" style="display:none;margin-bottom:1.25rem;">
-      <!-- Mode toggle: existing vs new -->
+      <label style="display:block;margin-bottom:0.5rem;color:var(--text-primary,#f0f4ff);font-weight:500;">Tenant</label>
+      <small id="tenantAssignHint" style="color:var(--text-secondary,#64748b);font-size:0.8rem;display:block;margin-bottom:0.75rem;">Optional — leave blank to keep current tenant.</small>
+      <!-- Mode toggle: existing vs new (only shown for tenant_admin) -->
       <div style="display:flex;gap:0;margin-bottom:1rem;border:1px solid var(--border-color,rgba(255,255,255,0.1));border-radius:0.375rem;overflow:hidden;">
         <button id="tenantModeExistingBtn" onclick="window.adminApp && window.adminApp._onTenantModeChange('existing')"
           style="flex:1;padding:0.5rem;background:var(--color-primary,#2569f4);color:#fff;border:none;cursor:pointer;font-size:0.875rem;font-weight:600;transition:background 0.15s;">
@@ -1559,13 +1561,12 @@
       </div>
       <!-- Existing tenant dropdown -->
       <div id="tenantExistingSection">
-        <label style="display:block;margin-bottom:0.5rem;color:var(--text-primary,#f0f4ff);font-weight:500;">Select Tenant <span style="color:var(--color-error,#ef4444);">*</span></label>
         <select id="changeRoleTenantSelect"
           style="width:100%;padding:0.75rem;border:1px solid var(--border-color,rgba(255,255,255,0.1));border-radius:0.375rem;background:rgba(17,24,39,0.7);color:var(--text-primary,#f0f4ff);font-size:0.95rem;">
-          <option value="">Loading tenants…</option>
+          <option value="">— No Tenant —</option>
         </select>
       </div>
-      <!-- New tenant input -->
+      <!-- New tenant input (tenant_admin only) -->
       <div id="tenantNewSection" style="display:none;">
         <label style="display:block;margin-bottom:0.5rem;color:var(--text-primary,#f0f4ff);font-weight:500;">Institution / Tenant Name <span style="color:var(--color-error,#ef4444);">*</span></label>
         <input type="text" id="changeRoleTenantName" placeholder="e.g. Hult International Business School"

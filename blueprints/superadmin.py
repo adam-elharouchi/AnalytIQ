@@ -904,7 +904,10 @@ def change_user_role(user_id):
     """
     data = request.json or {}
     new_role = data.get("role")
-    new_tenant_id = data.get("tenant_id")  # required for tenant_admin
+    # "tenant_id" key present → update (None clears the tenant, string sets it)
+    # "tenant_id" key absent  → leave existing tenant_id unchanged
+    tenant_id_provided = "tenant_id" in data
+    new_tenant_id = data.get("tenant_id")  # may be None (to clear) or a UUID string
     valid_roles = {"student", "professor", "tenant_admin", "superadmin"}
     if new_role not in valid_roles:
         return jsonify({"error": f"Role must be one of: {', '.join(sorted(valid_roles))}"}), 400
@@ -916,17 +919,25 @@ def change_user_role(user_id):
         conn = get_db_connection()
         cur = conn.cursor()
 
+        # Build tenant_id clause: update if caller sent the key, else preserve
+        if tenant_id_provided:
+            tenant_clause = "tenant_id = %s,"
+            tenant_params = (new_tenant_id,)
+        else:
+            tenant_clause = ""
+            tenant_params = ()
+
         cur.execute(
-            """
+            f"""
             UPDATE users
             SET role = %s,
                 is_super_admin = %s,
-                tenant_id = CASE WHEN %s IS NOT NULL THEN %s ELSE tenant_id END,
+                {tenant_clause}
                 updated_at = CURRENT_TIMESTAMP
             WHERE user_id = %s
             RETURNING user_id, name, email
             """,
-            (new_role, new_role == "superadmin", new_tenant_id, new_tenant_id, user_id),
+            (new_role, new_role == "superadmin", *tenant_params, user_id),
         )
         row = cur.fetchone()
         if not row:
