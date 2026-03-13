@@ -267,28 +267,35 @@ _CONTENT_PAGES = (
 )
 
 
-def _resolve_target_url(launch_data, class_id):
+def _resolve_target_url(launch_data, class_id, db_role="student"):
     """Return the AnalytIQ page to redirect to after a successful launch.
 
-    target_link_uri is only trusted when it points to a known content page
-    (e.g. a deep-linked chapter or class URL). Generic tool launches, admin
-    pages, and LTI infrastructure endpoints all fall back to role-based routing
-    so Moodle cannot accidentally send users to the wrong dashboard.
+    DB role takes precedence for admin accounts. target_link_uri is only
+    trusted for known content pages (deep-linked chapters/classes).
     """
+    from urllib.parse import urlparse
+
+    # Superadmin → superadmin dashboard (has no tenant_id, must not hit tenant-admin routes)
+    if db_role == "superadmin":
+        return "/superadmin-dashboard.html"
+
+    # Tenant admin → their scoped dashboard (they have a tenant_id)
+    if db_role == "tenant_admin":
+        return "/tenant-admin-dashboard.html"
+
+    # For professor/student, honour deep-linked content pages only
     target_link_uri = launch_data.get(
         "https://purl.imsglobal.org/spec/lti/claim/target_link_uri", ""
     )
-    from urllib.parse import urlparse
-
     parsed = urlparse(target_link_uri)
     is_same_origin = bool(target_link_uri and target_link_uri.startswith(config.LTI_TOOL_URL))
     is_content_page = any(parsed.path.startswith(p.split("?")[0]) for p in _CONTENT_PAGES)
     if is_same_origin and is_content_page:
         return target_link_uri
 
-    # Role-based routing (always used for standard / generic launches)
+    # Role-based routing from LTI claims
     roles = launch_data.get("https://purl.imsglobal.org/spec/lti/claim/roles", [])
-    if any("Instructor" in r or "Administrator" in r for r in roles):
+    if db_role == "professor" or any("Instructor" in r or "Administrator" in r for r in roles):
         if class_id:
             return f"/professor-class.html?id={class_id}"
         return "/professor-dashboard.html"
@@ -451,7 +458,7 @@ def lti_launch():
         _store_lti_session(conn, launch_data, user_id, class_id)
         conn.commit()
 
-        redirect_url = _resolve_target_url(launch_data, class_id)
+        redirect_url = _resolve_target_url(launch_data, class_id, db_role=user_tuple[3])
         return render_template(
             "lti-launch.html",
             jwt_token=jwt_token,
