@@ -30,8 +30,8 @@ student
 |------|-------|-------------|--------------|
 | `superadmin` | Platform-wide | All admin actions across all tenants | Auto from `@myanalytiq.org` email at signup (requires manual approval) |
 | `tenant_admin` | Single tenant (`tenant_id`) | All admin actions within their tenant: manage users, approve accounts, configure SSO, manage classes/content | Explicitly by superadmin via `PATCH /api/superadmin/users/<id>/role` + `tenant_id` |
-| `professor` | Platform-wide | Create and manage their own classes, chapters, exercises | Auto from `@hult.edu` / `@faculty.hult.edu` email at signup |
-| `student` | Platform-wide | Access enrolled class content, submit exercises | Default for all other email domains |
+| `professor` | Platform-wide | Create and manage their own classes, chapters, exercises | Assigned manually by superadmin or tenant_admin |
+| `student` | Platform-wide | Access enrolled class content, submit exercises | Default for all non-`@myanalytiq.org` email domains |
 
 ### Key distinctions
 
@@ -53,7 +53,7 @@ student
 | `blueprints/sso.py` | Full SSO blueprint — public login flow + admin management routes |
 | `blueprints/tenant_admin.py` | Tenant-scoped admin API (users, classes, approvals, audit, analytics) |
 | `templates/tenant-admin-dashboard.html` | Tenant admin dashboard — mirrors superadmin layout, tenant-scoped |
-| `js/tenant-admin.js` | `TenantAdminDashboard` JS class |
+| `static/js/tenant-admin.js` | `TenantAdminDashboard` JS class |
 
 ---
 
@@ -386,10 +386,10 @@ SSO provider management is handled by the existing `/api/sso/admin/providers` ro
 |------|--------|
 | `requirements.txt` | Added `authlib>=1.3.0` |
 | `config.py` | Added `FEATURE_SSO`, `SSO_STATE_TTL`, `SSO_REDIRECT_BASE_URL` |
-| `auth_helpers.py` | New `require_tenant_admin` decorator; `tenant_id` param in `create_jwt_token`; `g.tenant_id` set in `require_auth` |
+| `core/auth.py` | New `require_tenant_admin` decorator; `tenant_id` param in `create_jwt_token`; `g.tenant_id` set in `require_auth` |
 | `repositories/auth_repository.py` | `get_user_by_email` returns 6-tuple including `tenant_id` |
 | `blueprints/auth.py` | `signin()` passes `tenant_id` to JWT |
 | `blueprints/superadmin.py` | `change_user_role` accepts `tenant_admin` + `tenant_id` body param |
 | `app.py` | Registers `sso_bp` and `tenant_admin_bp` |
 | `templates/login.html` | SSO divider + `#ssoSection` / `#ssoButtons` container |
-| `js/auth.js` | `loadSSOProviders()`, `initSSOLogin()`, `handleSSOTokenParam()` |
+| `static/js/auth.js` | `loadSSOProviders()`, `initSSOLogin()`, `handleSSOTokenParam()` |

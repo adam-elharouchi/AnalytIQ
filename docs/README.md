@@ -2,46 +2,35 @@
 
 Central documentation for the AnalytIQ project.
 
-## Reference Guides
+## Architecture & System Design
 
 | File | Description |
 |---|---|
-| [00-Key-Decisions-And-Workflows.md](00-Key-Decisions-And-Workflows.md) | Architecture decisions and key workflows |
-| [01-Security-Authentication.md](01-Security-Authentication.md) | Auth, JWT, roles, CSRF |
-| [02-Configuration.md](02-Configuration.md) | Environment variables and config |
-| [03-Deployment.md](03-Deployment.md) | Render deployment, environment setup |
-| [04-Database-Storage.md](04-Database-Storage.md) | PostgreSQL schema, Supabase Storage |
-| [05-API-Endpoints.md](05-API-Endpoints.md) | REST API reference |
-| [06-Testing-CICD.md](06-Testing-CICD.md) | pytest, GitHub Actions CI |
-| [07-Background-Tasks.md](07-Background-Tasks.md) | Celery tasks and beat schedule |
-| [08-AI-Exercise-Generation.md](08-AI-Exercise-Generation.md) | Gemini API exercise generation |
-| [09-Monitoring-Logging.md](09-Monitoring-Logging.md) | Sentry, logging configuration |
-| [10-Classes-Chapters.md](10-Classes-Chapters.md) | Class and chapter data model |
-| [11-Frontend-Pages.md](11-Frontend-Pages.md) | HTML templates and JS modules |
-| [12-Superadmin-Architecture.md](12-Superadmin-Architecture.md) | Superadmin and tenant admin |
-| [14-SSO-Tenant-Authentication.md](14-SSO-Tenant-Authentication.md) | SSO / OIDC per-tenant auth |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | Repository layout, request lifecycle, database schema, auth flow, deployment |
+| [PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md) | High-level vision, personas, tech stack summary |
+| [12-Superadmin-Architecture.md](12-Superadmin-Architecture.md) | Evolution of the superadmin role (boolean → dedicated RBAC role) |
+| [14-SSO-Tenant-Authentication.md](14-SSO-Tenant-Authentication.md) | Per-tenant OIDC SSO, role model, tenant_admin, JWT changes |
 
-## Feature Guides
+## Security
 
 | File | Description |
 |---|---|
-| [AI_EXERCISE_GENERATION.md](AI_EXERCISE_GENERATION.md) | Exercise generation deep-dive |
-| [OUTPUT_BASED_GRADING.md](OUTPUT_BASED_GRADING.md) | Output-based grading design |
-| [professor_portal.md](professor_portal.md) | Professor portal features |
-| [student_portal.md](student_portal.md) | Student portal features |
-| [playground.md](playground.md) | Code playground and AI assistant |
+| [SECURITY.md](SECURITY.md) | Auth, authorization, passwords, rate limits, headers, CSRF, audit log |
+| [ACCESSIBILITY.md](ACCESSIBILITY.md) | WCAG 2.1 AA audit results and compliance checklist |
+| [RENDER_ENV_CHECKLIST.md](RENDER_ENV_CHECKLIST.md) | All environment variables, what each does, deployment checklist |
 
-## Architecture and Operations
+## Features
 
 | File | Description |
 |---|---|
-| [ARCHITECTURE.md](ARCHITECTURE.md) | System architecture overview |
-| [ARCHITECTURE_SNAPSHOT.md](ARCHITECTURE_SNAPSHOT.md) | Snapshot from last major refactor |
-| [SECURITY.md](SECURITY.md) | Security model and threat analysis |
-| [RENDER_ENV_CHECKLIST.md](RENDER_ENV_CHECKLIST.md) | Render deploy checklist |
-| [PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md) | Project summary |
-| [FULL_APP_REFERENCE.md](FULL_APP_REFERENCE.md) | Full application reference |
-| [TASKS.md](TASKS.md) | Backlog and task tracking |
-| [CODEBASE_AUDIT_MARCH_2026.md](CODEBASE_AUDIT_MARCH_2026.md) | March 2026 audit findings |
-| [WHATS_NEW.md](WHATS_NEW.md) | Release notes |
-| [ACCESSIBILITY.md](ACCESSIBILITY.md) | Accessibility guidelines |
+| [AI_EXERCISE_GENERATION.md](AI_EXERCISE_GENERATION.md) | Content extraction, Gemini prompt engineering, language detection |
+| [OUTPUT_BASED_GRADING.md](OUTPUT_BASED_GRADING.md) | Grading schema (0–100), sandbox security, supported languages, test case structure |
+
+## Operations & Development
+
+| File | Description |
+|---|---|
+| [testing_qa.md](testing_qa.md) | How to run tests, test structure, DB mocking, CI pipeline |
+| [TASKS.md](TASKS.md) | Completed work log from Feb 2026 sprint (99 tasks) |
+| [WHATS_NEW.md](WHATS_NEW.md) | Changelog: superadmin, tenants, LTI, SSO, content import |
+| [CODEBASE_AUDIT_MARCH_2026.md](CODEBASE_AUDIT_MARCH_2026.md) | March 2026 full audit: endpoints, schema, security gaps, known issues |
