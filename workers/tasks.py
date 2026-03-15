@@ -78,7 +78,7 @@ class DatabaseTask(Task):
         super().on_failure(exc, task_id, args, kwargs, einfo)
 
 
-@celery_app.task(bind=True, base=DatabaseTask, name="tasks.process_pdf_and_extract_text")
+@celery_app.task(bind=True, base=DatabaseTask, name="workers.tasks.process_pdf_and_extract_text")
 def process_pdf_and_extract_text(self, pdf_bytes, chapter_id):
     """
     Extract text from PDF bytes and store in database
@@ -129,10 +129,14 @@ def process_pdf_and_extract_text(self, pdf_bytes, chapter_id):
         return {"success": False, "error": str(e), "chapter_id": chapter_id}
 
 
-@celery_app.task(bind=True, base=DatabaseTask, name="tasks.generate_exercises_async")
+@celery_app.task(bind=True, base=DatabaseTask, name="workers.tasks.generate_exercises_async")
 def generate_exercises_async(self, pdf_text, chapter_title, chapter_id, class_id, api_key):
     """
     Generate exercises from PDF text using Gemini API
+
+    WARNING: This task uses outdated SQL. Exercises created by this task will lack
+    function_name, test_cases, and language columns. FEATURE_ASYNC_TASKS defaults to
+    False so this is not triggered in production. Fix before enabling async exercise generation.
 
     Args:
         pdf_text: Extracted PDF text
@@ -191,7 +195,7 @@ def generate_exercises_async(self, pdf_text, chapter_title, chapter_id, class_id
         return {"success": False, "error": str(e), "chapter_id": chapter_id}
 
 
-@celery_app.task(name="tasks.send_email_async")
+@celery_app.task(name="workers.tasks.send_email_async")
 def send_email_async(recipient, subject, body):
     """
     Send email asynchronously using Resend API.
@@ -236,7 +240,7 @@ def send_email_async(recipient, subject, body):
         return {"success": False, "error": str(e), "recipient": recipient}
 
 
-@celery_app.task(bind=True, base=DatabaseTask, name="tasks.process_chapter_upload")
+@celery_app.task(bind=True, base=DatabaseTask, name="workers.tasks.process_chapter_upload")
 def process_chapter_upload(
     self, chapter_id, pdf_bytes, auto_generate_exercises, class_id, chapter_title, api_key
 ):
@@ -292,7 +296,7 @@ def process_chapter_upload(
         return result
 
 
-@celery_app.task(bind=True, base=DatabaseTask, name="tasks.compute_exercise_quality_scores")
+@celery_app.task(bind=True, base=DatabaseTask, name="workers.tasks.compute_exercise_quality_scores")
 def compute_exercise_quality_scores(self, min_outcomes=5):
     """
     Compute and upsert quality scores for exercises that have accumulated
@@ -475,7 +479,7 @@ def compute_exercise_quality_scores(self, min_outcomes=5):
         return {"success": False, "error": str(e), "exercises_scored": 0}
 
 
-@celery_app.task(name="tasks.cleanup_expired_lti_sessions")
+@celery_app.task(name="workers.tasks.cleanup_expired_lti_sessions")
 def cleanup_expired_lti_sessions():
     """
     Delete expired LTI sessions from the database.
