@@ -191,7 +191,7 @@ class TestAppApiDocsSpec:
     def test_api_docs_spec_endpoint(self):
         """Line 165: GET /api/docs/spec.json returns OpenAPI spec"""
         import app as app_module
-        import api_docs
+        import blueprints.api_docs as api_docs
 
         # After reload, the route is registered (api_docs is cached in sys.modules)
         _safe_reload_app()
