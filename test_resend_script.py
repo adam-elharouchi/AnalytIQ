@@ -8,7 +8,7 @@ load_dotenv()
 
 # Add python directory to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from tasks import send_email_async
+from workers.tasks import send_email_async
 
 def test():
     # Retrieve test email from arg
