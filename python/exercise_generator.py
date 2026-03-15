@@ -3,25 +3,65 @@ Exercise Generation Service
 Uses Google Gemini API to generate coding exercises from PDF content
 """
 
+import hashlib
 import logging
 import os
+import re
+import time
 import json
 
 logger = logging.getLogger(__name__)
 
+# Bump this constant whenever the Gemini prompt changes so the flywheel can
+# measure whether the change improved exercise quality.
+PROMPT_TEMPLATE_VERSION = "v1.1"
 
-def generate_exercises_from_pdf_content(pdf_text, chapter_title, api_key=None):
+_GEMINI_MODEL = "gemini-2.5-flash"
+_GENERATION_PARAMS = {"temperature": 0.7, "maxOutputTokens": 8192}
+_TRUNCATION_LIMIT = 10_000
+
+
+def _extract_topics(title: str, description: str) -> list[str]:
     """
-    Generate coding exercises from PDF text using Gemini API
+    Simple keyword extraction from exercise title + description for the flywheel.
+    Splits on non-word characters, lowercases, and keeps tokens > 2 chars that
+    are not common stop-words.  Does NOT make any AI call.
+    """
+    stop_words = {
+        "the", "and", "for", "with", "this", "that", "from", "into", "your",
+        "you", "are", "use", "using", "write", "create", "define", "return",
+        "function", "method", "value", "values", "given", "one", "two",
+        "all", "each", "its", "has", "can", "not", "new", "any", "how",
+    }
+    text = f"{title} {description}".lower()
+    tokens = re.split(r"[^a-z0-9_]+", text)
+    seen: set = set()
+    topics: list = []
+    for tok in tokens:
+        if len(tok) > 2 and tok not in stop_words and tok not in seen:
+            seen.add(tok)
+            topics.append(tok)
+            if len(topics) >= 10:
+                break
+    return topics
+
+
+def generate_exercises_from_pdf_content(
+    pdf_text, chapter_title, api_key=None, source_content_type=None
+):
+    """
+    Generate coding exercises from PDF text using Gemini API.
 
     Args:
         pdf_text: Extracted text from PDF
         chapter_title: Title of the chapter
         api_key: Google Gemini API key (optional, can use env var)
+        source_content_type: File extension of the source (e.g. "pdf", "ipynb") for flywheel
 
     Returns:
         list: Array of exercise dicts with title, description, difficulty,
-              function_name, solution_code, and test_cases
+              function_name, solution_code, test_cases, and _gen_meta (flywheel metadata).
+              Callers that do not need _gen_meta can ignore it.
     """
     if not api_key:
         api_key = os.getenv("GEMINI_API_KEY")
@@ -32,8 +72,13 @@ def generate_exercises_from_pdf_content(pdf_text, chapter_title, api_key=None):
             "Configuration Error: GEMINI_API_KEY is missing. Please set this environment variable in Render."
         )
 
+    # --- Flywheel: capture input metadata before truncation ----------------
+    original_len = len(pdf_text) if pdf_text else 0
+    source_content_hash = hashlib.sha256((pdf_text or "").encode("utf-8", errors="replace")).hexdigest()
+    was_truncated = original_len > _TRUNCATION_LIMIT
+
     # Limit PDF text to avoid token limits (first 10000 characters)
-    truncated_text = pdf_text[:10000] if len(pdf_text) > 10000 else pdf_text
+    truncated_text = pdf_text[:_TRUNCATION_LIMIT] if was_truncated else pdf_text
 
     # Build prompt
     prompt = f"""You are a coding tutor creating beginner-friendly exercises for a university course.
@@ -66,6 +111,7 @@ FUNCTION STRUCTURE (critical for automated grading)
       – also prints the result with a label for human readability
   • The function name must be short, descriptive, and in snake_case for Python/R
     or camelCase for JavaScript/Java.
+  • You MUST include this function name as the "function_name" field in the JSON output.
   • Example (Python):
       def calculate_mean(numbers):
           mean = sum(numbers) / len(numbers)  # compute the average
@@ -110,6 +156,18 @@ DIFFICULTY
   • Remaining exercises: "medium" (combine two concepts, still one idea per exercise).
   • Never use "hard".
 
+TEST CASES (critical for automated grading)
+  • Generate 5–8 test cases per exercise.
+  • Each test case calls the function with a specific input and checks its output.
+  • "input" must be a JSON-serialisable value (string, number, list, dict, or null).
+    For functions that take no arguments, use null.
+  • "expected_output" must be the exact string that the function returns (as a string),
+    or the string representation of its return value.
+  • Keep inputs small and self-contained — no file I/O, no external state.
+  • If the exercise uses pandas/numpy/etc., use small inline data (3–5 elements max).
+  • Include at least one edge case (e.g. empty list, zero, negative number) where appropriate.
+  • "weight" is 1 for all test cases.
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Return your response as a JSON array with ONLY this structure — no markdown, no code fences, no extra text:
@@ -119,7 +177,16 @@ Return your response as a JSON array with ONLY this structure — no markdown, n
     "title": "Exercise title",
     "description": "One or two sentences telling the student exactly what to do. Name the function they must define and what it must return.",
     "difficulty": "easy|medium",
-    "solution_code": "Code in the detected language — every line commented, result output at end, 5-10 lines max"
+    "function_name": "snake_case function name the student must define",
+    "solution_code": "Code in the detected language — every line commented, result output at end, 5-10 lines max",
+    "test_cases": [
+      {{
+        "description": "Short label for this test",
+        "input": "JSON-serialisable value",
+        "expected_output": "Exact expected return value as a string",
+        "weight": 1
+      }}
+    ]
   }}
 ]"""
 
@@ -127,21 +194,23 @@ Return your response as a JSON array with ONLY this structure — no markdown, n
         import requests
 
         # Call Gemini API
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{_GEMINI_MODEL}:generateContent?key={api_key}"
 
+        _t0 = time.monotonic()
         response = requests.post(
             url,
             headers={"Content-Type": "application/json"},
             json={
                 "contents": [{"parts": [{"text": prompt}]}],
                 "generationConfig": {
-                    "temperature": 0.7,
-                    "maxOutputTokens": 8192,
+                    "temperature": _GENERATION_PARAMS["temperature"],
+                    "maxOutputTokens": _GENERATION_PARAMS["maxOutputTokens"],
                     "responseMimeType": "application/json",
                 },
             },
             timeout=60,
         )
+        generation_time_ms = int((time.monotonic() - _t0) * 1000)
 
         if not response.ok:
             error_data = response.json() if response.content else {}
@@ -151,6 +220,11 @@ Return your response as a JSON array with ONLY this structure — no markdown, n
             raise Exception(f"Gemini API error: {error_message}")
 
         data = response.json()
+
+        # --- Flywheel: extract token counts from Gemini usageMetadata -------
+        usage = data.get("usageMetadata", {})
+        prompt_tokens = usage.get("promptTokenCount")
+        completion_tokens = usage.get("candidatesTokenCount")
 
         # Extract text from response
         if "candidates" not in data or len(data["candidates"]) == 0:
@@ -205,13 +279,42 @@ Return your response as a JSON array with ONLY this structure — no markdown, n
                         "weight":          int(tc.get("weight", 1)),
                     })
 
+            ex_language = exercise.get("language", "Unknown")
+            ex_title = exercise.get("title", "Untitled Exercise")
+            ex_description = exercise.get("description", "")
+            ex_solution = exercise.get("solution_code", "")
+
             validated_exercise = {
-                "language": exercise.get("language", "Unknown"),
-                "title": exercise.get("title", "Untitled Exercise"),
-                "description": exercise.get("description", ""),
+                "language": ex_language,
+                "title": ex_title,
+                "description": ex_description,
                 "difficulty": difficulty,
-                "solution_code": exercise.get("solution_code", ""),
-                "test_cases":    validated_cases,
+                "solution_code": ex_solution,
+                "test_cases": validated_cases,
+                # Flywheel metadata — callers that don't need this can ignore it.
+                "_gen_meta": {
+                    "source_content_hash": source_content_hash,
+                    "source_content_type": source_content_type,
+                    "source_char_count": len(truncated_text),
+                    "was_truncated": was_truncated,
+                    "detected_language": ex_language,
+                    "detected_topics": _extract_topics(ex_title, ex_description),
+                    "gemini_model": _GEMINI_MODEL,
+                    "prompt_template_version": PROMPT_TEMPLATE_VERSION,
+                    "prompt_tokens": prompt_tokens,
+                    "completion_tokens": completion_tokens,
+                    "generation_params": _GENERATION_PARAMS,
+                    "difficulty_generated": difficulty,
+                    "exercise_type": "generated",
+                    "exercise_structure": {
+                        "has_starter_code": False,
+                        "num_test_cases": len(validated_cases),
+                        "instruction_length_chars": len(ex_description),
+                        "has_solution": bool(ex_solution),
+                    },
+                    "num_test_cases": len(validated_cases),
+                    "generation_time_ms": generation_time_ms,
+                },
             }
 
             validated_exercises.append(validated_exercise)
@@ -288,7 +391,8 @@ Return ONLY a JSON object (no markdown):
     try:
         import requests
 
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{_GEMINI_MODEL}:generateContent?key={api_key}"
+        _t0 = time.monotonic()
         response = requests.post(
             url,
             headers={"Content-Type": "application/json"},
@@ -302,6 +406,7 @@ Return ONLY a JSON object (no markdown):
             },
             timeout=45,
         )
+        _retroactive_gen_time_ms = int((time.monotonic() - _t0) * 1000)
 
         if not response.ok:
             error_msg = response.json().get("error", {}).get("message", "Gemini API error")
@@ -312,6 +417,7 @@ Return ONLY a JSON object (no markdown):
             raise Exception("No response from Gemini API")
 
         content = data["candidates"][0]["content"]["parts"][0]["text"].strip()
+        _retroactive_usage = data.get("usageMetadata", {})
 
         # Strip markdown fences if present
         if "```json" in content:
@@ -339,7 +445,21 @@ Return ONLY a JSON object (no markdown):
         if not validated:
             raise Exception("Gemini returned no valid test cases.")
 
-        return {"function_name": function_name, "test_cases": validated}
+        return {
+            "function_name": function_name,
+            "test_cases": validated,
+            # Flywheel metadata for retroactive instrumentation in the grading blueprint.
+            "_gen_meta": {
+                "gemini_model": _GEMINI_MODEL,
+                "prompt_template_version": PROMPT_TEMPLATE_VERSION,
+                "prompt_tokens": _retroactive_usage.get("promptTokenCount"),
+                "completion_tokens": _retroactive_usage.get("candidatesTokenCount"),
+                "generation_params": {"temperature": 0.3, "maxOutputTokens": 2048},
+                "exercise_type": "retroactive_test_gen",
+                "num_test_cases": len(validated),
+                "generation_time_ms": _retroactive_gen_time_ms,
+            },
+        }
 
     except json.JSONDecodeError as e:
         logger.error("Failed to parse test-case JSON from Gemini: %s", e)

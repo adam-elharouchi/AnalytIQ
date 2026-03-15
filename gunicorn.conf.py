@@ -15,7 +15,7 @@ forwarded_allow_ips = '*'  # trust X-Forwarded-* from Cloudflare/Render proxy
 def post_fork(server, worker):
     """Reset inherited DB pool after fork — workers must not share connections."""
     try:
-        from db import db_pool
+        from core.database import db_pool
         if db_pool is not None:
             db_pool.closeall()
         server.log.info("Worker %s: DB pool reset after fork", worker.pid)
@@ -26,7 +26,7 @@ def post_fork(server, worker):
 def worker_exit(server, worker):
     """Close all DB connections when a worker shuts down cleanly."""
     try:
-        from db import db_pool
+        from core.database import db_pool
         if db_pool is not None:
             db_pool.closeall()
         server.log.info("Worker %s: DB pool closed on exit", worker.pid)
@@ -37,7 +37,7 @@ def worker_exit(server, worker):
 def worker_abort(worker):
     """Close DB connections on worker crash (arity=1 — Gunicorn requirement)."""
     try:
-        from db import db_pool
+        from core.database import db_pool
         if db_pool is not None:
             db_pool.closeall()
     except Exception:

@@ -9,13 +9,13 @@ from datetime import datetime
 from flask import Blueprint, Response, current_app, g, jsonify, request, send_from_directory
 from werkzeug.utils import secure_filename
 
-import cache
+import core.cache as cache
 import config
-import utils
-from audit import audit
-from auth_helpers import require_auth, require_role, validate_fields
-from db import get_db_connection
-from extensions import csrf_exempt
+import core.pagination as utils
+from core.audit import audit
+from core.auth import require_auth, require_role, validate_fields
+from core.database import get_db_connection
+from core.extensions import csrf_exempt
 from repositories import class_repository as class_repo
 
 logger = logging.getLogger(__name__)

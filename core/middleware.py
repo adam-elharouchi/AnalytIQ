@@ -47,7 +47,7 @@ def _refresh_ip_blocklist():
     if now - _ip_cache["ts"] <= _CACHE_TTL:
         return
     try:
-        from db import get_db_connection
+        from core.database import get_db_connection
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute("SELECT ip_address FROM ip_blocklist")
@@ -65,7 +65,7 @@ def _refresh_maintenance():
     if now - _maint_cache["ts"] <= _CACHE_TTL:
         return
     try:
-        from db import get_db_connection
+        from core.database import get_db_connection
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute(

@@ -12,8 +12,8 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.routing import BaseConverter
 
 import config
-from db import close_db_connection  # teardown handler registered below
-from extensions import limiter
+from core.database import close_db_connection  # teardown handler registered below
+from core.extensions import limiter
 
 
 # Early logger — handlers are added below after JSON formatter is configured.
@@ -43,7 +43,7 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
 # Initialize Sentry with proper configuration (PII filtering, etc.)
 try:
-    from sentry_config import init_sentry
+    from core.sentry import init_sentry
 
     init_sentry(app)
 except ImportError:
@@ -332,7 +332,8 @@ from blueprints.content_import import bp as content_import_bp  # noqa: E402
 from blueprints.platform import bp as platform_bp  # noqa: E402
 from blueprints.sso import bp as sso_bp  # noqa: E402
 from blueprints.tenant_admin import bp as tenant_admin_bp  # noqa: E402
-from middleware import check_ip_blocklist, check_maintenance_mode  # noqa: E402
+from blueprints.flywheel import bp as flywheel_bp  # noqa: E402
+from core.middleware import check_ip_blocklist, check_maintenance_mode  # noqa: E402
 
 app.register_blueprint(health_bp)
 app.register_blueprint(ai_bp)
@@ -347,6 +348,7 @@ app.register_blueprint(content_import_bp)
 app.register_blueprint(platform_bp)
 app.register_blueprint(sso_bp)
 app.register_blueprint(tenant_admin_bp)
+app.register_blueprint(flywheel_bp)
 
 # Platform-level request guards (IP blocklist + maintenance mode)
 app.before_request(check_ip_blocklist)
@@ -357,7 +359,7 @@ app.before_request(check_maintenance_mode)
 # Ensures production DB schema is always in sync with the codebase.
 # ---------------------------------------------------------------------------
 try:
-    from db import get_db_connection
+    from core.database import get_db_connection
     from db_migrate import run_migrations
 
     with app.app_context():

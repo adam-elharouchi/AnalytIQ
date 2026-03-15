@@ -30,12 +30,12 @@ class TestConcurrentOperations:
 
     def test_multiple_api_calls_with_caching(self, mock_redis_client):
         """Verify cache improves performance for repeated requests"""
-        with patch('cache.FEATURE_CACHING', True):
-            with patch('cache.redis_client', mock_redis_client):
+        with patch('core.cache.FEATURE_CACHING', True):
+            with patch('core.cache.redis_client', mock_redis_client):
                 # First call - cache miss
                 mock_redis_client.get.return_value = None
                 start_time = time.time()
-                from cache import get_cached
+                from core.cache import get_cached
                 result1 = get_cached('test_key')
                 first_call_time = time.time() - start_time
                 
@@ -55,10 +55,10 @@ class TestCacheInvalidation:
 
     def test_cache_invalidation_on_update(self):
         """Verify cache is invalidated when data is updated"""
-        from cache import set_cached, get_cached, invalidate_cache
+        from core.cache import set_cached, get_cached, invalidate_cache
         
-        with patch('cache.redis_client') as mock_redis:
-            with patch('cache.FEATURE_CACHING', True):
+        with patch('core.cache.redis_client') as mock_redis:
+            with patch('core.cache.FEATURE_CACHING', True):
                 # Set initial cache
                 mock_redis.setex.return_value = True
                 set_cached('class:123', {'title': 'Old Title'}, ttl=300)
@@ -74,10 +74,10 @@ class TestCacheInvalidation:
 
     def test_stale_data_prevention(self):
         """Ensure cache doesn't serve stale data after updates"""
-        from cache import get_cached, set_cached
+        from core.cache import get_cached, set_cached
         
-        with patch('cache.redis_client') as mock_redis:
-            with patch('cache.FEATURE_CACHING', True):
+        with patch('core.cache.redis_client') as mock_redis:
+            with patch('core.cache.FEATURE_CACHING', True):
                 # First read - fresh data
                 mock_redis.get.return_value = '{"title": "Updated Title"}'
                 
@@ -92,10 +92,10 @@ class TestCostControl:
 
     def test_duplicate_exercise_generation_uses_cache(self):
         """Verify duplicate exercise requests use cache instead of calling Gemini API"""
-        from cache import get_cached, set_cached
+        from core.cache import get_cached, set_cached
         
-        with patch('cache.redis_client') as mock_redis:
-            with patch('cache.FEATURE_CACHING', True):
+        with patch('core.cache.redis_client') as mock_redis:
+            with patch('core.cache.FEATURE_CACHING', True):
                 # Simulate cached exercise result
                 cached_exercises = {
                     'exercises': [
@@ -113,7 +113,7 @@ class TestCostControl:
 
     def test_gemini_api_not_called_for_cached_results(self):
         """Ensure Gemini API is not called when results are cached"""
-        with patch('cache.get_cached') as mock_get_cache:
+        with patch('core.cache.get_cached') as mock_get_cache:
             with patch('tasks.generate_exercises_from_pdf_content') as mock_gemini:
                 # Return cached result
                 mock_get_cache.return_value = {'exercises': ['cached']}
@@ -159,7 +159,7 @@ class TestDatabaseConnectionPool:
 
     def test_connection_pool_handles_concurrent_requests(self):
         """Verify connection pool doesn't exhaust under load"""
-        with patch('db.db_pool') as mock_pool:
+        with patch('core.database.db_pool') as mock_pool:
             mock_conn = MagicMock()
             mock_pool.getconn.return_value = mock_conn
 
@@ -175,7 +175,7 @@ class TestDatabaseConnectionPool:
 
     def test_connection_pool_releases_properly(self):
         """Ensure connections are returned to pool after use"""
-        with patch('db.db_pool') as mock_pool:
+        with patch('core.database.db_pool') as mock_pool:
             mock_conn = MagicMock()
             mock_pool.getconn.return_value = mock_conn
 

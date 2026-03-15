@@ -252,7 +252,7 @@ class TestChapters:
 
 class TestAuditLog:
     def test_audit_creates_row(self, tx):
-        from audit import audit, _table_ready
+        from core.audit import audit, _table_ready
         import audit as audit_module
 
         # Force table-creation check to run (in case it's cached as True already).
@@ -278,7 +278,7 @@ class TestAuditLog:
 
     def test_audit_never_raises_on_bad_details(self, tx):
         """audit() must not propagate exceptions — it only logs warnings."""
-        from audit import audit
+        from core.audit import audit
 
         # Pass an un-serializable object — audit() should swallow the error.
         class Unserializable:

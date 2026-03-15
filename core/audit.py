@@ -6,8 +6,8 @@ The table is created by migration 006_core_tables.sql.
 
 Usage::
 
-    from audit import audit
-    from db import get_db_connection
+    from core.audit import audit
+    from core.database import get_db_connection
 
     conn = get_db_connection()
     # ... business operation ...

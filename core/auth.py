@@ -292,7 +292,7 @@ def require_auth(f):
         # Fail open (pass through) if the DB check itself errors, so a DB
         # hiccup does not lock out all users.
         try:
-            from db import get_db_connection
+            from core.database import get_db_connection
 
             _conn = get_db_connection()
             _cur = _conn.cursor()

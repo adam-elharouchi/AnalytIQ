@@ -2,7 +2,7 @@
 Unit tests for utility functions (utils.py)
 """
 import pytest
-from utils import get_pagination_params, build_pagination_metadata, build_paginated_response
+from core.pagination import get_pagination_params, build_pagination_metadata, build_paginated_response
 from unittest.mock import Mock
 
 

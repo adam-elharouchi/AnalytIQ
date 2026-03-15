@@ -8,7 +8,7 @@ Routes (no auth required):
 import logging
 from flask import Blueprint, jsonify, request
 
-from db import get_db_connection
+from core.database import get_db_connection
 
 logger = logging.getLogger(__name__)
 bp = Blueprint("platform", __name__)

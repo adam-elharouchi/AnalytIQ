@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from dotenv import load_dotenv
 import psycopg2
-from supabase_storage import migrate_pdf_from_db, supabase
+from core.storage import migrate_pdf_from_db, supabase
 
 # Load environment variables
 load_dotenv()
