@@ -143,7 +143,7 @@ except ImportError:
 
 try:
     from flask_swagger_ui import get_swaggerui_blueprint
-    import api_docs
+    import blueprints.api_docs as api_docs
 
     # Swagger UI configuration
     SWAGGER_URL = "/api/docs"
