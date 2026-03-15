@@ -25,19 +25,19 @@ class TestTasksImportErrors:
 
         # Save original state
         orig_extract = tasks_module.extract_text_from_pdf_bytes
-        orig_pdf_mod = sys.modules.get("pdf_processor")
+        orig_pdf_mod = sys.modules.get("services.content_extractor")
 
         try:
             # Simulate ImportError by setting module to None in sys.modules
-            sys.modules["pdf_processor"] = None
+            sys.modules["services.content_extractor"] = None
             importlib.reload(tasks_module)
             assert tasks_module.extract_text_from_pdf_bytes is None
         finally:
             # Restore
             if orig_pdf_mod is not None:
-                sys.modules["pdf_processor"] = orig_pdf_mod
+                sys.modules["services.content_extractor"] = orig_pdf_mod
             else:
-                sys.modules.pop("pdf_processor", None)
+                sys.modules.pop("services.content_extractor", None)
             importlib.reload(tasks_module)
 
     def test_exercise_generator_import_error(self):
@@ -45,17 +45,17 @@ class TestTasksImportErrors:
         import tasks as tasks_module
 
         orig_gen = tasks_module.generate_exercises_from_pdf_content
-        orig_gen_mod = sys.modules.get("exercise_generator")
+        orig_gen_mod = sys.modules.get("services.exercise_generator")
 
         try:
-            sys.modules["exercise_generator"] = None
+            sys.modules["services.exercise_generator"] = None
             importlib.reload(tasks_module)
             assert tasks_module.generate_exercises_from_pdf_content is None
         finally:
             if orig_gen_mod is not None:
-                sys.modules["exercise_generator"] = orig_gen_mod
+                sys.modules["services.exercise_generator"] = orig_gen_mod
             else:
-                sys.modules.pop("exercise_generator", None)
+                sys.modules.pop("services.exercise_generator", None)
             importlib.reload(tasks_module)
 
     def test_resend_import_error(self):

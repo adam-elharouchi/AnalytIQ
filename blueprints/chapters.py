@@ -25,7 +25,6 @@ logger = logging.getLogger(__name__)
 bp = Blueprint("chapters", __name__)
 
 # Add python directory to path for content extractor and exercise generator
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "python"))
 try:
     import content_extractor
 except ImportError:
@@ -33,7 +32,7 @@ except ImportError:
     content_extractor = None
 
 try:
-    from exercise_generator import generate_exercises_from_pdf_content
+    from services.exercise_generator import generate_exercises_from_pdf_content
 except ImportError:
     logger.warning("Exercise generator not available. Exercise generation will not work.")
     generate_exercises_from_pdf_content = None

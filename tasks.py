@@ -16,16 +16,15 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 # Add python directory to path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "python"))
 
 # Import PDF processor and exercise generator
 try:
-    from pdf_processor import extract_text_from_pdf_bytes
+    from services.content_extractor import extract_text_from_pdf_bytes
 except ImportError:
     extract_text_from_pdf_bytes = None
 
 try:
-    from exercise_generator import generate_exercises_from_pdf_content
+    from services.exercise_generator import generate_exercises_from_pdf_content
 except ImportError:
     generate_exercises_from_pdf_content = None
 
