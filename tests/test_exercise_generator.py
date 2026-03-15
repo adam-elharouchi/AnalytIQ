@@ -101,12 +101,11 @@ class TestExerciseGeneration:
                 api_key="test_key"
             )
 
-            # Verify the prompt was truncated to 10000 chars
+            # Verify the content was truncated to 10000 chars (not all 15k)
             call_args = mock_post.call_args
             prompt = call_args[1]["json"]["contents"][0]["parts"][0]["text"]
-            # The truncated text should be in the prompt
-            assert "AAAA" in prompt  # Some of the A's should be there
-            assert len(prompt) < len(long_text)  # But not all 15k
+            assert "A" * 10000 in prompt       # 10k consecutive A's present
+            assert "A" * 15000 not in prompt   # But not all 15k
 
     def test_generate_exercises_handles_markdown_json(self):
         """Test extraction of JSON from markdown code blocks"""

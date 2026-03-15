@@ -80,7 +80,7 @@ class TestAppImportErrorFlaskLimiter:
         # flask_limiter at app reload time doesn't affect the limiter object.
         # Just verify the app module still has a limiter attribute.
         import app as app_module
-        import extensions
+        import core.extensions as extensions
         assert hasattr(app_module, "limiter") or hasattr(extensions, "limiter")
 
 

@@ -9,11 +9,11 @@ import json
 class TestCacheOperations:
     """Tests for basic cache operations"""
     
-    @patch('cache.FEATURE_CACHING', True)
-    @patch('cache.redis_client')
+    @patch('core.cache.FEATURE_CACHING', True)
+    @patch('core.cache.redis_client')
     def test_get_cached_hit(self, mock_redis):
         """Test cache hit returns cached value"""
-        from cache import get_cached
+        from core.cache import get_cached
         
         # Mock Redis returning cached data
         cached_data = json.dumps({'result': 'cached'})
@@ -24,11 +24,11 @@ class TestCacheOperations:
         assert result == {'result': 'cached'}
         mock_redis.get.assert_called_once_with('test_key')
     
-    @patch('cache.FEATURE_CACHING', True)
-    @patch('cache.redis_client')
+    @patch('core.cache.FEATURE_CACHING', True)
+    @patch('core.cache.redis_client')
     def test_get_cached_miss(self, mock_redis):
         """Test cache miss returns None"""
-        from cache import get_cached
+        from core.cache import get_cached
         
         # Mock Redis returning None (cache miss)
         mock_redis.get.return_value = None
@@ -38,11 +38,11 @@ class TestCacheOperations:
         assert result is None
         mock_redis.get.assert_called_once_with('test_key')
     
-    @patch('cache.FEATURE_CACHING', True)
-    @patch('cache.redis_client')
+    @patch('core.cache.FEATURE_CACHING', True)
+    @patch('core.cache.redis_client')
     def test_set_cached_success(self, mock_redis):
         """Test setting cache value"""
-        from cache import set_cached
+        from core.cache import set_cached
         
         mock_redis.setex.return_value = True
         
@@ -55,11 +55,11 @@ class TestCacheOperations:
         assert call_args[1] == 300
         assert json.loads(call_args[2]) == {'data': 'value'}
     
-    @patch('cache.FEATURE_CACHING', True)
-    @patch('cache.redis_client')
+    @patch('core.cache.FEATURE_CACHING', True)
+    @patch('core.cache.redis_client')
     def test_invalidate_cache_single_key(self, mock_redis):
         """Test invalidating single cache key"""
-        from cache import invalidate_cache
+        from core.cache import invalidate_cache
         
         mock_redis.keys.return_value = ['test_key']
         mock_redis.delete.return_value = 1
@@ -70,11 +70,11 @@ class TestCacheOperations:
         mock_redis.keys.assert_called_once_with('test_key')
         mock_redis.delete.assert_called_once_with('test_key')
     
-    @patch('cache.FEATURE_CACHING', True)
-    @patch('cache.redis_client')
+    @patch('core.cache.FEATURE_CACHING', True)
+    @patch('core.cache.redis_client')
     def test_invalidate_cache_pattern(self, mock_redis):
         """Test invalidating cache by pattern"""
-        from cache import invalidate_cache
+        from core.cache import invalidate_cache
         
         # Mock Redis keys() returning matching keys
         mock_redis.keys.return_value = ['user:1', 'user:2', 'user:3']
@@ -86,10 +86,10 @@ class TestCacheOperations:
         mock_redis.keys.assert_called_once_with('user:*')
         mock_redis.delete.assert_called_once_with('user:1', 'user:2', 'user:3')
     
-    @patch('cache.FEATURE_CACHING', False)
+    @patch('core.cache.FEATURE_CACHING', False)
     def test_cache_disabled(self):
         """Test cache operations when feature disabled"""
-        from cache import get_cached, set_cached, invalidate_cache
+        from core.cache import get_cached, set_cached, invalidate_cache
         
         assert get_cached('key') is None
         assert set_cached('key', 'value') is False
@@ -99,10 +99,10 @@ class TestCacheOperations:
 class TestCacheHealthCheck:
     """Tests for cache_health_check function"""
     
-    @patch('cache.redis_client')
+    @patch('core.cache.redis_client')
     def test_health_check_healthy(self, mock_redis):
         """Test health check when Redis is healthy"""
-        from cache import cache_health_check
+        from core.cache import cache_health_check
         
         mock_redis.ping.return_value = True
         mock_redis.info.return_value = {
@@ -120,20 +120,20 @@ class TestCacheHealthCheck:
         assert result['stats']['total_connections'] == 100
         assert result['stats']['keyspace_hits'] == 800
     
-    @patch('cache.redis_client', None)
+    @patch('core.cache.redis_client', None)
     def test_health_check_no_client(self):
         """Test health check when Redis client not initialized"""
-        from cache import cache_health_check
+        from core.cache import cache_health_check
         
         result = cache_health_check()
         
         assert result['healthy'] is False
         assert result['message'] == 'Redis client not initialized'
     
-    @patch('cache.redis_client')
+    @patch('core.cache.redis_client')
     def test_health_check_connection_error(self, mock_redis):
         """Test health check when Redis connection fails"""
-        from cache import cache_health_check
+        from core.cache import cache_health_check
         
         mock_redis.ping.side_effect = Exception('Connection refused')
         
@@ -146,10 +146,10 @@ class TestCacheHealthCheck:
 class TestCacheStats:
     """Tests for get_cache_stats function"""
     
-    @patch('cache.redis_client')
+    @patch('core.cache.redis_client')
     def test_get_stats_success(self, mock_redis):
         """Test getting cache statistics"""
-        from cache import get_cache_stats
+        from core.cache import get_cache_stats
         
         mock_redis.info.return_value = {
             'keyspace_hits': 1500,
@@ -162,10 +162,10 @@ class TestCacheStats:
         assert stats['misses'] == 500
         assert stats['hit_rate_percent'] == 75.0
     
-    @patch('cache.redis_client')
+    @patch('core.cache.redis_client')
     def test_get_stats_zero_division(self, mock_redis):
         """Test stats with zero hits and misses"""
-        from cache import get_cache_stats
+        from core.cache import get_cache_stats
         
         mock_redis.info.return_value = {
             'keyspace_hits': 0,
@@ -176,10 +176,10 @@ class TestCacheStats:
         
         assert stats['hit_rate_percent'] == 0.0
     
-    @patch('cache.redis_client', None)
+    @patch('core.cache.redis_client', None)
     def test_get_stats_no_client(self):
         """Test stats when client not initialized"""
-        from cache import get_cache_stats
+        from core.cache import get_cache_stats
         
         stats = get_cache_stats()
         

@@ -12,7 +12,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app import app
-from db import get_db_connection
+from core.database import get_db_connection
 
 def drop_legacy_column():
     print("Initiating DROP COLUMN operation for 'is_super_admin'...")

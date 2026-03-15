@@ -29,8 +29,8 @@ def mock_sentry_sdk():
 
     with patch.dict(sys.modules, modules):
         # Force reimport of sentry_config with mocked modules
-        if 'sentry_config' in sys.modules:
-            del sys.modules['sentry_config']
+        if 'core.sentry' in sys.modules:
+            del sys.modules['core.sentry']
         yield mock_sdk
 
 
@@ -39,7 +39,7 @@ class TestSentryInitialization:
 
     def test_sentry_init_with_dsn(self, mock_sentry_sdk):
         """Test Sentry initializes when DSN is set"""
-        import sentry_config
+        import core.sentry as sentry_config
 
         mock_app = MagicMock()
         mock_app.logger = MagicMock()
@@ -52,7 +52,7 @@ class TestSentryInitialization:
 
     def test_sentry_init_without_dsn(self, mock_sentry_sdk):
         """Test Sentry skips initialization when DSN is not set"""
-        import sentry_config
+        import core.sentry as sentry_config
 
         mock_app = MagicMock()
         mock_app.logger = MagicMock()
@@ -72,7 +72,7 @@ class TestSentryInitialization:
 
     def test_sentry_init_default_environment(self, mock_sentry_sdk):
         """Test Sentry uses default environment"""
-        import sentry_config
+        import core.sentry as sentry_config
 
         mock_app = MagicMock()
         mock_app.logger = MagicMock()
@@ -88,7 +88,7 @@ class TestFilterSensitiveData:
 
     def test_filter_authorization_header(self, mock_sentry_sdk):
         """Test Authorization header is filtered"""
-        import sentry_config
+        import core.sentry as sentry_config
 
         event = {
             'request': {
@@ -105,7 +105,7 @@ class TestFilterSensitiveData:
 
     def test_filter_cookie_header(self, mock_sentry_sdk):
         """Test Cookie header is filtered"""
-        import sentry_config
+        import core.sentry as sentry_config
 
         event = {
             'request': {
@@ -120,7 +120,7 @@ class TestFilterSensitiveData:
 
     def test_filter_api_key_header(self, mock_sentry_sdk):
         """Test X-API-Key header is filtered"""
-        import sentry_config
+        import core.sentry as sentry_config
 
         event = {
             'request': {
@@ -135,7 +135,7 @@ class TestFilterSensitiveData:
 
     def test_filter_password_in_post_data(self, mock_sentry_sdk):
         """Test password is filtered from POST data"""
-        import sentry_config
+        import core.sentry as sentry_config
 
         event = {
             'request': {
@@ -152,7 +152,7 @@ class TestFilterSensitiveData:
 
     def test_filter_api_key_in_post_data(self, mock_sentry_sdk):
         """Test api_key is filtered from POST data"""
-        import sentry_config
+        import core.sentry as sentry_config
 
         event = {
             'request': {
@@ -169,7 +169,7 @@ class TestFilterSensitiveData:
 
     def test_filter_token_in_post_data(self, mock_sentry_sdk):
         """Test token and secret are filtered"""
-        import sentry_config
+        import core.sentry as sentry_config
 
         event = {
             'request': {
@@ -186,7 +186,7 @@ class TestFilterSensitiveData:
 
     def test_filter_no_request(self, mock_sentry_sdk):
         """Test filter handles events without request"""
-        import sentry_config
+        import core.sentry as sentry_config
 
         event = {'message': 'test error'}
         result = sentry_config.filter_sensitive_data(event, {})
@@ -194,7 +194,7 @@ class TestFilterSensitiveData:
 
     def test_filter_non_dict_data(self, mock_sentry_sdk):
         """Test filter handles non-dict POST data"""
-        import sentry_config
+        import core.sentry as sentry_config
 
         event = {
             'request': {
@@ -210,7 +210,7 @@ class TestCaptureException:
 
     def test_capture_exception_with_context(self, mock_sentry_sdk):
         """Test capturing exception with additional context"""
-        import sentry_config
+        import core.sentry as sentry_config
 
         test_exception = ValueError("test error")
         context = {'user_id': 'user123', 'operation': 'pdf_upload'}
@@ -221,7 +221,7 @@ class TestCaptureException:
 
     def test_capture_exception_without_context(self, mock_sentry_sdk):
         """Test capturing exception without context"""
-        import sentry_config
+        import core.sentry as sentry_config
 
         test_exception = ValueError("test error")
 
@@ -235,7 +235,7 @@ class TestCaptureMessage:
 
     def test_capture_message_with_context(self, mock_sentry_sdk):
         """Test capturing message with context"""
-        import sentry_config
+        import core.sentry as sentry_config
 
         sentry_config.capture_message(
             "Test message",
@@ -247,7 +247,7 @@ class TestCaptureMessage:
 
     def test_capture_message_without_context(self, mock_sentry_sdk):
         """Test capturing message without context"""
-        import sentry_config
+        import core.sentry as sentry_config
 
         sentry_config.capture_message("Test message", level='info')
 
@@ -255,7 +255,7 @@ class TestCaptureMessage:
 
     def test_capture_message_default_level(self, mock_sentry_sdk):
         """Test capturing message with default level"""
-        import sentry_config
+        import core.sentry as sentry_config
 
         sentry_config.capture_message("Test message")
 

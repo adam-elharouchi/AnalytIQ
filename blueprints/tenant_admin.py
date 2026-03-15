@@ -27,10 +27,10 @@ Routes:
 import logging
 from flask import Blueprint, jsonify, request, g
 
-from auth_helpers import require_auth, require_tenant_admin, create_jwt_token
-from audit import audit
-from db import get_db_connection
-from extensions import csrf_exempt, rate_limit
+from core.auth import require_auth, require_tenant_admin, create_jwt_token
+from core.audit import audit
+from core.database import get_db_connection
+from core.extensions import csrf_exempt, rate_limit
 
 
 logger = logging.getLogger(__name__)

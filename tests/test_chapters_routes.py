@@ -27,7 +27,7 @@ AUTH_PROF = {"X-Test-User-ID": "prof-user-id", "X-Test-User-Role": "professor"}
 class TestGetUploadUrl:
     def test_returns_upload_url_and_storage_path(self, client, mock_db):
         """Authenticated user gets presigned upload URL and storage_path."""
-        with patch("supabase_storage.get_presigned_upload_url") as mock_presigned:
+        with patch("core.storage.get_presigned_upload_url") as mock_presigned:
             mock_presigned.return_value = {"signedURL": "https://supabase.example.com/upload"}
 
             resp = client.get(
@@ -42,7 +42,7 @@ class TestGetUploadUrl:
 
     def test_returns_503_when_storage_unavailable(self, client, mock_db):
         """When storage returns None, endpoint returns 503."""
-        with patch("supabase_storage.get_presigned_upload_url") as mock_presigned:
+        with patch("core.storage.get_presigned_upload_url") as mock_presigned:
             mock_presigned.return_value = None
 
             resp = client.get(

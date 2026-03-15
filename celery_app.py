@@ -4,6 +4,7 @@ Handles async task processing for PDF operations and email sending
 """
 
 from celery import Celery
+from celery.schedules import crontab
 import config
 
 # Redis URL for broker and result backend
@@ -42,6 +43,7 @@ celery_app.conf.task_routes = {
     "tasks.process_pdf_and_extract_text": {"queue": "pdf_processing"},
     "tasks.generate_exercises_async": {"queue": "ai_tasks"},
     "tasks.send_email_async": {"queue": "emails"},
+    "tasks.compute_exercise_quality_scores": {"queue": "ai_tasks"},
 }
 
 # Periodic task schedule (requires celery beat)
@@ -49,6 +51,11 @@ celery_app.conf.beat_schedule = {
     "cleanup-expired-lti-sessions-daily": {
         "task": "tasks.cleanup_expired_lti_sessions",
         "schedule": 86400,  # once per day (seconds)
+    },
+    "compute-exercise-quality": {
+        "task": "tasks.compute_exercise_quality_scores",
+        "schedule": crontab(hour="*/6"),  # every 6 hours
+        "options": {"queue": "ai_tasks"},
     },
 }
 

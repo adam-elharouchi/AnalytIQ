@@ -86,7 +86,7 @@ class TestCacheRedisException:
 
     def test_redis_connection_fails(self):
         """Lines 29-31: redis.ping() raises, redis_client set to None"""
-        import cache as cache_module
+        import core.cache as cache_module
 
         orig_client = cache_module.redis_client
         orig_redis_mod = sys.modules.get("redis")
@@ -118,7 +118,7 @@ class TestSupabaseStorageInit:
 
     def test_supabase_no_credentials(self):
         """Lines 25-26: SUPABASE_URL/KEY not set"""
-        import supabase_storage as supa_module
+        import core.storage as supa_module
 
         orig_supabase = supa_module.supabase
         orig_url = supa_module.SUPABASE_URL
@@ -136,7 +136,7 @@ class TestSupabaseStorageInit:
 
     def test_supabase_import_error(self):
         """Lines 27-29: supabase library not installed"""
-        import supabase_storage as supa_module
+        import core.storage as supa_module
 
         orig_supabase = supa_module.supabase
         orig_supa_mod = sys.modules.get("supabase")
