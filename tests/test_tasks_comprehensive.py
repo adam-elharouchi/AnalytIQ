@@ -12,7 +12,7 @@ class TestDatabaseTask:
 
     def test_get_db_connection_creates_pool(self):
         """Test database connection pool creation"""
-        from tasks import DatabaseTask
+        from workers.tasks import DatabaseTask
 
         task = DatabaseTask()
         
@@ -28,7 +28,7 @@ class TestDatabaseTask:
 
     def test_get_db_connection_reuses_connection(self):
         """Test that connection is reused"""
-        from tasks import DatabaseTask
+        from workers.tasks import DatabaseTask
 
         task = DatabaseTask()
         
@@ -46,7 +46,7 @@ class TestDatabaseTask:
 
     def test_get_db_connection_no_url(self):
         """Test error when DATABASE_URL is missing"""
-        from tasks import DatabaseTask
+        from workers.tasks import DatabaseTask
 
         task = DatabaseTask()
         
@@ -57,7 +57,7 @@ class TestDatabaseTask:
 
     def test_close_db_connection(self):
         """Test closing database connection"""
-        from tasks import DatabaseTask
+        from workers.tasks import DatabaseTask
 
         task = DatabaseTask()
         
@@ -78,12 +78,12 @@ class TestProcessPDFTask:
 
     def test_process_pdf_success(self):
         """Test successful PDF processing"""
-        from tasks import process_pdf_and_extract_text
+        from workers.tasks import process_pdf_and_extract_text
 
         pdf_bytes = b"fake pdf content"
         chapter_id = "chapter123"
 
-        with patch("tasks.extract_text_from_pdf_bytes") as mock_extract:
+        with patch("workers.tasks.extract_text_from_pdf_bytes") as mock_extract:
             mock_extract.return_value = "Extracted text from PDF"
             
             with patch.object(process_pdf_and_extract_text, "get_db_connection") as mock_get_conn:
@@ -101,9 +101,9 @@ class TestProcessPDFTask:
 
     def test_process_pdf_no_processor(self):
         """Test when PDF processor is not available"""
-        from tasks import process_pdf_and_extract_text
+        from workers.tasks import process_pdf_and_extract_text
 
-        with patch("tasks.extract_text_from_pdf_bytes", None):
+        with patch("workers.tasks.extract_text_from_pdf_bytes", None):
             result = process_pdf_and_extract_text(b"pdf bytes", "chapter123")
 
             assert result["success"] is False
@@ -111,9 +111,9 @@ class TestProcessPDFTask:
 
     def test_process_pdf_extraction_fails(self):
         """Test when PDF extraction fails"""
-        from tasks import process_pdf_and_extract_text
+        from workers.tasks import process_pdf_and_extract_text
 
-        with patch("tasks.extract_text_from_pdf_bytes") as mock_extract:
+        with patch("workers.tasks.extract_text_from_pdf_bytes") as mock_extract:
             mock_extract.return_value = None  # Extraction failed
             
             with patch.object(process_pdf_and_extract_text, "get_db_connection") as mock_get_conn:
@@ -130,7 +130,7 @@ class TestGenerateExercisesTask:
 
     def test_generate_exercises_success(self):
         """Test successful exercise generation"""
-        from tasks import generate_exercises_async
+        from workers.tasks import generate_exercises_async
 
         pdf_text = "Sample chapter content"
         chapter_title = "Chapter 1"
@@ -142,7 +142,7 @@ class TestGenerateExercisesTask:
             {"title": "Exercise 1", "description": "Test", "difficulty": "easy", "solution_code": "print('test')"}
         ]
 
-        with patch("tasks.generate_exercises_from_pdf_content") as mock_generate:
+        with patch("workers.tasks.generate_exercises_from_pdf_content") as mock_generate:
             mock_generate.return_value = mock_exercises
             
             with patch.object(generate_exercises_async, "get_db_connection") as mock_get_conn:
@@ -158,9 +158,9 @@ class TestGenerateExercisesTask:
 
     def test_generate_exercises_no_generator(self):
         """Test when exercise generator is not available"""
-        from tasks import generate_exercises_async
+        from workers.tasks import generate_exercises_async
 
-        with patch("tasks.generate_exercises_from_pdf_content", None):
+        with patch("workers.tasks.generate_exercises_from_pdf_content", None):
             result = generate_exercises_async("text", "title", "chapter123", "class123", "key")
 
             assert result["success"] is False
@@ -168,9 +168,9 @@ class TestGenerateExercisesTask:
 
     def test_generate_exercises_api_error(self):
         """Test when API fails"""
-        from tasks import generate_exercises_async
+        from workers.tasks import generate_exercises_async
 
-        with patch("tasks.generate_exercises_from_pdf_content") as mock_generate:
+        with patch("workers.tasks.generate_exercises_from_pdf_content") as mock_generate:
             mock_generate.side_effect = Exception("API error")
 
             result = generate_exercises_async("text", "title", "chapter123", "class123", "key")
@@ -184,7 +184,7 @@ class TestSendEmailTask:
 
     def test_send_email_async_exists(self):
         """Test that send_email_async function exists"""
-        from tasks import send_email_async
+        from workers.tasks import send_email_async
         
         # Just verify the function exists
         assert callable(send_email_async)
@@ -196,10 +196,10 @@ class TestProcessChapterTask:
 
     def test_process_chapter_with_pdf(self):
         """Test processing chapter with PDF"""
-        from tasks import process_chapter_upload
+        from workers.tasks import process_chapter_upload
 
-        with patch("tasks.process_pdf_and_extract_text") as mock_pdf:
-            with patch("tasks.generate_exercises_async") as mock_exercises:
+        with patch("workers.tasks.process_pdf_and_extract_text") as mock_pdf:
+            with patch("workers.tasks.generate_exercises_async") as mock_exercises:
                 mock_pdf.return_value = {"success": True, "text_length": 1000, "pdf_text": "Sample text"}
                 mock_exercises.return_value = {"success": True, "exercise_count": 3}
 
@@ -217,9 +217,9 @@ class TestProcessChapterTask:
 
     def test_process_chapter_without_exercises(self):
         """Test processing chapter without generating exercises"""
-        from tasks import process_chapter_upload
+        from workers.tasks import process_chapter_upload
 
-        with patch("tasks.process_pdf_and_extract_text") as mock_pdf:
+        with patch("workers.tasks.process_pdf_and_extract_text") as mock_pdf:
             mock_pdf.return_value = {"success": True, "text_length": 1000, "pdf_text": "Sample text"}
 
             result = process_chapter_upload(

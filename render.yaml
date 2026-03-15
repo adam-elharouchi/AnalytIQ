@@ -36,7 +36,7 @@ services:
     name: analytiq-worker
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: celery -A celery_app.celery_app worker --loglevel=info --concurrency=2
+    startCommand: celery -A workers.celery_app.celery_app worker --loglevel=info --concurrency=2
     envVars:
       - key: FLASK_ENV
         value: production
