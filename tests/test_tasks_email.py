@@ -9,8 +9,8 @@ class TestSendEmailAsync:
     """Cover send_email_async paths in tasks.py"""
 
     def test_send_email_no_resend_installed(self):
-        from tasks import send_email_async
-        import tasks as tasks_module
+        from workers.tasks import send_email_async
+        import workers.tasks as tasks_module
 
         original_resend = getattr(tasks_module, "resend", None)
         try:
@@ -26,8 +26,8 @@ class TestSendEmailAsync:
             tasks_module.resend = original_resend
 
     def test_send_email_no_api_key(self):
-        from tasks import send_email_async
-        import tasks as tasks_module
+        from workers.tasks import send_email_async
+        import workers.tasks as tasks_module
 
         original_resend = getattr(tasks_module, "resend", None)
         if not original_resend:
@@ -44,8 +44,8 @@ class TestSendEmailAsync:
                 assert "missing" in result.get("error", "").lower()
 
     def test_send_email_success(self):
-        from tasks import send_email_async
-        import tasks as tasks_module
+        from workers.tasks import send_email_async
+        import workers.tasks as tasks_module
 
         original_resend = getattr(tasks_module, "resend", None)
         if not original_resend:

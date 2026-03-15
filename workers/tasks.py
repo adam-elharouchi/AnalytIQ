@@ -7,7 +7,7 @@ import logging
 import os
 import sys
 from celery import Task
-from celery_app import celery_app
+from workers.celery_app import celery_app
 from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)

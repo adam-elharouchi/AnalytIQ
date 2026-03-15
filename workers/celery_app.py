@@ -12,7 +12,7 @@ REDIS_URL = config.REDIS_URL
 
 # Initialize Celery
 celery_app = Celery(
-    "analytiq", broker=REDIS_URL, backend=REDIS_URL, include=["tasks"]  # Import tasks module
+    "analytiq", broker=REDIS_URL, backend=REDIS_URL, include=["workers.tasks"]  # Import tasks module
 )
 
 # Celery Configuration
@@ -40,20 +40,20 @@ celery_app.conf.update(
 
 # Task routes (optional - for multiple queues)
 celery_app.conf.task_routes = {
-    "tasks.process_pdf_and_extract_text": {"queue": "pdf_processing"},
-    "tasks.generate_exercises_async": {"queue": "ai_tasks"},
-    "tasks.send_email_async": {"queue": "emails"},
-    "tasks.compute_exercise_quality_scores": {"queue": "ai_tasks"},
+    "workers.tasks.process_pdf_and_extract_text": {"queue": "pdf_processing"},
+    "workers.tasks.generate_exercises_async": {"queue": "ai_tasks"},
+    "workers.tasks.send_email_async": {"queue": "emails"},
+    "workers.tasks.compute_exercise_quality_scores": {"queue": "ai_tasks"},
 }
 
 # Periodic task schedule (requires celery beat)
 celery_app.conf.beat_schedule = {
     "cleanup-expired-lti-sessions-daily": {
-        "task": "tasks.cleanup_expired_lti_sessions",
+        "task": "workers.tasks.cleanup_expired_lti_sessions",
         "schedule": 86400,  # once per day (seconds)
     },
     "compute-exercise-quality": {
-        "task": "tasks.compute_exercise_quality_scores",
+        "task": "workers.tasks.compute_exercise_quality_scores",
         "schedule": crontab(hour="*/6"),  # every 6 hours
         "options": {"queue": "ai_tasks"},
     },

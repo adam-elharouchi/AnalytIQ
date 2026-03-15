@@ -21,7 +21,7 @@ class TestTasksImportErrors:
 
     def test_pdf_processor_import_error(self):
         """Lines 21-22: pdf_processor import fails"""
-        import tasks as tasks_module
+        import workers.tasks as tasks_module
 
         # Save original state
         orig_extract = tasks_module.extract_text_from_pdf_bytes
@@ -42,7 +42,7 @@ class TestTasksImportErrors:
 
     def test_exercise_generator_import_error(self):
         """Lines 26-27: exercise_generator import fails"""
-        import tasks as tasks_module
+        import workers.tasks as tasks_module
 
         orig_gen = tasks_module.generate_exercises_from_pdf_content
         orig_gen_mod = sys.modules.get("services.exercise_generator")
@@ -60,7 +60,7 @@ class TestTasksImportErrors:
 
     def test_resend_import_error(self):
         """Lines 32-35: resend import fails"""
-        import tasks as tasks_module
+        import workers.tasks as tasks_module
 
         orig_resend = getattr(tasks_module, "resend", None)
         orig_resend_mod = sys.modules.get("resend")
@@ -162,7 +162,7 @@ class TestCeleryAppMain:
 
     def test_celery_main_block(self):
         """Line 52: celery_app.start() when run as __main__"""
-        import celery_app as celery_module
+        import workers.celery_app as celery_module
 
         # Read the source file and exec it with __name__ = "__main__"
         import types
@@ -180,7 +180,7 @@ class TestCeleryAppMain:
         with patch("celery.Celery", mock_celery_class):
             with patch("dotenv.load_dotenv"):
                 source_path = os.path.join(
-                    os.path.dirname(os.path.dirname(__file__)), "celery_app.py"
+                    os.path.dirname(os.path.dirname(__file__)), "workers", "celery_app.py"
                 )
                 with open(source_path) as f:
                     code = f.read()

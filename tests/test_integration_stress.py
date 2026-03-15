@@ -14,7 +14,7 @@ class TestConcurrentOperations:
         """Verify browsing doesn't slow down during background PDF processing"""
         # Simulate PDF upload starting
         with patch('app.FEATURE_ASYNC_TASKS', True):
-            with patch('tasks.process_pdf_and_extract_text.delay') as mock_task:
+            with patch('workers.tasks.process_pdf_and_extract_text.delay') as mock_task:
                 mock_task.return_value.id = 'test-task-123'
                 
                 # Start timing
@@ -114,7 +114,7 @@ class TestCostControl:
     def test_gemini_api_not_called_for_cached_results(self):
         """Ensure Gemini API is not called when results are cached"""
         with patch('core.cache.get_cached') as mock_get_cache:
-            with patch('tasks.generate_exercises_from_pdf_content') as mock_gemini:
+            with patch('workers.tasks.generate_exercises_from_pdf_content') as mock_gemini:
                 # Return cached result
                 mock_get_cache.return_value = {'exercises': ['cached']}
                 
@@ -131,7 +131,7 @@ class TestBackgroundTaskResilience:
 
     def test_task_failure_doesnt_crash_app(self):
         """Verify app continues running even if background task fails"""
-        with patch('tasks.process_pdf_and_extract_text.delay') as mock_task:
+        with patch('workers.tasks.process_pdf_and_extract_text.delay') as mock_task:
             # Simulate task failure
             mock_task.side_effect = Exception("Task failed")
             
@@ -144,7 +144,7 @@ class TestBackgroundTaskResilience:
 
     def test_task_retry_mechanism(self):
         """Verify tasks retry on failure"""
-        with patch('tasks.process_pdf_and_extract_text.retry') as mock_retry:
+        with patch('workers.tasks.process_pdf_and_extract_text.retry') as mock_retry:
             mock_retry.return_value = True
             
             # Simulate retry

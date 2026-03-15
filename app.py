@@ -177,7 +177,7 @@ except ImportError:
 # ============================================================================
 
 try:
-    from celery_app import celery_app
+    from workers.celery_app import celery_app
 
     # Feature flag for async processing
     FEATURE_ASYNC_TASKS = os.getenv("FEATURE_ASYNC_TASKS", "False").lower() == "true"
