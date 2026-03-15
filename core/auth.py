@@ -163,6 +163,7 @@ def hash_password_legacy(password):
     DEPRECATED: Legacy hash function for backward compatibility only.
     This function is insecure and should not be used for new passwords.
     Kept only to verify old passwords during migration period.
+    Remove once all legacy hashes are confirmed migrated (run scripts/check_legacy_hashes.py).
     """
     hash_val = 0
     for char in password:
