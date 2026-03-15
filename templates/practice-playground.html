@@ -761,11 +761,11 @@
 
 {% block scripts %}
 <!-- JS load order: api-helper.js (head) → auth.js → navigation.js → ai-agent.js (CodeWriterAgent) → code-assistant.js -->
-  <script src="js/auth.js"></script>
-  <script src="js/navigation.js"></script>
+  <script src="/static/js/auth.js"></script>
+  <script src="/static/js/navigation.js"></script>
 
-  <script src="js/ai-agent.js"></script>
-  <script src="js/code-assistant.js?v=1.1"></script>
+  <script src="/static/js/ai-agent.js"></script>
+  <script src="/static/js/code-assistant.js?v=1.1"></script>
   <script>
     // Playground chat history (separate from main code assistant)
     let playgroundChatHistory = [];
