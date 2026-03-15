@@ -12,8 +12,8 @@ from core.database import get_db_connection
 from core.extensions import csrf_exempt
 from repositories import exercise_repository as exercise_repo
 from repositories import flywheel_repository as flywheel_repo
-from python.code_runner import run_test_cases
-from python.exercise_generator import generate_test_cases_for_exercise
+from services.code_runner import run_test_cases
+from services.exercise_generator import generate_test_cases_for_exercise
 
 logger = logging.getLogger(__name__)
 bp = Blueprint("exercises", __name__)

@@ -21,7 +21,6 @@ from core.extensions import limiter
 logger = logging.getLogger("analytiq")
 
 # Add python directory to path for PDF processor and exercise generator
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "python"))
 try:
     from pdf_processor import extract_text_from_pdf_bytes
 except ImportError:

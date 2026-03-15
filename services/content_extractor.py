@@ -56,11 +56,6 @@ def extract_text(file_bytes: bytes, filename: str, max_size_mb: float = 50.0) ->
 
 
 def _extract_pdf(file_bytes: bytes) -> str:
-    try:
-        from pdf_processor import extract_text_from_pdf_bytes
-    except ImportError:
-        raise ValueError("PDF support requires PyPDF2 package")
-
     result = extract_text_from_pdf_bytes(file_bytes)
     return result if result is not None else ""
 
@@ -109,3 +104,65 @@ def _extract_docx(file_bytes: bytes) -> str:
                 if cell.text.strip():
                     parts.append(cell.text)
     return "\n".join(parts)
+
+
+# ---------------------------------------------------------------------------
+# PDF extraction (merged from pdf_processor.py)
+# ---------------------------------------------------------------------------
+
+def extract_text_from_pdf_bytes(pdf_bytes):
+    """
+    Extract text content from PDF binary data
+
+    Args:
+        pdf_bytes (bytes): PDF file content as bytes
+
+    Returns:
+        str: Extracted text from all pages, or None if extraction fails
+    """
+    try:
+        import PyPDF2
+        from io import BytesIO
+
+        pdf_file = BytesIO(pdf_bytes)
+        pdf_reader = PyPDF2.PdfReader(pdf_file)
+
+        text_content = []
+        for page_num in range(len(pdf_reader.pages)):
+            page = pdf_reader.pages[page_num]
+            text = page.extract_text()
+            if text:
+                text_content.append(text)
+
+        full_text = "\n\n".join(text_content)
+
+        if not full_text.strip():
+            print("Warning: PDF appears to be empty or contains only images")
+            return None
+
+        return full_text
+
+    except Exception as e:
+        print(f"Error extracting text from PDF: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
+
+
+def extract_text_from_pdf_file(pdf_path):
+    """
+    Extract text content from PDF file path
+
+    Args:
+        pdf_path (str): Path to PDF file
+
+    Returns:
+        str: Extracted text from all pages, or None if extraction fails
+    """
+    try:
+        with open(pdf_path, "rb") as file:
+            pdf_bytes = file.read()
+        return extract_text_from_pdf_bytes(pdf_bytes)
+    except Exception as e:
+        print(f"Error reading PDF file: {e}")
+        return None

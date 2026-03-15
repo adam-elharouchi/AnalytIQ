@@ -13,7 +13,7 @@ class TestPDFProcessor:
 
     def test_extract_text_from_pdf_bytes_success(self):
         """Test successful text extraction from PDF bytes"""
-        from python.pdf_processor import extract_text_from_pdf_bytes
+        from services.content_extractor import extract_text_from_pdf_bytes
 
         # Create a mock PDF with text
         with patch("PyPDF2.PdfReader") as mock_reader:
@@ -31,7 +31,7 @@ class TestPDFProcessor:
 
     def test_extract_text_from_multiple_pages(self):
         """Test extraction from multi-page PDF"""
-        from python.pdf_processor import extract_text_from_pdf_bytes
+        from services.content_extractor import extract_text_from_pdf_bytes
 
         with patch("PyPDF2.PdfReader") as mock_reader:
             mock_page1 = MagicMock()
@@ -52,7 +52,7 @@ class TestPDFProcessor:
 
     def test_extract_text_empty_pdf(self):
         """Test handling of empty PDF"""
-        from python.pdf_processor import extract_text_from_pdf_bytes
+        from services.content_extractor import extract_text_from_pdf_bytes
 
         with patch("PyPDF2.PdfReader") as mock_reader:
             mock_page = MagicMock()
@@ -68,7 +68,7 @@ class TestPDFProcessor:
 
     def test_extract_text_whitespace_only(self):
         """Test handling of PDF with only whitespace"""
-        from python.pdf_processor import extract_text_from_pdf_bytes
+        from services.content_extractor import extract_text_from_pdf_bytes
 
         with patch("PyPDF2.PdfReader") as mock_reader:
             mock_page = MagicMock()
@@ -84,7 +84,7 @@ class TestPDFProcessor:
 
     def test_extract_text_some_pages_empty(self):
         """Test extraction when some pages have no text"""
-        from python.pdf_processor import extract_text_from_pdf_bytes
+        from services.content_extractor import extract_text_from_pdf_bytes
 
         with patch("PyPDF2.PdfReader") as mock_reader:
             mock_page1 = MagicMock()
@@ -107,7 +107,7 @@ class TestPDFProcessor:
 
     def test_extract_text_pdf_error(self):
         """Test handling of PDF parsing errors"""
-        from python.pdf_processor import extract_text_from_pdf_bytes
+        from services.content_extractor import extract_text_from_pdf_bytes
 
         with patch("PyPDF2.PdfReader") as mock_reader:
             mock_reader.side_effect = Exception("Corrupted PDF")
@@ -118,12 +118,12 @@ class TestPDFProcessor:
 
     def test_extract_text_from_pdf_file_success(self):
         """Test extraction from file path"""
-        from python.pdf_processor import extract_text_from_pdf_file
+        from services.content_extractor import extract_text_from_pdf_file
 
         mock_pdf_content = b"fake pdf bytes"
         
         with patch("builtins.open", mock_open(read_data=mock_pdf_content)):
-            with patch("python.pdf_processor.extract_text_from_pdf_bytes") as mock_extract:
+            with patch("services.content_extractor.extract_text_from_pdf_bytes") as mock_extract:
                 mock_extract.return_value = "Extracted text"
 
                 result = extract_text_from_pdf_file("/path/to/file.pdf")
@@ -133,7 +133,7 @@ class TestPDFProcessor:
 
     def test_extract_text_from_pdf_file_not_found(self):
         """Test handling of missing file"""
-        from python.pdf_processor import extract_text_from_pdf_file
+        from services.content_extractor import extract_text_from_pdf_file
 
         with patch("builtins.open", side_effect=FileNotFoundError("File not found")):
             result = extract_text_from_pdf_file("/nonexistent/file.pdf")
@@ -142,7 +142,7 @@ class TestPDFProcessor:
 
     def test_extract_text_from_pdf_file_permission_error(self):
         """Test handling of permission errors"""
-        from python.pdf_processor import extract_text_from_pdf_file
+        from services.content_extractor import extract_text_from_pdf_file
 
         with patch("builtins.open", side_effect=PermissionError("Access denied")):
             result = extract_text_from_pdf_file("/restricted/file.pdf")
@@ -151,7 +151,7 @@ class TestPDFProcessor:
 
     def test_extract_text_preserves_formatting(self):
         """Test that text formatting is preserved"""
-        from python.pdf_processor import extract_text_from_pdf_bytes
+        from services.content_extractor import extract_text_from_pdf_bytes
 
         with patch("PyPDF2.PdfReader") as mock_reader:
             mock_page = MagicMock()

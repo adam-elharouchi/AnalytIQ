@@ -12,7 +12,7 @@ class TestExerciseGeneration:
 
     def test_generate_exercises_success(self):
         """Test successful exercise generation"""
-        from python.exercise_generator import generate_exercises_from_pdf_content
+        from services.exercise_generator import generate_exercises_from_pdf_content
 
         mock_response = {
             "candidates": [
@@ -51,7 +51,7 @@ class TestExerciseGeneration:
 
     def test_generate_exercises_no_api_key(self):
         """Test error when API key is missing"""
-        from python.exercise_generator import generate_exercises_from_pdf_content
+        from services.exercise_generator import generate_exercises_from_pdf_content
 
         with patch.dict("os.environ", {}, clear=True):
             with pytest.raises(Exception) as exc_info:
@@ -63,7 +63,7 @@ class TestExerciseGeneration:
 
     def test_generate_exercises_api_error(self):
         """Test handling of API errors"""
-        from python.exercise_generator import generate_exercises_from_pdf_content
+        from services.exercise_generator import generate_exercises_from_pdf_content
 
         with patch("requests.post") as mock_post:
             mock_post.return_value.ok = False
@@ -81,7 +81,7 @@ class TestExerciseGeneration:
 
     def test_generate_exercises_truncates_long_text(self):
         """Test that long PDF text is truncated"""
-        from python.exercise_generator import generate_exercises_from_pdf_content
+        from services.exercise_generator import generate_exercises_from_pdf_content
 
         long_text = "A" * 15000  # 15k characters
 
@@ -109,7 +109,7 @@ class TestExerciseGeneration:
 
     def test_generate_exercises_handles_markdown_json(self):
         """Test extraction of JSON from markdown code blocks"""
-        from python.exercise_generator import generate_exercises_from_pdf_content
+        from services.exercise_generator import generate_exercises_from_pdf_content
 
         mock_response = {
             "candidates": [{
@@ -136,7 +136,7 @@ class TestExerciseGeneration:
 
     def test_generate_exercises_validates_difficulty(self):
         """Test that invalid difficulty levels are corrected"""
-        from python.exercise_generator import generate_exercises_from_pdf_content
+        from services.exercise_generator import generate_exercises_from_pdf_content
 
         mock_response = {
             "candidates": [{
@@ -170,7 +170,7 @@ class TestExerciseGeneration:
 
     def test_generate_exercises_empty_response(self):
         """Test handling of empty API response"""
-        from python.exercise_generator import generate_exercises_from_pdf_content
+        from services.exercise_generator import generate_exercises_from_pdf_content
 
         mock_response = {"candidates": []}
 
@@ -188,7 +188,7 @@ class TestExerciseGeneration:
 
     def test_generate_exercises_invalid_json(self):
         """Test handling of invalid JSON response"""
-        from python.exercise_generator import generate_exercises_from_pdf_content
+        from services.exercise_generator import generate_exercises_from_pdf_content
 
         mock_response = {
             "candidates": [{
@@ -214,7 +214,7 @@ class TestExerciseGeneration:
 
     def test_generate_exercises_non_array_response(self):
         """Test handling when API returns object instead of array"""
-        from python.exercise_generator import generate_exercises_from_pdf_content
+        from services.exercise_generator import generate_exercises_from_pdf_content
 
         mock_response = {
             "candidates": [{
@@ -240,7 +240,7 @@ class TestExerciseGeneration:
 
     def test_generate_exercises_filters_invalid_exercises(self):
         """Test that invalid exercise objects are filtered out"""
-        from python.exercise_generator import generate_exercises_from_pdf_content
+        from services.exercise_generator import generate_exercises_from_pdf_content
 
         mock_response = {
             "candidates": [{
@@ -283,7 +283,7 @@ class TestExerciseGeneration:
 
     def test_generate_exercises_uses_env_api_key(self):
         """Test that API key is read from environment"""
-        from python.exercise_generator import generate_exercises_from_pdf_content
+        from services.exercise_generator import generate_exercises_from_pdf_content
 
         mock_response = {
             "candidates": [{
