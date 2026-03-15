@@ -180,7 +180,7 @@ class TestCeleryAppMain:
         with patch("celery.Celery", mock_celery_class):
             with patch("dotenv.load_dotenv"):
                 source_path = os.path.join(
-                    os.path.dirname(os.path.dirname(__file__)), "workers", "celery_app.py"
+                    os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "workers", "celery_app.py"
                 )
                 with open(source_path) as f:
                     code = f.read()
