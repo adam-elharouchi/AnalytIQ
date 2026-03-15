@@ -61,7 +61,7 @@ The system was refactored following this strict migration path:
 #### C. Dedicated Superadmin Landing Experience
 To resolve the UX clutter of the boolean era, the landing page (`index.html`) was completely overhauled to support role-based dynamic injection.
 
-When a user successfully authenticates, `js/navigation.js` reads their primary role:
+When a user successfully authenticates, `static/js/navigation.js` reads their primary role:
 *   **Students:** Renders cards for "My Classes", "Code Assistant", and "Profile".
 *   **Professors:** Renders cards for "Dashboard", "Code Assistant", and "Profile".
 *   **Superadmins:** The landing page dynamically renders an exclusive "Superadmin Portal" layout featuring:
@@ -73,7 +73,7 @@ When a user successfully authenticates, `js/navigation.js` reads their primary r
 During the transition to the standalone Superadmin dashboard, several architectural hurdles were resolved to ensure secure and reliable interactions:
 
 *   **Global Layout Binding:** Dashboard interactions (like toggling users and impersonating) rely on inline HTML events triggering class functions. The main `SuperAdminDashboard` class must be bound directly to the global `window.adminApp` reference during initialization. Using local variables (e.g., `let adminApp`) fails because HTML handlers cannot resolve scoped Javascript imports.
-*   **Global UI Helpers:** Consistent feedback relies on a standard suite of UI helpers (e.g., `showError`, `showSuccess`) injected into `api-helper.js`. Without these globally available functions, frontend components crash with `ReferenceError` when attempting to notify the user of API results.
+*   **Global UI Helpers:** Consistent feedback relies on a standard suite of UI helpers (e.g., `showError`, `showSuccess`) injected into `static/js/api-helper.js`. Without these globally available functions, frontend components crash with `ReferenceError` when attempting to notify the user of API results.
 *   **Asynchronous API Parsing:** The frontend relies on the `authFetch` utility wrapped around the native browser `fetch` API. It was identified that asynchronous promises from `authFetch` return raw HTTP `Response` objects by default. Fetching logic deeply nested in tenant mutation or user impersonation paths must strictly `await res.json()` before evaluating the payload properties (e.g., checking for new JWT `data.token`).
 *   **Non-Destructive Token Swapping:** The modern impersonation system leverages an `<iframe>` architecture. This requires the parent page to swap the `authToken` *before* the iframe loads its source, ensuring the child frame inherits the authenticated context of the target user without losing the Superadmin's background state.
 *   **JWT Storage Strictness:** The core application natively manages user sessions via the `localStorage.getItem('authToken')` key. Standardizing all LTI management and Impersonation swap functions to target `authToken` (vs a generic `token` key) ensures that the session is natively recognized by all site interceptors.
@@ -85,7 +85,7 @@ To maintain the stability of the Superadmin backend, the platform adopted automa
 - **Black Formatter:** Every backend update is strictly formatted via the `black` library to ensure a unified style.
 - **Flake8 Compliance:** Strict adherence to `flake8` standards ensures zero trailing whitespaces, correct comment padding, and exact vertical spacing (E302/E303) between logic blocks, preventing CI pipeline regressions.
 
-## 7. Summary & Future Extensibility
+## 7. Summary & Current State
 By unifying "Superadmin" under a strict RBAC `role` definition and providing them with a segregated, modular landing page, AnalytIQ achieved a cleaner codebase, inherently more secure authentication tokens, and a vastly improved user experience for platform administrators.
 
-This architecture paves the way for future extensions, such as introducing generic "Tenant Admin" roles that operate identically to Superadmins but are strictly scoped to a single `tenant_id`.
+The `tenant_admin` role is now fully implemented — see [14-SSO-Tenant-Authentication.md](14-SSO-Tenant-Authentication.md) for details. `tenant_admin` has identical capabilities to `superadmin` but strictly scoped to a single `tenant_id`.
