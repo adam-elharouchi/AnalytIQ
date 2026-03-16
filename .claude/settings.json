@@ -17,7 +17,8 @@
       "Bash(find /Users/aelharouchi/Documents/GitHub/AnalytIQ -name *.sql)",
       "Bash(grep -rn \"CREATE TABLE.*practice_progress\\\\|CREATE TABLE.*exercise_attempts\\\\|practice_progress.*exercise_id\\\\|exercise_attempts.*exercise_id\" /Users/aelharouchi/Documents/GitHub/AnalytIQ/ --include=*.sql --include=*.py)",
       "Bash(psql \"postgresql://postgres.omjttmkczfpnwyzrdzqi:AEHSupabase@aws-0-us-west-2.pooler.supabase.com:5432/postgres\" -f /Users/aelharouchi/Documents/GitHub/AnalytIQ/migrations/011_practice_progress_class_columns.sql)",
-      "Bash(brew list:*)"
+      "Bash(brew list:*)",
+      "Bash(git ls-tree:*)"
     ]
   }
 }

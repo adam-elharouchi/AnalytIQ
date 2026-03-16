@@ -57,7 +57,7 @@ jobs:
     
     - name: Run linting (flake8)
       run: |
-        python -m flake8 app.py utils/ cache.py supabase_storage.py auth_helpers.py db.py config.py blueprints/ repositories/ --max-line-length=120 --count --show-source --statistics
+        python -m flake8 app.py config.py blueprints/ repositories/ core/ services/ workers/ --max-line-length=120 --count --show-source --statistics
 
     - name: Check code formatting (black)
       run: |

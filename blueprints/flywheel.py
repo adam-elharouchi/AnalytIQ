@@ -5,9 +5,8 @@ Exposes data flywheel instrumentation metrics to professors and superadmins.
 """
 
 import logging
-import os
 
-from flask import Blueprint, g, jsonify, request
+from flask import Blueprint, g, jsonify
 
 from core.auth import require_auth, require_role, require_super_admin
 from core.database import get_db_connection
