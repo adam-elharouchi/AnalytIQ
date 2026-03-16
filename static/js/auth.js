@@ -42,11 +42,8 @@ class AuthManager {
   // Sign up new user
   async signUp(name, email, password) {
     try {
-      const response = await fetch(`${window.API_BASE_URL}/users/signup`, {
+      const response = await authFetch(`${window.API_BASE_URL}/users/signup`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
         body: JSON.stringify({
           name: name,
           email: email,
@@ -94,11 +91,8 @@ class AuthManager {
   // Sign in user
   async signIn(email, password) {
     try {
-      const response = await fetch(`${window.API_BASE_URL}/users/signin`, {
+      const response = await authFetch(`${window.API_BASE_URL}/users/signin`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
         body: JSON.stringify({
           email: email,
           password: password
@@ -475,11 +469,8 @@ async function handleForgotPassword(event) {
   submitButton.textContent = 'Sending...';
 
   try {
-    const response = await fetch(`${window.API_BASE_URL}/users/forgot-password`, {
+    const response = await authFetch(`${window.API_BASE_URL}/users/forgot-password`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
       body: JSON.stringify({ email: email })
     });
 
