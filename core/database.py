@@ -95,12 +95,9 @@ def init_db_pool():
         if "sslmode" not in clean_url:
             params_to_add.append("sslmode=require")
         if "connect_timeout" not in clean_url:
-            params_to_add.append("connect_timeout=10")  # 10 second connection timeout
-        if "options" not in clean_url:
-            # URL-encode the options parameter value
-            params_to_add.append(
-                f'options={quote("-c statement_timeout=30000")}'
-            )  # 30 second query timeout
+            params_to_add.append("connect_timeout=10")
+        # Note: statement_timeout via options is not supported on Supabase Transaction
+        # Mode pooler (port 6543) — omitted intentionally.
 
         if params_to_add:
             separator = "&" if "?" in clean_url else "?"
@@ -155,7 +152,7 @@ def init_db_pool():
                 logger.info("Retrying with explicit connection parameters...")
                 db_pool = pool.ThreadedConnectionPool(
                     minconn=1,
-                    maxconn=10,
+                    maxconn=5,
                     user=params["user"],
                     password=params["password"],
                     host=params["host"],
@@ -163,7 +160,6 @@ def init_db_pool():
                     database=params["database"],
                     sslmode="require",
                     connect_timeout=10,
-                    options="-c statement_timeout=30000",
                 )
                 logger.info("Database connection pool initialized with explicit params")
         except Exception as e2:

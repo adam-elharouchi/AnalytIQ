@@ -383,7 +383,7 @@ app.url_map.converters["no_api_path"] = NoApiPathConverter
 
 @app.route("/", methods=["GET"])
 def serve_index():
-    return render_template("index.html")
+    return render_template("landing.html")
 
 
 @app.route("/landing", methods=["GET"])
