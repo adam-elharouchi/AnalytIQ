@@ -89,8 +89,6 @@ def init_db_pool():
         clean_url = database_url
 
         # Add connection parameters if not present
-        from urllib.parse import quote
-
         params_to_add = []
         if "sslmode" not in clean_url:
             params_to_add.append("sslmode=require")

@@ -73,9 +73,9 @@ def _refresh_maintenance():
         )
         rows = {r[0]: r[1] for r in cur.fetchall()}
         cur.close()
-        _maint_cache["active"]  = rows.get("maintenance_mode", "false") == "true"
+        _maint_cache["active"] = rows.get("maintenance_mode", "false") == "true"
         _maint_cache["message"] = rows.get("maintenance_message", "")
-        _maint_cache["ts"]      = now
+        _maint_cache["ts"] = now
     except Exception as exc:
         logger.warning("Maintenance-mode refresh failed (fail-open): %s", exc)
         _maint_cache["ts"] = now

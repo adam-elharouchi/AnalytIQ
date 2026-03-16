@@ -11,7 +11,7 @@ from sentry_sdk.integrations.celery import CeleryIntegration
 def init_sentry(app):
     """
     Initialize Sentry error tracking for production monitoring
-    
+
     Features:
     - Automatic error capture and reporting
     - Performance monitoring (transactions)
@@ -20,14 +20,14 @@ def init_sentry(app):
     """
     sentry_dsn = os.getenv('SENTRY_DSN')
     environment = os.getenv('FLASK_ENV', 'production')
-    
+
     if not sentry_dsn:
         app.logger.warning("⚠️  Sentry DSN not configured. Error monitoring disabled.")
         return
-    
+
     # Get app version from environment or git
     release_version = os.getenv('RENDER_GIT_COMMIT', 'unknown')[:7]
-    
+
     sentry_sdk.init(
         dsn=sentry_dsn,
         integrations=[
@@ -35,32 +35,32 @@ def init_sentry(app):
             RedisIntegration(),
             CeleryIntegration(),
         ],
-        
+
         # Performance Monitoring
         traces_sample_rate=0.1,  # 10% of transactions for performance monitoring
-        
+
         # Error Sampling
         sample_rate=1.0,  # Capture 100% of errors
-        
+
         # Environment Configuration
         environment=environment,
         release=f"analytiq@{release_version}",
-        
+
         # Additional Context
         send_default_pii=False,  # Don't send personally identifiable information
         attach_stacktrace=True,
-        
+
         # Before Send Hook (filter sensitive data)
         before_send=filter_sensitive_data,
     )
-    
+
     app.logger.info(f"✅ Sentry initialized for {environment} environment")
 
 
 def filter_sensitive_data(event, hint):
     """
     Filter sensitive data before sending to Sentry
-    
+
     Removes:
     - API keys
     - Passwords
@@ -74,7 +74,7 @@ def filter_sensitive_data(event, hint):
         for header in sensitive_headers:
             if header in headers:
                 headers[header] = '[Filtered]'
-    
+
     # Remove sensitive POST data
     if 'request' in event and 'data' in event['request']:
         data = event['request']['data']
@@ -83,14 +83,14 @@ def filter_sensitive_data(event, hint):
             for field in sensitive_fields:
                 if field in data:
                     data[field] = '[Filtered]'
-    
+
     return event
 
 
 def capture_exception_with_context(exception, context=None):
     """
     Manually capture an exception with additional context
-    
+
     Usage:
         try:
             risky_operation()
@@ -112,7 +112,7 @@ def capture_exception_with_context(exception, context=None):
 def capture_message(message, level='info', context=None):
     """
     Capture a custom message in Sentry
-    
+
     Levels: 'debug', 'info', 'warning', 'error', 'fatal'
     """
     if context:

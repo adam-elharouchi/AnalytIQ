@@ -273,10 +273,10 @@ Return your response as a JSON array with ONLY this structure — no markdown, n
                     if "input" not in tc or "expected_output" not in tc:
                         continue
                     validated_cases.append({
-                        "description":     tc.get("description", ""),
-                        "input":           tc["input"],
+                        "description": tc.get("description", ""),
+                        "input": tc["input"],
                         "expected_output": tc["expected_output"],
-                        "weight":          int(tc.get("weight", 1)),
+                        "weight": int(tc.get("weight", 1)),
                     })
 
             ex_language = exercise.get("language", "Unknown")
@@ -436,10 +436,10 @@ Return ONLY a JSON object (no markdown):
             if "input" not in tc or "expected_output" not in tc:
                 continue
             validated.append({
-                "description":     tc.get("description", ""),
-                "input":           tc["input"],
+                "description": tc.get("description", ""),
+                "input": tc["input"],
                 "expected_output": str(tc["expected_output"]),
-                "weight":          int(tc.get("weight", 1)),
+                "weight": int(tc.get("weight", 1)),
             })
 
         if not validated:
