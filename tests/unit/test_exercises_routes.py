@@ -418,8 +418,12 @@ class TestGradeExercise:
     def test_exercise_without_test_cases_returns_200_with_flag_false(
         self, client, mock_db
     ):
-        # test_cases is NULL in DB → repo returns empty list
-        mock_db.cursor().fetchone.return_value = ("solution", "Python", None)
+        # First fetchone: get_exercise_test_cases (function_name, language, test_cases=NULL)
+        # Second fetchone: get_exercise_detail (7-col row) needed for auto-gen attempt
+        mock_db.cursor().fetchone.side_effect = [
+            ("solution", "Python", None),
+            ("ex-1", "ch-1", "cls-1", "Test Title", "A description", "easy", "def solution(): pass"),
+        ]
         resp = client.post("/api/exercises/ex-1/grade",
                            headers=AUTH_STUDENT, json={"code": "print(1)"})
         assert resp.status_code == 200
@@ -427,7 +431,10 @@ class TestGradeExercise:
         assert data["has_test_cases"] is False
 
     def test_exercise_without_test_cases_response_shape(self, client, mock_db):
-        mock_db.cursor().fetchone.return_value = ("solution", "Python", None)
+        mock_db.cursor().fetchone.side_effect = [
+            ("solution", "Python", None),
+            ("ex-1", "ch-1", "cls-1", "Test Title", "A description", "easy", "def solution(): pass"),
+        ]
         resp = client.post("/api/exercises/ex-1/grade",
                            headers=AUTH_STUDENT, json={"code": "print(1)"})
         data = resp.get_json()

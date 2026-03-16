@@ -18,9 +18,12 @@ def init_sentry(app):
     - Release tracking for deployment correlation
     - Environment tagging (production/staging)
     """
-    sentry_dsn = os.getenv("SENTRY_DSN")
     environment = os.getenv("FLASK_ENV", "production")
 
+    if environment == "testing":
+        return  # never send test-run noise to Sentry
+
+    sentry_dsn = os.getenv("SENTRY_DSN")
     if not sentry_dsn:
         app.logger.warning("⚠️  Sentry DSN not configured. Error monitoring disabled.")
         return

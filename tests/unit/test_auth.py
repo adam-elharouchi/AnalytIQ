@@ -32,6 +32,7 @@ class TestSignup:
         cursor = mock_db.cursor()
         cursor.fetchone.side_effect = [
             None,  # email_exists check
+            None,  # find_tenant_by_email_domain
             ("new-user-id", "Alice", "alice@student.hult.edu", "student", False),  # insert_user
         ]
 
@@ -53,7 +54,8 @@ class TestSignup:
         """@hult.edu email gets professor role in the response."""
         cursor = mock_db.cursor()
         cursor.fetchone.side_effect = [
-            None,
+            None,  # email_exists check
+            None,  # find_tenant_by_email_domain
             ("prof-id", "Prof Bob", "bob@hult.edu", "professor", False),
         ]
 
@@ -74,7 +76,8 @@ class TestSignup:
         """@myanalytiq.org email gets professor role in the response."""
         cursor = mock_db.cursor()
         cursor.fetchone.side_effect = [
-            None,
+            None,  # email_exists check
+            None,  # find_tenant_by_email_domain
             ("admin-id", "Admin Sam", "sam@myanalytiq.org", "professor", True),
         ]
 

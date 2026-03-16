@@ -57,9 +57,9 @@ _NOW = datetime(2026, 3, 1, 12, 0, 0)
 class TestListTenants:
     def test_returns_200_with_tenants(self, client, mock_db):
         cursor = mock_db.cursor()
-        # Columns: tenant_id, name, lti_issuer, is_active, created_at, total_users, total_classes
+        # Columns: tenant_id, name, lti_issuer, is_active, created_at, total_users, total_classes, email_domain
         cursor.fetchall.return_value = [
-            (TENANT_ID, "Acme Corp", "https://lti.acme.com", True, _NOW, 5, 2),
+            (TENANT_ID, "Acme Corp", "https://lti.acme.com", True, _NOW, 5, 2, "acme.com"),
         ]
         resp = client.get("/api/superadmin/tenants", headers=AUTH)
         assert resp.status_code == 200
@@ -84,8 +84,8 @@ class TestListTenants:
 class TestCreateTenant:
     def test_create_tenant_returns_201(self, client, mock_db):
         cursor = mock_db.cursor()
-        # Route does INSERT RETURNING (tenant_id, name, lti_issuer, is_active, created_at)
-        cursor.fetchone.return_value = (TENANT_ID, "Acme Corp", None, True, _NOW)
+        # Route does INSERT RETURNING (tenant_id, name, lti_issuer, is_active, created_at, email_domain)
+        cursor.fetchone.return_value = (TENANT_ID, "Acme Corp", None, True, _NOW, None)
         resp = client.post(
             "/api/superadmin/tenants",
             json={"name": "Acme Corp", "lti_issuer": "https://lti.acme.com"},
