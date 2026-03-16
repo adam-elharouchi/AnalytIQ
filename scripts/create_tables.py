@@ -140,6 +140,8 @@ def create_tables():
                 user_id VARCHAR(255) NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
                 exercise_id VARCHAR(255) NOT NULL,
                 exercise_title VARCHAR(500),
+                class_id VARCHAR(255),
+                class_exercise_id VARCHAR(255),
                 best_score INTEGER DEFAULT 0,
                 best_accuracy DECIMAL(5,2) DEFAULT 0,
                 best_time INTEGER,
