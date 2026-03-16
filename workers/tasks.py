@@ -5,7 +5,6 @@ Async tasks for PDF processing, exercise generation, and email sending
 
 import logging
 import os
-import sys
 from celery import Task
 from workers.celery_app import celery_app
 from dotenv import load_dotenv
@@ -44,7 +43,6 @@ class DatabaseTask(Task):
         """Get database connection (reuse connection pool)"""
         if self._db_conn is None:
             import psycopg2
-            from psycopg2 import pool
 
             database_url = os.getenv("DATABASE_URL")
             if not database_url:
@@ -107,8 +105,8 @@ def process_pdf_and_extract_text(self, pdf_bytes, chapter_id):
 
         cursor.execute(
             """
-            UPDATE class_chapters 
-            SET pdf_text = %s 
+            UPDATE class_chapters
+            SET pdf_text = %s
             WHERE chapter_id = %s
         """,
             (pdf_text, chapter_id),
@@ -170,7 +168,7 @@ def generate_exercises_async(self, pdf_text, chapter_title, chapter_id, class_id
         for exercise in exercises:
             cursor.execute(
                 """
-                INSERT INTO class_exercises 
+                INSERT INTO class_exercises
                 (chapter_id, class_id, title, description, difficulty, solution_code)
                 VALUES (%s, %s, %s, %s, %s, %s)
             """,
