@@ -3,7 +3,6 @@ Chapters Blueprint — /api/classes/<id>/chapters and /api/chapters/*
 """
 import logging
 import os
-import sys
 import uuid
 from datetime import datetime
 
