@@ -208,7 +208,11 @@ def send_email_async(recipient, subject, body):
     """
     try:
         if not resend:
-            return {"success": False, "error": "Resend library not installed", "recipient": recipient}
+            return {
+                "success": False,
+                "error": "Resend library not installed",
+                "recipient": recipient,
+            }
 
         # Initialize Resend API key
         if not getattr(resend, "api_key", None):
@@ -222,12 +226,14 @@ def send_email_async(recipient, subject, body):
 
         logger.info("Sending email FROM: %s TO: %s", from_email, recipient)
 
-        response = resend.Emails.send({
-            "from": f"AnalytIQ Support <{from_email}>",
-            "to": [recipient],
-            "subject": subject,
-            "html": body,
-        })
+        response = resend.Emails.send(
+            {
+                "from": f"AnalytIQ Support <{from_email}>",
+                "to": [recipient],
+                "subject": subject,
+                "html": body,
+            }
+        )
 
         logger.info("Resend success: %s", response)
 
@@ -344,7 +350,8 @@ def compute_exercise_quality_scores(self, min_outcomes=5):
                 first_attempts = [r for r in rows if r[1] == 1]
                 first_attempt_pass_rate = (
                     sum(1 for r in first_attempts if r[2]) / len(first_attempts)
-                    if first_attempts else None
+                    if first_attempts
+                    else None
                 )
 
                 overall_pass_rate = sum(1 for r in rows if r[2]) / total_attempts
@@ -357,7 +364,8 @@ def compute_exercise_quality_scores(self, min_outcomes=5):
                         passing_attempts_per_user[uid] = attempt_num
                 avg_attempts_to_pass = (
                     sum(passing_attempts_per_user.values()) / len(passing_attempts_per_user)
-                    if passing_attempts_per_user else None
+                    if passing_attempts_per_user
+                    else None
                 )
 
                 pass_times = [r[4] for r in rows if r[2] and r[4] is not None]
@@ -367,9 +375,7 @@ def compute_exercise_quality_scores(self, min_outcomes=5):
 
                 all_uids = {r[0] for r in rows}
                 passed_uids = set(passing_attempts_per_user.keys())
-                dropout_rate = (
-                    len(all_uids - passed_uids) / len(all_uids) if all_uids else 0.0
-                )
+                dropout_rate = len(all_uids - passed_uids) / len(all_uids) if all_uids else 0.0
 
                 avg_hints_before_pass = 0.0  # hints not yet tracked
 
@@ -389,8 +395,7 @@ def compute_exercise_quality_scores(self, min_outcomes=5):
                         if not (t or {}).get("passed", True):
                             test_fail_counts[i] = test_fail_counts.get(i, 0) + 1
                 most_failed_index = (
-                    max(test_fail_counts, key=test_fail_counts.get)
-                    if test_fail_counts else None
+                    max(test_fail_counts, key=test_fail_counts.get) if test_fail_counts else None
                 )
                 common_failure_pattern = {
                     "most_failed_test_index": most_failed_index,
@@ -400,9 +405,7 @@ def compute_exercise_quality_scores(self, min_outcomes=5):
                 def _norm(value, ideal, max_val=1.0):
                     if value is None:
                         return 0.5
-                    deviation = abs(value - ideal) / max(
-                        abs(ideal), abs(max_val - ideal), 1e-9
-                    )
+                    deviation = abs(value - ideal) / max(abs(ideal), abs(max_val - ideal), 1e-9)
                     return max(0.0, 1.0 - deviation)
 
                 if (
@@ -425,9 +428,7 @@ def compute_exercise_quality_scores(self, min_outcomes=5):
                 else:
                     quality_label = "good"
 
-                err_ok = (
-                    1.0 if dominant_error_category in (None, "none", "logic_error") else 0.5
-                )
+                err_ok = 1.0 if dominant_error_category in (None, "none", "logic_error") else 0.5
                 quality_score = (
                     0.4 * _norm(first_attempt_pass_rate, ideal=0.5)
                     + 0.3 * (1.0 - min(dropout_rate, 1.0))
@@ -461,15 +462,15 @@ def compute_exercise_quality_scores(self, min_outcomes=5):
             except Exception as ex_err:
                 logger.error(
                     "compute_exercise_quality_scores: failed for %s: %s",
-                    exercise_id, ex_err, exc_info=True,
+                    exercise_id,
+                    ex_err,
+                    exc_info=True,
                 )
                 continue
 
         cur.close()
         self.close_db_connection()
-        logger.info(
-            "compute_exercise_quality_scores: scored %d exercises", exercises_scored
-        )
+        logger.info("compute_exercise_quality_scores: scored %d exercises", exercises_scored)
         return {"success": True, "exercises_scored": exercises_scored}
 
     except Exception as e:

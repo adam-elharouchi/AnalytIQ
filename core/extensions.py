@@ -50,6 +50,7 @@ def csrf_exempt(view_func):
     """
     try:
         from flask_wtf.csrf import csrf_exempt as _wtf_csrf_exempt
+
         return _wtf_csrf_exempt(view_func)
     except ImportError:
         return view_func

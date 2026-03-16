@@ -80,6 +80,7 @@ def get_class_exercise_quality(class_id):
 
         if user_role != "superadmin":
             from repositories import class_repository as class_repo
+
             owner = class_repo.get_class_owner(conn, class_id)
             if owner is None:
                 return jsonify({"error": "Class not found"}), 404
@@ -161,6 +162,7 @@ def trigger_compute_quality():
         if not app_config.FEATURE_ASYNC_TASKS:
             # Synchronous execution — useful in dev/test environments
             from workers.tasks import compute_exercise_quality_scores
+
             result = compute_exercise_quality_scores()
             return (
                 jsonify(
@@ -173,6 +175,7 @@ def trigger_compute_quality():
             )
         else:
             from workers.tasks import compute_exercise_quality_scores
+
             task = compute_exercise_quality_scores.apply_async(queue="ai_tasks")
             return jsonify({"status": "started", "task_id": task.id}), 202
 

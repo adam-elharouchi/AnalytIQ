@@ -114,8 +114,7 @@ def validate_pdf_file(file):
 
 
 def _auto_generate_exercises(
-    conn, pdf_text, chapter_id, chapter_title, class_id,
-    source_content_type=None, tenant_id=None
+    conn, pdf_text, chapter_id, chapter_title, class_id, source_content_type=None, tenant_id=None
 ):
     """Generate exercises from chapter text. Returns count generated (0 on any failure)."""
     if not pdf_text or not generate_exercises_from_pdf_content:
@@ -300,7 +299,11 @@ def upload_chapter(class_id):
         exercises_generated = 0
         if exercise_mode == "auto":
             exercises_generated = _auto_generate_exercises(
-                conn, pdf_text, chapter_id_result, chapter_title_result, class_id,
+                conn,
+                pdf_text,
+                chapter_id_result,
+                chapter_title_result,
+                class_id,
                 source_content_type=ext,
                 tenant_id=getattr(g, "tenant_id", None),
             )

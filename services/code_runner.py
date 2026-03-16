@@ -42,25 +42,47 @@ logger = logging.getLogger(__name__)
 
 MAX_CODE_BYTES = 50_000
 
-BLOCKED_PY_MODULES: frozenset = frozenset({
-    "subprocess", "socket", "ssl", "shutil", "multiprocessing",
-    "threading", "concurrent", "asyncio", "_thread", "ctypes",
-    "signal", "mmap", "resource", "pty", "termios", "fcntl",
-})
+BLOCKED_PY_MODULES: frozenset = frozenset(
+    {
+        "subprocess",
+        "socket",
+        "ssl",
+        "shutil",
+        "multiprocessing",
+        "threading",
+        "concurrent",
+        "asyncio",
+        "_thread",
+        "ctypes",
+        "signal",
+        "mmap",
+        "resource",
+        "pty",
+        "termios",
+        "fcntl",
+    }
+)
 
 
 # ---------------------------------------------------------------------------
 # Language normalisation
 # ---------------------------------------------------------------------------
 
+
 def _normalise_language(lang: str) -> str:
     lang = (lang or "python").lower().strip()
     return {
-        "py": "python", "python3": "python",
-        "js": "javascript", "node": "javascript", "nodejs": "javascript",
+        "py": "python",
+        "python3": "python",
+        "js": "javascript",
+        "node": "javascript",
+        "nodejs": "javascript",
         "ts": "javascript",
         "r": "r",
-        "sql": "sql", "sqlite": "sql", "mysql": "sql", "postgresql": "sql",
+        "sql": "sql",
+        "sqlite": "sql",
+        "mysql": "sql",
+        "postgresql": "sql",
         "java": "java",
     }.get(lang, lang)
 
@@ -151,6 +173,7 @@ print(json.dumps({{"result": _result, "printed": _printed or None, "error": _err
 
 def _run_python(student_code: str, fn_name: str, tc: dict, timeout: int) -> dict:
     import subprocess
+
     harness = _PY_HARNESS.format(
         blocked_set=repr(set(BLOCKED_PY_MODULES)),
         student_code_repr=repr(student_code),
@@ -161,7 +184,10 @@ def _run_python(student_code: str, fn_name: str, tc: dict, timeout: int) -> dict
     try:
         proc = subprocess.run(
             [sys.executable, path, json.dumps(tc.get("input", {})), fn_name or ""],
-            capture_output=True, text=True, timeout=timeout, stdin=subprocess.DEVNULL,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            stdin=subprocess.DEVNULL,
         )
         return _parse_proc(proc.stdout, proc.stderr)
     except subprocess.TimeoutExpired:
@@ -198,6 +224,7 @@ process.stdout.write(JSON.stringify({{result: _result, error: _err}}));
 def _run_javascript(student_code: str, fn_name: str, tc: dict, timeout: int) -> dict:
     import subprocess
     import shutil
+
     if not shutil.which("node"):
         return {"error": "runtime_missing", "message": "Node.js is not installed on this server."}
     harness = _JS_HARNESS.format(student_code=student_code)
@@ -206,9 +233,17 @@ def _run_javascript(student_code: str, fn_name: str, tc: dict, timeout: int) -> 
         path = f.name
     try:
         proc = subprocess.run(
-            ["node", "--disallow-code-generation-from-strings",
-             path, json.dumps(tc.get("input", {})), fn_name],
-            capture_output=True, text=True, timeout=timeout, stdin=subprocess.DEVNULL,
+            [
+                "node",
+                "--disallow-code-generation-from-strings",
+                path,
+                json.dumps(tc.get("input", {})),
+                fn_name,
+            ],
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            stdin=subprocess.DEVNULL,
         )
         return _parse_proc(proc.stdout, proc.stderr)
     except subprocess.TimeoutExpired:
@@ -247,6 +282,7 @@ if (is.list(.result) && !is.null(.result$.err)) {{
 def _run_r(student_code: str, fn_name: str, tc: dict, timeout: int) -> dict:
     import subprocess
     import shutil
+
     if not shutil.which("Rscript"):
         return {"error": "runtime_missing", "message": "Rscript is not installed on this server."}
     harness = _R_HARNESS.format(student_code=student_code)
@@ -256,7 +292,10 @@ def _run_r(student_code: str, fn_name: str, tc: dict, timeout: int) -> dict:
     try:
         proc = subprocess.run(
             ["Rscript", path, json.dumps(tc.get("input", {})), fn_name],
-            capture_output=True, text=True, timeout=timeout, stdin=subprocess.DEVNULL,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            stdin=subprocess.DEVNULL,
         )
         return _parse_proc(proc.stdout, proc.stderr)
     except subprocess.TimeoutExpired:
@@ -269,6 +308,7 @@ def _run_r(student_code: str, fn_name: str, tc: dict, timeout: int) -> dict:
 # SQL harness — SQLite in-process
 # ---------------------------------------------------------------------------
 
+
 def _run_sql(student_code: str, fn_name: str, tc: dict, timeout: int) -> dict:
     """
     tc["input"] = {"setup": "<DDL + INSERT statements>"}
@@ -276,6 +316,7 @@ def _run_sql(student_code: str, fn_name: str, tc: dict, timeout: int) -> dict:
     tc["expected_output"] = list of rows (list of lists)
     """
     import sqlite3
+
     setup_sql = ""
     if isinstance(tc.get("input"), dict):
         setup_sql = tc["input"].get("setup", "")
@@ -335,6 +376,7 @@ public class _Harness {{
 def _run_java(student_code: str, fn_name: str, tc: dict, timeout: int) -> dict:
     import subprocess
     import shutil
+
     if not shutil.which("javac") or not shutil.which("java"):
         return {"error": "runtime_missing", "message": "Java is not installed on this server."}
     with tempfile.TemporaryDirectory(prefix="aq_java_") as tmpdir:
@@ -343,13 +385,15 @@ def _run_java(student_code: str, fn_name: str, tc: dict, timeout: int) -> dict:
             f.write(_JAVA_HARNESS.format(student_code=student_code, fn_name=fn_name))
         cp = subprocess.run(["javac", src], capture_output=True, text=True, timeout=15, cwd=tmpdir)
         if cp.returncode != 0:
-            return {"result": None, "printed": None,
-                    "error": f"Compile error: {cp.stderr[:500]}"}
+            return {"result": None, "printed": None, "error": f"Compile error: {cp.stderr[:500]}"}
         try:
             rp = subprocess.run(
                 ["java", "-cp", tmpdir, "_Harness", json.dumps(tc.get("input", {}))],
-                capture_output=True, text=True, timeout=timeout,
-                stdin=subprocess.DEVNULL, cwd=tmpdir,
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+                stdin=subprocess.DEVNULL,
+                cwd=tmpdir,
             )
             return _parse_proc(rp.stdout, rp.stderr)
         except subprocess.TimeoutExpired:
@@ -359,6 +403,7 @@ def _run_java(student_code: str, fn_name: str, tc: dict, timeout: int) -> dict:
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------
+
 
 def run_test_cases(
     student_code: str,
@@ -429,44 +474,64 @@ def run_test_cases(
             raw = runner(student_code, function_name, tc, timeout)
         except Exception as exc:
             logger.exception("Unexpected runner error for test case %r", tc)
-            results.append({
-                "description": description, "passed": False,
-                "error": f"Internal error: {exc}", "weight": weight,
-            })
+            results.append(
+                {
+                    "description": description,
+                    "passed": False,
+                    "error": f"Internal error: {exc}",
+                    "weight": weight,
+                }
+            )
             continue
 
         # Timed out
         if raw.get("timed_out"):
-            results.append({
-                "description": description, "passed": False,
-                "error": f"Timed out after {timeout} s.", "weight": weight,
-            })
+            results.append(
+                {
+                    "description": description,
+                    "passed": False,
+                    "error": f"Timed out after {timeout} s.",
+                    "weight": weight,
+                }
+            )
             continue
 
         # Runtime missing
         if raw.get("error") == "runtime_missing":
-            results.append({
-                "description": description, "passed": False,
-                "error": raw.get("message", "Runtime unavailable."), "weight": weight,
-            })
+            results.append(
+                {
+                    "description": description,
+                    "passed": False,
+                    "error": raw.get("message", "Runtime unavailable."),
+                    "weight": weight,
+                }
+            )
             continue
 
         # Compile / function-not-found errors
         if raw.get("error") in ("compile_error", "no_function"):
             if raw.get("error") == "compile_error":
                 compile_error = raw.get("message")
-            results.append({
-                "description": description, "passed": False,
-                "error": raw.get("message", ""), "weight": weight,
-            })
+            results.append(
+                {
+                    "description": description,
+                    "passed": False,
+                    "error": raw.get("message", ""),
+                    "weight": weight,
+                }
+            )
             continue
 
         # Other runtime error
         if raw.get("error"):
-            results.append({
-                "description": description, "passed": False,
-                "error": f"Runtime error: {raw['error']}", "weight": weight,
-            })
+            results.append(
+                {
+                    "description": description,
+                    "passed": False,
+                    "error": f"Runtime error: {raw['error']}",
+                    "weight": weight,
+                }
+            )
             continue
 
         # --- Output comparison (logic-based, NOT string similarity) ----------
@@ -486,11 +551,16 @@ def run_test_cases(
         if passed:
             earned_weight += weight
 
-        results.append({
-            "description": description, "passed": passed,
-            "actual": actual, "printed": printed,
-            "expected": expected, "weight": weight,
-        })
+        results.append(
+            {
+                "description": description,
+                "passed": passed,
+                "actual": actual,
+                "printed": printed,
+                "expected": expected,
+                "weight": weight,
+            }
+        )
 
     correctness = round((earned_weight / total_weight) * 80) if total_weight else 0
     tests_passed = sum(1 for r in results if r.get("passed"))
@@ -514,16 +584,23 @@ def run_test_cases(
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _parse_proc(stdout: str, stderr: str) -> dict:
     raw = (stdout or "").strip()
     if not raw:
-        return {"result": None, "printed": None,
-                "error": f"No output from runner. stderr: {(stderr or '')[:300]}"}
+        return {
+            "result": None,
+            "printed": None,
+            "error": f"No output from runner. stderr: {(stderr or '')[:300]}",
+        }
     try:
         return json.loads(raw)
     except json.JSONDecodeError as exc:
-        return {"result": None, "printed": None,
-                "error": f"Could not parse runner output: {exc}. raw={raw[:200]}"}
+        return {
+            "result": None,
+            "printed": None,
+            "error": f"Could not parse runner output: {exc}. raw={raw[:200]}",
+        }
 
 
 def _match(actual: Any, expected: Any) -> bool:
@@ -540,8 +617,7 @@ def _match(actual: Any, expected: Any) -> bool:
     if isinstance(expected, str) and isinstance(actual, str):
         return expected.strip() == actual.strip()
     if isinstance(expected, (list, tuple)) and isinstance(actual, (list, tuple)):
-        return (len(expected) == len(actual)
-                and all(_match(a, e) for a, e in zip(actual, expected)))
+        return len(expected) == len(actual) and all(_match(a, e) for a, e in zip(actual, expected))
     return actual == expected
 
 
@@ -577,47 +653,65 @@ def _quality(code: str, lang: str, any_ran: bool, compile_error) -> dict:
 
     # Hardcode check: all substantive lines are bare literal outputs.
     # Uses comment-stripped lines so inline comments don't mask hardcoded returns.
-    lines = [ln.strip() for ln in code_no_comments.splitlines()
-             if ln.strip() and not re.match(r'^\s*(#|//|--|/\*|\*)', ln)]
-    code_lines = [ln for ln in lines
-                  if not re.match(r'^(import|from|using|require|library|package|def\s|function\s|public\s)', ln)]
+    lines = [
+        ln.strip()
+        for ln in code_no_comments.splitlines()
+        if ln.strip() and not re.match(r"^\s*(#|//|--|/\*|\*)", ln)
+    ]
+    code_lines = [
+        ln
+        for ln in lines
+        if not re.match(
+            r"^(import|from|using|require|library|package|def\s|function\s|public\s)", ln
+        )
+    ]
     _literal_pat = {
-        "python": r'^\s*(return|print)\s*\(?\s*[\d.\"\'\[\]{}True False None,\s]+\s*\)?$',
-        "javascript": r'^\s*(return|console\.log)\s*\(?\s*[\d.\"\'\[\]{}true false null,\s]+\s*\)?;?$',
-        "r": r'^\s*(return\s*\(?\s*[\d.\"\',\s]+\s*\)?|cat\s*\([\d.\"\',\s]+\))$',
-        "java": r'^\s*(return|System\.out\.print(ln)?)\s*\(?\s*[\d.\"\',\s]+\s*\)?;?$',
+        "python": r"^\s*(return|print)\s*\(?\s*[\d.\"\'\[\]{}True False None,\s]+\s*\)?$",
+        "javascript": r"^\s*(return|console\.log)\s*\(?\s*[\d.\"\'\[\]{}true false null,\s]+\s*\)?;?$",
+        "r": r"^\s*(return\s*\(?\s*[\d.\"\',\s]+\s*\)?|cat\s*\([\d.\"\',\s]+\))$",
+        "java": r"^\s*(return|System\.out\.print(ln)?)\s*\(?\s*[\d.\"\',\s]+\s*\)?;?$",
     }
     pat = _literal_pat.get(lang)
     hardcoded = bool(
-        pat and code_lines
-        and all(re.match(pat, ln, re.IGNORECASE) for ln in code_lines)
+        pat and code_lines and all(re.match(pat, ln, re.IGNORECASE) for ln in code_lines)
     )
     no_hc = 0 if hardcoded else 5
 
     # Style: at least one variable assignment with a meaningful name (>1 char).
     # Uses comment-stripped code so commented-out assignments don't award points.
     _assign_pat = {
-        "python": r'\b[a-zA-Z_]{2,}\w*\s*=(?!=)',
-        "javascript": r'\b(let|const|var)\s+[a-zA-Z_]{2,}',
-        "r": r'\b[a-zA-Z_.]{2,}\w*\s*(<-|=)(?!=)',
-        "java": r'\b[a-zA-Z_]{2,}\w*\s+[a-zA-Z_]\w*\s*=',
+        "python": r"\b[a-zA-Z_]{2,}\w*\s*=(?!=)",
+        "javascript": r"\b(let|const|var)\s+[a-zA-Z_]{2,}",
+        "r": r"\b[a-zA-Z_.]{2,}\w*\s*(<-|=)(?!=)",
+        "java": r"\b[a-zA-Z_]{2,}\w*\s+[a-zA-Z_]\w*\s*=",
         "sql": None,
     }
-    ap = _assign_pat.get(lang, r'\b[a-zA-Z_]{2,}\w*\s*=(?!=)')
+    ap = _assign_pat.get(lang, r"\b[a-zA-Z_]{2,}\w*\s*=(?!=)")
     style = 5 if (ap is None or re.search(ap, code_no_comments)) else 0
 
-    return {"total": runs + no_hc + style,
-            "runs_cleanly": runs,
-            "no_hardcoded_answers": no_hc,
-            "basic_style": style}
+    return {
+        "total": runs + no_hc + style,
+        "runs_cleanly": runs,
+        "no_hardcoded_answers": no_hc,
+        "basic_style": style,
+    }
 
 
 def _zero(lang: str, reason: str) -> dict:
     return {
-        "correctness_score": 0, "quality_score": 0, "total_score": 0,
-        "tests_passed": 0, "tests_total": 0, "language": lang,
+        "correctness_score": 0,
+        "quality_score": 0,
+        "total_score": 0,
+        "tests_passed": 0,
+        "tests_total": 0,
+        "language": lang,
         "results": [{"description": reason, "passed": False, "error": reason, "weight": 0}],
-        "quality_details": {"total": 0, "runs_cleanly": 0, "no_hardcoded_answers": 0, "basic_style": 0},
+        "quality_details": {
+            "total": 0,
+            "runs_cleanly": 0,
+            "no_hardcoded_answers": 0,
+            "basic_style": 0,
+        },
     }
 
 

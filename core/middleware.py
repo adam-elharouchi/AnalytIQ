@@ -41,6 +41,7 @@ _MAINTENANCE_EXEMPT: frozenset = frozenset(
 # Cache helpers
 # ---------------------------------------------------------------------------
 
+
 def _refresh_ip_blocklist():
     """Reload IP blocklist from DB if cache is stale."""
     now = _time.monotonic()
@@ -48,6 +49,7 @@ def _refresh_ip_blocklist():
         return
     try:
         from core.database import get_db_connection
+
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute("SELECT ip_address FROM ip_blocklist")
@@ -66,6 +68,7 @@ def _refresh_maintenance():
         return
     try:
         from core.database import get_db_connection
+
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute(
@@ -84,6 +87,7 @@ def _refresh_maintenance():
 # ---------------------------------------------------------------------------
 # Request hook functions — registered in app.py
 # ---------------------------------------------------------------------------
+
 
 def check_ip_blocklist():
     """Block requests from IPs on the blocklist (403)."""
@@ -122,6 +126,7 @@ def check_maintenance_mode():
         try:
             import jwt
             from config import Config as _config
+
             payload = jwt.decode(
                 auth_header[7:],
                 _config.JWT_SECRET_KEY,
@@ -132,7 +137,10 @@ def check_maintenance_mode():
         except Exception:
             pass  # fall through to 503
 
-    msg = _maint_cache["message"] or "Platform is temporarily under maintenance. Please try again shortly."
+    msg = (
+        _maint_cache["message"]
+        or "Platform is temporarily under maintenance. Please try again shortly."
+    )
     return (
         jsonify({"error": msg, "maintenance": True}),
         503,

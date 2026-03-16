@@ -145,7 +145,9 @@ def update_exercise_generation_event_id(conn, exercise_id: str, generation_event
     except Exception as e:
         logger.error(
             "flywheel: update_exercise_generation_event_id failed for %s: %s",
-            exercise_id, e, exc_info=True,
+            exercise_id,
+            e,
+            exc_info=True,
         )
 
 
@@ -449,9 +451,7 @@ def get_flywheel_health(conn) -> dict:
         cur.execute("SELECT COUNT(*) FROM class_exercises")
         total_exercises = cur.fetchone()[0]
 
-        cur.execute(
-            "SELECT COUNT(*) FROM class_exercises WHERE generation_event_id IS NOT NULL"
-        )
+        cur.execute("SELECT COUNT(*) FROM class_exercises WHERE generation_event_id IS NOT NULL")
         instrumented = cur.fetchone()[0]
 
         cur.execute("SELECT COUNT(*) FROM exercise_outcome_events")

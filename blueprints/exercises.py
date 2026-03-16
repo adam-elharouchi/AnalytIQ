@@ -19,9 +19,18 @@ logger = logging.getLogger(__name__)
 bp = Blueprint("exercises", __name__)
 
 _PY_EXCEPTION_NAMES = (
-    "SyntaxError", "NameError", "TypeError", "IndexError", "ValueError",
-    "ZeroDivisionError", "ImportError", "ModuleNotFoundError", "TimeoutError",
-    "AttributeError", "KeyError", "RuntimeError",
+    "SyntaxError",
+    "NameError",
+    "TypeError",
+    "IndexError",
+    "ValueError",
+    "ZeroDivisionError",
+    "ImportError",
+    "ModuleNotFoundError",
+    "TimeoutError",
+    "AttributeError",
+    "KeyError",
+    "RuntimeError",
 )
 
 
@@ -316,14 +325,10 @@ def grade_exercise(exercise_id):
                 function_name = generated["function_name"]
                 test_cases = generated["test_cases"]
                 _retroactive_gen_meta = generated.get("_gen_meta")
-                exercise_repo.save_exercise_test_cases(
-                    conn, exercise_id, function_name, test_cases
-                )
+                exercise_repo.save_exercise_test_cases(conn, exercise_id, function_name, test_cases)
                 conn.commit()
             except Exception as gen_err:
-                logger.error(
-                    "Auto test-case generation failed for %s: %s", exercise_id, gen_err
-                )
+                logger.error("Auto test-case generation failed for %s: %s", exercise_id, gen_err)
                 return (
                     jsonify(
                         {
@@ -395,9 +400,9 @@ def grade_exercise(exercise_id):
             gen_event = flywheel_repo.get_generation_event_by_exercise(conn, exercise_id)
             generation_event_id = gen_event["id"] if gen_event else None
 
-            attempt_number = flywheel_repo.get_outcome_count_for_user_exercise(
-                conn, user_id, exercise_id
-            ) + 1
+            attempt_number = (
+                flywheel_repo.get_outcome_count_for_user_exercise(conn, user_id, exercise_id) + 1
+            )
 
             # Truncate per-test stderr to 200 chars to keep the JSONB payload small
             sanitised_results = []
@@ -440,7 +445,9 @@ def grade_exercise(exercise_id):
         except Exception as flywheel_err:
             logger.error(
                 "flywheel: outcome event recording failed for %s: %s",
-                exercise_id, flywheel_err, exc_info=True,
+                exercise_id,
+                flywheel_err,
+                exc_info=True,
             )
             # Intentional: do not re-raise — student must always get their grade
 
