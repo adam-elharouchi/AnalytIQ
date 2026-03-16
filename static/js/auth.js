@@ -175,7 +175,7 @@ class AuthManager {
   // Require authentication - redirect to login if not authenticated
   requireAuth() {
     if (!this.isAuthenticated()) {
-      window.location.href = 'login.html';
+      window.location.href = '/login';
       return false;
     }
     return true;
@@ -203,11 +203,11 @@ async function handleSignIn(event) {
     const signInResult = await authManager.signIn(email, password);
     // Force password reset if flagged by admin
     if (signInResult && signInResult.requires_password_reset) {
-      window.location.href = 'change-password.html?forced=true';
+      window.location.href = '/change-password?forced=true';
       return;
     }
     // Always redirect to home page
-    window.location.href = 'index.html';
+    window.location.href = '/';
   } catch (error) {
     errorDiv.textContent = error.message;
     errorDiv.style.display = 'block';
@@ -269,7 +269,7 @@ async function handleSignUp(event) {
     }
 
     // Normal path — redirect to home page
-    window.location.href = 'index.html';
+    window.location.href = '/';
   } catch (error) {
     errorDiv.textContent = error.message;
     errorDiv.style.display = 'block';
@@ -408,7 +408,7 @@ function handleSSOTokenParam() {
     } catch (_) {
       authManager.saveToken(ssoToken);
     }
-    window.location.href = 'index.html';
+    window.location.href = '/';
   }
 }
 
@@ -419,27 +419,27 @@ function handleSSOTokenParam() {
 // Check authentication on page load
 document.addEventListener('DOMContentLoaded', function () {
   // Handle SSO callback token before the auth redirect check
-  if (window.location.pathname.includes('login.html')) {
+  if (window.location.pathname.includes('/login')) {
     handleSSOTokenParam();
   }
 
   // If already authenticated and on login page, redirect to home
-  if (authManager.isAuthenticated() && window.location.pathname.includes('login.html')) {
-    window.location.href = 'index.html';
+  if (authManager.isAuthenticated() && window.location.pathname.includes('/login')) {
+    window.location.href = '/';
     return;
   }
 
   // Load SSO provider buttons on the login page
-  if (window.location.pathname.includes('login.html')) {
+  if (window.location.pathname.includes('/login')) {
     loadSSOProviders();
   }
 
   // If not authenticated and trying to access any page except login, redirect to login
   // This is handled by requireAuth() on each page, but we can add a global check here too
-  if (!authManager.isAuthenticated() && !window.location.pathname.includes('login.html')) {
+  if (!authManager.isAuthenticated() && !window.location.pathname.includes('/login')) {
     // This will be handled by individual pages, but we can add a fallback
     const currentPage = window.location.pathname.split('/').pop();
-    if (currentPage && currentPage !== 'login.html' && currentPage !== '') {
+    if (currentPage && currentPage !== 'login' && currentPage !== '') {
       // Will be redirected by requireAuth() on each page
     }
   }

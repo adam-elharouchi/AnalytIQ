@@ -257,7 +257,7 @@ async function handleCreateClass(event) {
 
 // View class (navigate to class management page)
 function viewClass(classId) {
-  window.location.href = `professor-class.html?class_id=${encodeURIComponent(classId)}`;
+  window.location.href = `/professor-class?class_id=${encodeURIComponent(classId)}`;
 }
 
 // Copy class code to clipboard

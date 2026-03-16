@@ -135,7 +135,7 @@
     const currentUser = authManager.getCurrentUser();
     if (!currentUser || (currentUser.role !== 'professor' && currentUser.role !== 'superadmin')) {
       alert('Access denied. This page is for professors or administrators only.');
-      window.location.href = 'index.html';
+      window.location.href = '/';
       return;
     }
 

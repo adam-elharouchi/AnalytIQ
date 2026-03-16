@@ -55,7 +55,7 @@ async function loadClassData(classId) {
     loadingState.innerHTML = `
       <h2 style="margin-bottom: 0.5rem;">Error Loading Class</h2>
       <p style="color: #64748b; margin-bottom: 1.5rem;">${error.message}</p>
-      <button class="btn btn-primary" onclick="window.location.href='student-classes.html'">Back to Classes</button>
+      <button class="btn btn-primary" onclick="window.location.href='/student-classes'">Back to Classes</button>
     `;
   }
 }
@@ -406,7 +406,7 @@ async function renderChapters(chapters) {
           </div>
           <div style="display: flex; gap: 0.5rem; flex-shrink: 0;">
             ${chapter.pdf_url || chapter.pdf_filename ? `
-            <a href="chapter-view.html?chapter_id=${encodeURIComponent(chapter.chapter_id)}&class_id=${encodeURIComponent(currentClassId)}"
+            <a href="chapter-view?chapter_id=${encodeURIComponent(chapter.chapter_id)}&class_id=${encodeURIComponent(currentClassId)}"
                style="text-decoration: none; padding: 0.55rem 1rem; background: rgba(37,105,244,0.1); border: 1px solid var(--color-primary); color: var(--color-primary); border-radius: 0.5rem; font-family: var(--font-mono); font-size: 0.82rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.4rem; transition: background 0.2s;"
                onmouseover="this.style.background='var(--color-primary)'; this.style.color='white';"
                onmouseout="this.style.background='rgba(37,105,244,0.1)'; this.style.color='var(--color-primary)';">
@@ -440,7 +440,7 @@ async function renderChapters(chapters) {
 
 // Start exercise - navigate to practice playground (same as professor portal)
 function startExercise(exerciseId, chapterId, exerciseTitle, exerciseDescription, exerciseDifficulty) {
-  window.location.href = `practice-playground.html?exercise_id=${encodeURIComponent(exerciseId)}&chapter_id=${encodeURIComponent(chapterId)}&class_id=${encodeURIComponent(currentClassId)}&title=${encodeURIComponent(exerciseTitle)}&page_type=student`;
+  window.location.href = `/practice-playground?exercise_id=${encodeURIComponent(exerciseId)}&chapter_id=${encodeURIComponent(chapterId)}&class_id=${encodeURIComponent(currentClassId)}&title=${encodeURIComponent(exerciseTitle)}&page_type=student`;
 }
 
 // Load resources (read-only for students)
@@ -479,7 +479,7 @@ async function loadResources() {
         title: 'Code Assistant',
         description: 'AI-powered assistant that helps you write code, analyze data, derive insights, and create visualizations.',
         resource_type: 'tool',
-        resource_url: 'code-assistant.html',
+        resource_url: '/code-assistant',
         is_default: true
       },
       {
@@ -591,7 +591,7 @@ async function loadResources() {
 
           // Case 1: Chapter PDF
           if (resource.resource_type === 'pdf' && resource.is_chapter && resource.chapter_id) {
-            url = `chapter-view.html?chapter_id=${encodeURIComponent(resource.chapter_id)}&class_id=${encodeURIComponent(currentClassId)}`;
+            url = `chapter-view?chapter_id=${encodeURIComponent(resource.chapter_id)}&class_id=${encodeURIComponent(currentClassId)}`;
             linkText = 'View PDF';
             linkTarget = ''; // Same tab for app navigation
             isDownload = false;

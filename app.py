@@ -4,7 +4,7 @@ import sys
 import uuid
 
 from dotenv import load_dotenv
-from flask import Flask, g, jsonify, render_template, request, send_from_directory
+from flask import Flask, g, jsonify, redirect, render_template, request, send_from_directory
 from jinja2 import TemplateNotFound
 from pythonjsonlogger import jsonlogger
 from werkzeug.exceptions import HTTPException
@@ -127,9 +127,9 @@ try:
     if config.FEATURE_CSRF_PROTECTION:
         csrf_instance.init_app(app)
         csrf = csrf_instance
-        import extensions
+        from core import extensions as _ext
 
-        extensions.csrf = csrf_instance
+        _ext.csrf = csrf_instance
         logger.info("CSRF protection enabled")
     else:
         logger.info("CSRF protection disabled (feature flag off)")
@@ -392,15 +392,21 @@ def serve_frontend(path):
     safe = os.path.normpath(path)
     if safe.startswith("..") or os.path.isabs(safe):
         return jsonify({"error": "Forbidden"}), 403
+    # Redirect legacy .html URLs to clean URLs (301 permanent)
     if safe.endswith(".html"):
-        try:
-            return render_template(safe)
-        except TemplateNotFound:
-            return render_template("index.html")
+        clean = safe[:-5] or "/"
+        return redirect(f"/{clean}", 301)
+    # Try to render as a Jinja2 template (adding .html extension)
+    try:
+        return render_template(f"{safe}.html")
+    except TemplateNotFound:
+        pass
+    # Serve as a static asset if the file exists
     full = os.path.join(_ROOT, safe)
-    if not os.path.isfile(full):
-        return render_template("index.html")
-    return send_from_directory(_ROOT, safe)
+    if os.path.isfile(full):
+        return send_from_directory(_ROOT, safe)
+    # Fall back to SPA entry point
+    return render_template("index.html")
 
 
 # ============================================================================

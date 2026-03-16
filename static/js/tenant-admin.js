@@ -31,7 +31,7 @@ class TenantAdminDashboard {
         try { currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}'); } catch (e) {}
         const role  = currentUser.role || localStorage.getItem('user_role');
         const token = localStorage.getItem('authToken');
-        if (!token) { window.location.href = '/login.html'; return false; }
+        if (!token) { window.location.href = '/login'; return false; }
         if (role !== 'tenant_admin') {
             console.warn('Tenant admin access denied, role=', role);
             window.location.href = '/';
@@ -380,13 +380,13 @@ class TenantAdminDashboard {
                     localStorage.setItem('original_user',  localStorage.getItem('currentUser'));
                 }
                 localStorage.setItem('authToken', data.token);
-                let dest = '/student-classes.html';
+                let dest = '/student-classes';
                 try {
                     const payload = JSON.parse(atob(data.token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
                     localStorage.setItem('currentUser', JSON.stringify({
                         user_id: payload.user_id, name: payload.name, email: payload.email, role: payload.role
                     }));
-                    dest = payload.role === 'professor' ? '/professor-dashboard.html' : '/student-classes.html';
+                    dest = payload.role === 'professor' ? '/professor-dashboard' : '/student-classes';
                 } catch (e) { console.error('JWT decode failed:', e); }
                 localStorage.setItem('impersonation_started_at', Date.now().toString());
                 window.location.href = dest;

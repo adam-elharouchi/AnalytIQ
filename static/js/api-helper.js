@@ -45,6 +45,28 @@ if (typeof apiCache === 'undefined') {
     };
 }
 
+// CSRF Token Management
+window._csrfToken = window._csrfToken || null;
+window._csrfFetchPromise = null;
+
+async function getCsrfToken() {
+    if (window._csrfToken) return window._csrfToken;
+    // Deduplicate concurrent fetches
+    if (!window._csrfFetchPromise) {
+        window._csrfFetchPromise = fetch('/api/csrf-token')
+            .then(function(r) { return r.ok ? r.json() : null; })
+            .then(function(data) {
+                if (data && data.csrf_enabled && data.csrf_token) {
+                    window._csrfToken = data.csrf_token;
+                }
+                window._csrfFetchPromise = null;
+                return window._csrfToken;
+            })
+            .catch(function() { window._csrfFetchPromise = null; return null; });
+    }
+    return window._csrfFetchPromise;
+}
+
 // Get auth headers for API requests
 function getAuthHeaders(extraHeaders = {}) {
     const headers = { 'Content-Type': 'application/json', ...extraHeaders };
@@ -55,17 +77,24 @@ function getAuthHeaders(extraHeaders = {}) {
     return headers;
 }
 
-// Authenticated fetch wrapper - adds JWT token to all requests
+// Authenticated fetch wrapper - adds JWT token and CSRF token to all requests
 async function authFetch(url, options = {}) {
-    // Add Authorization header
+    options.headers = options.headers || {};
     const token = localStorage.getItem('authToken');
     if (token) {
-        options.headers = options.headers || {};
         // Don't override Content-Type for FormData (multipart)
         if (!(options.body instanceof FormData)) {
             options.headers['Content-Type'] = options.headers['Content-Type'] || 'application/json';
         }
         options.headers['Authorization'] = `Bearer ${token}`;
+    }
+    // Attach CSRF token for state-changing requests
+    const method = (options.method || 'GET').toUpperCase();
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+        const csrfToken = await getCsrfToken();
+        if (csrfToken) {
+            options.headers['X-CSRFToken'] = csrfToken;
+        }
     }
     return fetch(url, options);
 }

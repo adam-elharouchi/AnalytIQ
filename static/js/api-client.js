@@ -48,7 +48,7 @@
                 localStorage.removeItem('authToken');
                 localStorage.removeItem('currentUser');
                 const redirect = encodeURIComponent(window.location.href);
-                window.location.href = 'login.html?reason=session_expired&redirect=' + redirect;
+                window.location.href = '/login?reason=session_expired&redirect=' + redirect;
                 return { ok: false, data: null, error: 'Session expired' };
             }
 

@@ -105,19 +105,19 @@
     if (isSuperAdmin) {
       // Superadmin navigation cards: Tenant Management, User Administration, System Settings
       navigationGrid.innerHTML = `
-        <a href="superadmin-dashboard.html" class="page-nav-card">
+        <a href="/superadmin-dashboard" class="page-nav-card">
           <span class="page-nav-icon">${ICON_TENANTS}</span>
           <h2>Manage Tenants & LTI</h2>
           <p>Configure LTI tool integrations, manage institutional tenants, and oversee global campus connectivity.</p>
         </a>
 
-        <a href="superadmin-dashboard.html" class="page-nav-card" onclick="sessionStorage.setItem('sa_tab', 'users')">
+        <a href="/superadmin-dashboard" class="page-nav-card" onclick="sessionStorage.setItem('sa_tab', 'users')">
           <span class="page-nav-icon">${ICON_USERS}</span>
           <h2>User Administration</h2>
           <p>Perform global user searches across all environments, manage account disabling, and utilize secure impersonation.</p>
         </a>
 
-        <a href="superadmin-dashboard.html" class="page-nav-card" onclick="sessionStorage.setItem('sa_tab', 'health')">
+        <a href="/superadmin-dashboard" class="page-nav-card" onclick="sessionStorage.setItem('sa_tab', 'health')">
           <span class="page-nav-icon">${ICON_SETTINGS}</span>
           <h2>System Settings</h2>
           <p>Monitor platform health, API rate limits, audit logging streams, and global server configurations.</p>
@@ -126,19 +126,19 @@
     } else if (isTenantAdmin) {
       // Tenant Admin navigation cards: Admin Dashboard, Users, SSO Config
       navigationGrid.innerHTML = `
-        <a href="tenant-admin-dashboard.html" class="page-nav-card">
+        <a href="/tenant-admin-dashboard" class="page-nav-card">
           <span class="page-nav-icon">${ICON_DASHBOARD}</span>
           <h2>Admin Dashboard</h2>
           <p>View tenant metrics, manage approvals, track activity, and oversee your organization's learning environment.</p>
         </a>
 
-        <a href="tenant-admin-dashboard.html" class="page-nav-card" onclick="sessionStorage.setItem('ta_tab', 'users-section')">
+        <a href="/tenant-admin-dashboard" class="page-nav-card" onclick="sessionStorage.setItem('ta_tab', 'users-section')">
           <span class="page-nav-icon">${ICON_USERS}</span>
           <h2>User Management</h2>
           <p>Search, manage, and configure roles for all users within your organization.</p>
         </a>
 
-        <a href="tenant-admin-dashboard.html" class="page-nav-card" onclick="sessionStorage.setItem('ta_tab', 'sso-config-section')">
+        <a href="/tenant-admin-dashboard" class="page-nav-card" onclick="sessionStorage.setItem('ta_tab', 'sso-config-section')">
           <span class="page-nav-icon">${ICON_SETTINGS}</span>
           <h2>SSO & Access</h2>
           <p>Configure Single Sign-On providers, manage identity integrations, and control access policies.</p>
@@ -147,19 +147,19 @@
     } else if (isProfessor) {
       // Professor navigation cards: Dashboard, Code, Profile
       navigationGrid.innerHTML = `
-          <a href="professor-dashboard.html" class="page-nav-card">
+          <a href="/professor-dashboard" class="page-nav-card">
             <span class="page-nav-icon">${ICON_DASHBOARD}</span>
             <h2>Dashboard</h2>
             <p>Manage your classes, upload modules, create exercises, and track student progress.</p>
           </a>
 
-          <a href="code-assistant.html" class="page-nav-card">
+          <a href="/code-assistant" class="page-nav-card">
             <span class="page-nav-icon">${ICON_CODE}</span>
             <h2>Code</h2>
             <p>AI-powered assistant that helps you write code, analyze data, derive insights, and create visualizations.</p>
           </a>
 
-          <a href="profile.html" class="page-nav-card">
+          <a href="/profile" class="page-nav-card">
             <span class="page-nav-icon">${ICON_PROFILE}</span>
             <h2>Profile</h2>
             <p>Manage your profile information, update your account settings, and customize your preferences.</p>
@@ -168,19 +168,19 @@
     } else {
       // Student navigation cards: My Classes, Code, Profile
       navigationGrid.innerHTML = `
-          <a href="student-classes.html" class="page-nav-card">
+          <a href="/student-classes" class="page-nav-card">
             <span class="page-nav-icon">${ICON_CLASSES}</span>
             <h2>My Classes</h2>
             <p>Access your enrolled classes, view modules, practice exercises, and resources for each course.</p>
           </a>
 
-          <a href="code-assistant.html" class="page-nav-card">
+          <a href="/code-assistant" class="page-nav-card">
             <span class="page-nav-icon">${ICON_CODE}</span>
             <h2>Code</h2>
             <p>AI-powered assistant that helps you write code, analyze data, derive insights, and create visualizations.</p>
           </a>
 
-          <a href="profile.html" class="page-nav-card">
+          <a href="/profile" class="page-nav-card">
             <span class="page-nav-icon">${ICON_PROFILE}</span>
             <h2>Profile</h2>
             <p>Manage your profile information, update your account settings, and customize your preferences.</p>
@@ -200,47 +200,47 @@
       if (isSuperAdmin) {
         // Superadmin portal: Dashboard, Audit Logs, Health
         footerLeftLinks.innerHTML = `
-          <a href="superadmin-dashboard.html">Dashboard</a>
-          <a href="superadmin-dashboard.html">System Health</a>
+          <a href="/superadmin-dashboard">Dashboard</a>
+          <a href="/superadmin-dashboard">System Health</a>
         `;
         footerRightLinks.innerHTML = `
-          <a href="contact.html">Support</a>
-          <a href="terms.html">Terms</a>
-          <a href="privacy.html">Privacy</a>
+          <a href="/contact">Support</a>
+          <a href="/terms">Terms</a>
+          <a href="/privacy">Privacy</a>
         `;
       } else if (isTenantAdmin) {
         footerLeftLinks.innerHTML = `
-          <a href="tenant-admin-dashboard.html">Dashboard</a>
-          <a href="tenant-admin-dashboard.html">Users</a>
+          <a href="/tenant-admin-dashboard">Dashboard</a>
+          <a href="/tenant-admin-dashboard">Users</a>
         `;
         footerRightLinks.innerHTML = `
-          <a href="contact.html">Support</a>
-          <a href="terms.html">Terms</a>
-          <a href="privacy.html">Privacy</a>
+          <a href="/contact">Support</a>
+          <a href="/terms">Terms</a>
+          <a href="/privacy">Privacy</a>
         `;
       } else if (isProfessor) {
         // Professor portal: Home, Dashboard, Code (left), Contact, Terms, Privacy (right)
         footerLeftLinks.innerHTML = `
-            <a href="index.html">Home</a>
-            <a href="professor-dashboard.html">Dashboard</a>
-            <a href="code-assistant.html">Code</a>
+            <a href="/">Home</a>
+            <a href="/professor-dashboard">Dashboard</a>
+            <a href="/code-assistant">Code</a>
           `;
         footerRightLinks.innerHTML = `
-            <a href="contact.html">Contact</a>
-            <a href="terms.html">Terms</a>
-            <a href="privacy.html">Privacy</a>
+            <a href="/contact">Contact</a>
+            <a href="/terms">Terms</a>
+            <a href="/privacy">Privacy</a>
           `;
       } else {
         // Student portal: My Classes, Profile, Code (left), Contact, Terms, Privacy (right)
         footerLeftLinks.innerHTML = `
-            <a href="student-classes.html">My Classes</a>
-            <a href="profile.html">Profile</a>
-            <a href="code-assistant.html">Code</a>
+            <a href="/student-classes">My Classes</a>
+            <a href="/profile">Profile</a>
+            <a href="/code-assistant">Code</a>
           `;
         footerRightLinks.innerHTML = `
-            <a href="contact.html">Contact</a>
-            <a href="terms.html">Terms</a>
-            <a href="privacy.html">Privacy</a>
+            <a href="/contact">Contact</a>
+            <a href="/terms">Terms</a>
+            <a href="/privacy">Privacy</a>
           `;
       }
     }
