@@ -339,7 +339,7 @@ async function deleteAccount() {
       localStorage.clear();
 
       // Redirect to login
-      window.location.href = 'login.html';
+      window.location.href = '/login';
     } else {
       throw new Error(data.error || 'Failed to delete account');
     }

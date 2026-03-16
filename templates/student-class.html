@@ -8,7 +8,7 @@
 <main class="container">
   <!-- Back Button -->
   <div style="margin-bottom: 2rem;">
-    <a href="student-classes.html" class="btn-back">
+    <a href="/student-classes" class="btn-back">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <line x1="19" y1="12" x2="5" y2="12"></line>
         <polyline points="12 19 5 12 12 5"></polyline>
@@ -205,11 +205,11 @@
     if (!currentUser || (currentUser.role !== 'student' && currentUser.role !== 'superadmin')) {
       // Redirect regular professors
       if (currentUser && currentUser.role === 'professor') {
-        window.location.href = 'professor-dashboard.html';
+        window.location.href = '/professor-dashboard';
         return;
       }
       // For any other unauthorized role, redirect to student classes or login
-      window.location.href = 'student-classes.html'; // Or 'login.html' if no other role is expected here
+      window.location.href = '/student-classes'; // Or '/login' if no other role is expected here
       return;
     }
 
@@ -219,7 +219,7 @@
 
     if (!classId) {
       alert('Class ID is required');
-      window.location.href = 'student-classes.html';
+      window.location.href = '/student-classes';
       return;
     }
 

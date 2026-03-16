@@ -251,7 +251,7 @@ async function handleJoinClass(event) {
 
 // Navigate to class view
 function viewClass(classId) {
-  window.location.href = `student-class.html?class_id=${encodeURIComponent(classId)}`;
+  window.location.href = `/student-class?class_id=${encodeURIComponent(classId)}`;
 }
 
 // Escape HTML to prevent XSS

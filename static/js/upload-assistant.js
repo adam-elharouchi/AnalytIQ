@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!classId) {
         alert('Class ID is required');
-        window.location.href = 'professor-dashboard.html';
+        window.location.href = '/professor-dashboard';
         return;
     }
 
@@ -26,7 +26,7 @@ let selectedChapterId = null; // For existing chapter selection
 let chapterSource = 'new'; // 'new' or 'existing'
 
 function goBack() {
-    window.location.href = `professor-class.html?class_id=${currentClassId}`;
+    window.location.href = `professor-class?class_id=${currentClassId}`;
 }
 
 // Toggle between existing chapter and new upload
@@ -426,7 +426,7 @@ async function saveAll() {
         await Promise.all(savePromises);
 
         alert('Exercises saved successfully!');
-        window.location.href = `professor-class.html?class_id=${currentClassId}`;
+        window.location.href = `professor-class?class_id=${currentClassId}`;
 
     } catch (error) {
         alert('Error saving: ' + error.message);

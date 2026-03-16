@@ -49,7 +49,7 @@ class SuperAdminDashboard {
         const token = localStorage.getItem('authToken');
 
         if (!token) {
-            window.location.href = '/login.html';
+            window.location.href = '/login';
             return false;
         }
 
@@ -1051,7 +1051,7 @@ class SuperAdminDashboard {
                     localStorage.setItem('authToken', data.token);
 
                     // Decode payload to determine the destination page.
-                    let dest = '/student-classes.html';
+                    let dest = '/student-classes';
                     try {
                         const payload = JSON.parse(
                             atob(data.token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))
@@ -1064,11 +1064,11 @@ class SuperAdminDashboard {
                         };
                         localStorage.setItem('currentUser', JSON.stringify(targetUserObj));
                         const roleDestMap = {
-                            professor:    '/professor-dashboard.html',
-                            tenant_admin: '/tenant-admin-dashboard.html',
-                            superadmin:   '/superadmin-dashboard.html',
+                            professor:    '/professor-dashboard',
+                            tenant_admin: '/tenant-admin-dashboard',
+                            superadmin:   '/superadmin-dashboard',
                         };
-                        dest = roleDestMap[payload.role] || '/student-classes.html';
+                        dest = roleDestMap[payload.role] || '/student-classes';
                     } catch (e) { console.error("JWT decode failed:", e); }
 
                     // Record when the session started so the floating bar can enforce

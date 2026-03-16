@@ -90,7 +90,7 @@ async function loadClassData(classId) {
       <div style="text-align: center; padding: 3rem;">
         <h2 style="margin-bottom: 0.5rem;">Error Loading Class</h2>
         <p style="color: #64748b; margin-bottom: 1.5rem;">${error.message}</p>
-        <button class="btn btn-primary" onclick="window.location.href='professor-dashboard.html'">Back to Dashboard</button>
+        <button class="btn btn-primary" onclick="window.location.href='/professor-dashboard'">Back to Dashboard</button>
       </div>
     `;
   }
@@ -220,7 +220,7 @@ async function loadChapters() {
             </div>
             <div style="display: flex; gap: 0.5rem; flex-shrink: 0;">
               ${chapter.pdf_url || chapter.pdf_filename ? `
-              <a href="chapter-view.html?chapter_id=${encodeURIComponent(chapter.chapter_id)}&class_id=${encodeURIComponent(currentClassId)}"
+              <a href="chapter-view?chapter_id=${encodeURIComponent(chapter.chapter_id)}&class_id=${encodeURIComponent(currentClassId)}"
                 style="text-decoration: none; padding: 0.55rem 1rem; background: rgba(37,105,244,0.1); border: 1px solid var(--color-primary); color: var(--color-primary); border-radius: 0.5rem; font-family: var(--font-mono); font-size: 0.82rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.4rem; transition: background 0.2s;"
                 onmouseover="this.style.background='var(--color-primary)'; this.style.color='white';"
                 onmouseout="this.style.background='rgba(37,105,244,0.1)'; this.style.color='var(--color-primary)';">
@@ -925,7 +925,7 @@ async function editExercise(exerciseId) {
 
 // Start exercise from class view - opens practice playground
 function startExerciseFromClass(exerciseId, chapterId, exerciseTitle) {
-  window.location.href = `practice-playground.html?exercise_id=${encodeURIComponent(exerciseId)}&chapter_id=${encodeURIComponent(chapterId)}&class_id=${encodeURIComponent(currentClassId)}&title=${encodeURIComponent(exerciseTitle)}&page_type=professor`;
+  window.location.href = `/practice-playground?exercise_id=${encodeURIComponent(exerciseId)}&chapter_id=${encodeURIComponent(chapterId)}&class_id=${encodeURIComponent(currentClassId)}&title=${encodeURIComponent(exerciseTitle)}&page_type=professor`;
 }
 
 // Load resources
@@ -964,7 +964,7 @@ async function loadResources() {
         title: 'Code Assistant',
         description: 'AI-powered assistant that helps you write code, analyze data, derive insights, and create visualizations.',
         resource_type: 'tool',
-        resource_url: 'code-assistant.html',
+        resource_url: '/code-assistant',
         is_default: true
       },
       {
@@ -1060,7 +1060,7 @@ async function loadResources() {
           // Handle PDFs
           // Handle Chapter PDFs
           if (resource.resource_type === 'pdf' && resource.is_chapter && resource.chapter_id) {
-            url = `chapter-view.html?chapter_id=${encodeURIComponent(resource.chapter_id)}&class_id=${encodeURIComponent(currentClassId)}`;
+            url = `chapter-view?chapter_id=${encodeURIComponent(resource.chapter_id)}&class_id=${encodeURIComponent(currentClassId)}`;
             linkText = 'View PDF';
             linkTarget = ''; // Open in same tab or new? User said "same chapter in chapters tab", usually implies navigation.
           } else if (resource.resource_type === 'pdf') {
@@ -1070,7 +1070,7 @@ async function loadResources() {
           } else if (resource.resource_type === 'chapter') {
             // Legacy fallback if type is still 'chapter'
             if (resource.chapter_id) {
-              url = `chapter-view.html?chapter_id=${encodeURIComponent(resource.chapter_id)}&class_id=${encodeURIComponent(currentClassId)}`;
+              url = `chapter-view?chapter_id=${encodeURIComponent(resource.chapter_id)}&class_id=${encodeURIComponent(currentClassId)}`;
               linkTarget = '';
             } else {
               linkText = 'View PDF';

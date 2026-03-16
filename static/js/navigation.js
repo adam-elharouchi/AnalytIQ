@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const navbar = document.getElementById('navbar');
   if (!navbar) return;
 
-  const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+  const currentPage = window.location.pathname.split('/').pop() || 'index';
 
   // Check authentication
   let currentUser = null;
@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', function () {
     `;
   } else {
     userMenu = `
-      <li><a href="login.html" class="btn-login">Sign In</a></li>
+      <li><a href="/login" class="btn-login">Sign In</a></li>
     `;
   }
 
@@ -62,41 +62,41 @@ document.addEventListener('DOMContentLoaded', function () {
   if (isAuthenticated) {
     if (isSuperAdmin) {
       // Superadmin: Management Portals
-      roleLinks = `<li><a href="superadmin-dashboard.html" ${currentPage === 'superadmin-dashboard.html' ? 'class="active"' : ''}>Super Admin</a></li>`;
+      roleLinks = `<li><a href="/superadmin-dashboard" ${currentPage === 'superadmin-dashboard' ? 'class="active"' : ''}>Super Admin</a></li>`;
       commonLinks = '';
     } else if (isTenantAdmin) {
-      roleLinks = `<li><a href="tenant-admin-dashboard.html" ${currentPage === 'tenant-admin-dashboard.html' ? 'class="active"' : ''}>Admin Dashboard</a></li>`;
+      roleLinks = `<li><a href="/tenant-admin-dashboard" ${currentPage === 'tenant-admin-dashboard' ? 'class="active"' : ''}>Admin Dashboard</a></li>`;
       commonLinks = '';
     } else if (isProfessor) {
       // Professors: Dashboard, Code
-      roleLinks = `<li><a href="professor-dashboard.html" ${currentPage === 'professor-dashboard.html' || currentPage === 'professor-class.html' ? 'class="active"' : ''}>Dashboard</a></li>`;
+      roleLinks = `<li><a href="/professor-dashboard" ${currentPage === 'professor-dashboard' || currentPage === 'professor-class' ? 'class="active"' : ''}>Dashboard</a></li>`;
       commonLinks = `
-        <li><a href="code-assistant.html" ${currentPage === 'code-assistant.html' ? 'class="active"' : ''}>Code</a></li>
+        <li><a href="/code-assistant" ${currentPage === 'code-assistant' ? 'class="active"' : ''}>Code</a></li>
       `;
     } else {
       // Students: My Classes, Code
-      roleLinks = `<li><a href="student-classes.html" ${currentPage === 'student-classes.html' || currentPage === 'student-class.html' ? 'class="active"' : ''}>My Classes</a></li>`;
+      roleLinks = `<li><a href="/student-classes" ${currentPage === 'student-classes' || currentPage === 'student-class' ? 'class="active"' : ''}>My Classes</a></li>`;
       commonLinks = `
-        <li><a href="code-assistant.html" ${currentPage === 'code-assistant.html' ? 'class="active"' : ''}>Code</a></li>
+        <li><a href="/code-assistant" ${currentPage === 'code-assistant' ? 'class="active"' : ''}>Code</a></li>
       `;
     }
   } else {
     // Not authenticated - show all links including Modules (Practice removed - now integrated into classes)
     commonLinks = `
-      <li><a href="modules.html" ${currentPage === 'modules.html' ? 'class="active"' : ''}>Modules</a></li>
-      <li><a href="resources.html" ${currentPage === 'resources.html' ? 'class="active"' : ''}>Resources</a></li>
-      <li><a href="code-assistant.html" ${currentPage === 'code-assistant.html' ? 'class="active"' : ''}>Code</a></li>
+      <li><a href="/modules" ${currentPage === 'modules' ? 'class="active"' : ''}>Modules</a></li>
+      <li><a href="/resources" ${currentPage === 'resources' ? 'class="active"' : ''}>Resources</a></li>
+      <li><a href="/code-assistant" ${currentPage === 'code-assistant' ? 'class="active"' : ''}>Code</a></li>
     `;
   }
 
   const navHTML = `
     <div class="nav-container" role="navigation" aria-label="Main navigation">
-      <a href="index.html" class="nav-brand" aria-label="AnalytIQ home">
+      <a href="/" class="nav-brand" aria-label="AnalytIQ home">
         <span class="logo-analyt" aria-hidden="true">Analyt</span><span class="logo-iq" aria-hidden="true">IQ</span>
       </a>
       <button class="mobile-menu-toggle" onclick="toggleMobileMenu()" aria-label="Open navigation menu" aria-expanded="false" aria-controls="navLinks">Menu</button>
       <ul class="nav-links" id="navLinks">
-        <li><a href="index.html" ${currentPage === 'index.html' ? 'class="active"' : ''}>Home</a></li>
+        <li><a href="/" ${currentPage === 'index' || currentPage === '' ? 'class="active"' : ''}>Home</a></li>
         ${roleLinks}
         ${commonLinks}
         ${userMenu}
@@ -151,11 +151,11 @@ function handleSignOut() {
   if (typeof uiStates !== 'undefined' && uiStates.showConfirmModal) {
     uiStates.showConfirmModal('Are you sure you want to sign out?', function () {
       localStorage.removeItem('currentUser');
-      window.location.href = 'login.html';
+      window.location.href = '/login';
     });
   } else {
     localStorage.removeItem('currentUser');
-    window.location.href = 'login.html';
+    window.location.href = '/login';
   }
 }
 
@@ -186,7 +186,7 @@ function exitImpersonation() {
     }
 
     setTimeout(() => {
-      window.location.href = 'superadmin-dashboard.html';
+      window.location.href = '/superadmin-dashboard';
     }, 1000);
   }
 }
@@ -223,7 +223,7 @@ document.addEventListener('click', function (event) {
 
 // Handle manage profile
 function handleManageProfile() {
-  window.location.href = 'profile.html';
+  window.location.href = '/profile';
   const dropdown = document.getElementById('userMenuDropdown');
   if (dropdown) {
     dropdown.classList.remove('active');

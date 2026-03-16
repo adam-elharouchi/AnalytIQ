@@ -11,7 +11,9 @@
       "Bash(sed -i '' 's/-> dict | None:/-> Optional[Dict]:/g' repositories/flywheel_repository.py)",
       "Bash(sed -i '' 's/-> list\\\\[dict\\\\]:/-> List[Dict]:/g' repositories/flywheel_repository.py)",
       "Bash(pytest --ignore=tests/e2e -q)",
-      "Bash(grep -rn \"from db import\\\\|import db$\\\\|^import db\\\\b\" --include=\"*.py\" .)"
+      "Bash(grep -rn \"from db import\\\\|import db$\\\\|^import db\\\\b\" --include=\"*.py\" .)",
+      "Bash(done)",
+      "Bash(grep -rn \"csrf_token\\\\|generate_csrf\\\\|csrf-token\" /Users/aelharouchi/Documents/GitHub/AnalytIQ/*.py /Users/aelharouchi/Documents/GitHub/AnalytIQ/blueprints/)"
     ]
   }
 }
