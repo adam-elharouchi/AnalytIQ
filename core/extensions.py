@@ -40,9 +40,16 @@ csrf = None
 
 def csrf_exempt(view_func):
     """
-    Wrapper decorator so we can safely exempt JSON API endpoints from CSRF
-    checks even when CSRF is disabled or Flask-WTF is not installed.
+    Mark a view function as exempt from CSRF checks.
+
+    Uses flask_wtf.csrf.csrf_exempt which stamps `view_func.csrf_exempt = True`
+    on the function itself.  CSRFProtect reads that flag at *request* time, so
+    this works correctly even though blueprints are decorated before app.py
+    calls csrf_instance.init_app(app).  Falls back to a no-op when Flask-WTF
+    is not installed.
     """
-    if csrf is not None:
-        return csrf.exempt(view_func)
-    return view_func
+    try:
+        from flask_wtf.csrf import csrf_exempt as _wtf_csrf_exempt
+        return _wtf_csrf_exempt(view_func)
+    except ImportError:
+        return view_func
