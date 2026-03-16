@@ -386,6 +386,11 @@ def serve_index():
     return render_template("index.html")
 
 
+@app.route("/landing", methods=["GET"])
+def serve_landing():
+    return render_template("landing.html")
+
+
 @app.route("/<no_api_path:path>", methods=["GET"])
 def serve_frontend(path):
     """Serve frontend files: render HTML via Jinja2; serve static assets directly."""
