@@ -61,11 +61,11 @@ jobs:
 
     - name: Check code formatting (black)
       run: |
-        python -m black --check app.py utils/ cache.py supabase_storage.py auth_helpers.py db.py config.py blueprints/ repositories/
+        python -m black --check app.py config.py blueprints/ repositories/ core/ services/ workers/
 
     - name: Run type checking (mypy)
       run: |
-        python -m mypy utils/ cache.py supabase_storage.py --ignore-missing-imports
+        python -m mypy app.py config.py blueprints/ repositories/ core/ services/ workers/ --ignore-missing-imports
       continue-on-error: true
     
     - name: Run tests with coverage
