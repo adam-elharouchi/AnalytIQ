@@ -16,12 +16,12 @@ from datetime import datetime
 from flask import Blueprint, jsonify, request
 
 import config
-from auth_helpers import decode_jwt_token, require_auth, validate_fields
-from cache import cache_health_check
-from celery_app import celery_app
-from db import close_conn_safely, get_db_connection
-from extensions import csrf_exempt
-from supabase_storage import storage_health_check
+from core.auth import decode_jwt_token, require_auth, validate_fields
+from core.cache import cache_health_check
+from workers.celery_app import celery_app
+from core.database import close_conn_safely, get_db_connection
+from core.extensions import csrf_exempt
+from core.storage import storage_health_check
 
 logger = logging.getLogger(__name__)
 bp = Blueprint("health", __name__)

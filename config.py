@@ -27,8 +27,8 @@ UPLOAD_FOLDER = "Course Content"
 # ============================================================================
 
 # Connection Pool Configuration
-DB_POOL_MIN_CONNECTIONS = int(os.getenv("DB_POOL_MIN", 2))
-DB_POOL_MAX_CONNECTIONS = int(os.getenv("DB_POOL_MAX", (os.cpu_count() or 4) * 2))
+DB_POOL_MIN_CONNECTIONS = int(os.getenv("DB_POOL_MIN", 1))
+DB_POOL_MAX_CONNECTIONS = int(os.getenv("DB_POOL_MAX", 5))
 
 # Connection Timeouts
 DB_CONNECTION_TIMEOUT = int(os.getenv("DB_CONNECTION_TIMEOUT", 10))  # seconds

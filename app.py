@@ -4,7 +4,7 @@ import sys
 import uuid
 
 from dotenv import load_dotenv
-from flask import Flask, g, jsonify, render_template, request, send_from_directory
+from flask import Flask, g, jsonify, redirect, render_template, request, send_from_directory
 from jinja2 import TemplateNotFound
 from pythonjsonlogger import jsonlogger
 from werkzeug.exceptions import HTTPException
@@ -12,8 +12,8 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.routing import BaseConverter
 
 import config
-from db import close_db_connection  # teardown handler registered below
-from extensions import limiter
+from core.database import close_db_connection  # teardown handler registered below
+from core.extensions import limiter
 
 
 # Early logger — handlers are added below after JSON formatter is configured.
@@ -21,7 +21,6 @@ from extensions import limiter
 logger = logging.getLogger("analytiq")
 
 # Add python directory to path for PDF processor and exercise generator
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "python"))
 try:
     from pdf_processor import extract_text_from_pdf_bytes
 except ImportError:
@@ -43,7 +42,7 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
 # Initialize Sentry with proper configuration (PII filtering, etc.)
 try:
-    from sentry_config import init_sentry
+    from core.sentry import init_sentry
 
     init_sentry(app)
 except ImportError:
@@ -128,9 +127,9 @@ try:
     if config.FEATURE_CSRF_PROTECTION:
         csrf_instance.init_app(app)
         csrf = csrf_instance
-        import extensions
+        from core import extensions as _ext
 
-        extensions.csrf = csrf_instance
+        _ext.csrf = csrf_instance
         logger.info("CSRF protection enabled")
     else:
         logger.info("CSRF protection disabled (feature flag off)")
@@ -144,7 +143,7 @@ except ImportError:
 
 try:
     from flask_swagger_ui import get_swaggerui_blueprint
-    import api_docs
+    import blueprints.api_docs as api_docs
 
     # Swagger UI configuration
     SWAGGER_URL = "/api/docs"
@@ -178,7 +177,7 @@ except ImportError:
 # ============================================================================
 
 try:
-    from celery_app import celery_app
+    from workers.celery_app import celery_app
 
     # Feature flag for async processing
     FEATURE_ASYNC_TASKS = os.getenv("FEATURE_ASYNC_TASKS", "False").lower() == "true"
@@ -332,7 +331,8 @@ from blueprints.content_import import bp as content_import_bp  # noqa: E402
 from blueprints.platform import bp as platform_bp  # noqa: E402
 from blueprints.sso import bp as sso_bp  # noqa: E402
 from blueprints.tenant_admin import bp as tenant_admin_bp  # noqa: E402
-from middleware import check_ip_blocklist, check_maintenance_mode  # noqa: E402
+from blueprints.flywheel import bp as flywheel_bp  # noqa: E402
+from core.middleware import check_ip_blocklist, check_maintenance_mode  # noqa: E402
 
 app.register_blueprint(health_bp)
 app.register_blueprint(ai_bp)
@@ -347,6 +347,7 @@ app.register_blueprint(content_import_bp)
 app.register_blueprint(platform_bp)
 app.register_blueprint(sso_bp)
 app.register_blueprint(tenant_admin_bp)
+app.register_blueprint(flywheel_bp)
 
 # Platform-level request guards (IP blocklist + maintenance mode)
 app.before_request(check_ip_blocklist)
@@ -357,7 +358,7 @@ app.before_request(check_maintenance_mode)
 # Ensures production DB schema is always in sync with the codebase.
 # ---------------------------------------------------------------------------
 try:
-    from db import get_db_connection
+    from core.database import get_db_connection
     from db_migrate import run_migrations
 
     with app.app_context():
@@ -382,7 +383,12 @@ app.url_map.converters["no_api_path"] = NoApiPathConverter
 
 @app.route("/", methods=["GET"])
 def serve_index():
-    return render_template("index.html")
+    return render_template("landing.html")
+
+
+@app.route("/landing", methods=["GET"])
+def serve_landing():
+    return render_template("landing.html")
 
 
 @app.route("/<no_api_path:path>", methods=["GET"])
@@ -391,15 +397,21 @@ def serve_frontend(path):
     safe = os.path.normpath(path)
     if safe.startswith("..") or os.path.isabs(safe):
         return jsonify({"error": "Forbidden"}), 403
+    # Redirect legacy .html URLs to clean URLs (301 permanent)
     if safe.endswith(".html"):
-        try:
-            return render_template(safe)
-        except TemplateNotFound:
-            return render_template("index.html")
+        clean = safe[:-5] or "/"
+        return redirect(f"/{clean}", 301)
+    # Try to render as a Jinja2 template (adding .html extension)
+    try:
+        return render_template(f"{safe}.html")
+    except TemplateNotFound:
+        pass
+    # Serve as a static asset if the file exists
     full = os.path.join(_ROOT, safe)
-    if not os.path.isfile(full):
-        return render_template("index.html")
-    return send_from_directory(_ROOT, safe)
+    if os.path.isfile(full):
+        return send_from_directory(_ROOT, safe)
+    # Fall back to SPA entry point
+    return render_template("index.html")
 
 
 # ============================================================================

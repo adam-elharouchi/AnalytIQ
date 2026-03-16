@@ -22,10 +22,10 @@ from flask import Blueprint, g, jsonify, request
 
 import repositories.chapter_repository as chapter_repo
 import repositories.class_repository as class_repo
-from audit import audit
-from auth_helpers import require_auth
-from db import get_db_connection
-from extensions import csrf_exempt
+from core.audit import audit
+from core.auth import require_auth
+from core.database import get_db_connection
+from core.extensions import csrf_exempt
 
 logger = logging.getLogger(__name__)
 bp = Blueprint("content_import", __name__)

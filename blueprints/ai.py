@@ -14,8 +14,8 @@ import requests
 from flask import Blueprint, g, jsonify, request
 
 import config
-from auth_helpers import require_auth
-from extensions import csrf_exempt, limiter
+from core.auth import require_auth
+from core.extensions import csrf_exempt, limiter
 
 logger = logging.getLogger(__name__)
 

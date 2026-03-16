@@ -10,7 +10,7 @@ so that re-running them on an already-migrated database is harmless.
 Usage (called automatically at app startup in app.py)::
 
     from db_migrate import run_migrations
-    from db import get_db_connection
+    from core.database import get_db_connection
     run_migrations(get_db_connection())
 """
 

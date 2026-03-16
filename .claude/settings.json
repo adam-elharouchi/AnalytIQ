@@ -5,7 +5,19 @@
       "Bash(grep -A 30 \"class_exercises\" /Users/aelharouchi/Documents/GitHub/AnalytIQ/migrations/*.sql)",
       "Bash(wc -l /Users/aelharouchi/Documents/GitHub/AnalytIQ/tests/test_*.py)",
       "Bash(grep -rn \"regenerate\\\\|generate-test\\\\|generate_test\" blueprints/*.py)",
-      "Bash(psql \"postgresql://postgres.omjttmkczfpnwyzrdzqi:AEHSupabase@aws-0-us-west-2.pooler.supabase.com:5432/postgres\" -f migrations/008_tenant_email_domain.sql)"
+      "Bash(psql \"postgresql://postgres.omjttmkczfpnwyzrdzqi:AEHSupabase@aws-0-us-west-2.pooler.supabase.com:5432/postgres\" -f migrations/008_tenant_email_domain.sql)",
+      "Bash(sed -i '' 's/^import json$/import json\\\\nfrom typing import Dict, List, Optional/' repositories/flywheel_repository.py)",
+      "Bash(sed -i '' 's/-> str | None:/-> Optional[str]:/g' repositories/flywheel_repository.py)",
+      "Bash(sed -i '' 's/-> dict | None:/-> Optional[Dict]:/g' repositories/flywheel_repository.py)",
+      "Bash(sed -i '' 's/-> list\\\\[dict\\\\]:/-> List[Dict]:/g' repositories/flywheel_repository.py)",
+      "Bash(pytest --ignore=tests/e2e -q)",
+      "Bash(grep -rn \"from db import\\\\|import db$\\\\|^import db\\\\b\" --include=\"*.py\" .)",
+      "Bash(done)",
+      "Bash(grep -rn \"csrf_token\\\\|generate_csrf\\\\|csrf-token\" /Users/aelharouchi/Documents/GitHub/AnalytIQ/*.py /Users/aelharouchi/Documents/GitHub/AnalytIQ/blueprints/)",
+      "Bash(find /Users/aelharouchi/Documents/GitHub/AnalytIQ -name *.sql)",
+      "Bash(grep -rn \"CREATE TABLE.*practice_progress\\\\|CREATE TABLE.*exercise_attempts\\\\|practice_progress.*exercise_id\\\\|exercise_attempts.*exercise_id\" /Users/aelharouchi/Documents/GitHub/AnalytIQ/ --include=*.sql --include=*.py)",
+      "Bash(psql \"postgresql://postgres.omjttmkczfpnwyzrdzqi:AEHSupabase@aws-0-us-west-2.pooler.supabase.com:5432/postgres\" -f /Users/aelharouchi/Documents/GitHub/AnalytIQ/migrations/011_practice_progress_class_columns.sql)",
+      "Bash(brew list:*)"
     ]
   }
 }

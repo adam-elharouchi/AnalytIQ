@@ -2,19 +2,61 @@
 Exercises Blueprint — /api/exercises/* and /api/leaderboard/grand
 """
 import logging
+import time
 from flask import Blueprint, g, jsonify, request
-import cache
+import core.cache as cache
 import config
-from audit import audit
-from auth_helpers import require_auth, validate_fields
-from db import get_db_connection
-from extensions import csrf_exempt
+from core.audit import audit
+from core.auth import require_auth, validate_fields
+from core.database import get_db_connection
+from core.extensions import csrf_exempt
 from repositories import exercise_repository as exercise_repo
-from python.code_runner import run_test_cases
-from python.exercise_generator import generate_test_cases_for_exercise
+from repositories import flywheel_repository as flywheel_repo
+from services.code_runner import run_test_cases
+from services.exercise_generator import generate_test_cases_for_exercise
 
 logger = logging.getLogger(__name__)
 bp = Blueprint("exercises", __name__)
+
+_PY_EXCEPTION_NAMES = (
+    "SyntaxError", "NameError", "TypeError", "IndexError", "ValueError",
+    "ZeroDivisionError", "ImportError", "ModuleNotFoundError", "TimeoutError",
+    "AttributeError", "KeyError", "RuntimeError",
+)
+
+
+def _classify_error_category(results: list) -> str:
+    """
+    Derive the dominant error category from a list of per-test grading results.
+    Returns a short label string or 'none' when all tests pass.
+    """
+    if all(r.get("passed") for r in results):
+        return "none"
+
+    failing = [r for r in results if not r.get("passed")]
+    categories: list = []
+    for r in failing:
+        err = str(r.get("error") or "")
+        if "timed out" in err.lower() or "timeout" in err.lower():
+            categories.append("timeout")
+        elif "memory" in err.lower():
+            categories.append("memory")
+        elif any(name in err for name in _PY_EXCEPTION_NAMES):
+            # Find the first matching exception name
+            for name in _PY_EXCEPTION_NAMES:
+                if name in err:
+                    categories.append(name.lower().replace("error", "_error"))
+                    break
+        elif r.get("actual") is not None or r.get("printed") is not None:
+            # Test ran but output didn't match
+            categories.append("logic_error")
+        else:
+            categories.append("runtime_error")
+
+    if not categories:
+        return "unknown"
+    # Return the most common category
+    return max(set(categories), key=categories.count)
 
 
 @bp.route("/api/exercises/progress", methods=["GET"])
@@ -258,6 +300,7 @@ def grade_exercise(exercise_id):
             return jsonify({"error": "Exercise not found."}), 404
 
         # Exercise predates test-case generation — auto-generate now
+        _retroactive_gen_meta = None
         if not test_cases:
             row = exercise_repo.get_exercise_detail(conn, exercise_id)
             if not row:
@@ -272,6 +315,7 @@ def grade_exercise(exercise_id):
                 )
                 function_name = generated["function_name"]
                 test_cases = generated["test_cases"]
+                _retroactive_gen_meta = generated.get("_gen_meta")
                 exercise_repo.save_exercise_test_cases(
                     conn, exercise_id, function_name, test_cases
                 )
@@ -298,6 +342,7 @@ def grade_exercise(exercise_id):
                 )
 
         # Run the code against every test case in the sandbox
+        _grade_t0 = time.monotonic()
         result = run_test_cases(
             student_code=student_code,
             language=language,
@@ -305,6 +350,7 @@ def grade_exercise(exercise_id):
             test_cases=test_cases,
             timeout=5,
         )
+        execution_time_ms = int((time.monotonic() - _grade_t0) * 1000)
 
         audit(
             conn,
@@ -318,6 +364,85 @@ def grade_exercise(exercise_id):
                 "language": language,
             },
         )
+
+        # --- Flywheel: record outcome event (must never break grading) -------
+        try:
+            user_id = g.user_id
+            tenant_id = getattr(g, "tenant_id", None)
+
+            # Look up class_id and generation_event_id from the exercise row
+            ex_location = exercise_repo.get_exercise_location(conn, exercise_id)
+            class_id_for_flywheel = ex_location[1] if ex_location else None
+
+            # If this was a retroactive test-case generation, record that first
+            if _retroactive_gen_meta:
+                retro_event_id = flywheel_repo.insert_generation_event(
+                    conn,
+                    {
+                        **_retroactive_gen_meta,
+                        "exercise_id": exercise_id,
+                        "class_id": class_id_for_flywheel,
+                        "tenant_id": str(tenant_id) if tenant_id else None,
+                    },
+                )
+                if retro_event_id:
+                    flywheel_repo.update_exercise_generation_event_id(
+                        conn, exercise_id, retro_event_id
+                    )
+                    conn.commit()
+
+            # Look up the generation_event_id that was set at exercise creation
+            gen_event = flywheel_repo.get_generation_event_by_exercise(conn, exercise_id)
+            generation_event_id = gen_event["id"] if gen_event else None
+
+            attempt_number = flywheel_repo.get_outcome_count_for_user_exercise(
+                conn, user_id, exercise_id
+            ) + 1
+
+            # Truncate per-test stderr to 200 chars to keep the JSONB payload small
+            sanitised_results = []
+            for r in result.get("results", []):
+                sr = {k: v for k, v in r.items()}
+                if isinstance(sr.get("error"), str) and len(sr["error"]) > 200:
+                    sr["error"] = sr["error"][:200]
+                sanitised_results.append(sr)
+
+            # TODO: wire frontend timer to send time_spent in grade request
+            time_spent_seconds = data.get("time_spent")
+
+            # TODO: count AI interactions per exercise session once
+            #       conversation-exercise linking exists
+            flywheel_repo.insert_outcome_event(
+                conn,
+                {
+                    "exercise_id": exercise_id,
+                    "generation_event_id": generation_event_id,
+                    "user_id": user_id,
+                    "class_id": class_id_for_flywheel,
+                    "tenant_id": str(tenant_id) if tenant_id else None,
+                    "attempt_number": attempt_number,
+                    "time_spent_seconds": int(time_spent_seconds) if time_spent_seconds else None,
+                    "hints_requested": 0,
+                    "ai_chat_messages": 0,
+                    "code_char_count": len(student_code),
+                    "passed": result["total_score"] >= 50,
+                    "total_score": result["total_score"],
+                    "correctness_score": result["correctness_score"],
+                    "quality_score": result["quality_score"],
+                    "tests_total": result["tests_total"],
+                    "tests_passed": result["tests_passed"],
+                    "test_results": sanitised_results,
+                    "error_category": _classify_error_category(result.get("results", [])),
+                    "execution_time_ms": execution_time_ms,
+                },
+            )
+            conn.commit()
+        except Exception as flywheel_err:
+            logger.error(
+                "flywheel: outcome event recording failed for %s: %s",
+                exercise_id, flywheel_err, exc_info=True,
+            )
+            # Intentional: do not re-raise — student must always get their grade
 
         return jsonify({**result, "has_test_cases": True}), 200
 

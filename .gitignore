@@ -26,5 +26,12 @@ htmlcov/
 .pytest_cache/
 bandit-report.json
 
+# Broken pip artifacts (e.g. =3.5.0)
+=*
+
+# User uploads (keep directory via .gitkeep)
+uploads/*
+!uploads/.gitkeep
+
 # Sensitive documents (credentials removed from history)
 docs/SECURITY_AUDIT_COMPLETE.md

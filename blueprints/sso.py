@@ -30,10 +30,10 @@ from cryptography.fernet import Fernet, InvalidToken
 from flask import Blueprint, g, jsonify, redirect, request
 
 import config
-from audit import audit
-from auth_helpers import create_jwt_token, require_auth, require_tenant_admin
-from db import get_db_connection
-from extensions import csrf_exempt, limiter
+from core.audit import audit
+from core.auth import create_jwt_token, require_auth, require_tenant_admin
+from core.database import get_db_connection
+from core.extensions import csrf_exempt, limiter
 from repositories import auth_repository as auth_repo
 from repositories import sso_repository as sso_repo
 
@@ -114,7 +114,7 @@ def _discovery_url_for_provider(provider: dict) -> str:
 def _store_state(state: str, data: dict) -> None:
     """Persist OAuth2 state in Redis with TTL. Falls back gracefully if Redis unavailable."""
     try:
-        from cache import redis_client
+        from core.cache import redis_client
 
         if redis_client:
             redis_client.setex(
@@ -129,7 +129,7 @@ def _store_state(state: str, data: dict) -> None:
 def _pop_state(state: str) -> Optional[dict]:
     """Retrieve and atomically delete OAuth2 state from Redis."""
     try:
-        from cache import redis_client
+        from core.cache import redis_client
 
         if redis_client:
             key = f"sso_state:{state}"

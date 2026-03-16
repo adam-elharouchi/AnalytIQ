@@ -16,16 +16,16 @@ from datetime import datetime
 import config
 from flask import Blueprint, jsonify, request
 
-from audit import audit
-from auth_helpers import (
+from core.audit import audit
+from core.auth import (
     create_jwt_token,
     detect_role_from_email,
     hash_password,
     validate_email,
     verify_password,
 )
-from db import get_db_connection
-from extensions import csrf_exempt, limiter
+from core.database import get_db_connection
+from core.extensions import csrf_exempt, limiter
 from repositories import auth_repository as auth_repo
 
 logger = logging.getLogger(__name__)
@@ -151,7 +151,7 @@ def signup():
             )
             # Notify aelharouchi@myanalytiq.org so they can approve from the dashboard
             try:
-                from utils.email_service import send_email
+                from core.email import send_email
 
                 send_email(
                     to_email="aelharouchi@myanalytiq.org",
@@ -282,7 +282,7 @@ def signin():
 
 def _send_reset_email(to_email, user_name, reset_link):
     """Send password reset email synchronously."""
-    from utils.email_service import send_email
+    from core.email import send_email
 
     try:
         subject = "Password Reset Request"
