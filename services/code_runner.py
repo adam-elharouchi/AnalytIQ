@@ -159,7 +159,7 @@ def _run_python(student_code: str, fn_name: str, tc: dict, timeout: int) -> dict
         f.write(harness); path = f.name
     try:
         proc = subprocess.run(
-            [sys.executable, path, json.dumps(tc.get("input", {})), fn_name],
+            [sys.executable, path, json.dumps(tc.get("input", {})), fn_name or ""],
             capture_output=True, text=True, timeout=timeout, stdin=subprocess.DEVNULL,
         )
         return _parse_proc(proc.stdout, proc.stderr)
