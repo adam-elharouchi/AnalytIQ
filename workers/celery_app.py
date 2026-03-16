@@ -12,7 +12,10 @@ REDIS_URL = config.REDIS_URL
 
 # Initialize Celery
 celery_app = Celery(
-    "analytiq", broker=REDIS_URL, backend=REDIS_URL, include=["workers.tasks"]  # Import tasks module
+    "analytiq",
+    broker=REDIS_URL,
+    backend=REDIS_URL,
+    include=["workers.tasks"],  # Import tasks module
 )
 
 # Celery Configuration

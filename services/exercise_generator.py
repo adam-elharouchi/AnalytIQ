@@ -28,10 +28,39 @@ def _extract_topics(title: str, description: str) -> list[str]:
     are not common stop-words.  Does NOT make any AI call.
     """
     stop_words = {
-        "the", "and", "for", "with", "this", "that", "from", "into", "your",
-        "you", "are", "use", "using", "write", "create", "define", "return",
-        "function", "method", "value", "values", "given", "one", "two",
-        "all", "each", "its", "has", "can", "not", "new", "any", "how",
+        "the",
+        "and",
+        "for",
+        "with",
+        "this",
+        "that",
+        "from",
+        "into",
+        "your",
+        "you",
+        "are",
+        "use",
+        "using",
+        "write",
+        "create",
+        "define",
+        "return",
+        "function",
+        "method",
+        "value",
+        "values",
+        "given",
+        "one",
+        "two",
+        "all",
+        "each",
+        "its",
+        "has",
+        "can",
+        "not",
+        "new",
+        "any",
+        "how",
     }
     text = f"{title} {description}".lower()
     tokens = re.split(r"[^a-z0-9_]+", text)
@@ -74,7 +103,9 @@ def generate_exercises_from_pdf_content(
 
     # --- Flywheel: capture input metadata before truncation ----------------
     original_len = len(pdf_text) if pdf_text else 0
-    source_content_hash = hashlib.sha256((pdf_text or "").encode("utf-8", errors="replace")).hexdigest()
+    source_content_hash = hashlib.sha256(
+        (pdf_text or "").encode("utf-8", errors="replace")
+    ).hexdigest()
     was_truncated = original_len > _TRUNCATION_LIMIT
 
     # Limit PDF text to avoid token limits (first 10000 characters)
@@ -272,12 +303,14 @@ Return your response as a JSON array with ONLY this structure — no markdown, n
                         continue
                     if "input" not in tc or "expected_output" not in tc:
                         continue
-                    validated_cases.append({
-                        "description": tc.get("description", ""),
-                        "input": tc["input"],
-                        "expected_output": tc["expected_output"],
-                        "weight": int(tc.get("weight", 1)),
-                    })
+                    validated_cases.append(
+                        {
+                            "description": tc.get("description", ""),
+                            "input": tc["input"],
+                            "expected_output": tc["expected_output"],
+                            "weight": int(tc.get("weight", 1)),
+                        }
+                    )
 
             ex_language = exercise.get("language", "Unknown")
             ex_title = exercise.get("title", "Untitled Exercise")
@@ -435,12 +468,14 @@ Return ONLY a JSON object (no markdown):
                 continue
             if "input" not in tc or "expected_output" not in tc:
                 continue
-            validated.append({
-                "description": tc.get("description", ""),
-                "input": tc["input"],
-                "expected_output": str(tc["expected_output"]),
-                "weight": int(tc.get("weight", 1)),
-            })
+            validated.append(
+                {
+                    "description": tc.get("description", ""),
+                    "input": tc["input"],
+                    "expected_output": str(tc["expected_output"]),
+                    "weight": int(tc.get("weight", 1)),
+                }
+            )
 
         if not validated:
             raise Exception("Gemini returned no valid test cases.")

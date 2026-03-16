@@ -110,6 +110,7 @@ def _extract_docx(file_bytes: bytes) -> str:
 # PDF extraction (merged from pdf_processor.py)
 # ---------------------------------------------------------------------------
 
+
 def extract_text_from_pdf_bytes(pdf_bytes):
     """
     Extract text content from PDF binary data
@@ -145,6 +146,7 @@ def extract_text_from_pdf_bytes(pdf_bytes):
     except Exception as e:
         print(f"Error extracting text from PDF: {e}")
         import traceback
+
         traceback.print_exc()
         return None
 
