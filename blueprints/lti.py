@@ -22,9 +22,9 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 import config
-from auth_helpers import create_jwt_token, require_auth, require_role
-from db import get_db_connection
-from extensions import csrf_exempt
+from core.auth import create_jwt_token, require_auth, require_role
+from core.database import get_db_connection
+from core.extensions import csrf_exempt
 from flask import Blueprint, g, jsonify, render_template, request
 from repositories import auth_repository as auth_repo
 from repositories import class_repository as class_repo
@@ -67,7 +67,7 @@ class _RedisLtiStorage(_LtiStorageBase):
 
     def get_value(self, key):
         try:
-            from cache import redis_client
+            from core.cache import redis_client
 
             if not redis_client:
                 return None
@@ -79,7 +79,7 @@ class _RedisLtiStorage(_LtiStorageBase):
 
     def set_value(self, key, value, exp=None):
         try:
-            from cache import redis_client
+            from core.cache import redis_client
 
             if not redis_client:
                 return
@@ -90,7 +90,7 @@ class _RedisLtiStorage(_LtiStorageBase):
 
     def check_value(self, key):
         try:
-            from cache import redis_client
+            from core.cache import redis_client
 
             if not redis_client:
                 return False

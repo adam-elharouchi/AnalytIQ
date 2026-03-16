@@ -761,11 +761,11 @@
 
 {% block scripts %}
 <!-- JS load order: api-helper.js (head) → auth.js → navigation.js → ai-agent.js (CodeWriterAgent) → code-assistant.js -->
-  <script src="js/auth.js"></script>
-  <script src="js/navigation.js"></script>
+  <script src="/static/js/auth.js"></script>
+  <script src="/static/js/navigation.js"></script>
 
-  <script src="js/ai-agent.js"></script>
-  <script src="js/code-assistant.js?v=1.1"></script>
+  <script src="/static/js/ai-agent.js"></script>
+  <script src="/static/js/code-assistant.js?v=1.1"></script>
   <script>
     // Playground chat history (separate from main code assistant)
     let playgroundChatHistory = [];
@@ -854,22 +854,22 @@
                 // Detect page type from referrer or parent window
                 const pageType = urlParams.get('page_type') || (document.referrer.includes('professor-class') ? 'professor' : 'student');
                 const backUrl = pageType === 'professor'
-                  ? `professor-class.html?class_id=${encodeURIComponent(classId)}&tab=exercises`
-                  : `student-class.html?class_id=${encodeURIComponent(classId)}&tab=exercises`;
+                  ? `professor-class?class_id=${encodeURIComponent(classId)}&tab=exercises`
+                  : `student-class?class_id=${encodeURIComponent(classId)}&tab=exercises`;
                 window.parent.location.href = backUrl;
               } else {
-                window.parent.location.href = 'student-classes.html';
+                window.parent.location.href = '/student-classes';
               }
             } catch (e) {
               // Cross-origin restriction - just navigate the iframe
               if (classId) {
                 const pageType = urlParams.get('page_type') || (document.referrer.includes('professor-class') ? 'professor' : 'student');
                 const backUrl = pageType === 'professor'
-                  ? `professor-class.html?class_id=${encodeURIComponent(classId)}&tab=exercises`
-                  : `student-class.html?class_id=${encodeURIComponent(classId)}&tab=exercises`;
+                  ? `professor-class?class_id=${encodeURIComponent(classId)}&tab=exercises`
+                  : `student-class?class_id=${encodeURIComponent(classId)}&tab=exercises`;
                 window.location.href = backUrl;
               } else {
-                window.location.href = 'student-classes.html';
+                window.location.href = '/student-classes';
               }
             }
           }
@@ -882,13 +882,13 @@
           if (classId) {
             let backUrl;
             if (pageType === 'professor') {
-              backUrl = `professor-class.html?class_id=${encodeURIComponent(classId)}&tab=exercises`;
+              backUrl = `professor-class?class_id=${encodeURIComponent(classId)}&tab=exercises`;
             } else {
-              backUrl = `student-class.html?class_id=${encodeURIComponent(classId)}&tab=exercises`;
+              backUrl = `student-class?class_id=${encodeURIComponent(classId)}&tab=exercises`;
             }
             window.location.href = backUrl;
           } else {
-            window.location.href = 'student-classes.html';
+            window.location.href = '/student-classes';
           }
         }
       };
@@ -1411,7 +1411,7 @@
         </div>
         <div class="exercise-info">
           <p style="color: #dc2626;">${message}</p>
-          <a href="student-classes.html" class="btn btn-primary" style="margin-top: 1rem; text-decoration: none; display: inline-block;">Back to My Classes</a>
+          <a href="/student-classes" class="btn btn-primary" style="margin-top: 1rem; text-decoration: none; display: inline-block;">Back to My Classes</a>
         </div>
       `;
     }

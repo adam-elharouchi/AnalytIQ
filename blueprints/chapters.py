@@ -10,21 +10,21 @@ from datetime import datetime
 from flask import Blueprint, Response, g, jsonify, redirect, request, send_from_directory
 from werkzeug.utils import secure_filename
 
-import cache
+import core.cache as cache
 import config
-import supabase_storage
-from audit import audit
-from auth_helpers import require_auth, validate_fields
-from db import get_db_connection
-from extensions import csrf_exempt
+import core.storage as supabase_storage
+from core.audit import audit
+from core.auth import require_auth, validate_fields
+from core.database import get_db_connection
+from core.extensions import csrf_exempt
 from repositories import chapter_repository as chapter_repo
 from repositories import class_repository as class_repo
+from repositories import flywheel_repository as flywheel_repo
 
 logger = logging.getLogger(__name__)
 bp = Blueprint("chapters", __name__)
 
 # Add python directory to path for content extractor and exercise generator
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "python"))
 try:
     import content_extractor
 except ImportError:
@@ -32,7 +32,7 @@ except ImportError:
     content_extractor = None
 
 try:
-    from exercise_generator import generate_exercises_from_pdf_content
+    from services.exercise_generator import generate_exercises_from_pdf_content
 except ImportError:
     logger.warning("Exercise generator not available. Exercise generation will not work.")
     generate_exercises_from_pdf_content = None
@@ -114,7 +114,10 @@ def validate_pdf_file(file):
 # ---------------------------------------------------------------------------
 
 
-def _auto_generate_exercises(conn, pdf_text, chapter_id, chapter_title, class_id):
+def _auto_generate_exercises(
+    conn, pdf_text, chapter_id, chapter_title, class_id,
+    source_content_type=None, tenant_id=None
+):
     """Generate exercises from chapter text. Returns count generated (0 on any failure)."""
     if not pdf_text or not generate_exercises_from_pdf_content:
         return 0
@@ -122,7 +125,9 @@ def _auto_generate_exercises(conn, pdf_text, chapter_id, chapter_title, class_id
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
             raise ValueError("GEMINI_API_KEY not set")
-        exercises = generate_exercises_from_pdf_content(pdf_text, chapter_title, api_key)
+        exercises = generate_exercises_from_pdf_content(
+            pdf_text, chapter_title, api_key, source_content_type=source_content_type
+        )
         if not exercises:
             return 0
         for idx, exercise in enumerate(exercises, 1):
@@ -141,6 +146,20 @@ def _auto_generate_exercises(conn, pdf_text, chapter_id, chapter_title, class_id
                 test_cases=exercise.get("test_cases") or [],
                 language=exercise.get("language", "Python"),
             )
+            # Flywheel: record the generation event and back-link to the exercise row.
+            gen_meta = exercise.get("_gen_meta") or {}
+            gen_event_id = flywheel_repo.insert_generation_event(
+                conn,
+                {
+                    **gen_meta,
+                    "exercise_id": exercise_id,
+                    "class_id": class_id,
+                    "chapter_id": chapter_id,
+                    "tenant_id": str(tenant_id) if tenant_id else None,
+                },
+            )
+            if gen_event_id:
+                flywheel_repo.update_exercise_generation_event_id(conn, exercise_id, gen_event_id)
         conn.commit()
         return len(exercises)
     except Exception as e:
@@ -282,7 +301,9 @@ def upload_chapter(class_id):
         exercises_generated = 0
         if exercise_mode == "auto":
             exercises_generated = _auto_generate_exercises(
-                conn, pdf_text, chapter_id_result, chapter_title_result, class_id
+                conn, pdf_text, chapter_id_result, chapter_title_result, class_id,
+                source_content_type=ext,
+                tenant_id=getattr(g, "tenant_id", None),
             )
 
         conn.commit()
@@ -513,6 +534,21 @@ def generate_exercises_for_chapter(chapter_id):
                 test_cases=exercise.get("test_cases") or [],
                 language=exercise.get("language", "Python"),
             )
+            # Flywheel: record the generation event.
+            gen_meta = exercise.get("_gen_meta") or {}
+            gen_event_id = flywheel_repo.insert_generation_event(
+                conn,
+                {
+                    **gen_meta,
+                    "exercise_id": exercise_id,
+                    "class_id": class_id,
+                    "chapter_id": chapter_id,
+                    "tenant_id": str(getattr(g, "tenant_id", None) or "") or None,
+                    "source_content_type": "pdf",
+                },
+            )
+            if gen_event_id:
+                flywheel_repo.update_exercise_generation_event_id(conn, exercise_id, gen_event_id)
             exercises_generated += 1
 
         conn.commit()

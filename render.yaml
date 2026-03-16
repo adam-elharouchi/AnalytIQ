@@ -16,13 +16,13 @@ services:
     #
     # Render web services do not support route-level headers in render.yaml
     # (that feature is for static sites only).  The Flask headers above are
-    # sufficient for Cloudflare to cache /js/*, /css/*, and image paths.
+    # sufficient for Cloudflare to cache /static/js/*, /static/css/*, and image paths.
     #
     # Cloudflare setup (one-time, via Cloudflare dashboard):
     #   1. Add analytiq.com (or your domain) to Cloudflare as a proxied zone.
     #   2. Create a Cache Rule:
-    #        URL pattern : analytiq.com/js/*
-    #                      analytiq.com/css/*
+    #        URL pattern : analytiq.com/static/js/*
+    #                      analytiq.com/static/css/*
     #        Action      : Cache eligibility → Eligible for cache
     #        Edge TTL    : Respect existing headers (honours Cache-Control: public, max-age=86400)
     #   3. Create a Cache Rule for /api/*:
@@ -36,7 +36,7 @@ services:
     name: analytiq-worker
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: celery -A celery_app.celery_app worker --loglevel=info --concurrency=2
+    startCommand: celery -A workers.celery_app.celery_app worker --loglevel=info --concurrency=2
     envVars:
       - key: FLASK_ENV
         value: production

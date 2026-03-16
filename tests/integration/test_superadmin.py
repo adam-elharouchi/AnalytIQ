@@ -1,17 +1,17 @@
 import json
 import pytest
 from app import app
-from db import get_db_connection
+from core.database import get_db_connection
 
 # Generate a super admin token for testing
 def get_super_admin_token(client):
-    from auth_helpers import create_jwt_token
+    from core.auth import create_jwt_token
     # In test context we can just generate one directly
     token = create_jwt_token("sah_123", role="superadmin", name="Super Admin", email="admin@hult.edu")
     return token
 
 def get_normal_token(client):
-    from auth_helpers import create_jwt_token
+    from core.auth import create_jwt_token
     token = create_jwt_token("norm_123", role="student", name="Normal User", email="student@student.hult.edu")
     return token
 
@@ -52,7 +52,7 @@ def test_tenant_creation(client, super_admin_headers, tx):
 
 def test_impersonation(client, super_admin_headers, tx):
     from repositories import auth_repository as auth_repo
-    from auth_helpers import hash_password
+    from core.auth import hash_password
     
     auth_repo.insert_user(tx, 'inttest_imp_target', 'Imp Target', 'imp@example.com', hash_password('password'), 'student')
 
@@ -62,7 +62,7 @@ def test_impersonation(client, super_admin_headers, tx):
     assert token is not None
 
     # Verify impersonation embedded attributes
-    from auth_helpers import decode_jwt_token
+    from core.auth import decode_jwt_token
     payload = decode_jwt_token(token)
     assert payload["user_id"] == "inttest_imp_target"
     assert payload["role"] == "student"

@@ -22,18 +22,18 @@ from datetime import datetime
 from flask import Blueprint, g, jsonify, request
 
 import config
-import cache
-import utils
-from audit import audit
-from auth_helpers import (
+import core.cache as cache
+import core.pagination as utils
+from core.audit import audit
+from core.auth import (
     hash_password,
     require_auth,
     validate_email,
     validate_fields,
     verify_password,
 )
-from db import get_db_connection
-from extensions import csrf_exempt
+from core.database import get_db_connection
+from core.extensions import csrf_exempt
 from repositories import user_repository as user_repo
 
 logger = logging.getLogger(__name__)

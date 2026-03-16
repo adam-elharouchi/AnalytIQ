@@ -15,10 +15,10 @@ import psycopg2
 from flask import Blueprint, jsonify, request, g
 
 import config
-from auth_helpers import require_auth, require_super_admin, create_jwt_token
-from audit import audit
-from db import get_db_connection
-from extensions import csrf_exempt, rate_limit
+from core.auth import require_auth, require_super_admin, create_jwt_token
+from core.audit import audit
+from core.database import get_db_connection
+from core.extensions import csrf_exempt, rate_limit
 
 
 logger = logging.getLogger(__name__)

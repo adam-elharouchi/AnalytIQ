@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AnalytIQ – The Executable Syllabus</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ─── TOKENS ──────────────────────────────────────── */
+    :root {
+      --ink:      #0D1117;
+      --ink-2:    #1A2232;
+      --blue:     #2563EB;
+      --blue-lt:  #3B82F6;
+      --blue-pale:#EFF6FF;
+      --accent:   #00D4FF;
+      --white:    #FFFFFF;
+      --off:      #F8FAFC;
+      --muted:    #64748B;
+      --rule:     #E2E8F0;
+      --green:    #10B981;
+      --serif:    'DM Serif Display', Georgia, serif;
+      --sans:     'Sora', sans-serif;
+      --mono:     'DM Mono', monospace;
+    }
+
+    /* ─── RESET ─────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--sans);
+      background: var(--white);
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ─── NAV ────────────────────────────────────────────── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 48px;
+      height: 64px;
+      background: rgba(13,17,23,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .nav-logo {
+      font-family: var(--sans);
+      font-weight: 700;
+      font-size: 20px;
+      color: var(--white);
+      letter-spacing: -0.5px;
+    }
+    .nav-logo span { color: var(--blue-lt); }
+    .nav-links {
+      display: flex; gap: 32px; list-style: none;
+    }
+    .nav-links a {
+      font-size: 13px; font-weight: 500;
+      color: rgba(255,255,255,0.6);
+      text-decoration: none; letter-spacing: 0.3px;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--white); }
+    .nav-cta {
+      background: var(--blue);
+      color: var(--white) !important;
+      padding: 8px 20px;
+      border-radius: 6px;
+      font-weight: 600 !important;
+      font-size: 13px;
+      text-decoration: none;
+      transition: background 0.2s, transform 0.15s;
+    }
+    .nav-cta:hover { background: var(--blue-lt); transform: translateY(-1px); }
+
+    /* ─── HERO ──────────────────────────────────────────── */
+    .hero {
+      min-height: 100vh;
+      background: var(--ink);
+      display: flex; align-items: center;
+      position: relative;
+      overflow: hidden;
+      padding: 120px 48px 80px;
+    }
+
+    /* grid lines background */
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(37,99,235,0.07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(37,99,235,0.07) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+    }
+
+    /* glow blob */
+    .hero-glow {
+      position: absolute;
+      width: 800px; height: 800px;
+      right: -200px; top: -200px;
+      background: radial-gradient(circle, rgba(37,99,235,0.18) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-inner {
+      max-width: 1200px; margin: 0 auto; width: 100%;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center;
+      position: relative; z-index: 1;
+    }
+
+    .hero-eyebrow {
+      font-family: var(--mono);
+      font-size: 11px; letter-spacing: 3px;
+      color: var(--blue-lt); text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    .hero-h1 {
+      font-family: var(--serif);
+      font-size: clamp(42px, 5vw, 64px);
+      line-height: 1.1;
+      color: var(--white);
+      margin-bottom: 24px;
+    }
+    .hero-h1 em { color: var(--blue-lt); font-style: italic; }
+
+    .hero-sub {
+      font-size: 17px; line-height: 1.7; font-weight: 300;
+      color: rgba(255,255,255,0.65);
+      margin-bottom: 40px;
+      max-width: 480px;
+    }
+
+    .hero-actions {
+      display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
+    }
+
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--blue);
+      color: var(--white);
+      padding: 14px 28px;
+      border-radius: 8px;
+      font-weight: 600; font-size: 15px;
+      text-decoration: none;
+      transition: all 0.2s;
+      border: none; cursor: pointer;
+    }
+    .btn-primary:hover { background: var(--blue-lt); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(37,99,235,0.4); }
+
+    .btn-ghost {
+      display: inline-flex; align-items: center; gap: 8px;
+      color: rgba(255,255,255,0.7);
+      padding: 14px 24px;
+      border-radius: 8px;
+      font-weight: 500; font-size: 15px;
+      text-decoration: none;
+      border: 1px solid rgba(255,255,255,0.15);
+      transition: all 0.2s;
+    }
+    .btn-ghost:hover { border-color: rgba(255,255,255,0.4); color: var(--white); }
+
+    .hero-trust {
+      margin-top: 40px;
+      display: flex; align-items: center; gap: 12px;
+      font-size: 13px; color: rgba(255,255,255,0.4);
+    }
+    .trust-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+
+    /* Hero right – demo card */
+    .demo-card {
+      background: var(--ink-2);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.5);
+    }
+    .demo-bar {
+      background: rgba(255,255,255,0.04);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 16px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .demo-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .demo-dot.r { background: #FF5F57; }
+    .demo-dot.y { background: #FEBC2E; }
+    .demo-dot.g { background: #28C840; }
+    .demo-tab {
+      font-family: var(--mono); font-size: 11px;
+      margin-left: 12px;
+      background: rgba(37,99,235,0.15);
+      padding: 3px 10px; border-radius: 4px;
+      border: 1px solid rgba(37,99,235,0.3);
+      color: var(--blue-lt);
+    }
+    .demo-body { padding: 24px; }
+    .demo-step {
+      display: flex; gap: 14px; align-items: flex-start;
+      margin-bottom: 20px;
+    }
+    .demo-step:last-child { margin-bottom: 0; }
+    .step-num {
+      font-family: var(--mono); font-size: 11px;
+      color: var(--blue-lt);
+      background: rgba(37,99,235,0.12);
+      border: 1px solid rgba(37,99,235,0.25);
+      width: 28px; height: 28px;
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .step-content { flex: 1; }
+    .step-label {
+      font-family: var(--mono); font-size: 10px;
+      letter-spacing: 2px; color: var(--muted);
+      margin-bottom: 4px; text-transform: uppercase;
+    }
+    .step-text {
+      font-size: 13px; line-height: 1.5;
+      color: rgba(255,255,255,0.75);
+    }
+    .step-highlight {
+      display: inline-block;
+      background: rgba(37,99,235,0.15);
+      border: 1px solid rgba(37,99,235,0.3);
+      padding: 2px 8px; border-radius: 4px;
+      color: var(--blue-lt); font-family: var(--mono);
+      font-size: 11px; margin-top: 6px;
+    }
+    .arrow-row {
+      text-align: center; padding: 4px 0;
+      color: var(--blue-lt); font-size: 18px;
+    }
+    .demo-result {
+      background: rgba(16,185,129,0.08);
+      border: 1px solid rgba(16,185,129,0.2);
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-top: 20px;
+    }
+    .result-label {
+      font-family: var(--mono); font-size: 10px;
+      letter-spacing: 2px; color: var(--green);
+      margin-bottom: 6px; text-transform: uppercase;
+    }
+    .result-text { font-size: 13px; color: rgba(255,255,255,0.7); line-height: 1.5; }
+    .result-time {
+      font-family: var(--mono); font-size: 22px;
+      color: var(--green); font-weight: 500;
+      margin-top: 4px;
+    }
+
+    /* ─── SOCIAL PROOF BAR ─────────────────────────────── */
+    .proof-bar {
+      background: var(--off);
+      border-top: 1px solid var(--rule);
+      border-bottom: 1px solid var(--rule);
+      padding: 20px 48px;
+    }
+    .proof-inner {
+      max-width: 1200px; margin: 0 auto;
+      display: flex; align-items: center; gap: 48px;
+      flex-wrap: wrap;
+    }
+    .proof-label {
+      font-family: var(--mono); font-size: 10px;
+      letter-spacing: 2px; color: var(--muted);
+      text-transform: uppercase; white-space: nowrap;
+    }
+    .proof-stats {
+      display: flex; gap: 40px; flex-wrap: wrap;
+    }
+    .proof-stat { text-align: center; }
+    .proof-n {
+      font-family: var(--serif);
+      font-size: 28px; line-height: 1;
+      color: var(--ink);
+    }
+    .proof-l {
+      font-family: var(--mono); font-size: 10px;
+      letter-spacing: 1.5px; color: var(--muted);
+      text-transform: uppercase; margin-top: 2px;
+    }
+    .proof-divider { width: 1px; height: 40px; background: var(--rule); }
+    .proof-school {
+      font-size: 13px; font-weight: 500; color: var(--muted);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .school-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+
+    /* ─── PROBLEM SECTION ──────────────────────────────── */
+    .section { padding: 100px 48px; }
+    .section-inner { max-width: 1200px; margin: 0 auto; }
+
+    .section-eyebrow {
+      font-family: var(--mono); font-size: 11px;
+      letter-spacing: 3px; text-transform: uppercase;
+      color: var(--blue); margin-bottom: 16px;
+    }
+    .section-h2 {
+      font-family: var(--serif);
+      font-size: clamp(32px, 4vw, 52px);
+      line-height: 1.15;
+      margin-bottom: 24px;
+    }
+    .section-h2 em { color: var(--blue); font-style: italic; }
+    .section-lead {
+      font-size: 17px; line-height: 1.7; font-weight: 300;
+      color: var(--muted); max-width: 640px;
+    }
+
+    .problem-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 32px; margin-top: 64px;
+    }
+    .problem-card {
+      padding: 32px;
+      border: 1px solid var(--rule);
+      border-radius: 12px;
+      background: var(--off);
+      position: relative;
+    }
+    .problem-card.highlight {
+      background: var(--ink);
+      border-color: rgba(37,99,235,0.3);
+    }
+    .problem-card.highlight .pc-title { color: var(--white); }
+    .problem-card.highlight .pc-body { color: rgba(255,255,255,0.6); }
+    .pc-tag {
+      font-family: var(--mono); font-size: 10px;
+      letter-spacing: 2px; text-transform: uppercase;
+      padding: 4px 10px; border-radius: 4px;
+      display: inline-block; margin-bottom: 16px;
+    }
+    .pc-tag.bad { background: rgba(239,68,68,0.1); color: #EF4444; border: 1px solid rgba(239,68,68,0.2); }
+    .pc-tag.good { background: rgba(16,185,129,0.1); color: var(--green); border: 1px solid rgba(16,185,129,0.2); }
+    .pc-title { font-family: var(--serif); font-size: 22px; margin-bottom: 12px; }
+    .pc-body { font-size: 14px; line-height: 1.7; color: var(--muted); }
+
+    /* ─── HOW IT WORKS ─────────────────────────────────── */
+    .how-section {
+      background: var(--ink);
+      padding: 100px 48px;
+    }
+    .how-inner { max-width: 1200px; margin: 0 auto; }
+    .how-section .section-eyebrow { color: var(--blue-lt); }
+    .how-section .section-h2 { color: var(--white); }
+    .how-section .section-h2 em { color: var(--blue-lt); }
+
+    .steps-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 2px; margin-top: 64px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 16px; overflow: hidden;
+    }
+    .step-card {
+      background: var(--ink-2);
+      padding: 40px 32px;
+      position: relative;
+    }
+    .step-card::after {
+      content: '';
+      position: absolute; top: 40px; right: 0;
+      height: 40px; width: 1px;
+      background: rgba(255,255,255,0.08);
+    }
+    .step-card:last-child::after { display: none; }
+    .step-n {
+      font-family: var(--mono); font-size: 11px;
+      letter-spacing: 2px; color: var(--blue-lt);
+      margin-bottom: 20px;
+    }
+    .step-icon {
+      font-size: 32px; margin-bottom: 16px;
+    }
+    .step-h { font-family: var(--serif); font-size: 22px; color: var(--white); margin-bottom: 12px; }
+    .step-p { font-size: 14px; line-height: 1.7; color: rgba(255,255,255,0.5); }
+    .step-badge {
+      display: inline-block; margin-top: 16px;
+      font-family: var(--mono); font-size: 11px;
+      padding: 4px 10px; border-radius: 20px;
+      background: rgba(16,185,129,0.1);
+      color: var(--green);
+      border: 1px solid rgba(16,185,129,0.2);
+    }
+
+    /* ─── FEATURES ─────────────────────────────────────── */
+    .features-section { padding: 100px 48px; }
+    .feat-inner { max-width: 1200px; margin: 0 auto; }
+    .feat-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 24px; margin-top: 64px;
+    }
+    .feat-card {
+      padding: 28px;
+      border: 1px solid var(--rule);
+      border-radius: 12px;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .feat-card:hover { border-color: rgba(37,99,235,0.3); transform: translateY(-3px); }
+    .feat-icon {
+      width: 44px; height: 44px; border-radius: 10px;
+      background: var(--blue-pale);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; margin-bottom: 16px;
+    }
+    .feat-h { font-weight: 600; font-size: 15px; margin-bottom: 8px; }
+    .feat-p { font-size: 13px; line-height: 1.6; color: var(--muted); }
+    .feat-tag {
+      display: inline-block; margin-top: 12px;
+      font-family: var(--mono); font-size: 10px;
+      padding: 3px 8px; border-radius: 4px;
+      background: var(--blue-pale); color: var(--blue);
+      letter-spacing: 1px;
+    }
+
+    /* ─── COMPARISON ───────────────────────────────────── */
+    .compare-section { background: var(--off); padding: 100px 48px; }
+    .compare-inner { max-width: 900px; margin: 0 auto; }
+
+    .compare-table {
+      width: 100%; border-collapse: collapse;
+      margin-top: 48px;
+    }
+    .compare-table th {
+      font-family: var(--mono); font-size: 11px;
+      letter-spacing: 2px; text-transform: uppercase;
+      color: var(--muted);
+      padding: 16px 20px; text-align: left;
+      border-bottom: 2px solid var(--rule);
+    }
+    .compare-table th.analytiq { color: var(--blue); }
+    .compare-table td {
+      padding: 16px 20px;
+      font-size: 14px; line-height: 1.5;
+      border-bottom: 1px solid var(--rule);
+      vertical-align: top;
+    }
+    .compare-table tr:last-child td { border-bottom: none; }
+    .compare-table td.feature { font-weight: 500; color: var(--ink); }
+    .compare-table td.generic { color: var(--muted); }
+    .chk { color: var(--green); margin-right: 6px; }
+    .x { color: #EF4444; margin-right: 6px; }
+    .analytiq-col { background: rgba(37,99,235,0.04); }
+
+    /* ─── PRICING ──────────────────────────────────────── */
+    .pricing-section { padding: 100px 48px; }
+    .price-inner { max-width: 1200px; margin: 0 auto; }
+    .price-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 24px; margin-top: 64px; align-items: start;
+    }
+    .price-card {
+      border: 1px solid var(--rule);
+      border-radius: 16px; overflow: hidden;
+    }
+    .price-card.featured {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 4px rgba(37,99,235,0.08);
+    }
+    .price-head {
+      padding: 32px 28px 24px;
+      border-bottom: 1px solid var(--rule);
+    }
+    .price-card.featured .price-head { background: var(--blue); }
+    .price-badge {
+      font-family: var(--mono); font-size: 10px;
+      letter-spacing: 2px; text-transform: uppercase;
+      margin-bottom: 12px;
+      display: inline-block;
+      color: var(--muted);
+    }
+    .price-name { font-family: var(--serif); font-size: 24px; margin-bottom: 8px; }
+    .price-card.featured .price-name { color: var(--white); }
+    .price-amount { font-size: 36px; font-weight: 700; line-height: 1; }
+    .price-card.featured .price-amount { color: var(--white); }
+    .price-period { font-size: 13px; color: var(--muted); margin-top: 4px; }
+    .price-card.featured .price-period { color: rgba(255,255,255,0.6); }
+    .price-body { padding: 24px 28px; }
+    .price-desc { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 20px; }
+    .price-features { list-style: none; }
+    .price-features li {
+      font-size: 13px; line-height: 1.5;
+      padding: 6px 0;
+      display: flex; gap: 8px;
+      border-bottom: 1px solid var(--rule);
+    }
+    .price-features li:last-child { border-bottom: none; }
+    .price-cta {
+      display: block; text-align: center;
+      margin-top: 24px;
+      padding: 12px; border-radius: 8px;
+      font-weight: 600; font-size: 14px;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .price-cta.primary { background: var(--blue); color: var(--white); }
+    .price-cta.primary:hover { background: var(--blue-lt); }
+    .price-cta.outline { border: 1px solid var(--rule); color: var(--ink); }
+    .price-cta.outline:hover { border-color: var(--blue); color: var(--blue); }
+
+    .founding-note {
+      background: var(--ink);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-top: 32px;
+      display: flex; gap: 16px; align-items: flex-start;
+    }
+    .founding-star { font-size: 20px; }
+    .founding-text { font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.7); }
+    .founding-text strong { color: var(--white); }
+
+    /* ─── CTA SECTION ──────────────────────────────────── */
+    .cta-section {
+      background: var(--blue);
+      padding: 100px 48px;
+      text-align: center;
+      position: relative; overflow: hidden;
+    }
+    .cta-section::before {
+      content: '';
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+    .cta-inner { position: relative; z-index: 1; max-width: 640px; margin: 0 auto; }
+    .cta-h { font-family: var(--serif); font-size: clamp(32px, 4vw, 52px); color: var(--white); line-height: 1.15; margin-bottom: 20px; }
+    .cta-sub { font-size: 16px; color: rgba(255,255,255,0.75); line-height: 1.6; margin-bottom: 40px; }
+    .cta-form { display: flex; gap: 12px; max-width: 440px; margin: 0 auto; }
+    .cta-input {
+      flex: 1; padding: 14px 16px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 8px;
+      color: var(--white); font-size: 14px;
+      font-family: var(--sans);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .cta-input::placeholder { color: rgba(255,255,255,0.4); }
+    .cta-input:focus { border-color: rgba(255,255,255,0.5); }
+    .btn-white {
+      background: var(--white); color: var(--blue);
+      padding: 14px 24px; border-radius: 8px;
+      font-weight: 700; font-size: 14px;
+      border: none; cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .btn-white:hover { background: var(--off); transform: translateY(-1px); }
+    .cta-fine { margin-top: 16px; font-size: 12px; color: rgba(255,255,255,0.5); }
+
+    /* ─── FOOTER ───────────────────────────────────────── */
+    footer {
+      background: var(--ink);
+      padding: 40px 48px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .footer-logo { font-family: var(--sans); font-weight: 700; font-size: 18px; color: var(--white); }
+    .footer-logo span { color: var(--blue-lt); }
+    .footer-meta { font-size: 12px; color: rgba(255,255,255,0.3); font-family: var(--mono); }
+
+    /* ─── ANIMATIONS ───────────────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .hero-eyebrow { animation: fadeUp 0.6s ease both; }
+    .hero-h1      { animation: fadeUp 0.6s 0.1s ease both; }
+    .hero-sub     { animation: fadeUp 0.6s 0.2s ease both; }
+    .hero-actions { animation: fadeUp 0.6s 0.3s ease both; }
+    .hero-trust   { animation: fadeUp 0.6s 0.4s ease both; }
+    .demo-card    { animation: fadeUp 0.8s 0.2s ease both; }
+
+    /* ─── RESPONSIVE ───────────────────────────────────── */
+    @media (max-width: 900px) {
+      nav { padding: 0 24px; }
+      .nav-links { display: none; }
+      .hero { padding: 100px 24px 60px; }
+      .hero-inner { grid-template-columns: 1fr; gap: 48px; }
+      .section, .how-section, .features-section,
+      .compare-section, .pricing-section, .cta-section { padding: 60px 24px; }
+      .problem-grid, .steps-grid, .feat-grid, .price-grid { grid-template-columns: 1fr; }
+      .proof-bar { padding: 20px 24px; }
+      .cta-form { flex-direction: column; }
+      footer { flex-direction: column; gap: 12px; text-align: center; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- — NAV — -->
+  <nav>
+    <div class="nav-logo">Analyt<span>IQ</span></div>
+    <ul class="nav-links">
+      <li><a href="#how">How It Works</a></li>
+      <li><a href="#features">Features</a></li>
+      <li><a href="#pricing">Pricing</a></li>
+      <li><a href="https://myanalytiq.org" target="_blank" class="nav-cta">Sign In &rarr;</a></li>
+    </ul>
+  </nav>
+
+  <!-- — HERO — -->
+  <section class="hero">
+    <div class="hero-glow"></div>
+    <div class="hero-inner">
+      <div class="hero-left">
+        <div class="hero-eyebrow">The Executable Syllabus</div>
+        <h1 class="hero-h1">
+          Your syllabus.<br>
+          <em>Interactive labs.</em><br>
+          In under 60 seconds.
+        </h1>
+        <p class="hero-sub">
+          Upload your course PDF. AnalytIQ generates hands-on coding exercises
+          aligned to <em>your</em> content &mdash; not generic curriculum. Students practice
+          exactly what you teach.
+        </p>
+        <div class="hero-actions">
+          <a href="#demo" class="btn-primary">Book a Free Demo &rarr;</a>
+          <a href="#how" class="btn-ghost">See How It Works</a>
+        </div>
+        <div class="hero-trust">
+          <div class="trust-dot"></div>
+          Live at Hult International Business School &middot; 100% organic adoption
+        </div>
+      </div>
+
+      <div class="hero-right">
+        <div class="demo-card">
+          <div class="demo-bar">
+            <div class="demo-dot r"></div>
+            <div class="demo-dot y"></div>
+            <div class="demo-dot g"></div>
+            <div class="demo-tab">analytiq &mdash; lab generator</div>
+          </div>
+          <div class="demo-body">
+            <div class="demo-step">
+              <div class="step-num">1</div>
+              <div class="step-content">
+                <div class="step-label">Professor uploads</div>
+                <div class="step-text">BUSA 401 &mdash; Business Analytics Syllabus.pdf</div>
+                <div class="step-highlight">&#128196; syllabus_week4_regression.pdf</div>
+              </div>
+            </div>
+            <div class="arrow-row">&darr;</div>
+            <div class="demo-step">
+              <div class="step-num">2</div>
+              <div class="step-content">
+                <div class="step-label">AI extracts your pedagogy</div>
+                <div class="step-text">Reading lecture logic, examples, and notation style from your PDF...</div>
+              </div>
+            </div>
+            <div class="arrow-row">&darr;</div>
+            <div class="demo-step">
+              <div class="step-num">3</div>
+              <div class="step-content">
+                <div class="step-label">Exercises generated</div>
+                <div class="step-text">Python labs locked to your specific approach, with unit-tested auto-grading.</div>
+              </div>
+            </div>
+            <div class="demo-result">
+              <div class="result-label">&#10003; Ready for students</div>
+              <div class="result-text">8 interactive coding exercises generated</div>
+              <div class="result-time">&lt; 60s</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- — PROOF BAR — -->
+  <div class="proof-bar">
+    <div class="proof-inner">
+      <div class="proof-label">Live Traction</div>
+      <div class="proof-stats">
+        <div class="proof-stat">
+          <div class="proof-n">33</div>
+          <div class="proof-l">Users</div>
+        </div>
+        <div class="proof-divider"></div>
+        <div class="proof-stat">
+          <div class="proof-n">3</div>
+          <div class="proof-l">Professors</div>
+        </div>
+        <div class="proof-divider"></div>
+        <div class="proof-stat">
+          <div class="proof-n">2</div>
+          <div class="proof-l">Pilot Classes</div>
+        </div>
+        <div class="proof-divider"></div>
+        <div class="proof-stat">
+          <div class="proof-n">$0</div>
+          <div class="proof-l">Marketing Spend</div>
+        </div>
+      </div>
+      <div class="proof-divider"></div>
+      <div class="proof-school">
+        <div class="school-dot"></div>
+        Active at Hult International Business School
+      </div>
+    </div>
+  </div>
+
+  <!-- — PROBLEM — -->
+  <section class="section" id="problem">
+    <div class="section-inner">
+      <div class="section-eyebrow">The Problem</div>
+      <h2 class="section-h2">Generic platforms teach<br><em>their</em> content. Not yours.</h2>
+      <p class="section-lead">
+        Datacamp, Coursera, and every platform like them were built for mass-market learners.
+        They have no idea what you taught in Week 4, which datasets you used, or how you
+        explained regression. Students are left to bridge the gap on their own.
+      </p>
+      <div class="problem-grid">
+        <div class="problem-card">
+          <div class="pc-tag bad">The Status Quo</div>
+          <div class="pc-title">Generic EdTech Platforms</div>
+          <div class="pc-body">
+            Students practice Datacamp&rsquo;s curriculum &mdash; pandas their way, their notation,
+            their examples. Zero alignment with what the professor actually taught.
+            Every hour spent on Datacamp is an hour not spent on your material.
+          </div>
+        </div>
+        <div class="problem-card highlight">
+          <div class="pc-tag good">AnalytIQ</div>
+          <div class="pc-title">The Alignment Layer</div>
+          <div class="pc-body" style="color:rgba(255,255,255,0.6)">
+            Exercises generated from <em>your</em> syllabus, locked to your pedagogy.
+            Students practice exactly the logic, syntax, and datasets you introduced in class.
+            The AI tutor answers questions using your course material as its only context.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- — HOW IT WORKS — -->
+  <section class="how-section" id="how">
+    <div class="how-inner">
+      <div class="section-eyebrow">How It Works</div>
+      <h2 class="section-h2">Three steps.<br><em>Zero setup.</em></h2>
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-n">STEP 01</div>
+          <div class="step-icon">&#128196;</div>
+          <div class="step-h">Upload Your PDF</div>
+          <div class="step-p">
+            Drop in your syllabus, lecture slides, or any course material.
+            Supports PDF, DOCX, CSV, Jupyter notebooks, and web URLs.
+          </div>
+          <div class="step-badge">Multi-format import</div>
+        </div>
+        <div class="step-card">
+          <div class="step-n">STEP 02</div>
+          <div class="step-icon">&#9889;</div>
+          <div class="step-h">AI Generates Labs</div>
+          <div class="step-p">
+            AnalytIQ reads your material, extracts your logic, and generates
+            interactive coding exercises in Python, SQL, R, or JavaScript &mdash; in under 60 seconds.
+          </div>
+          <div class="step-badge">5&ndash;8 unit-tested exercises</div>
+        </div>
+        <div class="step-card">
+          <div class="step-n">STEP 03</div>
+          <div class="step-icon">&#128202;</div>
+          <div class="step-h">Students Practice. You See Everything.</div>
+          <div class="step-p">
+            Students code in-browser with an AI tutor that only knows your content.
+            You get real-time analytics on completion, struggle points, and performance.
+          </div>
+          <div class="step-badge">Real-time dashboard</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- — FEATURES — -->
+  <section class="features-section" id="features">
+    <div class="feat-inner">
+      <div class="section-eyebrow">Features</div>
+      <h2 class="section-h2">Everything a professor<br>actually <em>needs.</em></h2>
+      <div class="feat-grid">
+        <div class="feat-card">
+          <div class="feat-icon">&#129514;</div>
+          <div class="feat-h">Sandboxed Code Execution</div>
+          <div class="feat-p">Student code runs in an isolated sandbox &mdash; no setup, no install, no IT involvement. Works in any browser.</div>
+          <div class="feat-tag">Python &middot; SQL &middot; R &middot; JS</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon">&#10003;</div>
+          <div class="feat-h">Automated Grading</div>
+          <div class="feat-p">Output-based unit testing grades student work on actual results, not string matching. Catches copying, rewards real understanding.</div>
+          <div class="feat-tag">5&ndash;8 unit tests per exercise</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon">&#129302;</div>
+          <div class="feat-h">Context-Locked AI Tutor</div>
+          <div class="feat-p">The AI assistant only answers questions using your course material as context. No hallucination. No teaching conflicting approaches.</div>
+          <div class="feat-tag">Syllabus-bound hints</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon">&#128202;</div>
+          <div class="feat-h">Student Analytics Dashboard</div>
+          <div class="feat-p">See who&rsquo;s struggling, which exercises have high fail rates, and overall class progress &mdash; all in real time, per student.</div>
+          <div class="feat-tag">Class-wide insights</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon">&#128279;</div>
+          <div class="feat-h">LMS Integration (LTI 1.3)</div>
+          <div class="feat-p">Plugs directly into Canvas, Blackboard, and Moodle via LTI 1.3. Single sign-on, roster sync, and grade passback to your gradebook.</div>
+          <div class="feat-tag">Canvas &middot; Moodle &middot; Blackboard</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon">&#127942;</div>
+          <div class="feat-h">Gamified Leaderboards</div>
+          <div class="feat-p">Optional competitive leaderboards drive student engagement and completion rates without any extra work on your end.</div>
+          <div class="feat-tag">Increases completion</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- — COMPARISON — -->
+  <section class="compare-section">
+    <div class="compare-inner">
+      <div class="section-eyebrow">Why Not Datacamp?</div>
+      <h2 class="section-h2">They teach their content.<br><em>We teach yours.</em></h2>
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th style="width:35%">Feature</th>
+            <th>Datacamp / Coursera</th>
+            <th class="analytiq">AnalytIQ</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="feature">Aligned to your syllabus</td>
+            <td class="generic"><span class="x">&#10007;</span> Generic curriculum only</td>
+            <td class="analytiq-col"><span class="chk">&#10003;</span> Generated from your PDF</td>
+          </tr>
+          <tr>
+            <td class="feature">Exercises match your notation</td>
+            <td class="generic"><span class="x">&#10007;</span> Their style, their examples</td>
+            <td class="analytiq-col"><span class="chk">&#10003;</span> Locked to your logic</td>
+          </tr>
+          <tr>
+            <td class="feature">AI tutor uses your material</td>
+            <td class="generic"><span class="x">&#10007;</span> General-purpose chatbot</td>
+            <td class="analytiq-col"><span class="chk">&#10003;</span> Context-locked to your syllabus</td>
+          </tr>
+          <tr>
+            <td class="feature">Professor analytics dashboard</td>
+            <td class="generic"><span class="x">&#10007;</span> No professor view</td>
+            <td class="analytiq-col"><span class="chk">&#10003;</span> Real-time per-student data</td>
+          </tr>
+          <tr>
+            <td class="feature">LMS grade passback</td>
+            <td class="generic"><span class="x">&#10007;</span> Not supported</td>
+            <td class="analytiq-col"><span class="chk">&#10003;</span> LTI 1.3 native</td>
+          </tr>
+          <tr>
+            <td class="feature">Setup time</td>
+            <td class="generic">Days of content mapping</td>
+            <td class="analytiq-col"><span class="chk">&#10003;</span> Under 60 seconds</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- — PRICING — -->
+  <section class="pricing-section" id="pricing">
+    <div class="price-inner">
+      <div class="section-eyebrow">Pricing</div>
+      <h2 class="section-h2">Start with one class.<br><em>Scale when it works.</em></h2>
+      <div class="price-grid">
+        <!-- Tier 1 -->
+        <div class="price-card">
+          <div class="price-head">
+            <div class="price-badge">Entry &middot; Founding Rate</div>
+            <div class="price-name">Class License</div>
+            <div class="price-amount">$2,500</div>
+            <div class="price-period">per class &middot; per semester</div>
+          </div>
+          <div class="price-body">
+            <div class="price-desc">One professor, one class. Below every budget approval threshold. No procurement, no IT.</div>
+            <ul class="price-features">
+              <li><span class="chk">&#10003;</span> Unlimited AI exercise generation</li>
+              <li><span class="chk">&#10003;</span> Student coding playground + AI hints</li>
+              <li><span class="chk">&#10003;</span> Real-time student performance analytics</li>
+              <li><span class="chk">&#10003;</span> Gamified leaderboards</li>
+              <li><span class="chk">&#10003;</span> Direct founder support</li>
+              <li><span class="chk">&#10003;</span> Rate locked for life as founding partner</li>
+            </ul>
+            <a href="#demo" class="price-cta outline">Start With One Class &rarr;</a>
+          </div>
+        </div>
+
+        <!-- Tier 2 (Featured) -->
+        <div class="price-card featured">
+          <div class="price-head">
+            <div class="price-badge" style="color:rgba(255,255,255,0.7)">Core &middot; Most Popular</div>
+            <div class="price-name" style="color:white">Department License</div>
+            <div class="price-amount" style="color:white">$24,000</div>
+            <div class="price-period" style="color:rgba(255,255,255,0.6)">per department &middot; per year (~$2K/mo)</div>
+          </div>
+          <div class="price-body">
+            <div class="price-desc">Your entire department on one platform. All professors, unlimited classes.</div>
+            <ul class="price-features">
+              <li><span class="chk">&#10003;</span> Up to 10 professors, unlimited classes</li>
+              <li><span class="chk">&#10003;</span> Everything in Class License</li>
+              <li><span class="chk">&#10003;</span> Department-wide analytics dashboard</li>
+              <li><span class="chk">&#10003;</span> LMS integration via LTI 1.3</li>
+              <li><span class="chk">&#10003;</span> Grade passback to LMS gradebook</li>
+              <li><span class="chk">&#10003;</span> Dedicated onboarding + support</li>
+              <li><span class="chk">&#10003;</span> Rate locked for life as founding partner</li>
+            </ul>
+            <a href="#demo" class="price-cta primary">Book a Demo &rarr;</a>
+          </div>
+        </div>
+
+        <!-- Tier 3 -->
+        <div class="price-card">
+          <div class="price-head">
+            <div class="price-badge">Enterprise &middot; University-Wide</div>
+            <div class="price-name">Institutional License</div>
+            <div class="price-amount">$60K+</div>
+            <div class="price-period">per institution &middot; per year &middot; custom</div>
+          </div>
+          <div class="price-body">
+            <div class="price-desc">Multiple departments, enterprise security, FERPA compliance, and custom integrations.</div>
+            <ul class="price-features">
+              <li><span class="chk">&#10003;</span> Unlimited professors and departments</li>
+              <li><span class="chk">&#10003;</span> Everything in Department License</li>
+              <li><span class="chk">&#10003;</span> SSO / SAML integration</li>
+              <li><span class="chk">&#10003;</span> Custom data retention + DPA</li>
+              <li><span class="chk">&#10003;</span> FERPA compliance documentation</li>
+              <li><span class="chk">&#10003;</span> Dedicated success manager</li>
+            </ul>
+            <a href="#demo" class="price-cta outline">Contact Us &rarr;</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="founding-note">
+        <div class="founding-star">&#11088;</div>
+        <div class="founding-text">
+          <strong>Founding Customer Program &mdash; Limited to 10 institutions.</strong>
+          All prices are locked for life upon signing. Founding partners get direct
+          access to the founder and priority input on the product roadmap. This pricing
+          is not published publicly and will not be offered after our first 10 contracts are signed.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- — CTA — -->
+  <section class="cta-section" id="demo">
+    <div class="cta-inner">
+      <h2 class="cta-h">See it with your own syllabus.</h2>
+      <p class="cta-sub">Book a 20-minute demo and watch AnalytIQ turn your actual course PDF into interactive labs in real time. No slide decks. No pitches. Just the product.</p>
+      <div id="form-wrap">
+        <div class="cta-form">
+          <input type="email" id="demo-email" class="cta-input" placeholder="your.email@university.edu" />
+          <button class="btn-white" onclick="handleDemo()">Book Demo &rarr;</button>
+        </div>
+        <div class="cta-fine">No commitment. No procurement. We&rsquo;ll reach out within 24 hours.</div>
+      </div>
+      <div id="form-success" style="display:none; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); border-radius:10px; padding:20px 28px; margin-top:8px;">
+        <div style="font-size:22px; margin-bottom:8px;">&#10003;</div>
+        <div style="font-weight:600; font-size:16px; color:white;">You&rsquo;re on the list.</div>
+        <div style="font-size:14px; color:rgba(255,255,255,0.75); margin-top:4px;">Adam will be in touch within 24 hours.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- — FOOTER — -->
+  <footer>
+    <div class="footer-logo">Analyt<span>IQ</span></div>
+    <div class="footer-meta">
+      myanalytiq.org &middot;
+      <a href="mailto:adamelharouchi@myanalytiq.org" style="color:rgba(255,255,255,0.3);text-decoration:none;">adamelharouchi@myanalytiq.org</a>
+      &middot; Built in Boston &middot; &copy; 2026 AnalytIQ
+    </div>
+  </footer>
+
+  <script>
+    async function handleDemo() {
+      const input = document.getElementById('demo-email');
+      const email = input.value.trim();
+      if (!email || !email.includes('@')) {
+        input.style.borderColor = '#EF4444';
+        setTimeout(() => input.style.borderColor = '', 1500);
+        return;
+      }
+      const btn = document.querySelector('.btn-white');
+      btn.textContent = 'Sending...';
+      btn.disabled = true;
+      try {
+        const res = await fetch('https://formspree.io/f/mvzwwdpl', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ email, _subject: 'AnalytIQ Demo Request from ' + email, _replyto: email })
+        });
+        if (res.ok) {
+          document.getElementById('form-wrap').style.display = 'none';
+          document.getElementById('form-success').style.display = 'block';
+        } else { throw new Error(); }
+      } catch (e) {
+        window.location.href = 'mailto:adamelharouchi@myanalytiq.org?subject=Demo%20Request&body=Hi%20Adam%2C%20I%20would%20like%20to%20book%20a%20demo.%20My%20email%20is%3A%20' + encodeURIComponent(email);
+        btn.textContent = 'Book Demo \u2192';
+        btn.disabled = false;
+      }
+    }
+
+    document.getElementById('demo-email').addEventListener('keydown', e => {
+      if (e.key === 'Enter') handleDemo();
+    });
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.opacity = '1';
+          entry.target.style.transform = 'translateY(0)';
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.feat-card, .problem-card, .step-card, .price-card').forEach(el => {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(20px)';
+      el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+      observer.observe(el);
+    });
+  </script>
+
+</body>
+</html>

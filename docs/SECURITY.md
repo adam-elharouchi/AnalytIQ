@@ -1,6 +1,6 @@
 # AnalytIQ Security Reference
 
-Last updated: 2026-02-18
+Last updated: 2026-03-15
 
 ---
 
@@ -15,9 +15,9 @@ Last updated: 2026-02-18
 
 ## 2. Authorization
 
-- **`@require_auth`** (`auth_helpers.py`): extracts and verifies the Bearer token, sets
+- **`@require_auth`** (`core/auth.py`): extracts and verifies the Bearer token, sets
   `g.user_id` and `g.user_role`. Returns 401 on missing or expired tokens.
-- **`@require_role(*roles)`** (`auth_helpers.py`): must be stacked after `@require_auth`;
+- **`@require_role(*roles)`** (`core/auth.py`): must be stacked after `@require_auth`;
   returns 403 when `g.user_role` is not in the allowed set.
 - **TESTING bypass guard:** the bypass is gated on both `app.config["TESTING"] == True`
   AND `config.ENV != "production"`, so it cannot fire in a production process.
@@ -54,8 +54,8 @@ Default limits overridden via `RATE_LIMIT_DAY` / `RATE_LIMIT_HOUR` env vars.
 
 ## 5. Input Validation
 
-- **`validate_fields(data, rules)`** (`auth_helpers.py`): checks presence and max-length for any field list.
-- **`validate_email(email)`** (`auth_helpers.py`): RFC 5321 regex + 254-char cap.
+- **`validate_fields(data, rules)`** (`core/auth.py`): checks presence and max-length for any field list.
+- **`validate_email(email)`** (`core/auth.py`): RFC 5321 regex + 254-char cap.
 - Field length limits (from `config.py`):
 
   | Field                   | Limit        |
@@ -103,7 +103,7 @@ Directive: `default-src 'self'; script-src 'self' 'unsafe-inline' cdn.jsdelivr.n
 
 ## 9. FERPA Audit Log
 
-- Module: `audit.py`; table: `audit_log` (auto-created on first use).
+- Module: `core/audit.py`; table: `audit_log` (auto-created on first use).
 - Schema: `id, user_id, action, resource_type, resource_id, ip_address, details (JSONB), created_at`.
 - Indexed on `user_id` and `created_at DESC`.
 - Audit row and business operation share the same transaction (atomic).

@@ -1,36 +1,36 @@
-# AnalytIQ Knowledge Base
+# AnalytIQ Documentation
 
-Welcome to the central documentation hub for the **AnalytIQ** project. This knowledge base consolidates technical details, workflows, and project history into a single, easy-to-navigate structure.
+Central documentation for the AnalytIQ project.
 
-## 📚 Documentation Index
+## Architecture & System Design
 
-### 🔐 [Authentication & Security](./authentication_security.md)
-*   **User Roles**: Student, Professor, Admin
-*   **Security Mechanisms**: JWT Authentication, CORS, CSRF, Rate Limiting
-*   **Environment Configuration**: Secure variable management
+| File | Description |
+|---|---|
+| [ARCHITECTURE.md](ARCHITECTURE.md) | Repository layout, request lifecycle, database schema, auth flow, deployment |
+| [PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md) | High-level vision, personas, tech stack summary |
+| [12-Superadmin-Architecture.md](12-Superadmin-Architecture.md) | Evolution of the superadmin role (boolean → dedicated RBAC role) |
+| [14-SSO-Tenant-Authentication.md](14-SSO-Tenant-Authentication.md) | Per-tenant OIDC SSO, role model, tenant_admin, JWT changes |
 
-### 🚀 [Deployment & Infrastructure](./deployment_infrastructure.md)
-*   **Platform**: Render (Web Service + Redis)
-*   **Database**: PostgreSQL (Supabase)
-*   **Storage**: Supabase Storage (PDFs)
-*   **AI Integration**: Google Gemini API
+## Security
 
-### 🧪 [Testing & QA](./testing_qa.md)
-*   **Testing Framework**: `pytest`
-*   **Coverage Goals**: 70%+ Code Coverage
-*   **Running Tests**: Local and CI/CD workflows
+| File | Description |
+|---|---|
+| [SECURITY.md](SECURITY.md) | Auth, authorization, passwords, rate limits, headers, CSRF, audit log |
+| [ACCESSIBILITY.md](ACCESSIBILITY.md) | WCAG 2.1 AA audit results and compliance checklist |
+| [RENDER_ENV_CHECKLIST.md](RENDER_ENV_CHECKLIST.md) | All environment variables, what each does, deployment checklist |
 
-### ✨ Features & Portals
-*   **[Professor Portal](./features/professor_portal.md)**: Class management, student tracking, analytics.
-*   **[Student Portal](./features/student_portal.md)**: Course access, progress tracking, resources.
-*   **[Playground & AI](./features/playground.md)**: Interactive coding environment, AI-driven exercises.
+## Features
 
-### 📜 [Project History & Decisions](./project_history.md)
-*   **Timeline**: Summary of recent development sprints.
-*   **Key Decisions**: Architecture choices, migrations, and major refactors.
+| File | Description |
+|---|---|
+| [AI_EXERCISE_GENERATION.md](AI_EXERCISE_GENERATION.md) | Content extraction, Gemini prompt engineering, language detection |
+| [OUTPUT_BASED_GRADING.md](OUTPUT_BASED_GRADING.md) | Grading schema (0–100), sandbox security, supported languages, test case structure |
 
----
+## Operations & Development
 
-## 🛠️ Quick Links
-*   **Live Site**: [https://www.myanalytiq.org](https://www.myanalytiq.org)
-*   **Repository**: [GitHub](https://github.com/adamelharouchi5-blip/AnalytIQ)
+| File | Description |
+|---|---|
+| [testing_qa.md](testing_qa.md) | How to run tests, test structure, DB mocking, CI pipeline |
+| [TASKS.md](TASKS.md) | Completed work log from Feb 2026 sprint (99 tasks) |
+| [WHATS_NEW.md](WHATS_NEW.md) | Changelog: superadmin, tenants, LTI, SSO, content import |
+| [CODEBASE_AUDIT_MARCH_2026.md](CODEBASE_AUDIT_MARCH_2026.md) | March 2026 full audit: endpoints, schema, security gaps, known issues |
