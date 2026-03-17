@@ -200,8 +200,8 @@ async function handleSignIn(event) {
       window.location.href = '/change-password?forced=true';
       return;
     }
-    // Always redirect to home page
-    window.location.href = '/';
+    // Always redirect to app home (not landing page)
+    window.location.href = '/home';
   } catch (error) {
     errorDiv.textContent = error.message;
     errorDiv.style.display = 'block';

@@ -53,19 +53,19 @@ class TestSentryInitialization:
     def test_sentry_init_without_dsn(self, mock_sentry_sdk):
         """Test Sentry skips initialization when DSN is not set"""
         import core.sentry as sentry_config
+        import os
 
         mock_app = MagicMock()
         mock_app.logger = MagicMock()
 
-        with patch.dict('os.environ', {'SENTRY_DSN': ''}, clear=False):
-            # Remove SENTRY_DSN to test missing DSN
-            import os
-            old_val = os.environ.pop('SENTRY_DSN', None)
-            try:
+        env = {'FLASK_ENV': 'production'}
+        old_val = os.environ.pop('SENTRY_DSN', None)
+        try:
+            with patch.dict('os.environ', env, clear=False):
                 sentry_config.init_sentry(mock_app)
-            finally:
-                if old_val:
-                    os.environ['SENTRY_DSN'] = old_val
+        finally:
+            if old_val:
+                os.environ['SENTRY_DSN'] = old_val
 
         mock_sentry_sdk.init.assert_not_called()
         mock_app.logger.warning.assert_called()
@@ -77,7 +77,7 @@ class TestSentryInitialization:
         mock_app = MagicMock()
         mock_app.logger = MagicMock()
 
-        with patch.dict('os.environ', {'SENTRY_DSN': 'https://test@sentry.io/123'}, clear=False):
+        with patch.dict('os.environ', {'SENTRY_DSN': 'https://test@sentry.io/123', 'FLASK_ENV': 'production'}, clear=False):
             sentry_config.init_sentry(mock_app)
 
         mock_sentry_sdk.init.assert_called_once()

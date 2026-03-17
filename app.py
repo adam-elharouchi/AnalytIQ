@@ -386,6 +386,11 @@ def serve_index():
     return render_template("landing.html")
 
 
+@app.route("/home", methods=["GET"])
+def serve_home():
+    return render_template("index.html")
+
+
 @app.route("/landing", methods=["GET"])
 def serve_landing():
     return render_template("landing.html")
