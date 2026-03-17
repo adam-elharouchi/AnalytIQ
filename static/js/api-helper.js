@@ -80,12 +80,12 @@ function getAuthHeaders(extraHeaders = {}) {
 // Authenticated fetch wrapper - adds JWT token and CSRF token to all requests
 async function authFetch(url, options = {}) {
     options.headers = options.headers || {};
+    // Always set Content-Type for non-FormData requests (including unauthenticated ones like sign-in)
+    if (!(options.body instanceof FormData)) {
+        options.headers['Content-Type'] = options.headers['Content-Type'] || 'application/json';
+    }
     const token = localStorage.getItem('authToken');
     if (token) {
-        // Don't override Content-Type for FormData (multipart)
-        if (!(options.body instanceof FormData)) {
-            options.headers['Content-Type'] = options.headers['Content-Type'] || 'application/json';
-        }
         options.headers['Authorization'] = `Bearer ${token}`;
     }
     // Attach CSRF token for state-changing requests
