@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1d4ed8"/>
+      <stop offset="100%" stop-color="#2563eb"/>
+    </linearGradient>
+  </defs>
+  <!-- Rounded square background -->
+  <rect width="32" height="32" rx="7" ry="7" fill="url(#bg)"/>
+  <!-- Decorative top-right accent dot -->
+  <circle cx="25" cy="7" r="2.5" fill="#93c5fd" opacity="0.8"/>
+  <!-- "IQ" text -->
+  <text
+    x="16" y="22"
+    font-family="'Arial Black', Arial, sans-serif"
+    font-weight="900"
+    font-size="16"
+    fill="white"
+    text-anchor="middle"
+    letter-spacing="0.5"
+  >IQ</text>
+</svg>
