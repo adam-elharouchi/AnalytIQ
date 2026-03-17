@@ -22,7 +22,8 @@
       "Bash(python -m flake8 app.py config.py blueprints/ repositories/ core/ services/ workers/ --max-line-length=120 --count --show-source --statistics)",
       "Bash(grep -E \"^\\(utils|cache\\\\.py|supabase_storage\\\\.py|auth_helpers\\\\.py|db\\\\.py\\)$\")",
       "Bash(xargs -n1 basename)",
-      "Bash(pip install:*)"
+      "Bash(pip install:*)",
+      "Bash(grep -n \"signin\\\\|redirect\\\\|window.location\\\\|login\" /Users/aelharouchi/Documents/GitHub/AnalytIQ/static/js/*.js)"
     ]
   }
 }
