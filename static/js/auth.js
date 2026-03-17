@@ -263,7 +263,7 @@ async function handleSignUp(event) {
     }
 
     // Normal path — redirect to home page
-    window.location.href = '/';
+    window.location.href = '/home';
   } catch (error) {
     errorDiv.textContent = error.message;
     errorDiv.style.display = 'block';
@@ -402,7 +402,7 @@ function handleSSOTokenParam() {
     } catch (_) {
       authManager.saveToken(ssoToken);
     }
-    window.location.href = '/';
+    window.location.href = '/home';
   }
 }
 
@@ -419,7 +419,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // If already authenticated and on login page, redirect to home
   if (authManager.isAuthenticated() && window.location.pathname.includes('/login')) {
-    window.location.href = '/';
+    window.location.href = '/home';
     return;
   }
 
