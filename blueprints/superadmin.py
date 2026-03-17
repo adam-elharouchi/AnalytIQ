@@ -842,30 +842,29 @@ def delete_tenant(tenant_id):
             cur.execute("DELETE FROM class_chapters    WHERE class_id = ANY(%s)", (class_ids,))
             cur.execute("DELETE FROM class_enrollments WHERE class_id = ANY(%s)", (class_ids,))
 
-        # --- Delete user data ---
+        # --- Archive users (soft-delete — preserve their personal data) ---
         if user_ids:
-            cur.execute("DELETE FROM class_enrollments WHERE student_id   = ANY(%s)", (user_ids,))
-            cur.execute("DELETE FROM conversations     WHERE user_id      = ANY(%s)", (user_ids,))
-            cur.execute("DELETE FROM exercise_attempts WHERE user_id      = ANY(%s)", (user_ids,))
-            cur.execute("DELETE FROM practice_progress WHERE user_id      = ANY(%s)", (user_ids,))
-            cur.execute("DELETE FROM ai_agent_memory   WHERE user_id      = ANY(%s)", (user_ids,))
-            cur.execute("DELETE FROM ai_agent_digest   WHERE user_id      = ANY(%s)", (user_ids,))
-            cur.execute("DELETE FROM user_profiles     WHERE user_id      = ANY(%s)", (user_ids,))
-            cur.execute("DELETE FROM user_settings     WHERE user_id      = ANY(%s)", (user_ids,))
-            cur.execute("DELETE FROM user_preferences  WHERE user_id      = ANY(%s)", (user_ids,))
-            cur.execute("DELETE FROM lti_sessions      WHERE user_id      = ANY(%s)", (user_ids,))
-            cur.execute("DELETE FROM lti_configurations WHERE created_by  = ANY(%s)", (user_ids,))
+            cur.execute(
+                """
+                UPDATE users
+                   SET account_status = 'archived',
+                       archived_at    = NOW(),
+                       tenant_id      = NULL
+                 WHERE user_id = ANY(%s)
+                """,
+                (user_ids,),
+            )
+            # Remove class enrollments for the deleted classes only
+            cur.execute("DELETE FROM class_enrollments WHERE student_id = ANY(%s)", (user_ids,))
 
-        # --- Delete classes and users ---
+        # --- Delete classes ---
         if class_ids:
             cur.execute("DELETE FROM classes WHERE class_id = ANY(%s)", (class_ids,))
-        if user_ids:
-            cur.execute("DELETE FROM users   WHERE user_id  = ANY(%s)", (user_ids,))
 
         # --- Delete tenant-level records ---
         cur.execute("DELETE FROM tenant_sso_providers WHERE tenant_id = %s", (tenant_id,))
-        cur.execute("DELETE FROM announcements WHERE tenant_id = %s", (tenant_id,))
-        cur.execute("DELETE FROM tenants WHERE tenant_id = %s", (tenant_id,))
+        cur.execute("DELETE FROM announcements        WHERE tenant_id = %s", (tenant_id,))
+        cur.execute("DELETE FROM tenants              WHERE tenant_id = %s", (tenant_id,))
 
         audit(
             conn,
