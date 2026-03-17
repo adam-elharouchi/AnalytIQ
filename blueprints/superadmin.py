@@ -847,7 +847,7 @@ def delete_tenant(tenant_id):
             cur.execute(
                 """
                 UPDATE users
-                   SET account_status = 'archived',
+                   SET account_status = 'disabled',
                        archived_at    = NOW(),
                        tenant_id      = NULL
                  WHERE user_id = ANY(%s)
