@@ -231,6 +231,15 @@
             style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.5rem; font-size: 1rem; background: rgba(17,24,39,0.7); color: var(--text-primary, #f0f4ff);">
         </div>
 
+        <div style="margin-bottom: 1.5rem; display: flex; align-items: flex-start; gap: 0.75rem; padding: 1rem; border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.5rem; background: rgba(17,24,39,0.5);">
+          <input type="checkbox" id="autoGenerateExercises" checked
+            style="margin-top: 0.15rem; width: 1rem; height: 1rem; cursor: pointer; accent-color: var(--color-primary, #2569f4);">
+          <label for="autoGenerateExercises" style="cursor: pointer;">
+            <strong style="display: block; color: var(--text-primary, #f0f4ff);">Auto-generate exercises from content</strong>
+            <span style="font-size: 0.875rem; color: var(--text-secondary, #64748b);">Use AI to create coding exercises from the uploaded PDF. Uncheck to upload without generating exercises.</span>
+          </label>
+        </div>
+
         <div class="upload-zone" id="dropZone">
           <div style="font-size: 3rem; margin-bottom: 1rem;"></div>
           <h3 style="margin-bottom: 0.5rem; color: var(--text-primary, #f0f4ff);">Upload Chapter PDF</h3>

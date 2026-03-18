@@ -3,6 +3,7 @@ Exercises Blueprint — /api/exercises/* and /api/leaderboard/grand
 """
 import logging
 import time
+import unicodedata
 from flask import Blueprint, g, jsonify, request
 import core.cache as cache
 import config
@@ -17,6 +18,33 @@ from services.exercise_generator import generate_test_cases_for_exercise
 
 logger = logging.getLogger(__name__)
 bp = Blueprint("exercises", __name__)
+
+# ---------------------------------------------------------------------------
+# Unicode sanitisation for student code submissions
+# ---------------------------------------------------------------------------
+# Browsers inside LTI iframes (e.g. Moodle) can silently inject invisible
+# Unicode characters into textarea content — zero-width spaces (U+200B), BOM
+# (U+FEFF), soft hyphens (U+00AD), etc.  These are Unicode "format" category
+# (Cf) chars that survive a plain .strip() but cause "SyntaxError: invalid
+# syntax (<student>, line 1)" when Python's tokeniser encounters them.
+# Non-breaking-space variants are normalised to regular spaces so that Python
+# indentation is not destroyed.
+
+_NBSP_CHARS = frozenset("\u00a0\u2002\u2003\u2009\u202f")
+
+
+def _sanitise_student_code(code: str) -> str:
+    """Strip invisible Unicode format chars; normalise non-breaking spaces."""
+    out = []
+    for ch in code:
+        if ch in _NBSP_CHARS:
+            out.append(" ")
+        elif unicodedata.category(ch) == "Cf":  # format chars: U+200B, U+FEFF, …
+            pass  # drop silently
+        else:
+            out.append(ch)
+    return "".join(out).strip()
+
 
 _PY_EXCEPTION_NAMES = (
     "SyntaxError",
@@ -294,7 +322,8 @@ def grade_exercise(exercise_id):
         conn = get_db_connection()
         data = request.json or {}
 
-        student_code = (data.get("code") or "").strip()
+        student_code = _sanitise_student_code(data.get("code") or "")
+
         if not student_code:
             return jsonify({"error": "No code submitted."}), 400
 

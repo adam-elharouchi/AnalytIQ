@@ -276,7 +276,9 @@ async function processUpload(file, title) {
     const formData = new FormData();
     formData.append('pdf_file', file);
     formData.append('title', title);
-    formData.append('exercise_mode', 'manual'); // Don't auto-generate yet
+    const autoGenerate = document.getElementById('autoGenerateExercises');
+    const exerciseMode = (autoGenerate && autoGenerate.checked) ? 'auto' : 'manual';
+    formData.append('exercise_mode', exerciseMode);
     formData.append('chapter_number', 999); // Auto-increment ideally
 
     // Create the chapter first
@@ -294,6 +296,14 @@ async function processUpload(file, title) {
     selectedChapterId = chapterData.chapter_id;
 
     updateStage('stageUpload', 'completed');
+
+    // If manual mode, skip exercise generation and return to class
+    if (exerciseMode === 'manual') {
+        setTimeout(() => {
+            window.location.href = `professor-class?class_id=${currentClassId}`;
+        }, 500);
+        return;
+    }
 
     // 2. Generate exercises from the uploaded chapter
     updateStage('stageExtract', 'active');

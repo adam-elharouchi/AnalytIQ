@@ -123,14 +123,21 @@ def _safe_open(file, mode="r", *args, **kwargs):
     return _ro(file, mode, *args, **kwargs)
 builtins.open = _safe_open
 
-# Parse CLI args: argv[1]=JSON input, argv[2]=function name
-_params  = json.loads(sys.argv[1])
-_fn_name = sys.argv[2]
-_globs   = {{"__builtins__": builtins, "__name__": "__student__"}}
+# Parse CLI args: argv[1]=JSON input, argv[2]=function name, argv[3]=path to student code file
+_params      = json.loads(sys.argv[1])
+_fn_name     = sys.argv[2]
+_code_path   = sys.argv[3]
+_globs       = {{"__builtins__": builtins, "__name__": "__student__"}}
+
+# Read student code from the dedicated temp file (avoids repr/format injection issues)
+try:
+    _student_src = _ro(_code_path, encoding="utf-8").read()
+except Exception as e:
+    print(json.dumps({{"error": "compile_error", "message": f"Could not read student code: {{e}}"}})); sys.exit(0)
 
 # Compile and exec student code
 try:
-    exec(compile({student_code_repr}, "<student>", "exec"), _globs)
+    exec(compile(_student_src, "<student>", "exec"), _globs)
 except SyntaxError as e:
     print(json.dumps({{"error": "compile_error", "message": f"SyntaxError: {{e}}"}})); sys.exit(0)
 except Exception as e:
@@ -174,16 +181,32 @@ print(json.dumps({{"result": _result, "printed": _printed or None, "error": _err
 def _run_python(student_code: str, fn_name: str, tc: dict, timeout: int) -> dict:
     import subprocess
 
+    # The harness no longer embeds student code via repr() — it reads it from a
+    # dedicated temp file (argv[3]).  This avoids repr/format edge cases that
+    # corrupted code containing backslashes, Unicode characters (e.g. smart
+    # quotes introduced by browser autocorrect in LTI iframes), or other chars
+    # that survive .strip() but are not valid Python syntax.
     harness = _PY_HARNESS.format(
         blocked_set=repr(set(BLOCKED_PY_MODULES)),
-        student_code_repr=repr(student_code),
     )
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False, prefix="aq_py_") as f:
-        f.write(harness)
-        path = f.name
+
+    code_path = None
+    path = None
     try:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".py", delete=False, prefix="aq_py_"
+        ) as f:
+            f.write(harness)
+            path = f.name
+
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".py", delete=False, prefix="aq_src_", encoding="utf-8"
+        ) as cf:
+            cf.write(student_code)
+            code_path = cf.name
+
         proc = subprocess.run(
-            [sys.executable, path, json.dumps(tc.get("input", {})), fn_name or ""],
+            [sys.executable, path, json.dumps(tc.get("input", {})), fn_name or "", code_path],
             capture_output=True,
             text=True,
             timeout=timeout,
@@ -193,7 +216,10 @@ def _run_python(student_code: str, fn_name: str, tc: dict, timeout: int) -> dict
     except subprocess.TimeoutExpired:
         return {"timed_out": True}
     finally:
-        _rm(path)
+        if path:
+            _rm(path)
+        if code_path:
+            _rm(code_path)
 
 
 # ---------------------------------------------------------------------------
