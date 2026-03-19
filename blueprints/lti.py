@@ -261,61 +261,6 @@ def _store_lti_session(conn, launch_data, user_id, class_id):
     return session_id
 
 
-def _push_ags_grade(conn, class_id, exercise_id, lti_user_id, score):
-    """Push a numeric grade (0–100) to the LMS via AGS for a single student.
-
-    Silently returns if the class is not found, AGS is disabled, or the
-    lineitems URL is missing.  Raises RuntimeError / ImportError if pylti1p3
-    is unavailable or if the tool is not configured.
-    """
-    cur = conn.cursor()
-    cur.execute(
-        "SELECT ags_enabled, ags_lineitems_url, lti_issuer FROM classes WHERE class_id = %s",
-        (class_id,),
-    )
-    class_row = cur.fetchone()
-    cur.close()
-
-    if not class_row:
-        return
-    ags_enabled, ags_lineitems_url, lti_issuer = class_row
-    if not ags_enabled:
-        return
-    if not ags_lineitems_url:
-        return
-
-    tool_conf = _build_tool_conf(conn)
-    if tool_conf is None:
-        raise RuntimeError("LTI tool not configured")
-
-    from pylti1p3.assignments_grades import AssignmentsGradesService
-    from pylti1p3.grade import Grade
-    from pylti1p3.lineitem import LineItem
-
-    ags = AssignmentsGradesService(
-        tool_conf,
-        {
-            "lineitems": ags_lineitems_url,
-            "scope": ["https://purl.imsglobal.org/spec/lti-ags/scope/score"],
-        },
-        lti_issuer,
-    )
-
-    grade = (
-        Grade()
-        .set_score_given(score)
-        .set_score_maximum(100)
-        .set_timestamp(datetime.now(timezone.utc).isoformat())
-        .set_activity_progress("Completed")
-        .set_grading_progress("FullyGraded")
-        .set_user_id(lti_user_id)
-    )
-
-    line_item = LineItem().set_tag(f"exercise-{exercise_id}").set_score_maximum(100)
-
-    ags.put_grade(grade, line_item)
-
-
 _LTI_ENDPOINTS = ("/lti/jwks", "/lti/login", "/lti/launch")
 
 
