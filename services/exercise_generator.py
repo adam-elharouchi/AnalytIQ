@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 # Bump this constant whenever the Gemini prompt changes so the flywheel can
 # measure whether the change improved exercise quality.
-PROMPT_TEMPLATE_VERSION = "v1.1"
+PROMPT_TEMPLATE_VERSION = "v1.2"
 
 # Use the model configured in config.py / GEMINI_MODEL env var.
 # Defaults to gemini-2.5-flash if not set.
@@ -215,8 +215,11 @@ IMPORTS / DEPENDENCIES
   • Use standard aliases/conventions for the detected language and ecosystem.
 
 DATA
-  • Use small synthetic data defined inline, OR reference a well-known public dataset appropriate for the language (e.g. seaborn "tips"/"iris" for Python, built-in datasets for R, a simple CREATE TABLE + INSERT for SQL).
+  • PRIORITY: If the chapter shows a specific dataset, table, or list of values, USE THOSE EXACT VALUES in the exercise. This makes the exercise feel grounded in the lesson.
+  • If no specific values exist, use small synthetic data defined inline (5–10 values max).
+  • Reference well-known public datasets (seaborn "tips"/"iris", R built-ins, SQL inline inserts) only as a last resort.
   • Do NOT reference external files that may not exist on the student's machine.
+  • Always include the inline data in the description so the student knows what to work with.
 
 DIFFICULTY
   • First 2–3 exercises: "easy" (single operation, one function/method call).
@@ -241,8 +244,8 @@ Return your response as a JSON array with ONLY this structure — no markdown, n
 [
   {{
     "language": "The detected language name, e.g. Python, R, SQL, JavaScript",
-    "title": "Exercise title",
-    "description": "One or two sentences telling the student exactly what to do. Name the function they must define and what it must return.",
+    "title": "Short action-oriented title describing the exact goal, e.g. 'Calculate the Mean of Test Scores'",
+    "description": "3-5 sentences that give the student EVERYTHING they need — no outside knowledge required. MUST include ALL of: (1) the specific dataset, values, or scenario from this chapter (quote exact numbers/column names where possible), (2) a clear step-by-step statement of what the student must do, (3) the exact function name and what it accepts/returns. Example: 'The chapter introduces a dataset of 10 student test scores: [82, 91, 78, 95, 88, 76, 90, 85, 93, 80]. Your task is to write a function called calculate_mean(scores) that computes the average of a list of numbers. The function should accept a list of numbers as its only argument, store the result in a variable called mean_score, print it with a label, and return it.'",
     "difficulty": "easy|medium",
     "function_name": "snake_case function name the student must define",
     "solution_code": "Code in the detected language — every line commented, result output at end, 5-10 lines max",
