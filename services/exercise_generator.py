@@ -10,13 +10,17 @@ import re
 import time
 import json
 
+import config
+
 logger = logging.getLogger(__name__)
 
 # Bump this constant whenever the Gemini prompt changes so the flywheel can
 # measure whether the change improved exercise quality.
 PROMPT_TEMPLATE_VERSION = "v1.1"
 
-_GEMINI_MODEL = "gemini-2.0-flash"
+# Use the model configured in config.py / GEMINI_MODEL env var.
+# Defaults to gemini-2.5-flash if not set.
+_GEMINI_MODEL = config.GEMINI_MODEL or "gemini-2.5-flash"
 _GENERATION_PARAMS = {"temperature": 0.7, "maxOutputTokens": 8192}
 _TRUNCATION_LIMIT = 10_000
 
@@ -259,19 +263,26 @@ Return your response as a JSON array with ONLY this structure — no markdown, n
         # Call Gemini API
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{_GEMINI_MODEL}:generateContent?key={api_key}"
 
+        # Disable thinking mode on thinking-capable models (e.g. gemini-2.5-*).
+        # Without this, the model's internal reasoning tokens can corrupt the
+        # structured JSON output, causing JSONDecodeError mid-response.
+        gen_config = {
+            "temperature": _GENERATION_PARAMS["temperature"],
+            "maxOutputTokens": _GENERATION_PARAMS["maxOutputTokens"],
+            "responseMimeType": "application/json",
+        }
+        if "2.5" in _GEMINI_MODEL or "3." in _GEMINI_MODEL:
+            gen_config["thinkingConfig"] = {"thinkingBudget": 0}
+
         _t0 = time.monotonic()
         response = requests.post(
             url,
             headers={"Content-Type": "application/json"},
             json={
                 "contents": [{"parts": [{"text": prompt}]}],
-                "generationConfig": {
-                    "temperature": _GENERATION_PARAMS["temperature"],
-                    "maxOutputTokens": _GENERATION_PARAMS["maxOutputTokens"],
-                    "responseMimeType": "application/json",
-                },
+                "generationConfig": gen_config,
             },
-            timeout=60,
+            timeout=config.GEMINI_TIMEOUT,
         )
         generation_time_ms = int((time.monotonic() - _t0) * 1000)
 
@@ -464,19 +475,23 @@ Return ONLY a JSON object (no markdown):
         import requests
 
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{_GEMINI_MODEL}:generateContent?key={api_key}"
+        gen_config_tc = {
+            "temperature": 0.3,
+            "maxOutputTokens": 2048,
+            "responseMimeType": "application/json",
+        }
+        if "2.5" in _GEMINI_MODEL or "3." in _GEMINI_MODEL:
+            gen_config_tc["thinkingConfig"] = {"thinkingBudget": 0}
+
         _t0 = time.monotonic()
         response = requests.post(
             url,
             headers={"Content-Type": "application/json"},
             json={
                 "contents": [{"parts": [{"text": prompt}]}],
-                "generationConfig": {
-                    "temperature": 0.3,
-                    "maxOutputTokens": 2048,
-                    "responseMimeType": "application/json",
-                },
+                "generationConfig": gen_config_tc,
             },
-            timeout=45,
+            timeout=config.GEMINI_TIMEOUT,
         )
         _retroactive_gen_time_ms = int((time.monotonic() - _t0) * 1000)
 
