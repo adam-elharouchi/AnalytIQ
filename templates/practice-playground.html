@@ -396,6 +396,36 @@
     .output-placeholder { color: #475569; font-style: italic; }
     .output-running { color: #60a5fa; }
 
+    .editor-output-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      align-items: start;
+      margin-bottom: 2rem;
+    }
+
+    .editor-col {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .output-col {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .grading-panel {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 0.5rem;
+      padding: 1rem 1.25rem;
+    }
+
+    @media (max-width: 900px) {
+      .editor-output-grid { grid-template-columns: 1fr; }
+    }
+
     .solution-section {
       display: none;
       margin-top: 2rem;
@@ -798,41 +828,51 @@
         </div>
       </div>
 
-      <div class="code-editor-section">
-        <h3 id="codeEditorTitle">Your Code</h3>
-        <div class="code-editor-wrapper">
-          <div class="code-editor-header">
-            <div class="code-editor-header-left">
-              <div class="code-editor-dot red"></div>
-              <div class="code-editor-dot yellow"></div>
-              <div class="code-editor-dot green"></div>
-              <span class="code-editor-title">main.py</span>
+      <div class="editor-output-grid">
+
+        <!-- Left: code editor + action buttons -->
+        <div class="editor-col">
+          <div class="code-editor-section">
+            <h3 id="codeEditorTitle">Your Code</h3>
+            <div class="code-editor-wrapper">
+              <div class="code-editor-header">
+                <div class="code-editor-header-left">
+                  <div class="code-editor-dot red"></div>
+                  <div class="code-editor-dot yellow"></div>
+                  <div class="code-editor-dot green"></div>
+                  <span class="code-editor-title">main.py</span>
+                </div>
+              </div>
+              <div class="code-editor-container">
+                <div class="code-editor-line-numbers" id="lineNumbers"></div>
+                <textarea id="codeEditor" class="code-editor" aria-labelledby="codeEditorTitle" placeholder="Write your code here..." spellcheck="false" autocorrect="off" autocapitalize="off" autocomplete="off"
+                  onscroll="syncLineNumbers()" oninput="updateLineNumbers()"
+                  onkeydown="handleCodeEditorKeyDown(event)"></textarea>
+              </div>
             </div>
           </div>
-          <div class="code-editor-container">
-            <div class="code-editor-line-numbers" id="lineNumbers"></div>
-            <textarea id="codeEditor" class="code-editor" aria-labelledby="codeEditorTitle" placeholder="Write your code here..." spellcheck="false" autocorrect="off" autocapitalize="off" autocomplete="off"
-              onscroll="syncLineNumbers()" oninput="updateLineNumbers()"
-              onkeydown="handleCodeEditorKeyDown(event)"></textarea>
-            <div id="codeDisplay" class="code-display"></div>
+
+          <div class="playground-actions">
+            <button class="btn-run" id="runBtn" onclick="runCode()">&#9654; Run &amp; Grade</button>
+            <button class="btn-reset" onclick="resetCode()">Reset</button>
           </div>
         </div>
-      </div>
 
-      <div class="playground-actions">
-        <button class="btn-run" id="runBtn" onclick="runCode()">&#9654; Run</button>
-        <button class="btn-submit" id="submitBtn" onclick="submitSolution()">Submit Solution</button>
-        <button class="btn-reset" onclick="resetCode()">Reset Code</button>
-      </div>
+        <!-- Right: output + grading feedback -->
+        <div class="output-col">
+          <div class="output-panel" id="outputPanel">
+            <div class="output-panel-header">
+              <span>Output</span>
+              <button class="output-clear-btn" onclick="clearOutput()">Clear</button>
+            </div>
+            <div class="output-content" id="outputContent">
+              <span class="output-placeholder">Press &#9654; Run or Ctrl+Enter to execute your code.</span>
+            </div>
+          </div>
 
-      <div class="output-panel" id="outputPanel">
-        <div class="output-panel-header">
-          <span>Output</span>
-          <button class="output-clear-btn" onclick="clearOutput()">Clear</button>
+          <div class="grading-panel" id="gradingPanel" style="display:none;"></div>
         </div>
-        <div class="output-content" id="outputContent">
-          <span class="output-placeholder">Press &#9654; Run or Ctrl+Enter to execute your code.</span>
-        </div>
+
       </div>
     </div>
   </main>
@@ -1189,16 +1229,9 @@
 
     function updateLineNumbers() {
       const editor = document.getElementById('codeEditor');
-      const codeDisplay = document.getElementById('codeDisplay');
       const lineNumbers = document.getElementById('lineNumbers');
 
-      // Get line count from either editor or display
-      let lines = 1;
-      if (codeDisplay.classList.contains('show')) {
-        lines = codeDisplay.querySelectorAll('.code-line').length || 1;
-      } else {
-        lines = editor.value.split('\n').length || 1;
-      }
+      let lines = editor.value.split('\n').length || 1;
 
       const minLines = Math.max(lines, 20); // Show at least 20 lines
 
@@ -1215,98 +1248,6 @@
       lineNumbers.scrollTop = editor.scrollTop;
     }
 
-    async function submitSolution() {
-      const codeEditor = document.getElementById('codeEditor');
-      const userCode = codeEditor.value.trim();
-
-      if (!userCode) {
-        showSubmissionMessage('Please write some code before submitting.', 'info');
-        return;
-      }
-
-      // Stop timer
-      stopTimer();
-
-      // Clear autosave draft now that the exercise is submitted
-      if (exerciseData && exerciseData.id) {
-        localStorage.removeItem('analytiq_draft_' + exerciseData.id);
-      }
-
-      // Mark as submitted
-      hasSubmitted = true;
-
-      // ── Grade via backend (output-based — no Levenshtein, no time bonus) ──
-      showSubmissionMessage('Grading your code…', 'info');
-
-      let score = 0;
-      let accuracy = 0;
-      let gradingResult = null;
-
-      try {
-        const apiUrl = window.API_BASE_URL || '/api';
-        const gradeResp = await authFetch(
-          `${apiUrl}/exercises/${exerciseData.id}/grade`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ code: userCode }),
-          }
-        );
-
-        if (gradeResp.ok) {
-          gradingResult = await gradeResp.json();
-          score    = gradingResult.total_score || 0;
-          // Normalise correctness (0-70) to a 0-100% for the accuracy display
-          accuracy = gradingResult.correctness_score != null
-            ? Math.round((gradingResult.correctness_score / 70) * 100)
-            : Math.round(score);
-        } else {
-          console.error('Grading request failed:', gradeResp.status);
-        }
-      } catch (gradeErr) {
-        console.error('Error calling grade endpoint:', gradeErr);
-      }
-
-      // Update stats display
-      document.getElementById('accuracyDisplay').textContent = `${accuracy}%`;
-      document.getElementById('scoreDisplay').textContent = score;
-
-      // Hide editor, show test results panel
-      codeEditor.style.display = 'none';
-      const codeDisplay = document.getElementById('codeDisplay');
-      codeDisplay.classList.add('show');
-
-      renderTestResults(gradingResult);
-
-      // Update title
-      document.getElementById('codeEditorTitle').textContent = 'Feedback';
-
-      // Disable submit button
-      const submitBtn = document.getElementById('submitBtn');
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Submitted';
-
-      // Show submission message
-      let submissionMessage;
-      if (gradingResult) {
-        const verdict = gradingResult.passed ? 'Passed' : 'Not yet passing';
-        submissionMessage = `${verdict} · Score: ${score}/100 · Time: ${formatTime(elapsedSeconds)}`;
-      } else {
-        submissionMessage = `Submitted. Score: ${score} · Time: ${formatTime(elapsedSeconds)}`;
-      }
-      if (hintInteractions > 0) submissionMessage += ` · Hints: ${hintInteractions}`;
-      showSubmissionMessage(submissionMessage, 'success');
-
-      // Save score to backend
-      const saveSuccess = await saveExerciseScore(exerciseData.id, exerciseData.title, score, accuracy, elapsedSeconds);
-
-      sessionStorage.setItem('practiceProgressNeedsRefresh', 'true');
-      sessionStorage.setItem('lastSubmittedExerciseId', exerciseData.id);
-
-      if (saveSuccess) {
-        console.log('Solution submitted successfully, refresh flag set for exercise:', exerciseData.id);
-      }
-    }
 
     async function saveExerciseScore(exerciseId, exerciseTitle, score, accuracy, timeSpent) {
       try {
@@ -1363,63 +1304,37 @@
       }
     }
 
-    // ── renderTestResults — AI grading feedback display ──────────────────────
-    function renderTestResults(gradingResult) {
-      const codeDisplay = document.getElementById('codeDisplay');
-
+    // ── renderGradingResult — AI feedback in right panel ─────────────────────
+    function renderGradingResult(gradingResult, container) {
       if (!gradingResult) {
-        codeDisplay.innerHTML = '<div class="code-line">Grading failed — please try again.</div>';
+        container.innerHTML = '<div style="color:#f87171;">Grading failed — please try again.</div>';
         return;
       }
 
       const passed   = gradingResult.passed;
-      const score    = gradingResult.total_score || 0;
       const correct  = gradingResult.correctness_score || 0;
       const quality  = gradingResult.quality_score || 0;
       const feedback = gradingResult.feedback || '';
-      const output   = gradingResult.output || '';
-      const timedOut = gradingResult.timed_out;
 
       const verdictColour = passed ? '#4caf50' : '#f5a623';
       const verdictIcon   = passed ? '✓' : '○';
       const verdictLabel  = passed ? 'Passed' : 'Keep going';
 
       let html = `
-        <div style="margin-bottom:14px;">
-          <span style="color:${verdictColour};font-size:1.1em;font-weight:700;">
-            ${verdictIcon} ${verdictLabel}
-          </span>
-          <span style="color:#94a3b8;font-size:0.85em;margin-left:10px;">
-            Correctness ${correct}/70 &nbsp;·&nbsp; Quality ${quality}/30
-          </span>
+        <div style="margin-bottom:10px;">
+          <span style="color:${verdictColour};font-size:1.05em;font-weight:700;">${verdictIcon} ${verdictLabel}</span>
+          <span style="color:#94a3b8;font-size:0.82em;margin-left:10px;">Correctness ${correct}/70 · Quality ${quality}/30</span>
         </div>`;
 
       if (feedback) {
         html += `
-        <div style="background:rgba(255,255,255,0.04);border-left:3px solid ${verdictColour};
-                    padding:0.75rem 1rem;border-radius:0 0.375rem 0.375rem 0;margin-bottom:14px;
-                    color:#e2e8f0;font-size:0.9em;line-height:1.6;">
+        <div style="border-left:3px solid ${verdictColour};padding:0.65rem 1rem;
+                    border-radius:0 0.375rem 0.375rem 0;color:#e2e8f0;font-size:0.88em;line-height:1.6;">
           ${escapeHtml(feedback)}
         </div>`;
       }
 
-      if (timedOut) {
-        html += `<div class="code-line" style="color:#f87171;">⏱ Code timed out — check for infinite loops.</div>`;
-      } else if (output) {
-        html += `
-        <div style="margin-top:10px;">
-          <div style="color:#64748b;font-size:0.75em;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em;">
-            Output
-          </div>
-          <pre style="background:#0d1117;border:1px solid rgba(255,255,255,0.08);border-radius:0.375rem;
-                      padding:0.75rem;margin:0;font-size:0.8em;color:#e2e8f0;
-                      white-space:pre-wrap;word-break:break-all;max-height:200px;overflow-y:auto;">${escapeHtml(output)}</pre>
-        </div>`;
-      } else if (!timedOut) {
-        html += `<div class="code-line" style="color:#64748b;font-size:0.85em;">(no output — did your code print anything?)</div>`;
-      }
-
-      codeDisplay.innerHTML = html;
+      container.innerHTML = html;
     }
 
     function escapeHtml(text) {
@@ -1430,7 +1345,7 @@
 
     function resetCode() {
       if (hasSubmitted) {
-        if (!confirm('Resetting will allow you to submit again. Continue?')) {
+        if (!confirm('Reset your code and try again?')) {
           return;
         }
       }
@@ -1440,15 +1355,16 @@
       startTimer();
 
       const codeEditor = document.getElementById('codeEditor');
-      const codeDisplay = document.getElementById('codeDisplay');
-
       codeEditor.value = '';
       codeEditor.disabled = false;
-      codeEditor.style.display = 'block';
-      codeDisplay.classList.remove('show');
-      codeDisplay.innerHTML = '';
-
       updateLineNumbers();
+
+      // Clear right-side panels
+      document.getElementById('outputContent').innerHTML =
+        '<span class="output-placeholder">Press &#9654; Run or Ctrl+Enter to execute your code.</span>';
+      const gradingPanel = document.getElementById('gradingPanel');
+      gradingPanel.style.display = 'none';
+      gradingPanel.innerHTML = '';
 
       // Reset stats
       document.getElementById('accuracyDisplay').textContent = '0%';
@@ -1459,15 +1375,9 @@
       hintInteractions = 0;
       currentHintLevel = 1;
 
-      const submitBtn = document.getElementById('submitBtn');
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Submit Solution';
-
-      const submissionMessage = document.getElementById('submissionMessage');
-      submissionMessage.classList.remove('show');
+      document.getElementById('submissionMessage').classList.remove('show');
 
       hasSubmitted = false;
-
       codeEditor.focus();
     }
 
@@ -1714,58 +1624,109 @@
       }
     }
 
-    // ── Live code execution (▶ Run) ──────────────────────────────────────────
+    // ── Run & Grade (single button flow) ────────────────────────────────────
     async function runCode() {
-      const code = document.getElementById('codeEditor').value;
+      const userCode = document.getElementById('codeEditor').value.trim();
       const outputContent = document.getElementById('outputContent');
-      const runBtn = document.getElementById('runBtn');
+      const gradingPanel  = document.getElementById('gradingPanel');
+      const runBtn        = document.getElementById('runBtn');
 
-      if (!code.trim()) {
+      if (!userCode) {
         outputContent.innerHTML = '<span class="output-stderr">No code to run.</span>';
         return;
       }
 
+      // Phase 1: Running
       runBtn.disabled = true;
       runBtn.innerHTML = '&#9203; Running\u2026';
-      outputContent.innerHTML = '<span class="output-running">Running\u2026</span>';
+      outputContent.innerHTML = '<span class="output-running">Running your code\u2026</span>';
+      gradingPanel.style.display = 'none';
+      gradingPanel.innerHTML = '';
+
+      // After 1 s switch button label to "Grading…"
+      const phaseTimer = setTimeout(() => {
+        if (runBtn.disabled) {
+          runBtn.innerHTML = '&#129302; Grading\u2026';
+        }
+      }, 1000);
 
       try {
-        const apiUrl = window.API_BASE_URL || '/api';
-        const resp = await authFetch(`${apiUrl}/code/run`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            code,
-            language: exerciseData?.language || 'python',
-          }),
-        });
-
-        const result = await resp.json();
-
-        if (result.timed_out) {
-          outputContent.innerHTML = '<span class="output-stderr">&#9203; Timed out after 15s. Infinite loop?</span>';
-        } else {
-          let html = '';
-          if (result.stdout) {
-            html += `<span class="output-stdout">${escapeHtml(result.stdout)}</span>`;
+        // Stop timer once on first run
+        if (!hasSubmitted) {
+          stopTimer();
+          hasSubmitted = true;
+          if (exerciseData && exerciseData.id) {
+            localStorage.removeItem('analytiq_draft_' + exerciseData.id);
           }
-          if (result.stderr) {
-            if (html) html += '\n';
-            html += `<span class="output-stderr">${escapeHtml(result.stderr)}</span>`;
-          }
-          outputContent.innerHTML = html || '<span class="output-placeholder">(no output)</span>';
         }
+
+        const apiUrl = window.API_BASE_URL || '/api';
+        const gradeResp = await authFetch(
+          `${apiUrl}/exercises/${exerciseData.id}/grade`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code: userCode }),
+          }
+        );
+
+        clearTimeout(phaseTimer);
+
+        if (!gradeResp.ok) {
+          const err = await gradeResp.json().catch(() => ({}));
+          throw new Error(err.error || `Server error ${gradeResp.status}`);
+        }
+
+        const result = await gradeResp.json();
+        const score    = result.total_score || 0;
+        const accuracy = result.correctness_score != null
+          ? Math.round((result.correctness_score / 70) * 100)
+          : Math.round(score);
+
+        // Show output in left panel
+        if (result.timed_out) {
+          outputContent.innerHTML = '<span class="output-stderr">&#9203; Timed out after 15 s — check for infinite loops.</span>';
+        } else {
+          const out = result.output || '';
+          outputContent.innerHTML = out
+            ? `<span class="output-stdout">${escapeHtml(out)}</span>`
+            : '<span class="output-placeholder">(no output)</span>';
+        }
+
+        // Show AI grading in right panel
+        gradingPanel.style.display = 'block';
+        renderGradingResult(result, gradingPanel);
+
+        // Update stats bar
+        document.getElementById('accuracyDisplay').textContent = `${accuracy}%`;
+        document.getElementById('scoreDisplay').textContent = score;
+
+        // Submission banner
+        const verdict = result.passed ? 'Passed' : 'Keep going';
+        let msg = `${verdict} · Score: ${score}/100 · Time: ${formatTime(elapsedSeconds)}`;
+        if (hintInteractions > 0) msg += ` · Hints: ${hintInteractions}`;
+        showSubmissionMessage(msg, result.passed ? 'success' : 'info');
+
+        // Persist to backend
+        await saveExerciseScore(exerciseData.id, exerciseData.title, score, accuracy, elapsedSeconds);
+        sessionStorage.setItem('practiceProgressNeedsRefresh', 'true');
+        sessionStorage.setItem('lastSubmittedExerciseId', exerciseData.id);
+
       } catch (err) {
+        clearTimeout(phaseTimer);
         outputContent.innerHTML = `<span class="output-stderr">Error: ${escapeHtml(String(err))}</span>`;
       } finally {
         runBtn.disabled = false;
-        runBtn.innerHTML = '&#9654; Run';
+        runBtn.innerHTML = '&#9654; Run &amp; Grade';
       }
     }
 
     function clearOutput() {
       document.getElementById('outputContent').innerHTML =
         '<span class="output-placeholder">Press &#9654; Run or Ctrl+Enter to execute your code.</span>';
+      const gp = document.getElementById('gradingPanel');
+      gp.style.display = 'none';
+      gp.innerHTML = '';
     }
   </script>
 {% endblock %}
