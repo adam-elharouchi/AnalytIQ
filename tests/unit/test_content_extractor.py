@@ -1,12 +1,11 @@
 """
-tests/test_content_extractor.py — Unit tests for python/content_extractor.py
+tests/test_content_extractor.py — Unit tests for services/content_extractor.py
 """
 import json
 import sys
 import os
 import pytest
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "python"))
 import services.content_extractor as content_extractor
 
 
