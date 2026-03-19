@@ -492,7 +492,7 @@ def import_as_chapter(class_id: str):
         try:
             import cache
 
-            cache.invalidate_cache(f"chapters:*:{class_id}")
+            cache.invalidate_cache(f"chapters:*:class_id={class_id}")
         except Exception:
             pass
 

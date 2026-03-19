@@ -284,7 +284,7 @@ def delete_exercise(exercise_id):
         conn.commit()
 
         cache.invalidate_cache(f"exercise:*:{exercise_id}")
-        cache.invalidate_cache(f"chap_exercises:*:{chapter_id}")
+        cache.invalidate_cache(f"chap_exercises:*:chapter_id={chapter_id}")
         return jsonify({"success": True}), 200
 
     except Exception as e:
