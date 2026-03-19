@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 # Bump this constant whenever the Gemini prompt changes so the flywheel can
 # measure whether the change improved exercise quality.
-PROMPT_TEMPLATE_VERSION = "v1.2"
+PROMPT_TEMPLATE_VERSION = "v1.3"
 
 # Use the model configured in config.py / GEMINI_MODEL env var.
 # Defaults to gemini-2.5-flash if not set.
@@ -171,6 +171,11 @@ ONE CONCEPT PER EXERCISE
   • Each exercise teaches exactly one thing (e.g. "compute the mean", NOT "compute the mean, std, and percentage above average").
   • If a topic naturally has three sub-steps, make three separate exercises.
 
+SELF-CONTAINED (CRITICAL)
+  • Every exercise MUST work completely on its own — define all data inline.
+  • NEVER reference another exercise: no "using the DataFrame from exercise 1", no "continuing from the previous task", no "building on what you created above".
+  • A student must be able to do exercise 3 without having done exercises 1 or 2.
+
 FUNCTION STRUCTURE (critical for automated grading)
   • Every exercise solution MUST define a named function that:
       – accepts named parameters (not hardcoded data)
@@ -245,7 +250,7 @@ Return your response as a JSON array with ONLY this structure — no markdown, n
   {{
     "language": "The detected language name, e.g. Python, R, SQL, JavaScript",
     "title": "Short action-oriented title describing the exact goal, e.g. 'Calculate the Mean of Test Scores'",
-    "description": "3-5 sentences that give the student EVERYTHING they need — no outside knowledge required. MUST include ALL of: (1) the specific dataset, values, or scenario from this chapter (quote exact numbers/column names where possible), (2) a clear step-by-step statement of what the student must do, (3) the exact function name and what it accepts/returns. Example: 'The chapter introduces a dataset of 10 student test scores: [82, 91, 78, 95, 88, 76, 90, 85, 93, 80]. Your task is to write a function called calculate_mean(scores) that computes the average of a list of numbers. The function should accept a list of numbers as its only argument, store the result in a variable called mean_score, print it with a label, and return it.'",
+    "description": "EXACTLY 2 sentences — no more. Sentence 1: state the specific data the student will work with (include the actual values from the chapter, e.g. 'You have the following test scores: [10, 15, 12, 14, 17, 17, 20, 8, 5, 13].'). Sentence 2: state exactly what the student must do and what function to write, e.g. 'Write a function called calculate_mean(scores) that computes and returns the mean of a list of numbers.' CRITICAL RULES: (a) NEVER reference another exercise — every exercise is standalone; (b) NEVER say 'using the DataFrame/list/variable from the previous exercise' — define the data fresh in every description; (c) keep both sentences concise and specific.",
     "difficulty": "easy|medium",
     "function_name": "snake_case function name the student must define",
     "solution_code": "Code in the detected language — every line commented, result output at end, 5-10 lines max",
