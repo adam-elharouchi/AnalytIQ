@@ -89,15 +89,14 @@ document.addEventListener('DOMContentLoaded', function () {
     `;
   }
 
-  const homeHref = isAuthenticated ? '/home' : '/';
   const navHTML = `
     <div class="nav-container" role="navigation" aria-label="Main navigation">
-      <a href="${homeHref}" class="nav-brand" aria-label="AnalytIQ home">
+      <a href="/home" class="nav-brand" aria-label="AnalytIQ home">
         <span class="logo-analyt" aria-hidden="true">Analyt</span><span class="logo-iq" aria-hidden="true">IQ</span>
       </a>
       <button class="mobile-menu-toggle" onclick="toggleMobileMenu()" aria-label="Open navigation menu" aria-expanded="false" aria-controls="navLinks">Menu</button>
       <ul class="nav-links" id="navLinks">
-        <li><a href="${homeHref}" ${currentPage === 'home' || currentPage === 'index' || currentPage === '' ? 'class="active"' : ''}>Home</a></li>
+        <li><a href="/home" ${currentPage === 'home' ? 'class="active"' : ''}>Home</a></li>
         ${roleLinks}
         ${commonLinks}
         ${userMenu}
