@@ -480,6 +480,34 @@ def grade_exercise(exercise_id):
             )
             # Intentional: do not re-raise — student must always get their grade
 
+        # AGS grade passback — push score to LMS if class is LTI-linked
+        try:
+            if class_id_for_flywheel:
+                from blueprints.lti import _push_ags_grade
+
+                cur = conn.cursor()
+                cur.execute("SELECT lti_sub FROM users WHERE user_id = %s", (g.user_id,))
+                lti_row = cur.fetchone()
+                cur.close()
+                lti_user_id = lti_row[0] if lti_row and lti_row[0] else None
+                if lti_user_id:
+                    _push_ags_grade(
+                        conn,
+                        class_id_for_flywheel,
+                        exercise_id,
+                        lti_user_id,
+                        result["total_score"],
+                    )
+                    logger.info(
+                        "AGS grade pushed: exercise=%s class=%s score=%s",
+                        exercise_id,
+                        class_id_for_flywheel,
+                        result["total_score"],
+                    )
+        except Exception as ags_err:
+            logger.warning("AGS passback skipped for %s: %s", exercise_id, ags_err)
+            # Intentional: do not re-raise — student must always get their grade
+
         return jsonify({**result, "has_test_cases": True}), 200
 
     except Exception as e:

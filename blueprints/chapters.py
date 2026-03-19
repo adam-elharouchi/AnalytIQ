@@ -25,7 +25,7 @@ bp = Blueprint("chapters", __name__)
 
 # Add python directory to path for content extractor and exercise generator
 try:
-    import content_extractor
+    from services import content_extractor
 except ImportError:
     logger.warning("Content extractor not available. File text extraction will not work.")
     content_extractor = None

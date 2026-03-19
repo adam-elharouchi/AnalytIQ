@@ -322,6 +322,7 @@ Return your response as a JSON array with ONLY this structure — no markdown, n
                 "title": ex_title,
                 "description": ex_description,
                 "difficulty": difficulty,
+                "function_name": exercise.get("function_name", "solution"),
                 "solution_code": ex_solution,
                 "test_cases": validated_cases,
                 # Flywheel metadata — callers that don't need this can ignore it.

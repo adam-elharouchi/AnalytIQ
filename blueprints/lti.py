@@ -453,6 +453,21 @@ def lti_launch():
             class_row = lti_repo.get_class_by_lti_context(conn, lti_context_id, issuer)
             if class_row:
                 class_id = class_row["class_id"]
+                # Auto-capture AGS lineitems URL from launch data
+                ags_claim = (
+                    launch_data.get(
+                        "https://purl.imsglobal.org/spec/lti-ags/claim/endpoint", {}
+                    )
+                    or {}
+                )
+                ags_lineitems_url = ags_claim.get("lineitems", "")
+                if ags_lineitems_url and not class_row.get("ags_lineitems_url"):
+                    try:
+                        lti_repo.update_class_ags_lineitems_url(
+                            conn, class_id, ags_lineitems_url
+                        )
+                    except Exception as ags_url_err:
+                        logger.warning("Could not save AGS lineitems URL: %s", ags_url_err)
                 # Auto-enroll students who launch via LTI
                 if user_tuple[3] == "student" and class_id:
                     try:
@@ -812,6 +827,65 @@ def sync_roster(class_id):
 
 
 # ---------------------------------------------------------------------------
+# AGS — grade passback helpers
+
+
+def _push_ags_grade(conn, class_id, exercise_id, lti_user_id, score, max_score=100):
+    """Push a grade to the LMS via AGS.
+
+    Parameters
+    ----------
+    conn         : DB connection
+    class_id     : AnalytIQ class_id (must have ags_enabled=True and ags_lineitems_url set)
+    exercise_id  : used as the line-item tag
+    lti_user_id  : the LTI platform's user identifier (users.lti_sub), NOT the internal user_id
+    score        : numeric score 0-100
+    max_score    : maximum score (default 100)
+
+    Raises on failure so callers can decide whether to swallow or propagate.
+    """
+    try:
+        from pylti1p3.assignments_grades import AssignmentsGradesService
+        from pylti1p3.grade import Grade
+        from pylti1p3.lineitem import LineItem
+    except ImportError:
+        raise RuntimeError("PyLTI1p3 not installed")
+
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT ags_enabled, ags_lineitems_url, lti_issuer FROM classes WHERE class_id = %s",
+        (class_id,),
+    )
+    row = cur.fetchone()
+    cur.close()
+
+    if not row or not row[0] or not row[1]:
+        return  # AGS not enabled or lineitems URL missing — silently skip
+
+    ags_url, lti_issuer = row[1], row[2]
+    tool_conf = _build_tool_conf(conn)
+    if tool_conf is None:
+        raise RuntimeError("LTI tool not configured")
+
+    ags = AssignmentsGradesService(
+        tool_conf,
+        {"lineitems": ags_url, "scope": ["https://purl.imsglobal.org/spec/lti-ags/scope/score"]},
+        lti_issuer,
+    )
+    grade = (
+        Grade()
+        .set_score_given(score)
+        .set_score_maximum(max_score)
+        .set_timestamp(datetime.now(timezone.utc).isoformat())
+        .set_activity_progress("Completed")
+        .set_grading_progress("FullyGraded")
+        .set_user_id(lti_user_id)
+    )
+    line_item = LineItem()
+    line_item.set_tag(f"exercise-{exercise_id}").set_score_maximum(max_score)
+    ags.put_grade(grade, line_item)
+
+
 # AGS — Submit a grade to the LMS
 # ---------------------------------------------------------------------------
 
@@ -823,77 +897,30 @@ def submit_grade(class_id, exercise_id):
     """Submit a numeric score (0–100) to the LMS via AGS.
 
     Called internally after a student submits an exercise attempt.
-    Body: { "score": 85, "max_score": 100, "comment": "..." }
+    Body: { "score": 85, "max_score": 100 }
     """
-    try:
-        from pylti1p3.grade import Grade
-        from pylti1p3.lineitem import LineItem
-    except ImportError:
-        return jsonify({"error": "PyLTI1p3 not installed"}), 500
-
     data = request.json or {}
     score = data.get("score")
     max_score = data.get("max_score", 100)
-    comment = data.get("comment", "")
 
     if score is None:
         return jsonify({"error": "'score' is required"}), 400
 
     conn = get_db_connection()
 
-    # Verify class + AGS enabled
+    # Look up the LTI sub for the requesting user
     cur = conn.cursor()
-    cur.execute(
-        "SELECT professor_id, ags_enabled, ags_lineitems_url, lti_issuer FROM classes WHERE class_id = %s",
-        (class_id,),
-    )
-    class_row = cur.fetchone()
+    cur.execute("SELECT lti_sub FROM users WHERE user_id = %s", (g.user_id,))
+    user_row = cur.fetchone()
     cur.close()
 
-    if not class_row:
-        return jsonify({"error": "Class not found"}), 404
-    if not class_row[1]:
-        return jsonify({"error": "AGS not enabled for this class"}), 400
-    if not class_row[2]:
-        return jsonify({"error": "AGS lineitems URL not configured"}), 400
-
-    tool_conf = _build_tool_conf(conn)
-    if tool_conf is None:
-        return jsonify({"error": "LTI not configured"}), 500
-
-    lti_issuer = class_row[3]
-    ags_url = class_row[2]
+    lti_user_id = user_row[0] if user_row and user_row[0] else None
+    if not lti_user_id:
+        return jsonify({"error": "No LTI identity for this user"}), 400
 
     try:
-        from pylti1p3.assignments_grades import AssignmentsGradesService
-
-        ags = AssignmentsGradesService(
-            tool_conf,
-            {
-                "lineitems": ags_url,
-                "scope": ["https://purl.imsglobal.org/spec/lti-ags/scope/score"],
-            },
-            lti_issuer,
-        )
-
-        grade = (
-            Grade()
-            .set_score_given(score)
-            .set_score_maximum(max_score)
-            .set_timestamp(datetime.now(timezone.utc).isoformat())
-            .set_activity_progress("Completed")
-            .set_grading_progress("FullyGraded")
-            .set_user_id(g.user_id)
-        )
-        if comment:
-            grade.set_comment(comment)
-
-        line_item = LineItem()
-        line_item.set_tag(f"exercise-{exercise_id}").set_score_maximum(max_score)
-
-        ags.put_grade(grade, line_item)
+        _push_ags_grade(conn, class_id, exercise_id, lti_user_id, score, max_score)
         return jsonify({"submitted": True, "score": score, "max_score": max_score})
-
     except Exception as e:
         logger.error("AGS grade submission failed: %s", e, exc_info=True)
         return jsonify({"error": "Grade submission to LMS failed"}), 502
