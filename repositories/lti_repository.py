@@ -291,3 +291,13 @@ def set_class_ags_enabled(conn, class_id, enabled):
         (enabled, class_id),
     )
     cur.close()
+
+
+def update_class_ags_lineitems_url(conn, class_id, lineitems_url):
+    """Persist the AGS lineitems URL captured from an LTI launch."""
+    cur = conn.cursor()
+    cur.execute(
+        "UPDATE classes SET ags_lineitems_url = %s, updated_at = NOW() WHERE class_id = %s",
+        (lineitems_url, class_id),
+    )
+    cur.close()
