@@ -421,31 +421,6 @@ class TestGradeExercise:
         assert resp.status_code == 404
         assert "error" in resp.get_json()
 
-<<<<<<< Updated upstream
-    def test_exercise_without_test_cases_returns_200_with_flag_false(
-        self, client, mock_db
-    ):
-        # test_cases is NULL in DB → repo returns empty list
-        mock_db.cursor().fetchone.return_value = ("solution", "Python", None)
-        resp = client.post("/api/exercises/ex-1/grade",
-                           headers=AUTH_STUDENT, json={"code": "print(1)"})
-        assert resp.status_code == 200
-        data = resp.get_json()
-        assert data["has_test_cases"] is False
-
-    def test_exercise_without_test_cases_response_shape(self, client, mock_db):
-        mock_db.cursor().fetchone.return_value = ("solution", "Python", None)
-        resp = client.post("/api/exercises/ex-1/grade",
-                           headers=AUTH_STUDENT, json={"code": "print(1)"})
-        data = resp.get_json()
-        assert data["total_score"] == 0
-        assert data["tests_passed"] == 0
-        assert data["tests_total"] == 0
-        assert data["results"] == []
-        assert "message" in data
-
-=======
->>>>>>> Stashed changes
     def test_valid_submission_returns_200(self, client, mock_db, monkeypatch):
         self._setup_db(mock_db)
         monkeypatch.setattr("blueprints.exercises.run_code", lambda *a, **kw: RUN_CODE_RESULT)

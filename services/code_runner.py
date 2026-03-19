@@ -107,12 +107,6 @@ def _safe_open(file, mode="r", *args, **kwargs):
     return _ro(file, mode, *args, **kwargs)
 builtins.open = _safe_open
 
-<<<<<<< Updated upstream
-# Parse CLI args: argv[1]=JSON input, argv[2]=function name
-_params  = json.loads(sys.argv[1])
-_fn_name = sys.argv[2]
-_globs   = {{"__builtins__": builtins, "__name__": "__student__"}}
-=======
 # Parse CLI args: argv[1]=JSON input, argv[2]=function name, argv[3]=path to student code file
 _params    = json.loads(sys.argv[1])
 _fn_name   = sys.argv[2]
@@ -124,7 +118,6 @@ try:
     _student_src = _ro(_code_path, encoding="utf-8").read()
 except Exception as e:
     print(json.dumps({{"error": "compile_error", "message": f"Could not read student code: {{e}}"}})); sys.exit(0)
->>>>>>> Stashed changes
 
 # ── Capture ALL stdout produced during exec (top-level prints = script output) ──
 _exec_buf = io.StringIO()
@@ -793,10 +786,6 @@ def _match(actual: Any, expected: Any) -> bool:
     if isinstance(expected, str) and isinstance(actual, str):
         return expected.strip() == actual.strip()
     if isinstance(expected, (list, tuple)) and isinstance(actual, (list, tuple)):
-<<<<<<< Updated upstream
-        return len(expected) == len(actual) and \
-               all(_match(a, e) for a, e in zip(actual, expected))
-=======
         return len(expected) == len(actual) and all(_match(a, e) for a, e in zip(actual, expected))
     # Tuple serialised as JSON list vs string expected: [4, 1] vs "(4, 1)"
     if isinstance(actual, list) and isinstance(expected, str):
@@ -808,7 +797,6 @@ def _match(actual: Any, expected: Any) -> bool:
             return True
         if str(actual).strip() == expected.strip():
             return True
->>>>>>> Stashed changes
     return actual == expected
 
 
