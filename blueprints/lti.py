@@ -455,17 +455,13 @@ def lti_launch():
                 class_id = class_row["class_id"]
                 # Auto-capture AGS lineitems URL from launch data
                 ags_claim = (
-                    launch_data.get(
-                        "https://purl.imsglobal.org/spec/lti-ags/claim/endpoint", {}
-                    )
+                    launch_data.get("https://purl.imsglobal.org/spec/lti-ags/claim/endpoint", {})
                     or {}
                 )
                 ags_lineitems_url = ags_claim.get("lineitems", "")
                 if ags_lineitems_url and not class_row.get("ags_lineitems_url"):
                     try:
-                        lti_repo.update_class_ags_lineitems_url(
-                            conn, class_id, ags_lineitems_url
-                        )
+                        lti_repo.update_class_ags_lineitems_url(conn, class_id, ags_lineitems_url)
                     except Exception as ags_url_err:
                         logger.warning("Could not save AGS lineitems URL: %s", ags_url_err)
                 # Auto-enroll students who launch via LTI
