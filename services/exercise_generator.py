@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 # measure whether the change improved exercise quality.
 PROMPT_TEMPLATE_VERSION = "v1.1"
 
-_GEMINI_MODEL = "gemini-2.5-flash"
+_GEMINI_MODEL = "gemini-2.0-flash"
 _GENERATION_PARAMS = {"temperature": 0.7, "maxOutputTokens": 8192}
 _TRUNCATION_LIMIT = 10_000
 
@@ -73,6 +73,38 @@ def _extract_topics(title: str, description: str) -> list[str]:
             if len(topics) >= 10:
                 break
     return topics
+
+
+def _extract_partial_exercises(content):
+    """
+    Salvage complete exercise JSON objects from a truncated/malformed response.
+    Scans for balanced {...} blocks and attempts to parse each one individually.
+    Returns a list of successfully parsed exercise dicts (may be empty).
+    """
+    results = []
+    depth = 0
+    start = None
+    for i, ch in enumerate(content):
+        if ch == "{":
+            if depth == 0:
+                start = i
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0 and start is not None:
+                candidate = content[start : i + 1]
+                try:
+                    obj = json.loads(candidate)
+                    if isinstance(obj, dict) and "title" in obj:
+                        results.append(obj)
+                except json.JSONDecodeError:
+                    pass
+                start = None
+    if results:
+        logger.warning(
+            "_extract_partial_exercises: salvaged %d exercise(s) from malformed JSON", len(results)
+        )
+    return results
 
 
 def generate_exercises_from_pdf_content(
@@ -277,8 +309,14 @@ Return your response as a JSON array with ONLY this structure — no markdown, n
         elif "```" in content:
             content = content.split("```")[1].split("```")[0].strip()
 
-        # Parse JSON
-        exercises = json.loads(content)
+        # Parse JSON — with fallback for truncated responses
+        try:
+            exercises = json.loads(content)
+        except json.JSONDecodeError:
+            # Attempt to salvage complete exercise objects from a truncated response
+            exercises = _extract_partial_exercises(content)
+            if not exercises:
+                raise
 
         # Validate structure
         if not isinstance(exercises, list):
