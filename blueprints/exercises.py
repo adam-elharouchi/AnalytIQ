@@ -485,6 +485,42 @@ def grade_exercise(exercise_id):
         return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
+@bp.route("/api/exercises/<exercise_id>/rate", methods=["POST"])
+@csrf_exempt
+@require_auth
+def rate_exercise(exercise_id):
+    """Record a student thumbs-up or thumbs-down for an exercise.
+
+    Body: { "rating": "up" | "down" }
+    Stored in exercise_ratings for flywheel analysis.
+    Fails silently if the table doesn't exist yet.
+    """
+    data = request.get_json(silent=True) or {}
+    rating = data.get("rating")
+    if rating not in ("up", "down"):
+        return jsonify({"error": "rating must be 'up' or 'down'"}), 400
+
+    conn = get_db_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """
+            INSERT INTO exercise_ratings (exercise_id, user_id, rating, created_at)
+            VALUES (%s, %s, %s, NOW())
+            ON CONFLICT (exercise_id, user_id)
+            DO UPDATE SET rating = EXCLUDED.rating, created_at = NOW()
+            """,
+            (exercise_id, g.user_id, rating),
+        )
+        cur.close()
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        logger.warning("exercise_ratings insert failed (table may not exist yet): %s", e)
+
+    return jsonify({"rated": True, "rating": rating}), 200
+
+
 @bp.route("/api/code/run", methods=["POST"])
 @csrf_exempt
 @require_auth
