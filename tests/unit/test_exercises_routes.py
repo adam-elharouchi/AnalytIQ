@@ -40,16 +40,17 @@ GRAND_ROW = ("user-1", "Alice", 10, 88.5, 885, None)
 TEST_CASES = [{"description": "basic", "input": "[1, 2]", "expected_output": "3", "weight": 1}]
 TEST_CASES_ROW = ("solution", "Python", TEST_CASES)
 
-# Typical run_test_cases result
-GRADE_RESULT = {
+# AI grader result shape (replaces run_test_cases result)
+AI_GRADE_RESULT = {
     "total_score": 80,
-    "correctness_score": 64,
-    "quality_score": 16,
-    "tests_passed": 1,
-    "tests_total": 1,
-    "results": [{"passed": True, "description": "basic", "actual": "3", "expected": "3"}],
-    "quality_details": {"style": 8, "efficiency": 8},
+    "correctness_score": 56,
+    "quality_score": 24,
+    "feedback": "Your solution correctly solves the task. Consider adding a comment to explain your logic.",
+    "passed": True,
+    "graded_by": "ai",
 }
+
+RUN_CODE_RESULT = {"stdout": "Hello World\n", "stderr": "", "timed_out": False}
 
 
 # ---------------------------------------------------------------------------
@@ -386,11 +387,16 @@ class TestDeleteExercise:
 
 
 class TestGradeExercise:
-    def _mock_test_cases(self, mock_db, row=None):
-        """Set up cursor to return test case data for get_exercise_test_cases."""
-        if row is None:
-            row = TEST_CASES_ROW
-        mock_db.cursor().fetchone.return_value = row
+    """
+    Grading uses AI (grade_with_ai) instead of test cases.
+    Fetchone sequence per request:
+      [0] get_exercise_detail   → EXERCISE_ROW
+      [1] get_exercise_test_cases → TEST_CASES_ROW  (language lookup)
+      [2+] flywheel calls (wrapped in try/except — failures are silent)
+    """
+
+    def _setup_db(self, mock_db, detail_row=EXERCISE_ROW, lang_row=TEST_CASES_ROW):
+        mock_db.cursor().fetchone.side_effect = [detail_row, lang_row]
 
     def test_empty_code_returns_400(self, client, mock_db):
         resp = client.post("/api/exercises/ex-1/grade",
@@ -415,6 +421,7 @@ class TestGradeExercise:
         assert resp.status_code == 404
         assert "error" in resp.get_json()
 
+<<<<<<< Updated upstream
     def test_exercise_without_test_cases_returns_200_with_flag_false(
         self, client, mock_db
     ):
@@ -437,106 +444,111 @@ class TestGradeExercise:
         assert data["results"] == []
         assert "message" in data
 
+=======
+>>>>>>> Stashed changes
     def test_valid_submission_returns_200(self, client, mock_db, monkeypatch):
-        self._mock_test_cases(mock_db)
-        monkeypatch.setattr("blueprints.exercises.run_test_cases",
-                            lambda **kw: GRADE_RESULT)
+        self._setup_db(mock_db)
+        monkeypatch.setattr("blueprints.exercises.run_code", lambda *a, **kw: RUN_CODE_RESULT)
+        monkeypatch.setattr("blueprints.exercises.grade_with_ai", lambda **kw: AI_GRADE_RESULT)
         resp = client.post("/api/exercises/ex-1/grade",
                            headers=AUTH_STUDENT,
-                           json={"code": "def solution(a, b): return a + b"})
+                           json={"code": "print('Hello World')"})
         assert resp.status_code == 200
 
-    def test_response_includes_all_required_fields(self, client, mock_db, monkeypatch):
-        self._mock_test_cases(mock_db)
-        monkeypatch.setattr("blueprints.exercises.run_test_cases",
-                            lambda **kw: GRADE_RESULT)
-        resp = client.post("/api/exercises/ex-1/grade",
+    def test_response_includes_required_fields(self, client, mock_db, monkeypatch):
+        self._setup_db(mock_db)
+        monkeypatch.setattr("blueprints.exercises.run_code", lambda *a, **kw: RUN_CODE_RESULT)
+        monkeypatch.setattr("blueprints.exercises.grade_with_ai", lambda **kw: AI_GRADE_RESULT)
+        data = client.post("/api/exercises/ex-1/grade",
                            headers=AUTH_STUDENT,
-                           json={"code": "def solution(a, b): return a + b"})
-        data = resp.get_json()
+                           json={"code": "print('Hello World')"}).get_json()
         for field in ("total_score", "correctness_score", "quality_score",
-                      "tests_passed", "tests_total", "results",
-                      "quality_details", "has_test_cases"):
+                      "feedback", "passed", "graded_by", "output"):
             assert field in data, f"Missing field: {field}"
 
-    def test_has_test_cases_is_true_when_test_cases_exist(
-        self, client, mock_db, monkeypatch
-    ):
-        self._mock_test_cases(mock_db)
-        monkeypatch.setattr("blueprints.exercises.run_test_cases",
-                            lambda **kw: GRADE_RESULT)
-        resp = client.post("/api/exercises/ex-1/grade",
+    def test_graded_by_is_ai(self, client, mock_db, monkeypatch):
+        self._setup_db(mock_db)
+        monkeypatch.setattr("blueprints.exercises.run_code", lambda *a, **kw: RUN_CODE_RESULT)
+        monkeypatch.setattr("blueprints.exercises.grade_with_ai", lambda **kw: AI_GRADE_RESULT)
+        data = client.post("/api/exercises/ex-1/grade",
                            headers=AUTH_STUDENT,
-                           json={"code": "def solution(a, b): return a + b"})
-        assert resp.get_json()["has_test_cases"] is True
+                           json={"code": "print('Hello World')"}).get_json()
+        assert data["graded_by"] == "ai"
 
     def test_total_score_within_0_to_100(self, client, mock_db, monkeypatch):
-        self._mock_test_cases(mock_db)
-        monkeypatch.setattr("blueprints.exercises.run_test_cases",
-                            lambda **kw: GRADE_RESULT)
-        resp = client.post("/api/exercises/ex-1/grade",
-                           headers=AUTH_STUDENT,
-                           json={"code": "def solution(a, b): return a + b"})
-        score = resp.get_json()["total_score"]
+        self._setup_db(mock_db)
+        monkeypatch.setattr("blueprints.exercises.run_code", lambda *a, **kw: RUN_CODE_RESULT)
+        monkeypatch.setattr("blueprints.exercises.grade_with_ai", lambda **kw: AI_GRADE_RESULT)
+        score = client.post("/api/exercises/ex-1/grade",
+                            headers=AUTH_STUDENT,
+                            json={"code": "print('Hello World')"}).get_json()["total_score"]
         assert 0 <= score <= 100
 
-    def test_runner_called_with_db_language_not_client(
-        self, client, mock_db, monkeypatch
-    ):
-        """Language must come from DB, not from any client-supplied header/body."""
+    def test_ai_grader_receives_db_language_not_client(self, client, mock_db, monkeypatch):
+        """Language must come from DB — client cannot override it."""
         captured = {}
 
-        def capture_runner(**kw):
+        def capture_grader(**kw):
             captured.update(kw)
-            return GRADE_RESULT
+            return AI_GRADE_RESULT
 
-        # DB says Python
-        mock_db.cursor().fetchone.return_value = ("solution", "Python", TEST_CASES)
-        monkeypatch.setattr("blueprints.exercises.run_test_cases", capture_runner)
+        self._setup_db(mock_db)  # DB says Python
+        monkeypatch.setattr("blueprints.exercises.run_code", lambda *a, **kw: RUN_CODE_RESULT)
+        monkeypatch.setattr("blueprints.exercises.grade_with_ai", capture_grader)
 
-        # Client sends no language field (language cannot be injected via body)
         client.post("/api/exercises/ex-1/grade",
                     headers=AUTH_STUDENT,
-                    json={"code": "def solution(a, b): return a + b",
-                          "language": "SQL"})  # should be ignored
+                    json={"code": "print(1)", "language": "SQL"})  # SQL should be ignored
 
         assert captured.get("language") == "Python"
 
-    def test_perfect_score_when_all_tests_pass(self, client, mock_db, monkeypatch):
-        perfect = {**GRADE_RESULT, "total_score": 100, "tests_passed": 1,
-                   "tests_total": 1}
-        self._mock_test_cases(mock_db)
-        monkeypatch.setattr("blueprints.exercises.run_test_cases",
-                            lambda **kw: perfect)
-        resp = client.post("/api/exercises/ex-1/grade",
+    def test_ai_feedback_in_response(self, client, mock_db, monkeypatch):
+        self._setup_db(mock_db)
+        monkeypatch.setattr("blueprints.exercises.run_code", lambda *a, **kw: RUN_CODE_RESULT)
+        monkeypatch.setattr("blueprints.exercises.grade_with_ai", lambda **kw: AI_GRADE_RESULT)
+        data = client.post("/api/exercises/ex-1/grade",
                            headers=AUTH_STUDENT,
-                           json={"code": "def solution(a, b): return a + b"})
-        assert resp.get_json()["total_score"] == 100
+                           json={"code": "print('Hello World')"}).get_json()
+        assert data["feedback"] == AI_GRADE_RESULT["feedback"]
 
-    def test_zero_score_when_all_tests_fail(self, client, mock_db, monkeypatch):
-        failed = {**GRADE_RESULT, "total_score": 0, "correctness_score": 0,
-                  "quality_score": 0, "tests_passed": 0}
-        self._mock_test_cases(mock_db)
-        monkeypatch.setattr("blueprints.exercises.run_test_cases",
-                            lambda **kw: failed)
-        resp = client.post("/api/exercises/ex-1/grade",
+    def test_stdout_in_output_field(self, client, mock_db, monkeypatch):
+        self._setup_db(mock_db)
+        monkeypatch.setattr("blueprints.exercises.run_code",
+                            lambda *a, **kw: {"stdout": "42\n", "stderr": "", "timed_out": False})
+        monkeypatch.setattr("blueprints.exercises.grade_with_ai", lambda **kw: AI_GRADE_RESULT)
+        data = client.post("/api/exercises/ex-1/grade",
                            headers=AUTH_STUDENT,
-                           json={"code": "def solution(a, b): return -1"})
-        assert resp.get_json()["total_score"] == 0
+                           json={"code": "print(42)"}).get_json()
+        assert data["output"] == "42\n"
+
+    def test_perfect_score_from_ai(self, client, mock_db, monkeypatch):
+        perfect = {**AI_GRADE_RESULT, "total_score": 100, "correctness_score": 70,
+                   "quality_score": 30, "passed": True}
+        self._setup_db(mock_db)
+        monkeypatch.setattr("blueprints.exercises.run_code", lambda *a, **kw: RUN_CODE_RESULT)
+        monkeypatch.setattr("blueprints.exercises.grade_with_ai", lambda **kw: perfect)
+        assert client.post("/api/exercises/ex-1/grade",
+                           headers=AUTH_STUDENT,
+                           json={"code": "print('perfect')"}).get_json()["total_score"] == 100
+
+    def test_zero_score_from_ai(self, client, mock_db, monkeypatch):
+        zero = {**AI_GRADE_RESULT, "total_score": 0, "correctness_score": 0,
+                "quality_score": 0, "passed": False}
+        self._setup_db(mock_db)
+        monkeypatch.setattr("blueprints.exercises.run_code", lambda *a, **kw: RUN_CODE_RESULT)
+        monkeypatch.setattr("blueprints.exercises.grade_with_ai", lambda **kw: zero)
+        assert client.post("/api/exercises/ex-1/grade",
+                           headers=AUTH_STUDENT,
+                           json={"code": "print('wrong')"}).get_json()["total_score"] == 0
 
     def test_no_auth_returns_401(self, client, mock_db):
-        resp = client.post("/api/exercises/ex-1/grade",
-                           json={"code": "print(1)"})
+        resp = client.post("/api/exercises/ex-1/grade", json={"code": "print(1)"})
         assert resp.status_code == 401
 
-    def test_commit_called_after_successful_grade(
-        self, client, mock_db, monkeypatch
-    ):
-        self._mock_test_cases(mock_db)
-        monkeypatch.setattr("blueprints.exercises.run_test_cases",
-                            lambda **kw: GRADE_RESULT)
+    def test_commit_called_after_successful_grade(self, client, mock_db, monkeypatch):
+        self._setup_db(mock_db)
+        monkeypatch.setattr("blueprints.exercises.run_code", lambda *a, **kw: RUN_CODE_RESULT)
+        monkeypatch.setattr("blueprints.exercises.grade_with_ai", lambda **kw: AI_GRADE_RESULT)
         client.post("/api/exercises/ex-1/grade",
-                    headers=AUTH_STUDENT,
-                    json={"code": "def solution(a, b): return a + b"})
-        # audit() calls conn.commit via the blueprint; at minimum execute was called
+                    headers=AUTH_STUDENT, json={"code": "print('Hello World')"})
         assert mock_db.cursor().execute.called

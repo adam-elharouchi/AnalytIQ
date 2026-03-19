@@ -48,6 +48,11 @@ BLOCKED_PY_MODULES: frozenset = frozenset({
     "signal", "mmap", "resource", "pty", "termios", "fcntl",
 })
 
+# For the live "run" sandbox, network is intentionally allowed so that
+# pd.read_csv(url), requests.get(url), etc. work like in a Colab cell.
+# socket and ssl are removed; everything else stays blocked.
+_RUN_BLOCKED_PY_MODULES: frozenset = BLOCKED_PY_MODULES - {"socket", "ssl"}
+
 
 # ---------------------------------------------------------------------------
 # Language normalisation
@@ -72,12 +77,13 @@ def _normalise_language(lang: str) -> str:
 _PY_HARNESS = r"""
 import sys, json, builtins, io
 
-# Resource limits — Linux only, silently skipped elsewhere
+# Resource limits — Linux only, silently skipped elsewhere.
+# 512 MB virtual memory ceiling (pandas + numpy need headroom beyond the old 256 MB).
 try:
     import resource as _res
     _MB = 1024 * 1024
     _res.setrlimit(_res.RLIMIT_FSIZE, (0, 0))
-    _res.setrlimit(_res.RLIMIT_AS,    (256 * _MB, 256 * _MB))
+    _res.setrlimit(_res.RLIMIT_AS,    (512 * _MB, 512 * _MB))
     _res.setrlimit(_res.RLIMIT_NPROC, (0, 0))
 except Exception:
     pass
@@ -101,52 +107,314 @@ def _safe_open(file, mode="r", *args, **kwargs):
     return _ro(file, mode, *args, **kwargs)
 builtins.open = _safe_open
 
+<<<<<<< Updated upstream
 # Parse CLI args: argv[1]=JSON input, argv[2]=function name
 _params  = json.loads(sys.argv[1])
 _fn_name = sys.argv[2]
 _globs   = {{"__builtins__": builtins, "__name__": "__student__"}}
+=======
+# Parse CLI args: argv[1]=JSON input, argv[2]=function name, argv[3]=path to student code file
+_params    = json.loads(sys.argv[1])
+_fn_name   = sys.argv[2]
+_code_path = sys.argv[3]
+_globs     = {{"__builtins__": builtins, "__name__": "__student__"}}
 
-# Compile and exec student code
+# Read student code from the dedicated temp file
+try:
+    _student_src = _ro(_code_path, encoding="utf-8").read()
+except Exception as e:
+    print(json.dumps({{"error": "compile_error", "message": f"Could not read student code: {{e}}"}})); sys.exit(0)
+>>>>>>> Stashed changes
+
+# ── Capture ALL stdout produced during exec (top-level prints = script output) ──
+_exec_buf = io.StringIO()
+sys.stdout = _exec_buf
 try:
     exec(compile({student_code_repr}, "<student>", "exec"), _globs)
 except SyntaxError as e:
+    sys.stdout = sys.__stdout__
     print(json.dumps({{"error": "compile_error", "message": f"SyntaxError: {{e}}"}})); sys.exit(0)
 except Exception as e:
+    sys.stdout = sys.__stdout__
     print(json.dumps({{"error": "compile_error", "message": str(e)}})); sys.exit(0)
+finally:
+    sys.stdout = sys.__stdout__
 
-# Locate the target function
+_exec_printed = _exec_buf.getvalue().strip()
+
+# ── Locate the target function ───────────────────────────────────────────────
 _func = _globs.get(_fn_name)
 if _func is None:
     _candidates = [v for k, v in _globs.items()
                    if callable(v) and not k.startswith("_") and k not in dir(builtins)]
     _func = _candidates[0] if _candidates else None
 
+# ── SCRIPT MODE: no function defined — use top-level printed output as the answer ──
+# This handles exercises where students write top-level code (like a Colab cell)
+# instead of a named function.  The output is compared to expected_output exactly
+# as it would be for a function's printed output.
 if _func is None:
-    print(json.dumps({{"error": "no_function",
-                       "message": f"Function {{_fn_name!r}} not found."}})); sys.exit(0)
+    print(json.dumps({{
+        "result": None,
+        "printed": _exec_printed or None,
+        "error": None,
+    }}))
+    sys.exit(0)
 
-# Capture stdout and return value
-_buf = io.StringIO(); sys.stdout = _buf
+# ── Helpers ──────────────────────────────────────────────────────────────────
+
+def _serialise(v):
+    # Convert non-JSON-serialisable values (DataFrames, arrays) to plain Python
+    try:
+        json.dumps(v)
+        return v
+    except (TypeError, ValueError):
+        pass
+    _pd = sys.modules.get("pandas")
+    _np = sys.modules.get("numpy")
+    if _pd is not None:
+        if isinstance(v, _pd.DataFrame):
+            return v.where(_pd.notnull(v), None).to_dict(orient="list")
+        if isinstance(v, _pd.Series):
+            return v.tolist()
+    if _np is not None and hasattr(v, "tolist"):
+        return v.tolist()
+    return repr(v)
+
+def _call_func(func, params):
+    # Try multiple calling conventions so students can structure code freely:
+    #   None params   -> func()  then func(None)
+    #   dict params   -> func(**params)  then func(params)  then func(DataFrame(params))
+    #   list params   -> func(*params)   then func(params)  then func(DataFrame(params))
+    #   scalar        -> func(params)
+    _pd = sys.modules.get("pandas")
+
+    if params is None:
+        # Zero-argument functions (hello_world, etc.)
+        try:
+            return func(), None
+        except TypeError:
+            pass
+        except Exception as e:
+            return None, str(e)
+        # One-argument function that accepts None
+        try:
+            return func(None), None
+        except Exception as e:
+            return None, str(e)
+
+    if isinstance(params, dict):
+        # Named parameters: func(a=1, b=2)
+        try:
+            return func(**params), None
+        except TypeError:
+            pass
+        except Exception as e:
+            return None, str(e)
+        # Single dict argument: func(dict_value)
+        try:
+            return func(params), None
+        except TypeError:
+            pass
+        except Exception as e:
+            return None, str(e)
+        # Pandas DataFrame: func(pd.DataFrame(dict_value))
+        if _pd is not None:
+            try:
+                return func(_pd.DataFrame(params)), None
+            except Exception as e:
+                return None, str(e)
+        return None, "dict input could not be matched to function signature"
+
+    if isinstance(params, list):
+        # Positional args: func(1, 2, 3)
+        try:
+            return func(*params), None
+        except TypeError:
+            pass
+        except Exception as e:
+            return None, str(e)
+        # Single list argument: func([1, 2, 3])
+        try:
+            return func(params), None
+        except TypeError:
+            pass
+        except Exception as e:
+            return None, str(e)
+        # Pandas DataFrame from list-of-records
+        if _pd is not None:
+            try:
+                return func(_pd.DataFrame(params)), None
+            except Exception as e:
+                return None, str(e)
+        return None, "list input could not be matched to function signature"
+
+    # Scalar (int, float, str, bool)
+    try:
+        return func(params), None
+    except Exception as e:
+        return None, str(e)
+
+# ── FUNCTION MODE ─────────────────────────────────────────────────────────────
+_buf = io.StringIO()
+sys.stdout = _buf
 _result = _err = None
 try:
-    if isinstance(_params, dict):   _result = _func(**_params)
-    elif isinstance(_params, list): _result = _func(*_params)
-    else:                           _result = _func(_params)
+    _result, _err = _call_func(_func, _params)
 except Exception as e:
     _err = str(e)
 finally:
     sys.stdout = sys.__stdout__
 
-_printed = _buf.getvalue().strip()
+# Prefer output captured during the function call; fall back to exec-level output
+_fn_printed  = _buf.getvalue().strip()
+_printed     = _fn_printed or _exec_printed or None
 
-# Ensure result is JSON-serialisable
-try:
-    json.dumps(_result)
-except (TypeError, ValueError):
-    _result = repr(_result)
-
+_result = _serialise(_result)
 print(json.dumps({{"result": _result, "printed": _printed or None, "error": _err}}))
 """
+
+
+# ---------------------------------------------------------------------------
+# Python live-run harness (no test cases — just run the code, capture output)
+# Network access allowed: socket/ssl not blocked so pd.read_csv(url) works.
+# ---------------------------------------------------------------------------
+
+_PY_RUN_HARNESS = r"""
+import sys, json, builtins, io, traceback
+
+try:
+    import resource as _res
+    _MB = 1024 * 1024
+    _res.setrlimit(_res.RLIMIT_FSIZE, (0, 0))
+    _res.setrlimit(_res.RLIMIT_AS,    (1024 * _MB, 1024 * _MB))
+    _res.setrlimit(_res.RLIMIT_NPROC, (0, 0))
+except Exception:
+    pass
+
+_BLOCKED = {blocked_set}
+
+class _BlockImporter:
+    def find_module(self, name, path=None):
+        return self if name.split(".")[0] in _BLOCKED else None
+    def load_module(self, name):
+        raise ImportError(f"Import of {{name!r}} is not permitted.")
+
+sys.meta_path.insert(0, _BlockImporter())
+
+_ro = builtins.open
+def _safe_open(file, mode="r", *args, **kwargs):
+    if any(c in mode for c in "wax"):
+        raise PermissionError("File writing is not allowed.")
+    return _ro(file, mode, *args, **kwargs)
+builtins.open = _safe_open
+
+_code_path = sys.argv[1]
+try:
+    _student_src = _ro(_code_path, encoding="utf-8").read()
+except Exception as e:
+    print(json.dumps({{"stdout": "", "stderr": f"Could not read code: {{e}}"}}))
+    sys.exit(0)
+
+_out_buf = io.StringIO()
+_err_buf = io.StringIO()
+sys.stdout = _out_buf
+sys.stderr = _err_buf
+
+_globs = {{"__builtins__": builtins, "__name__": "__main__"}}
+try:
+    exec(compile(_student_src, "<cell>", "exec"), _globs)
+except SystemExit:
+    pass
+except Exception:
+    sys.stderr.write(traceback.format_exc())
+finally:
+    sys.stdout = sys.__stdout__
+    sys.stderr = sys.__stderr__
+
+print(json.dumps({{"stdout": _out_buf.getvalue(), "stderr": _err_buf.getvalue()}}))
+"""
+
+
+def _run_python_free(student_code: str, timeout: int) -> dict:
+    """Execute code in the live sandbox; return stdout + stderr."""
+    import subprocess
+
+    harness = _PY_RUN_HARNESS.format(
+        blocked_set=repr(set(_RUN_BLOCKED_PY_MODULES)),
+    )
+    code_path = None
+    path = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".py", delete=False, prefix="aq_run_"
+        ) as f:
+            f.write(harness)
+            path = f.name
+
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".py", delete=False, prefix="aq_src_", encoding="utf-8"
+        ) as cf:
+            cf.write(student_code)
+            code_path = cf.name
+
+        proc = subprocess.run(
+            [sys.executable, path, code_path],
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            stdin=subprocess.DEVNULL,
+        )
+        raw = (proc.stdout or "").strip()
+        if not raw:
+            stderr = (proc.stderr or "")[:2000]
+            return {"stdout": "", "stderr": stderr or "No output.", "timed_out": False}
+        try:
+            data = json.loads(raw)
+            data["timed_out"] = False
+            return data
+        except json.JSONDecodeError:
+            return {"stdout": raw[:5000], "stderr": "", "timed_out": False}
+    except subprocess.TimeoutExpired:
+        return {"stdout": "", "stderr": f"Timed out after {timeout}s.", "timed_out": True}
+    finally:
+        if path:
+            _rm(path)
+        if code_path:
+            _rm(code_path)
+
+
+def run_code(student_code: str, language: str = "python", timeout: int = 15) -> dict:
+    """
+    Execute student code and return stdout/stderr — no grading, no test cases.
+    This powers the live Colab-style code cell in the playground.
+    Network access is allowed so pd.read_csv(url) and similar work.
+
+    Returns
+    -------
+    {
+      stdout    : str   — everything printed to stdout
+      stderr    : str   — tracebacks / error messages
+      timed_out : bool
+    }
+    """
+    lang = _normalise_language(language)
+    stripped = (student_code or "").strip()
+    if not stripped:
+        return {"stdout": "", "stderr": "No code to run.", "timed_out": False}
+    if len(student_code.encode()) > MAX_CODE_BYTES:
+        return {
+            "stdout": "",
+            "stderr": f"Code exceeds the {MAX_CODE_BYTES // 1000} KB limit.",
+            "timed_out": False,
+        }
+    if lang == "python":
+        return _run_python_free(student_code, timeout)
+    return {
+        "stdout": "",
+        "stderr": f"Live execution for '{language}' is not yet supported.",
+        "timed_out": False,
+    }
 
 
 def _run_python(student_code: str, fn_name: str, tc: dict, timeout: int) -> dict:
@@ -510,6 +778,12 @@ def _match(actual: Any, expected: Any) -> bool:
     """
     Output-based comparison — no string similarity, no partial credit.
     Returns True only when actual matches expected within defined tolerances.
+
+    Extra cases handled beyond strict equality:
+    - Numeric tolerance for floats
+    - Tuple serialised as list: [4, 1] matches "(4, 1)"
+    - repr(actual) matches str(expected) — covers shapes, named tuples, etc.
+    - str(actual) matches str(expected) — last-resort string normalisation
     """
     if isinstance(expected, bool) or isinstance(actual, bool):
         return actual == expected
@@ -519,8 +793,22 @@ def _match(actual: Any, expected: Any) -> bool:
     if isinstance(expected, str) and isinstance(actual, str):
         return expected.strip() == actual.strip()
     if isinstance(expected, (list, tuple)) and isinstance(actual, (list, tuple)):
+<<<<<<< Updated upstream
         return len(expected) == len(actual) and \
                all(_match(a, e) for a, e in zip(actual, expected))
+=======
+        return len(expected) == len(actual) and all(_match(a, e) for a, e in zip(actual, expected))
+    # Tuple serialised as JSON list vs string expected: [4, 1] vs "(4, 1)"
+    if isinstance(actual, list) and isinstance(expected, str):
+        if str(tuple(actual)).strip() == expected.strip():
+            return True
+    # repr comparison: covers DataFrames summarised as strings, named tuples, etc.
+    if isinstance(expected, str):
+        if repr(actual).strip() == expected.strip():
+            return True
+        if str(actual).strip() == expected.strip():
+            return True
+>>>>>>> Stashed changes
     return actual == expected
 
 

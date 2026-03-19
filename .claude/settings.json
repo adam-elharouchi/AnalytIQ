@@ -18,7 +18,24 @@
       "Bash(grep -rn \"CREATE TABLE.*practice_progress\\\\|CREATE TABLE.*exercise_attempts\\\\|practice_progress.*exercise_id\\\\|exercise_attempts.*exercise_id\" /Users/aelharouchi/Documents/GitHub/AnalytIQ/ --include=*.sql --include=*.py)",
       "Bash(psql \"postgresql://postgres.omjttmkczfpnwyzrdzqi:AEHSupabase@aws-0-us-west-2.pooler.supabase.com:5432/postgres\" -f /Users/aelharouchi/Documents/GitHub/AnalytIQ/migrations/011_practice_progress_class_columns.sql)",
       "Bash(brew list:*)",
+<<<<<<< Updated upstream
       "Bash(git ls-tree:*)"
+=======
+      "Bash(grep -rn \"sign.in\\\\|signin\\\\|login\\\\|auth\" /Users/aelharouchi/Documents/GitHub/AnalytIQ/static/js/ --include=*.js -l)",
+      "Bash(python -m flake8 app.py config.py blueprints/ repositories/ core/ services/ workers/ --max-line-length=120 --count --show-source --statistics)",
+      "Bash(grep -E \"^\\(utils|cache\\\\.py|supabase_storage\\\\.py|auth_helpers\\\\.py|db\\\\.py\\)$\")",
+      "Bash(xargs -n1 basename)",
+      "Bash(pip install:*)",
+      "Bash(grep -n \"signin\\\\|redirect\\\\|window.location\\\\|login\" /Users/aelharouchi/Documents/GitHub/AnalytIQ/static/js/*.js)",
+      "Bash(grep -n \"window.location.href = ''/''\" /Users/aelharouchi/Documents/GitHub/AnalytIQ/static/js/auth.js)",
+      "Bash(grep -n \"CREATE TABLE classes\\\\|classes \\(\" /Users/aelharouchi/Documents/GitHub/AnalytIQ/migrations/*.sql)",
+      "Read(//dev/**)",
+      "Bash(git commit:*)",
+      "Bash(find /Users/aelharouchi/Documents/GitHub/AnalytIQ -type f -name *assignment* -o -name *grade* -o -name *lti*)",
+      "Bash(find /Users/aelharouchi/Documents/GitHub/AnalytIQ -name code_runner.py -o -name *code*runner*)",
+      "Bash(grep -l \"practice_progress\\\\|class_exercises\" /Users/aelharouchi/Documents/GitHub/AnalytIQ/migrations/*.sql)",
+      "Bash(grep -i pandas requirements*.txt)"
+>>>>>>> Stashed changes
     ]
   }
 }
