@@ -157,7 +157,10 @@ Respond with ONLY this JSON (no markdown fences):
 
         logger.info(
             "AI graded exercise: total=%s correctness=%s quality=%s time=%sms",
-            total, correctness, quality, grading_time_ms,
+            total,
+            correctness,
+            quality,
+            grading_time_ms,
         )
 
         return {
