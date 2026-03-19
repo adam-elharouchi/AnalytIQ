@@ -413,7 +413,9 @@ def grade_exercise(exercise_id):
                     "class_id": class_id_for_flywheel,
                     "tenant_id": str(tenant_id) if tenant_id else None,
                     "attempt_number": attempt_number,
-                    "time_spent_seconds": int(data["time_spent"]) if data.get("time_spent") else None,
+                    "time_spent_seconds": int(data["time_spent"])
+                    if data.get("time_spent")
+                    else None,
                     "hints_requested": 0,
                     "ai_chat_messages": 0,
                     "code_char_count": len(student_code),
@@ -423,7 +425,9 @@ def grade_exercise(exercise_id):
                     "quality_score": result["quality_score"],
                     "tests_total": 0,
                     "tests_passed": 0,
-                    "test_results": [{"description": result["feedback"], "passed": result["passed"]}],
+                    "test_results": [
+                        {"description": result["feedback"], "passed": result["passed"]}
+                    ],
                     "error_category": "none" if result["passed"] else "logic",
                     "execution_time_ms": execution_time_ms,
                 },
@@ -450,21 +454,31 @@ def grade_exercise(exercise_id):
                 lti_user_id = lti_row[0] if lti_row and lti_row[0] else None
                 if lti_user_id:
                     _push_ags_grade(
-                        conn, class_id_for_flywheel, exercise_id,
-                        lti_user_id, result["total_score"],
+                        conn,
+                        class_id_for_flywheel,
+                        exercise_id,
+                        lti_user_id,
+                        result["total_score"],
                     )
                     logger.info(
                         "AGS grade pushed: exercise=%s class=%s score=%s",
-                        exercise_id, class_id_for_flywheel, result["total_score"],
+                        exercise_id,
+                        class_id_for_flywheel,
+                        result["total_score"],
                     )
         except Exception as ags_err:
             logger.warning("AGS passback skipped for %s: %s", exercise_id, ags_err)
 
-        return jsonify({
-            **result,
-            "output": stdout,
-            "timed_out": timed_out,
-        }), 200
+        return (
+            jsonify(
+                {
+                    **result,
+                    "output": stdout,
+                    "timed_out": timed_out,
+                }
+            ),
+            200,
+        )
 
     except Exception as e:
         logger.error("Unexpected error grading exercise %s: %s", exercise_id, e, exc_info=True)
