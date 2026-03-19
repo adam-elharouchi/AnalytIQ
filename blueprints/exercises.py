@@ -3,6 +3,7 @@ Exercises Blueprint — /api/exercises/* and /api/leaderboard/grand
 """
 import logging
 import time
+import unicodedata
 from flask import Blueprint, g, jsonify, request
 import core.cache as cache
 import config
@@ -18,8 +19,6 @@ from services.code_runner import run_code
 logger = logging.getLogger(__name__)
 bp = Blueprint("exercises", __name__)
 
-<<<<<<< Updated upstream
-=======
 # ---------------------------------------------------------------------------
 # Unicode sanitisation for student code submissions
 # ---------------------------------------------------------------------------
@@ -66,7 +65,6 @@ def _sanitise_student_code(code: str) -> str:
     return "".join(out).strip()
 
 
->>>>>>> Stashed changes
 _PY_EXCEPTION_NAMES = (
     "SyntaxError", "NameError", "TypeError", "IndexError", "ValueError",
     "ZeroDivisionError", "ImportError", "ModuleNotFoundError", "TimeoutError",
@@ -330,11 +328,7 @@ def grade_exercise(exercise_id):
         conn = get_db_connection()
         data = request.json or {}
 
-<<<<<<< Updated upstream
-        student_code = (data.get("code") or "").strip()
-=======
         student_code = _sanitise_student_code(data.get("code") or "")
->>>>>>> Stashed changes
         if not student_code:
             return jsonify({"error": "No code submitted."}), 400
 
@@ -345,53 +339,9 @@ def grade_exercise(exercise_id):
         # row: (exercise_id, chapter_id, class_id, title, description, difficulty, solution_code)
         _, _, _, title, description, _, _ = row
 
-<<<<<<< Updated upstream
-        # Exercise predates test-case generation — auto-generate now
-        _retroactive_gen_meta = None
-        if not test_cases:
-            row = exercise_repo.get_exercise_detail(conn, exercise_id)
-            if not row:
-                return jsonify({"error": "Exercise not found."}), 404
-            title, description, solution_code = row[3], row[4], row[6]
-            try:
-                generated = generate_test_cases_for_exercise(
-                    title=title,
-                    description=description,
-                    solution_code=solution_code,
-                    language=language,
-                )
-                function_name = generated["function_name"]
-                test_cases = generated["test_cases"]
-                _retroactive_gen_meta = generated.get("_gen_meta")
-                exercise_repo.save_exercise_test_cases(
-                    conn, exercise_id, function_name, test_cases
-                )
-                conn.commit()
-            except Exception as gen_err:
-                logger.error(
-                    "Auto test-case generation failed for %s: %s", exercise_id, gen_err
-                )
-                return (
-                    jsonify(
-                        {
-                            "has_test_cases": False,
-                            "total_score": 0,
-                            "correctness_score": 0,
-                            "quality_score": 0,
-                            "tests_passed": 0,
-                            "tests_total": 0,
-                            "results": [],
-                            "quality_details": {},
-                            "message": "Could not generate test cases. Please try again.",
-                        }
-                    ),
-                    200,
-                )
-=======
         # Language is stored in the test_cases row; default to Python
         _, language, _ = exercise_repo.get_exercise_test_cases(conn, exercise_id)
         language = language or "Python"
->>>>>>> Stashed changes
 
         # ── Step 1: Run the code in a sandbox, capture output ─────────────────
         _run_t0 = time.monotonic()
@@ -477,9 +427,6 @@ def grade_exercise(exercise_id):
             )
             # Intentional: do not re-raise — student must always get their grade
 
-<<<<<<< Updated upstream
-        return jsonify({**result, "has_test_cases": True}), 200
-=======
         # ── AGS grade passback ────────────────────────────────────────────────
         try:
             if class_id_for_flywheel:
@@ -507,7 +454,6 @@ def grade_exercise(exercise_id):
             "output": stdout,
             "timed_out": timed_out,
         }), 200
->>>>>>> Stashed changes
 
     except Exception as e:
         logger.error("Unexpected error grading exercise %s: %s", exercise_id, e, exc_info=True)
