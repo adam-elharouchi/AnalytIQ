@@ -217,8 +217,11 @@ class TestUpdateChapter:
     def test_update_chapter_owner_returns_200(self, client, mock_db):
         """Professor who owns the class can update a chapter."""
         cursor = mock_db.cursor()
-        # get_chapter_for_delete returns (class_id, chapter_number, professor_id)
-        cursor.fetchone.return_value = ("class-abc", 1, "prof-user-id")
+        # get_chapter_for_delete now makes two queries: chapter then class
+        cursor.fetchone.side_effect = [
+            ("class-abc", "chapter.pdf"),  # class_chapters query
+            ("prof-user-id",),             # classes query for professor_id
+        ]
 
         resp = client.put(
             "/api/chapters/ch-1",
@@ -232,7 +235,10 @@ class TestUpdateChapter:
     def test_update_chapter_non_owner_returns_403(self, client, mock_db):
         """Non-owner cannot update chapter."""
         cursor = mock_db.cursor()
-        cursor.fetchone.return_value = ("class-abc", 1, "different-prof-id")
+        cursor.fetchone.side_effect = [
+            ("class-abc", "chapter.pdf"),  # class_chapters query
+            ("different-prof-id",),        # classes query for professor_id
+        ]
 
         resp = client.put(
             "/api/chapters/ch-1",
@@ -264,7 +270,11 @@ class TestDeleteChapter:
     def test_delete_chapter_owner_returns_200(self, client, mock_db):
         """Chapter owner can delete chapter."""
         cursor = mock_db.cursor()
-        cursor.fetchone.return_value = ("class-abc", 1, "prof-user-id")
+        # get_chapter_for_delete now makes two queries: chapter then class
+        cursor.fetchone.side_effect = [
+            ("class-abc", "chapter.pdf"),  # class_chapters query
+            ("prof-user-id",),             # classes query for professor_id
+        ]
 
         resp = client.delete("/api/chapters/ch-1", headers=AUTH_PROF)
 
@@ -273,7 +283,10 @@ class TestDeleteChapter:
     def test_delete_chapter_non_owner_returns_403(self, client, mock_db):
         """Non-owner cannot delete chapter."""
         cursor = mock_db.cursor()
-        cursor.fetchone.return_value = ("class-abc", 1, "different-prof-id")
+        cursor.fetchone.side_effect = [
+            ("class-abc", "chapter.pdf"),  # class_chapters query
+            ("different-prof-id",),        # classes query for professor_id
+        ]
 
         resp = client.delete("/api/chapters/ch-1", headers=AUTH_PROF)
 
