@@ -13,8 +13,8 @@ from core.database import get_db_connection
 from core.extensions import csrf_exempt
 from repositories import exercise_repository as exercise_repo
 from repositories import flywheel_repository as flywheel_repo
-from services.code_runner import run_test_cases
-from services.exercise_generator import generate_test_cases_for_exercise
+from services.ai_grader import grade_with_ai
+from services.code_runner import run_code
 
 logger = logging.getLogger(__name__)
 bp = Blueprint("exercises", __name__)
@@ -32,13 +32,32 @@ bp = Blueprint("exercises", __name__)
 
 _NBSP_CHARS = frozenset("\u00a0\u2002\u2003\u2009\u202f")
 
+# Curly/smart quotes → straight ASCII equivalents.
+# These are Unicode Pi/Pf punctuation (not Cf), so they survive the format-char
+# stripper below but cause "SyntaxError: invalid syntax (<student>, line 1)".
+# They appear in code copy-pasted from the AI chat, rich-text editors, or Word.
+_CURLY_QUOTE_MAP = {
+    "\u2018": "'",  # LEFT SINGLE QUOTATION MARK  '
+    "\u2019": "'",  # RIGHT SINGLE QUOTATION MARK '
+    "\u201c": '"',  # LEFT DOUBLE QUOTATION MARK  "
+    "\u201d": '"',  # RIGHT DOUBLE QUOTATION MARK "
+    "\u201a": "'",  # SINGLE LOW-9 QUOTATION MARK ‚
+    "\u201e": '"',  # DOUBLE LOW-9 QUOTATION MARK „
+    "\u2032": "'",  # PRIME                        ′
+    "\u2033": '"',  # DOUBLE PRIME                 ″
+    "\u00ab": '"',  # LEFT-POINTING DOUBLE ANGLE QUOTATION MARK «
+    "\u00bb": '"',  # RIGHT-POINTING DOUBLE ANGLE QUOTATION MARK »
+}
+
 
 def _sanitise_student_code(code: str) -> str:
-    """Strip invisible Unicode format chars; normalise non-breaking spaces."""
+    """Strip invisible Unicode format chars; normalise non-breaking spaces and curly quotes."""
     out = []
     for ch in code:
         if ch in _NBSP_CHARS:
             out.append(" ")
+        elif ch in _CURLY_QUOTE_MAP:
+            out.append(_CURLY_QUOTE_MAP[ch])
         elif unicodedata.category(ch) == "Cf":  # format chars: U+200B, U+FEFF, …
             pass  # drop silently
         else:
@@ -297,135 +316,87 @@ def delete_exercise(exercise_id):
 @require_auth
 def grade_exercise(exercise_id):
     """
-    Grade a student's code submission against pre-generated test cases.
+    Grade a student's code submission using AI.
 
-    Body:
-      { "code": "<student source code>" }
-      (language is read from the DB, not trusted from the client)
+    Runs the code in a sandbox, captures stdout/stderr, then asks Gemini to
+    evaluate whether the logic and output fulfil the exercise description.
+    Grading is style-agnostic — any correct approach scores equally.
 
-    Returns:
-      {
-        "total_score":       int,   // 0-100  ← store this as the submission score
-        "correctness_score": int,   // 0-80
-        "quality_score":     int,   // 0-20
-        "tests_passed":      int,
-        "tests_total":       int,
-        "results":           [...], // per-test detail
-        "quality_details":   {...},
-        "has_test_cases":    bool   // false when exercise was generated before migration
-      }
-
-    Grading is purely output-based — no Levenshtein, no time bonus.
-    The frontend should store total_score via PUT /api/users/practice-progress.
+    Body:    { "code": "<student source code>" }
+    Returns: {
+      "total_score":       int,   // 0-100
+      "correctness_score": int,   // 0-70
+      "quality_score":     int,   // 0-30
+      "feedback":          str,   // AI feedback (2-3 sentences)
+      "output":            str,   // stdout produced by the code
+      "passed":            bool,
+      "graded_by":         "ai"
+    }
     """
     try:
         conn = get_db_connection()
         data = request.json or {}
 
         student_code = _sanitise_student_code(data.get("code") or "")
-
         if not student_code:
             return jsonify({"error": "No code submitted."}), 400
 
-        # Retrieve test cases stored at generation time.
-        # Language comes from the DB (set at generation time) — we do NOT trust
-        # the client-supplied language to select the sandbox runner.
-        function_name, language, test_cases = exercise_repo.get_exercise_test_cases(
-            conn, exercise_id
-        )
-
-        if function_name is None:
+        # Fetch exercise title, description, language from DB
+        row = exercise_repo.get_exercise_detail(conn, exercise_id)
+        if not row:
             return jsonify({"error": "Exercise not found."}), 404
+        # row: (exercise_id, chapter_id, class_id, title, description, difficulty, solution_code)
+        _, _, _, title, description, _, _ = row
 
-        # Exercise predates test-case generation — auto-generate now
-        _retroactive_gen_meta = None
-        if not test_cases:
-            row = exercise_repo.get_exercise_detail(conn, exercise_id)
-            if not row:
-                return jsonify({"error": "Exercise not found."}), 404
-            title, description, solution_code = row[3], row[4], row[6]
-            try:
-                generated = generate_test_cases_for_exercise(
-                    title=title,
-                    description=description,
-                    solution_code=solution_code,
-                    language=language,
-                )
-                function_name = generated["function_name"]
-                test_cases = generated["test_cases"]
-                _retroactive_gen_meta = generated.get("_gen_meta")
-                exercise_repo.save_exercise_test_cases(conn, exercise_id, function_name, test_cases)
-                conn.commit()
-            except Exception as gen_err:
-                logger.error("Auto test-case generation failed for %s: %s", exercise_id, gen_err)
-                return (
-                    jsonify(
-                        {
-                            "has_test_cases": False,
-                            "total_score": 0,
-                            "correctness_score": 0,
-                            "quality_score": 0,
-                            "tests_passed": 0,
-                            "tests_total": 0,
-                            "results": [],
-                            "quality_details": {},
-                            "message": "Could not generate test cases. Please try again.",
-                        }
-                    ),
-                    200,
-                )
+        # Language is stored in the test_cases row; default to Python
+        _, language, _ = exercise_repo.get_exercise_test_cases(conn, exercise_id)
+        language = language or "Python"
 
-        # Run the code against every test case in the sandbox
-        _grade_t0 = time.monotonic()
-        result = run_test_cases(
-            student_code=student_code,
+        # ── Step 1: Run the code in a sandbox, capture output ─────────────────
+        _run_t0 = time.monotonic()
+        run_result = run_code(student_code, language=language, timeout=10)
+        execution_time_ms = int((time.monotonic() - _run_t0) * 1000)
+
+        stdout = run_result.get("stdout", "")
+        stderr = run_result.get("stderr", "")
+        timed_out = run_result.get("timed_out", False)
+
+        if timed_out:
+            actual_output = "[Code timed out after 10 seconds — possible infinite loop]"
+        elif stderr and not stdout:
+            actual_output = stderr
+        elif stderr:
+            actual_output = f"{stdout}\n{stderr}".strip()
+        else:
+            actual_output = stdout
+
+        # ── Step 2: AI grades the code + output against the description ───────
+        result = grade_with_ai(
+            title=title,
+            description=description,
             language=language,
-            function_name=function_name,
-            test_cases=test_cases,
-            timeout=5,
+            student_code=student_code,
+            actual_output=actual_output,
+            api_key=config.GEMINI_API_KEY,
         )
-        execution_time_ms = int((time.monotonic() - _grade_t0) * 1000)
 
         audit(
             conn,
             "GRADE_EXERCISE",
             resource_type="exercise",
             resource_id=exercise_id,
-            details={
-                "score": result["total_score"],
-                "tests_passed": result["tests_passed"],
-                "tests_total": result["tests_total"],
-                "language": language,
-            },
+            details={"score": result["total_score"], "language": language, "graded_by": "ai"},
         )
 
-        # --- Flywheel: record outcome event (must never break grading) -------
+        # ── Flywheel: record outcome event (must never break grading) ─────────
+        class_id_for_flywheel = None
         try:
             user_id = g.user_id
             tenant_id = getattr(g, "tenant_id", None)
 
-            # Look up class_id and generation_event_id from the exercise row
             ex_location = exercise_repo.get_exercise_location(conn, exercise_id)
             class_id_for_flywheel = ex_location[1] if ex_location else None
 
-            # If this was a retroactive test-case generation, record that first
-            if _retroactive_gen_meta:
-                retro_event_id = flywheel_repo.insert_generation_event(
-                    conn,
-                    {
-                        **_retroactive_gen_meta,
-                        "exercise_id": exercise_id,
-                        "class_id": class_id_for_flywheel,
-                        "tenant_id": str(tenant_id) if tenant_id else None,
-                    },
-                )
-                if retro_event_id:
-                    flywheel_repo.update_exercise_generation_event_id(
-                        conn, exercise_id, retro_event_id
-                    )
-                    conn.commit()
-
-            # Look up the generation_event_id that was set at exercise creation
             gen_event = flywheel_repo.get_generation_event_by_exercise(conn, exercise_id)
             generation_event_id = gen_event["id"] if gen_event else None
 
@@ -433,19 +404,6 @@ def grade_exercise(exercise_id):
                 flywheel_repo.get_outcome_count_for_user_exercise(conn, user_id, exercise_id) + 1
             )
 
-            # Truncate per-test stderr to 200 chars to keep the JSONB payload small
-            sanitised_results = []
-            for r in result.get("results", []):
-                sr = {k: v for k, v in r.items()}
-                if isinstance(sr.get("error"), str) and len(sr["error"]) > 200:
-                    sr["error"] = sr["error"][:200]
-                sanitised_results.append(sr)
-
-            # TODO: wire frontend timer to send time_spent in grade request
-            time_spent_seconds = data.get("time_spent")
-
-            # TODO: count AI interactions per exercise session once
-            #       conversation-exercise linking exists
             flywheel_repo.insert_outcome_event(
                 conn,
                 {
@@ -455,18 +413,18 @@ def grade_exercise(exercise_id):
                     "class_id": class_id_for_flywheel,
                     "tenant_id": str(tenant_id) if tenant_id else None,
                     "attempt_number": attempt_number,
-                    "time_spent_seconds": int(time_spent_seconds) if time_spent_seconds else None,
+                    "time_spent_seconds": int(data["time_spent"]) if data.get("time_spent") else None,
                     "hints_requested": 0,
                     "ai_chat_messages": 0,
                     "code_char_count": len(student_code),
-                    "passed": result["total_score"] >= 50,
+                    "passed": result["passed"],
                     "total_score": result["total_score"],
                     "correctness_score": result["correctness_score"],
                     "quality_score": result["quality_score"],
-                    "tests_total": result["tests_total"],
-                    "tests_passed": result["tests_passed"],
-                    "test_results": sanitised_results,
-                    "error_category": _classify_error_category(result.get("results", [])),
+                    "tests_total": 0,
+                    "tests_passed": 0,
+                    "test_results": [{"description": result["feedback"], "passed": result["passed"]}],
+                    "error_category": "none" if result["passed"] else "logic",
                     "execution_time_ms": execution_time_ms,
                 },
             )
@@ -480,7 +438,7 @@ def grade_exercise(exercise_id):
             )
             # Intentional: do not re-raise — student must always get their grade
 
-        # AGS grade passback — push score to LMS if class is LTI-linked
+        # ── AGS grade passback ────────────────────────────────────────────────
         try:
             if class_id_for_flywheel:
                 from blueprints.lti import _push_ags_grade
@@ -492,24 +450,44 @@ def grade_exercise(exercise_id):
                 lti_user_id = lti_row[0] if lti_row and lti_row[0] else None
                 if lti_user_id:
                     _push_ags_grade(
-                        conn,
-                        class_id_for_flywheel,
-                        exercise_id,
-                        lti_user_id,
-                        result["total_score"],
+                        conn, class_id_for_flywheel, exercise_id,
+                        lti_user_id, result["total_score"],
                     )
                     logger.info(
                         "AGS grade pushed: exercise=%s class=%s score=%s",
-                        exercise_id,
-                        class_id_for_flywheel,
-                        result["total_score"],
+                        exercise_id, class_id_for_flywheel, result["total_score"],
                     )
         except Exception as ags_err:
             logger.warning("AGS passback skipped for %s: %s", exercise_id, ags_err)
-            # Intentional: do not re-raise — student must always get their grade
 
-        return jsonify({**result, "has_test_cases": True}), 200
+        return jsonify({
+            **result,
+            "output": stdout,
+            "timed_out": timed_out,
+        }), 200
 
     except Exception as e:
         logger.error("Unexpected error grading exercise %s: %s", exercise_id, e, exc_info=True)
         return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
+
+
+@bp.route("/api/code/run", methods=["POST"])
+@csrf_exempt
+@require_auth
+def run_code_endpoint():
+    """
+    Execute code in a live sandbox and return stdout/stderr — no grading.
+    Network access is allowed so pd.read_csv(url) and similar work.
+
+    Body:  { "code": "...", "language": "python" }
+    Returns: { "stdout": "...", "stderr": "...", "timed_out": bool }
+    """
+    data = request.get_json(silent=True) or {}
+    code = _sanitise_student_code(data.get("code") or "")
+    language = data.get("language", "python")
+
+    if not code:
+        return jsonify({"stdout": "", "stderr": "No code provided.", "timed_out": False}), 400
+
+    result = run_code(code, language=language)
+    return jsonify(result), 200

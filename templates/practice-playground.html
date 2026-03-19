@@ -328,6 +328,74 @@
       color: #ffffff;
     }
 
+    .btn-run {
+      background-color: #10b981;
+      color: #ffffff;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .btn-run:hover:not(:disabled) { background-color: #059669; }
+    .btn-run:disabled { background-color: #6b7280; cursor: not-allowed; }
+
+    .output-panel {
+      background: #0d1117;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 0.5rem;
+      margin-bottom: 2rem;
+      overflow: hidden;
+    }
+
+    .output-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.5rem 1rem;
+      background: rgba(255,255,255,0.04);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      font-size: 0.875rem;
+      color: #94a3b8;
+    }
+
+    .output-panel-header span { font-weight: 600; }
+
+    .output-clear-btn {
+      background: none;
+      border: none;
+      color: #64748b;
+      cursor: pointer;
+      font-size: 0.75rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 0.25rem;
+    }
+
+    .output-clear-btn:hover { color: #94a3b8; background: rgba(255,255,255,0.06); }
+
+    .output-content {
+      padding: 1rem;
+      min-height: 60px;
+      max-height: 400px;
+      overflow-y: auto;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 0.875rem;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .output-stdout { color: #e2e8f0; }
+    .output-stderr { color: #f87171; }
+    .output-placeholder { color: #475569; font-style: italic; }
+    .output-running { color: #60a5fa; }
+
     .solution-section {
       display: none;
       margin-top: 2rem;
@@ -752,8 +820,19 @@
       </div>
 
       <div class="playground-actions">
+        <button class="btn-run" id="runBtn" onclick="runCode()">&#9654; Run</button>
         <button class="btn-submit" id="submitBtn" onclick="submitSolution()">Submit Solution</button>
         <button class="btn-reset" onclick="resetCode()">Reset Code</button>
+      </div>
+
+      <div class="output-panel" id="outputPanel">
+        <div class="output-panel-header">
+          <span>Output</span>
+          <button class="output-clear-btn" onclick="clearOutput()">Clear</button>
+        </div>
+        <div class="output-content" id="outputContent">
+          <span class="output-placeholder">Press &#9654; Run or Ctrl+Enter to execute your code.</span>
+        </div>
       </div>
     </div>
   </main>
@@ -1177,9 +1256,10 @@
         if (gradeResp.ok) {
           gradingResult = await gradeResp.json();
           score    = gradingResult.total_score || 0;
-          accuracy = gradingResult.tests_total > 0
-            ? Math.round((gradingResult.tests_passed / gradingResult.tests_total) * 100)
-            : 0;
+          // Normalise correctness (0-70) to a 0-100% for the accuracy display
+          accuracy = gradingResult.correctness_score != null
+            ? Math.round((gradingResult.correctness_score / 70) * 100)
+            : Math.round(score);
         } else {
           console.error('Grading request failed:', gradeResp.status);
         }
@@ -1199,7 +1279,7 @@
       renderTestResults(gradingResult);
 
       // Update title
-      document.getElementById('codeEditorTitle').textContent = 'Test Results';
+      document.getElementById('codeEditorTitle').textContent = 'Feedback';
 
       // Disable submit button
       const submitBtn = document.getElementById('submitBtn');
@@ -1208,10 +1288,9 @@
 
       // Show submission message
       let submissionMessage;
-      if (gradingResult && gradingResult.has_test_cases === false) {
-        submissionMessage = `Submitted! No test cases available yet. Time: ${formatTime(elapsedSeconds)}`;
-      } else if (gradingResult) {
-        submissionMessage = `Graded! ${gradingResult.tests_passed}/${gradingResult.tests_total} tests passed · Score: ${score}/100 · Time: ${formatTime(elapsedSeconds)}`;
+      if (gradingResult) {
+        const verdict = gradingResult.passed ? 'Passed' : 'Not yet passing';
+        submissionMessage = `${verdict} · Score: ${score}/100 · Time: ${formatTime(elapsedSeconds)}`;
       } else {
         submissionMessage = `Submitted. Score: ${score} · Time: ${formatTime(elapsedSeconds)}`;
       }
@@ -1284,9 +1363,7 @@
       }
     }
 
-    // ── renderTestResults ─────────────────────────────────────────────────────
-    // Replaces the old compareCode / Levenshtein display.
-    // Shows pass/fail for each test case returned by the grading endpoint.
+    // ── renderTestResults — AI grading feedback display ──────────────────────
     function renderTestResults(gradingResult) {
       const codeDisplay = document.getElementById('codeDisplay');
 
@@ -1295,51 +1372,55 @@
         return;
       }
 
-      if (gradingResult.has_test_cases === false) {
-        codeDisplay.innerHTML =
-          `<div class="code-line" style="color:#f5a623;">
-             ${gradingResult.message || 'Could not generate test cases. Please try again.'}
-           </div>`;
-        return;
+      const passed   = gradingResult.passed;
+      const score    = gradingResult.total_score || 0;
+      const correct  = gradingResult.correctness_score || 0;
+      const quality  = gradingResult.quality_score || 0;
+      const feedback = gradingResult.feedback || '';
+      const output   = gradingResult.output || '';
+      const timedOut = gradingResult.timed_out;
+
+      const verdictColour = passed ? '#4caf50' : '#f5a623';
+      const verdictIcon   = passed ? '✓' : '○';
+      const verdictLabel  = passed ? 'Passed' : 'Keep going';
+
+      let html = `
+        <div style="margin-bottom:14px;">
+          <span style="color:${verdictColour};font-size:1.1em;font-weight:700;">
+            ${verdictIcon} ${verdictLabel}
+          </span>
+          <span style="color:#94a3b8;font-size:0.85em;margin-left:10px;">
+            Correctness ${correct}/70 &nbsp;·&nbsp; Quality ${quality}/30
+          </span>
+        </div>`;
+
+      if (feedback) {
+        html += `
+        <div style="background:rgba(255,255,255,0.04);border-left:3px solid ${verdictColour};
+                    padding:0.75rem 1rem;border-radius:0 0.375rem 0.375rem 0;margin-bottom:14px;
+                    color:#e2e8f0;font-size:0.9em;line-height:1.6;">
+          ${escapeHtml(feedback)}
+        </div>`;
       }
 
-      const results = gradingResult.results || [];
-      const quality = gradingResult.quality_details || {};
-
-      let html = '';
-
-      // Test cases
-      results.forEach((r, i) => {
-        const icon    = r.passed ? '✓' : '✗';
-        const colour  = r.passed ? '#4caf50' : '#f44336';
-        const desc    = escapeHtml(r.description || `Test ${i + 1}`);
-        const detail  = r.error
-          ? `<span style="color:#f5a623;font-size:0.85em;"> — ${escapeHtml(r.error)}</span>`
-          : (!r.passed && r.expected !== undefined
-              ? `<span style="color:#aaa;font-size:0.85em;"> — expected ${escapeHtml(String(r.expected))}, got ${escapeHtml(String(r.actual ?? r.printed ?? 'nothing'))}</span>`
-              : '');
-        html += `<div class="code-line">
-          <span style="color:${colour};font-weight:bold;">${icon}</span>
-          <span style="margin-left:8px;">${desc}</span>${detail}
+      if (timedOut) {
+        html += `<div class="code-line" style="color:#f87171;">⏱ Code timed out — check for infinite loops.</div>`;
+      } else if (output) {
+        html += `
+        <div style="margin-top:10px;">
+          <div style="color:#64748b;font-size:0.75em;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em;">
+            Output
+          </div>
+          <pre style="background:#0d1117;border:1px solid rgba(255,255,255,0.08);border-radius:0.375rem;
+                      padding:0.75rem;margin:0;font-size:0.8em;color:#e2e8f0;
+                      white-space:pre-wrap;word-break:break-all;max-height:200px;overflow-y:auto;">${escapeHtml(output)}</pre>
         </div>`;
-      });
-
-      // Quality breakdown
-      if (Object.keys(quality).length) {
-        html += `<div class="code-line" style="margin-top:12px;color:#aaa;font-size:0.85em;">
-          Quality: runs cleanly ${quality.runs_cleanly}/10
-          · no hardcoded answers ${quality.no_hardcoded_answers}/5
-          · style ${quality.basic_style}/5
-        </div>`;
+      } else if (!timedOut) {
+        html += `<div class="code-line" style="color:#64748b;font-size:0.85em;">(no output — did your code print anything?)</div>`;
       }
 
       codeDisplay.innerHTML = html;
     }
-
-    // ── Legacy code-comparison functions removed ───────────────────────────
-    // compareCode, calculateLineSimilarity, levenshteinDistance, and
-    // calculateScore (with time bonus) have all been removed.
-    // Grading is now done server-side via POST /api/exercises/<id>/grade.
 
     function escapeHtml(text) {
       const div = document.createElement('div');
@@ -1622,11 +1703,69 @@
         // Update cursor position
         this.selectionStart = this.selectionEnd = start + 4;
         updateLineNumbers();
+      } else if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+        // Ctrl+Enter / Cmd+Enter — run code (like Jupyter/Colab)
+        event.preventDefault();
+        runCode();
       } else if (event.key === 'Enter') {
         // Sync line numbers after a short delay to allow the new line to be added
         setTimeout(updateLineNumbers, 0);
         event.stopPropagation();
       }
+    }
+
+    // ── Live code execution (▶ Run) ──────────────────────────────────────────
+    async function runCode() {
+      const code = document.getElementById('codeEditor').value;
+      const outputContent = document.getElementById('outputContent');
+      const runBtn = document.getElementById('runBtn');
+
+      if (!code.trim()) {
+        outputContent.innerHTML = '<span class="output-stderr">No code to run.</span>';
+        return;
+      }
+
+      runBtn.disabled = true;
+      runBtn.innerHTML = '&#9203; Running\u2026';
+      outputContent.innerHTML = '<span class="output-running">Running\u2026</span>';
+
+      try {
+        const apiUrl = window.API_BASE_URL || '/api';
+        const resp = await authFetch(`${apiUrl}/code/run`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            code,
+            language: exerciseData?.language || 'python',
+          }),
+        });
+
+        const result = await resp.json();
+
+        if (result.timed_out) {
+          outputContent.innerHTML = '<span class="output-stderr">&#9203; Timed out after 15s. Infinite loop?</span>';
+        } else {
+          let html = '';
+          if (result.stdout) {
+            html += `<span class="output-stdout">${escapeHtml(result.stdout)}</span>`;
+          }
+          if (result.stderr) {
+            if (html) html += '\n';
+            html += `<span class="output-stderr">${escapeHtml(result.stderr)}</span>`;
+          }
+          outputContent.innerHTML = html || '<span class="output-placeholder">(no output)</span>';
+        }
+      } catch (err) {
+        outputContent.innerHTML = `<span class="output-stderr">Error: ${escapeHtml(String(err))}</span>`;
+      } finally {
+        runBtn.disabled = false;
+        runBtn.innerHTML = '&#9654; Run';
+      }
+    }
+
+    function clearOutput() {
+      document.getElementById('outputContent').innerHTML =
+        '<span class="output-placeholder">Press &#9654; Run or Ctrl+Enter to execute your code.</span>';
     }
   </script>
 {% endblock %}
