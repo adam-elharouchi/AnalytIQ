@@ -310,7 +310,7 @@ def upload_chapter(class_id):
 
         conn.commit()
 
-        cache.invalidate_cache(f"chapters:*:{class_id}")
+        cache.invalidate_cache(f"chapters:*:class_id={class_id}")
 
         return (
             jsonify(
@@ -412,7 +412,7 @@ def update_chapter(chapter_id):
         chapter_repo.update_chapter(conn, chapter_id, data.get("title"), data.get("description"))
         conn.commit()
 
-        cache.invalidate_cache(f"chapters:*:{class_id}")
+        cache.invalidate_cache(f"chapters:*:class_id={class_id}")
         return jsonify({"success": True}), 200
     except Exception as e:
         logger.error("Unexpected error: %s", e, exc_info=True)
@@ -451,8 +451,8 @@ def delete_chapter(chapter_id):
         )
         conn.commit()
 
-        cache.invalidate_cache(f"chapters:*:{class_id}")
-        cache.invalidate_cache(f"chap_exercises:*:{chapter_id}")
+        cache.invalidate_cache(f"chapters:*:class_id={class_id}")
+        cache.invalidate_cache(f"chap_exercises:*:chapter_id={chapter_id}")
         return jsonify({"success": True, "message": "Chapter deleted successfully"}), 200
 
     except Exception as e:
@@ -556,7 +556,7 @@ def generate_exercises_for_chapter(chapter_id):
 
         conn.commit()
 
-        cache.invalidate_cache(f"chap_exercises:*:{chapter_id}")
+        cache.invalidate_cache(f"chap_exercises:*:chapter_id={chapter_id}")
 
         return (
             jsonify(
@@ -673,7 +673,7 @@ def create_exercise(class_id, chapter_id):
         )
         conn.commit()
 
-        cache.invalidate_cache(f"chap_exercises:*:{chapter_id}")
+        cache.invalidate_cache(f"chap_exercises:*:chapter_id={chapter_id}")
         return jsonify({"success": True, "exercise_id": exercise_id}), 201
 
     except Exception as e:
