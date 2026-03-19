@@ -1762,8 +1762,6 @@
         if (pageNum === 1) {
           var maxW = 900;
           var parent = container.parentElement;
-          if (typeof window !== 'undefined' && window.innerWidth > 0)
-            maxW = window.innerWidth - 280;
           if (parent && parent.clientWidth > 200)
             maxW = Math.min(maxW, parent.clientWidth - 80);
           scaleFactor = maxW / viewport.width;
