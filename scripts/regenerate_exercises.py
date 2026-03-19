@@ -2,11 +2,12 @@
 """
 scripts/regenerate_exercises.py — Regenerate all exercises from stored PDF data.
 
-For every chapter that has stored PDF/file bytes, this script:
-  1. Extracts text from the stored binary content.
-  2. Deletes the chapter's existing exercises (and their flywheel events).
-  3. Calls generate_exercises_from_pdf_content() with the improved v1.2 prompt.
-  4. Inserts the new exercises (+ flywheel generation events).
+For every chapter that has a PDF (stored in the DB or in Supabase Storage), this script:
+  1. Gets the file bytes — from pdf_data column or by downloading from Supabase.
+  2. Extracts text from the file content.
+  3. Deletes the chapter's existing exercises (and their flywheel events).
+  4. Calls generate_exercises_from_pdf_content() with the v1.3 prompt.
+  5. Inserts the new exercises (+ flywheel generation events).
 
 Usage:
   # Dry-run (preview what would be regenerated, no DB changes):
@@ -62,10 +63,12 @@ def get_conn():
 
 def fetch_chapters(conn, class_id_filter=None, chapter_id_filter=None):
     """
-    Return list of dicts with chapter metadata + binary PDF/file data.
-    Only chapters that have pdf_data stored are returned.
+    Return list of dicts for ALL chapters that have either:
+      - pdf_data stored in the DB (old upload path), or
+      - pdf_filename pointing to Supabase Storage (new presigned-URL path).
+    pdf_data is None for Supabase-only chapters; the caller fetches it on demand.
     """
-    where_clauses = ["cc.pdf_data IS NOT NULL"]
+    where_clauses = ["(cc.pdf_data IS NOT NULL OR cc.pdf_filename IS NOT NULL)"]
     params = []
 
     if class_id_filter:
@@ -83,7 +86,7 @@ def fetch_chapters(conn, class_id_filter=None, chapter_id_filter=None):
     cur.execute(
         f"""
         SELECT cc.chapter_id, cc.class_id, cc.title, cc.pdf_filename,
-               cc.pdf_data, c.professor_id
+               cc.pdf_data, cc.pdf_url, c.professor_id
         FROM class_chapters cc
         JOIN classes c ON cc.class_id = c.class_id
         WHERE {where_sql}
@@ -99,11 +102,47 @@ def fetch_chapters(conn, class_id_filter=None, chapter_id_filter=None):
             "class_id": r[1],
             "title": r[2],
             "pdf_filename": r[3],
-            "pdf_data": bytes(r[4]),
-            "professor_id": r[5],
+            "pdf_data": bytes(r[4]) if r[4] is not None else None,
+            "pdf_url": r[5],
+            "professor_id": r[6],
         }
         for r in rows
     ]
+
+
+def _download_from_supabase(pdf_filename):
+    """
+    Download file bytes from Supabase Storage using the storage path (pdf_filename).
+    Returns bytes or raises RuntimeError.
+    """
+    import requests as req
+
+    supabase_url = os.getenv("SUPABASE_URL", "").rstrip("/")
+    supabase_key = os.getenv("SUPABASE_KEY") or os.getenv("SUPABASE_SERVICE_KEY")
+    bucket = os.getenv("SUPABASE_BUCKET", "analytiq-pdfs")
+
+    if not supabase_url or not supabase_key:
+        raise RuntimeError("SUPABASE_URL / SUPABASE_KEY not set — cannot download from Supabase")
+
+    # Try direct download via Supabase Storage REST API
+    download_url = f"{supabase_url}/storage/v1/object/{bucket}/{pdf_filename}"
+    resp = req.get(
+        download_url,
+        headers={"Authorization": f"Bearer {supabase_key}", "apikey": supabase_key},
+        timeout=30,
+    )
+    if resp.ok:
+        return resp.content
+
+    # Fallback: try public URL path
+    public_url = f"{supabase_url}/storage/v1/object/public/{bucket}/{pdf_filename}"
+    resp = req.get(public_url, timeout=30)
+    if resp.ok:
+        return resp.content
+
+    raise RuntimeError(
+        f"Supabase download failed for '{pdf_filename}': {resp.status_code} {resp.text[:200]}"
+    )
 
 
 def delete_chapter_exercises(conn, chapter_id):
@@ -182,7 +221,15 @@ def regenerate_chapter(conn, chapter, execute=False):
     pdf_filename = chapter["pdf_filename"] or "chapter.pdf"
     pdf_data = chapter["pdf_data"]
 
-    # 1. Extract text
+    # 1. Get file bytes — from DB or Supabase Storage
+    if pdf_data is None:
+        try:
+            pdf_data = _download_from_supabase(pdf_filename)
+            logger.info("  downloaded %d bytes from Supabase (%s)", len(pdf_data), pdf_filename)
+        except Exception as e:
+            return 0, f"Supabase download failed: {e}"
+
+    # 2. Extract text
     try:
         pdf_text = extract_text(pdf_data, pdf_filename)
     except Exception as e:
