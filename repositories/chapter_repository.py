@@ -156,18 +156,34 @@ def update_chapter(conn, chapter_id, title, description):
 def get_chapter_for_delete(conn, chapter_id):
     """Return (class_id, pdf_filename, professor_id) or None."""
     cur = conn.cursor()
+    # Step 1: look up the chapter
     cur.execute(
-        """
-        SELECT cc.class_id, cc.pdf_filename, c.professor_id
-        FROM class_chapters cc
-        JOIN classes c ON cc.class_id = c.class_id
-        WHERE cc.chapter_id = %s
-        """,
+        "SELECT class_id, pdf_filename FROM class_chapters WHERE chapter_id = %s",
         (chapter_id,),
     )
-    row = cur.fetchone()
+    chapter_row = cur.fetchone()
+    if not chapter_row:
+        cur.close()
+        logger.warning(
+            "get_chapter_for_delete: chapter not found in class_chapters: %s", chapter_id
+        )
+        return None
+    class_id, pdf_filename = chapter_row
+    # Step 2: look up the professor from the class
+    cur.execute(
+        "SELECT professor_id FROM classes WHERE class_id = %s",
+        (class_id,),
+    )
+    class_row = cur.fetchone()
     cur.close()
-    return row
+    if not class_row:
+        logger.warning(
+            "get_chapter_for_delete: class not found in classes for chapter %s (class_id=%s)",
+            chapter_id,
+            class_id,
+        )
+        return None
+    return (class_id, pdf_filename, class_row[0])
 
 
 def delete_chapter_and_exercises(conn, chapter_id):
