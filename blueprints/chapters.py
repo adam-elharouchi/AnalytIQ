@@ -431,6 +431,7 @@ def delete_chapter(chapter_id):
 
         conn = get_db_connection()
 
+        logger.info("delete_chapter: user=%s chapter_id=%r", user_id, chapter_id)
         chapter_data = chapter_repo.get_chapter_for_delete(conn, chapter_id)
         if not chapter_data:
             return jsonify({"error": "Chapter not found"}), 404

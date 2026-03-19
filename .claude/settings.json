@@ -24,7 +24,8 @@
       "Bash(xargs -n1 basename)",
       "Bash(pip install:*)",
       "Bash(grep -n \"signin\\\\|redirect\\\\|window.location\\\\|login\" /Users/aelharouchi/Documents/GitHub/AnalytIQ/static/js/*.js)",
-      "Bash(grep -n \"window.location.href = ''/''\" /Users/aelharouchi/Documents/GitHub/AnalytIQ/static/js/auth.js)"
+      "Bash(grep -n \"window.location.href = ''/''\" /Users/aelharouchi/Documents/GitHub/AnalytIQ/static/js/auth.js)",
+      "Bash(grep -n \"CREATE TABLE classes\\\\|classes \\(\" /Users/aelharouchi/Documents/GitHub/AnalytIQ/migrations/*.sql)"
     ]
   }
 }
