@@ -198,21 +198,19 @@ class TestAppV1AliasExceptions:
     """Cover register_api_v1_aliases exception handlers in app.py"""
 
     def test_v1_alias_assertion_error(self):
-        """Lines 5076-5078: AssertionError when rule already exists"""
-        from app import app as flask_app, register_api_v1_aliases
+        """AssertionError when rule already exists is swallowed"""
+        from app import app as flask_app
+        from core.factory import register_api_versioning
 
-        # Mock add_url_rule to raise AssertionError (rule already exists)
         with patch.object(flask_app, "add_url_rule", side_effect=AssertionError("Rule exists")):
             with flask_app.app_context():
-                # Should not raise - AssertionError is caught and ignored
-                register_api_v1_aliases(flask_app)
+                register_api_versioning(flask_app)
 
     def test_v1_alias_generic_exception(self):
-        """Lines 5079-5081: generic Exception during alias registration"""
-        from app import app as flask_app, register_api_v1_aliases
+        """Generic Exception during alias registration is swallowed"""
+        from app import app as flask_app
+        from core.factory import register_api_versioning
 
-        # Mock add_url_rule to raise a generic Exception
         with patch.object(flask_app, "add_url_rule", side_effect=Exception("Something broke")):
             with flask_app.app_context():
-                # Should not raise - Exception is caught and ignored
-                register_api_v1_aliases(flask_app)
+                register_api_versioning(flask_app)
