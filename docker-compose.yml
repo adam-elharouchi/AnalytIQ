@@ -1,0 +1,51 @@
+version: "3.9"
+
+# Local development stack — PostgreSQL + Redis.
+# The Flask app itself runs outside Docker so you get hot-reload and debugger support.
+#
+# Usage:
+#   make services   # start DB + Redis
+#   make dev        # start DB + Redis + Flask
+#   make stop       # stop containers
+
+services:
+  db:
+    image: postgres:14-alpine
+    environment:
+      POSTGRES_DB: analytiq
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  flower:
+    image: mher/flower:2.0
+    command: celery --broker=redis://redis:6379/0 flower --port=5555
+    ports:
+      - "5555:5555"
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+
+volumes:
+  postgres_data:

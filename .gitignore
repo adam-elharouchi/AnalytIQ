@@ -16,8 +16,10 @@ __pycache__/
 *.pyc
 *.pyo
 
-# Node (if applicable)
+# Node / Frontend
 node_modules/
+frontend/node_modules/
+static/react/
 
 # Coverage artifacts
 .coverage

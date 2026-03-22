@@ -205,8 +205,8 @@ def _upsert_lti_user(conn, launch_data):
                 auth_repo.create_default_settings(conn, new_row[0])
                 auth_repo.create_default_preferences(conn, new_row[0])
                 auth_repo.create_default_ai_digest(conn, new_row[0])
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("Non-critical: default profile creation failed for new LTI user %s: %s", new_row[0], e)
             user_row = (new_row[0], new_row[1], new_row[2], role)
 
     if not user_row:
@@ -395,10 +395,10 @@ def lti_login():
         return oidc_login.redirect(target_link_uri)
     except OIDCException as e:
         logger.warning("LTI OIDC login error: %s", e)
-        return jsonify({"error": "OIDC login failed", "detail": str(e)}), 400
+        return jsonify({"error": "OIDC login failed"}), 400
     except Exception as e:
         logger.error("LTI login unexpected error: %s", e, exc_info=True)
-        return jsonify({"error": "LTI login error", "detail": str(e)}), 500
+        return jsonify({"error": "An unexpected error occurred"}), 500
 
 
 # ---------------------------------------------------------------------------

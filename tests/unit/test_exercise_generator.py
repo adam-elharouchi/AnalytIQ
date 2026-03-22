@@ -295,7 +295,7 @@ class TestExerciseGeneration:
             }]
         }
 
-        with patch.dict("os.environ", {"GEMINI_API_KEY": "env_key"}):
+        with patch("config.GEMINI_API_KEY", "env_key"):
             with patch("requests.post") as mock_post:
                 mock_post.return_value.ok = True
                 mock_post.return_value.json.return_value = mock_response
@@ -303,9 +303,9 @@ class TestExerciseGeneration:
                 generate_exercises_from_pdf_content(
                     "Sample text",
                     "Chapter 1"
-                    # No api_key parameter - should use env var
+                    # No api_key parameter - should use config.GEMINI_API_KEY
                 )
 
-                # Verify the env key was used in the URL
+                # Verify the config key was used in the URL
                 call_args = mock_post.call_args
                 assert "key=env_key" in call_args[0][0]
