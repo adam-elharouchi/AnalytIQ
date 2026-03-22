@@ -8,22 +8,20 @@ from unittest.mock import patch, MagicMock
 class TestSendEmailAsync:
     """Cover send_email_async paths in tasks.py"""
 
-    def test_send_email_no_resend_installed(self):
+    def test_send_email_core_error_returns_failure(self):
         from workers.tasks import send_email_async
-        import workers.tasks as tasks_module
+        from unittest.mock import patch
+        from celery.exceptions import MaxRetriesExceededError
 
-        original_resend = getattr(tasks_module, "resend", None)
-        try:
-            tasks_module.resend = None
-            result = send_email_async(
-                recipient="test@test.com",
-                subject="Test",
-                body="<p>Hello</p>",
-            )
-            assert result["success"] == False
-            assert "not installed" in result.get("error", "")
-        finally:
-            tasks_module.resend = original_resend
+        with patch("core.email.send_email", side_effect=RuntimeError("RESEND_API_KEY is missing")):
+            with patch.object(send_email_async, "retry", side_effect=MaxRetriesExceededError()):
+                result = send_email_async(
+                    recipient="test@test.com",
+                    subject="Test",
+                    body="<p>Hello</p>",
+                )
+                assert result["success"] == False
+                assert "error" in result
 
     def test_send_email_no_api_key(self):
         from workers.tasks import send_email_async

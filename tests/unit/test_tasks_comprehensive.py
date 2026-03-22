@@ -167,16 +167,17 @@ class TestGenerateExercisesTask:
             assert "not available" in result["error"]
 
     def test_generate_exercises_api_error(self):
-        """Test when API fails"""
+        """Test when API fails and retries are exhausted"""
         from workers.tasks import generate_exercises_async
+        from celery.exceptions import MaxRetriesExceededError
 
         with patch("workers.tasks.generate_exercises_from_pdf_content") as mock_generate:
             mock_generate.side_effect = Exception("API error")
+            with patch.object(generate_exercises_async, "retry", side_effect=MaxRetriesExceededError()):
+                result = generate_exercises_async("text", "title", "chapter123", "class123", "key")
 
-            result = generate_exercises_async("text", "title", "chapter123", "class123", "key")
-
-            assert result["success"] is False
-            assert "error" in result
+                assert result["success"] is False
+                assert "error" in result
 
 
 class TestSendEmailTask:

@@ -366,6 +366,7 @@ def delete_class(class_id):
 @bp.route("/api/classes/enroll", methods=["POST"])
 @csrf_exempt
 @require_auth
+@require_role("student", "superadmin", "tenant_admin")
 def enroll_in_class():
     """Enroll student in a class using class_id (class code)"""
     try:
@@ -375,9 +376,6 @@ def enroll_in_class():
 
         if not class_id:
             return jsonify({"error": "Missing required field (class_id)"}), 400
-
-        if getattr(g, "user_role", None) == "professor":
-            return jsonify({"error": "Professors cannot enroll in classes"}), 403
 
         conn = get_db_connection()
 
@@ -629,8 +627,9 @@ def get_progress():
 
 @bp.route("/api/students/<student_id>/progress", methods=["GET"])
 @require_auth
+@require_role("professor", "superadmin", "tenant_admin")
 def get_student_progress(student_id):
-    """Get specific student's progress (professor only for their classes)"""
+    """Get specific student's progress (professor / admin only)"""
     try:
         user_id = g.user_id
         class_id = request.args.get("class_id")
@@ -639,9 +638,6 @@ def get_student_progress(student_id):
             return jsonify({"error": "Missing user_id"}), 400
 
         conn = get_db_connection()
-
-        if getattr(g, "user_role", None) != "professor":
-            return jsonify({"error": "Only professors can view student progress"}), 403
 
         student = class_repo.get_student_by_id(conn, student_id)
         if not student:
