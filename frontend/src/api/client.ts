@@ -45,8 +45,10 @@ async function request<T>(
   try {
     const res = await fetch(API_BASE + path, init)
 
-    // 401 — session expired; redirect to login
-    if (res.status === 401) {
+    // 401 — session expired; redirect to login.
+    // Skip auth endpoints: a 401 from signin/signup means wrong credentials, not expiry.
+    const isAuthEndpoint = path === '/users/signin' || path === '/users/signup'
+    if (res.status === 401 && !isAuthEndpoint) {
       localStorage.removeItem('authToken')
       localStorage.removeItem('currentUser')
       const redirect = encodeURIComponent(window.location.href)
