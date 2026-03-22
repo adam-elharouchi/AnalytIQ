@@ -19,7 +19,7 @@ def setup_test_environment():
     os.environ['REDIS_URL'] = 'redis://localhost:6379/1'
     os.environ['FEATURE_ASYNC_TASKS'] = 'False'
     os.environ['FEATURE_CACHING'] = 'False'
-    os.environ['FEATURE_CSRF_PROTECTION'] = 'False'
+    os.environ['FEATURE_CSRF'] = 'False'
     yield
     # Cleanup after all tests
 
@@ -35,7 +35,7 @@ def app():
     os.environ['FLASK_ENV'] = 'testing'
     os.environ['FEATURE_ASYNC_TASKS'] = 'False'
     os.environ['FEATURE_CACHING'] = 'False'
-    os.environ['FEATURE_CSRF_PROTECTION'] = 'False'
+    os.environ['FEATURE_CSRF'] = 'False'
     
     from app import app as flask_app
     flask_app.config['TESTING'] = True
@@ -43,7 +43,7 @@ def app():
     
     # Disable rate limiting in tests to avoid 429 errors
     try:
-        from app import limiter
+        from core.extensions import limiter
         if limiter:
             limiter.enabled = False
     except (ImportError, AttributeError):
