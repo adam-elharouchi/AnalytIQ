@@ -52,7 +52,7 @@ def _mock_gemini_ok():
 class TestAiChat:
     def test_success_returns_gemini_response(self, client, mock_db):
         """Valid request is proxied to Gemini and response is forwarded."""
-        with patch("os.getenv", side_effect=lambda k, d=None: "fake-api-key" if k == "GEMINI_API_KEY" else d), \
+        with patch("config.GEMINI_API_KEY", "fake-api-key"), \
              patch("requests.post", return_value=_mock_gemini_ok()):
 
             resp = _post_chat(client, {
@@ -85,7 +85,7 @@ class TestAiChat:
 
     def test_missing_api_key_returns_500(self, client, mock_db):
         """When GEMINI_API_KEY is not set, returns 500 configuration error."""
-        with patch("os.getenv", side_effect=lambda k, d=None: None if k == "GEMINI_API_KEY" else d):
+        with patch("config.GEMINI_API_KEY", None):
             resp = _post_chat(client, {
                 "contents": [{"role": "user", "parts": [{"text": "Hello"}]}],
             })
@@ -96,7 +96,7 @@ class TestAiChat:
 
     def test_unsupported_model_falls_back_to_default(self, client, mock_db):
         """Unknown model name is silently overridden with default model."""
-        with patch("os.getenv", side_effect=lambda k, d=None: "fake-api-key" if k == "GEMINI_API_KEY" else d), \
+        with patch("config.GEMINI_API_KEY", "fake-api-key"), \
              patch("requests.post", return_value=_mock_gemini_ok()) as mock_post:
 
             _post_chat(client, {
@@ -117,7 +117,7 @@ class TestAiChat:
         mock_err_response.status_code = 429
         mock_err_response.json.return_value = {"error": {"message": "Rate limit exceeded"}}
 
-        with patch("os.getenv", side_effect=lambda k, d=None: "fake-api-key" if k == "GEMINI_API_KEY" else d), \
+        with patch("config.GEMINI_API_KEY", "fake-api-key"), \
              patch("requests.post", return_value=mock_err_response):
 
             resp = _post_chat(client, {
@@ -128,7 +128,7 @@ class TestAiChat:
 
     def test_payload_with_empty_contents_allowed(self, client, mock_db):
         """Empty contents list does not exceed the limit — request goes through."""
-        with patch("os.getenv", side_effect=lambda k, d=None: "fake-api-key" if k == "GEMINI_API_KEY" else d), \
+        with patch("config.GEMINI_API_KEY", "fake-api-key"), \
              patch("requests.post", return_value=_mock_gemini_ok()):
 
             resp = _post_chat(client, {"contents": []})
@@ -144,7 +144,7 @@ class TestAiChat:
             "contents": [{"role": "user", "parts": [{"text": large_content}]}]
         }).encode()
 
-        with patch("os.getenv", side_effect=lambda k, d=None: "fake-api-key" if k == "GEMINI_API_KEY" else d):
+        with patch("config.GEMINI_API_KEY", "fake-api-key"):
             resp = client.post(
                 "/api/ai/chat",
                 headers={**AUTH, "Content-Type": "application/json"},

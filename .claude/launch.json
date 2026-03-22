@@ -1,0 +1,35 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Flask Dev Server",
+      "runtimeExecutable": "/bin/bash",
+      "runtimeArgs": ["-c", "cd /Users/aelharouchi/Documents/GitHub/AnalytIQ/.claude/worktrees/fervent-keller && python3 app.py"],
+      "port": 5001
+    },
+    {
+      "name": "Vite Frontend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "frontend", "run", "dev"],
+      "port": 3000
+    },
+    {
+      "name": "Celery Worker",
+      "runtimeExecutable": "/bin/bash",
+      "runtimeArgs": ["-c", "cd /Users/aelharouchi/Documents/GitHub/AnalytIQ/.claude/worktrees/fervent-keller && python3 -m celery -A workers.celery_app.celery_app worker --loglevel=info --concurrency=2"],
+      "port": 6001
+    },
+    {
+      "name": "Flower (Celery Monitor)",
+      "runtimeExecutable": "/bin/bash",
+      "runtimeArgs": ["-c", "cd /Users/aelharouchi/Documents/GitHub/AnalytIQ/.claude/worktrees/fervent-keller && python3 -m celery -A workers.celery_app.celery_app flower --port=5555"],
+      "port": 5555
+    },
+    {
+      "name": "Docker Services (Postgres + Redis)",
+      "runtimeExecutable": "/bin/bash",
+      "runtimeArgs": ["-c", "cd /Users/aelharouchi/Documents/GitHub/AnalytIQ/.claude/worktrees/fervent-keller && docker compose up postgres redis"],
+      "port": 5432
+    }
+  ]
+}

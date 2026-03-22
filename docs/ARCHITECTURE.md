@@ -1,6 +1,6 @@
 # AnalytIQ Architecture
 
-Last updated: 2026-03-15
+Last updated: 2026-03-22
 
 ---
 
@@ -25,7 +25,7 @@ exercise generation and grading.
 | Cache / queue | Redis 7 (Flask-Limiter + Celery broker)        |
 | Task queue    | Celery (async PDF processing)                  |
 | AI            | Google Gemini API (exercise generation + chat) |
-| Frontend      | Vanilla JS, HTML5, CSS3 (no framework)         |
+| Frontend      | React 18 + TypeScript (Vite 6); Jinja2 for legacy pages |
 | Auth          | JWT Bearer (PyJWT), bcrypt                     |
 | CI/CD         | GitHub Actions → Render auto-deploy            |
 
@@ -34,11 +34,13 @@ exercise generation and grading.
 ## Repository Layout
 
 ```
-app.py                    # Flask app init, middleware, blueprint registration
-config.py                 # All env vars + validate_config()
-db_migrate.py             # Migration runner (run migrations/ files against DB)
+app.py                    # create_app() — calls core/factory.py helpers in sequence
+config.py                 # All env vars + validate_config(); only file that calls os.getenv()
+db_migrate.py             # Migration runner (applies migrations/ SQL files)
 gunicorn.conf.py          # Gunicorn production config
 Procfile                  # web + worker process definitions
+Makefile                  # Dev tasks: make dev, make test, make flower, make frontend-build
+docker-compose.yml        # Local services: postgres, redis, flower
 
 blueprints/               # One file per domain
   auth.py                 # POST /api/users/signup|signin|forgot-password|reset-password
@@ -62,6 +64,8 @@ repositories/             # SQL-only, no business logic
   (+ more)
 
 core/                     # Infrastructure (imported across blueprints/services)
+  factory.py              # Flask app startup helpers (setup_logging, register_blueprints, ...)
+  errors.py               # Typed error classes (ApiError, NotFoundError, ...)
   database.py             # ThreadedConnectionPool, get_db_connection()
   auth.py                 # JWT, bcrypt, require_auth/require_role decorators
   audit.py                # FERPA audit_log table + audit() helper
@@ -69,8 +73,8 @@ core/                     # Infrastructure (imported across blueprints/services)
   extensions.py           # Flask-Limiter + csrf_exempt (avoids circular imports)
   storage.py              # Supabase Storage client
   sentry.py               # Sentry SDK init
-  email.py                # Email sending helpers
-  middleware.py           # Request middleware (CORS, security headers)
+  email.py                # Email sending via Resend (uses config.RESEND_API_KEY)
+  middleware.py           # IP blocklist, maintenance mode
   pagination.py           # Pagination param parsing + response builders
 
 services/                 # Business logic
@@ -80,22 +84,40 @@ services/                 # Business logic
 
 workers/                  # Celery async task infrastructure
   celery_app.py           # Celery app factory + task routing + beat schedule
-  tasks.py                # Celery task definitions (PDF processing, email, quality scoring)
+  tasks.py                # Task definitions with exponential-backoff retry logic
 
-templates/                # Jinja2 HTML templates (14 pages)
+frontend/                 # React + TypeScript (Vite 6) — strangler-fig migration
+  src/
+    api/                  # Typed API client (client.ts, endpoints.ts)
+    contexts/             # AuthContext (JWT lifecycle management)
+    components/           # Navigation, PrivateRoute
+    pages/                # Login, StudentClasses, ProfessorDashboard, NotFound
+    types/                # Shared TypeScript interfaces (User, Class, Chapter, ...)
+    styles/               # global.css (CSS custom properties design system)
+    App.tsx               # React Router v6 + lazy loading + QueryClient
+    main.tsx              # StrictMode entry point
+  package.json            # React 18, Vite 6, TanStack Query v5, TypeScript ~5.6
+  vite.config.ts          # Dev server :3000, /api proxy → :5001, build → static/react/
+
 static/
-  js/                     # 14 JS modules (auth.js, api-helper.js, navigation.js, ...)
-  css/                    # styles.css
-  course-content/         # Static PDFs (business analytics textbook chapters)
+  react/                  # Vite build output (served by Flask for React routes)
+  js/                     # Legacy vanilla-JS modules (still active for non-React pages)
+  css/                    # styles.css (legacy)
+  course-content/         # Static PDFs
 
-migrations/               # Numbered SQL migration files
+templates/                # Jinja2 HTML templates (legacy pages)
+migrations/               # Numbered SQL migration files (idempotent)
 tests/
   conftest.py             # Shared fixtures (mocks DB)
   unit/                   # Unit tests (mock DB via monkeypatch)
-    test_*.py             # ~50 test files
+  integration/            # Integration tests (require live DB + Redis)
 
-scripts/                  # One-off utility scripts
-docs/                     # Documentation (see docs/README.md)
+scripts/                  # One-off admin/migration scripts
+docs/
+  adr/                    # Architecture Decision Records (ADR-001 through ADR-004)
+  ARCHITECTURE.md         # This file
+  DATABASE_SCHEMA.md      # Full table reference
+  (+ more topic docs)
 ```
 
 ---
@@ -173,25 +195,50 @@ Browser → Flask app.py (before_request: CORS, auth context)
 
 ## Frontend Architecture
 
-All pages are static HTML files served directly by Flask.
+AnalytIQ is in a **strangler-fig migration** from vanilla JS + Jinja2 to
+React + TypeScript. Both frontends coexist; Flask routes determine which
+renders.
 
-| Pattern        | Details                                                             |
-|----------------|---------------------------------------------------------------------|
-| Auth           | `currentUser` object stored in `localStorage`                       |
-| API calls      | `authFetch()` in `api-helper.js` wraps `fetch()` + JWT header       |
-| UI components  | `window.uiStates` (ui-states.js): showLoading, showEmpty, showError, showConfirmModal |
-| Code editor    | Plain `<textarea>` with custom line numbers and syntax highlighting |
-| Grading        | Levenshtein + line-by-line similarity on client side               |
-| Autosave       | 500ms debounced `localStorage` draft, keyed by exercise ID         |
+### React routes (`/login`, `/classes`, `/dashboard`, `/admin`)
+
+Flask's catch-all (`core/factory.py` → `register_frontend_routes`) serves
+`static/react/index.html` for these paths. React Router v6 handles
+client-side navigation from there.
+
+| Pattern | Details |
+|---|---|
+| Auth | `AuthContext` + `useAuth()` hook; JWT stored in `localStorage`; expiry detection on every request |
+| API calls | `apiClient` in `src/api/client.ts`; returns `ApiResult<T>` (`{ok, data, error, status}`) |
+| Data fetching | TanStack React Query v5; `staleTime=30s`; explicit cache invalidation on mutations |
+| Route guards | `<PrivateRoute roles={[...]}>` redirects to `/login` if unauthenticated |
+| Code splitting | Each page is `React.lazy()`-loaded with `<Suspense>` |
+| Dev server | Vite on `:3000`, proxies `/api` to Flask on `:5001` |
+| Build output | `static/react/` (served by Flask in production) |
+
+### Legacy routes (all other non-API paths)
+
+| Pattern | Details |
+|---|---|
+| Auth | `currentUser` object in `localStorage` |
+| API calls | `authFetch()` in `api-helper.js` wraps `fetch()` + JWT header |
+| UI helpers | `window.uiStates` (ui-states.js): `showLoading`, `showEmpty`, `showError` |
+| Code editor | `<textarea>` with custom line numbers and syntax highlighting |
+| Autosave | 500ms debounced `localStorage` draft, keyed by exercise ID |
 
 ---
 
 ## Background Tasks (Celery)
 
 - **Broker / result backend:** Redis.
-- **Tasks:** PDF text extraction + exercise generation (async on large files).
+- **Tasks:** PDF text extraction, exercise generation, email sending, quality
+  scoring, LTI session cleanup.
+- **Retry strategy:** Each task retries with exponential backoff on any
+  exception. On final failure (`MaxRetriesExceededError`), the task returns
+  `{"success": False, "error": ...}`. See ADR-004.
 - **Status polling:** `GET /api/tasks/<task_id>` returns `{state, result}`.
-- `FEATURE_ASYNC_TASKS=False` disables Celery (runs synchronously in CI).
+- **Monitoring:** Flower UI available at `:5555` (`make flower` locally; see
+  `docker-compose.yml`).
+- `FEATURE_ASYNC_TASKS=False` disables Celery (tasks run synchronously in CI).
 
 ---
 
@@ -209,25 +256,43 @@ All pages are static HTML files served directly by Flask.
 
 Three jobs on every push/PR to `main` or `develop`:
 
-1. **test** — spins up Postgres 14 + Redis 7, installs deps, runs flake8 + black check +
-   mypy + pytest with coverage.
-2. **security-scan** — Bandit static analysis, uploads `bandit-report.json` artifact.
+1. **test** — spins up Postgres 14 + Redis 7, installs Python deps, installs
+   frontend deps (`npm ci`), runs TypeScript typecheck, builds React bundle,
+   then runs flake8 + black check + mypy + pytest with coverage.
+2. **security-scan** — Bandit static analysis (`-ll` severity filter), uploads
+   `bandit-report.json` artifact.
 3. **deploy-notification** — logs "ready for Render" on successful `main` push.
 
-Integration tests in `tests/integration/` require `DATABASE_URL` to be set; they are
-skipped in CI unless the workflow provides a real Postgres URL.
+Integration tests in `tests/integration/` require `DATABASE_URL` to be set;
+they are skipped in CI unless the workflow provides a real Postgres URL.
 
 ---
 
 ## Key Design Decisions
 
-| Decision                        | Rationale                                                 |
-|---------------------------------|-----------------------------------------------------------|
-| Monolith → 12+ Blueprints       | Enables per-domain ownership without micro-service overhead |
-| Repository layer (no ORM)       | Fine-grained SQL control; avoids N+1 and ORM magic        |
-| `core/` / `services/` / `workers/` | Separates infrastructure from business logic from async; clear import direction |
-| ThreadedConnectionPool          | Reuse connections across requests without per-request connect overhead |
-| JWT over sessions               | Stateless; works well with Render's ephemeral filesystem  |
-| Vanilla JS + Jinja2 templates   | Zero build step; fast load; no framework churn            |
-| Gemini for AI                   | Generous free tier; good at structured JSON output        |
-| Savepoint-based integration tests | Full isolation without truncating tables between tests  |
+| Decision                              | Rationale                                                       |
+|---------------------------------------|-----------------------------------------------------------------|
+| Application Factory (`core/factory.py`) | Each startup concern is independently readable and testable; eliminates circular imports |
+| Config centralization (`config.py`)   | Single source of truth; `validate_config()` fails fast on startup; test patches are stable |
+| Monolith → 12+ Blueprints             | Per-domain ownership without micro-service overhead             |
+| Repository layer (no ORM)             | Fine-grained SQL control; avoids N+1 and ORM magic              |
+| `core/` / `services/` / `workers/`   | Clear import direction: blueprints → repositories → DB; services stay framework-free |
+| ThreadedConnectionPool                | Reuse connections across requests without per-request connect overhead |
+| JWT over sessions                     | Stateless; works well with Render's ephemeral filesystem        |
+| React + TS strangler-fig              | Type safety + component reuse without a big-bang rewrite        |
+| Celery exponential-backoff retry      | Transient network/API failures recover automatically; see ADR-004 |
+| Gemini for AI                         | Generous free tier; structured JSON output; single SDK          |
+| Savepoint-based integration tests     | Full isolation without truncating tables between tests          |
+
+---
+
+## Architecture Decision Records
+
+Key decisions are documented in `docs/adr/`:
+
+| ADR | Decision |
+|-----|---------|
+| [ADR-001](adr/001-application-factory.md) | Flask Application Factory pattern |
+| [ADR-002](adr/002-config-centralization.md) | Centralize all config in `config.py` |
+| [ADR-003](adr/003-react-typescript-frontend.md) | React + TypeScript strangler-fig migration |
+| [ADR-004](adr/004-celery-retry-strategy.md) | Celery task retry strategy |

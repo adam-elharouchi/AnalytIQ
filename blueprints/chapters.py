@@ -120,7 +120,7 @@ def _auto_generate_exercises(
     if not pdf_text or not generate_exercises_from_pdf_content:
         return 0
     try:
-        api_key = os.getenv("GEMINI_API_KEY")
+        api_key = config.GEMINI_API_KEY
         if not api_key:
             raise ValueError("GEMINI_API_KEY not set")
         exercises = generate_exercises_from_pdf_content(
@@ -509,7 +509,7 @@ def generate_exercises_for_chapter(chapter_id):
             return jsonify({"error": "Exercise generator not available"}), 500
 
         try:
-            api_key = os.getenv("GEMINI_API_KEY")
+            api_key = config.GEMINI_API_KEY
             if not api_key:
                 raise ValueError("GEMINI_API_KEY not set")
             exercises = generate_exercises_from_pdf_content(pdf_text, chapter_title, api_key)

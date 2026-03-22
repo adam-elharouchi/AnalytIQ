@@ -15,7 +15,6 @@ Total        0–100
 
 import json
 import logging
-import os
 import time
 
 import config
@@ -57,7 +56,7 @@ def grade_with_ai(
     }
     """
     if not api_key:
-        api_key = os.getenv("GEMINI_API_KEY")
+        api_key = config.GEMINI_API_KEY
     if not api_key:
         raise RuntimeError("GEMINI_API_KEY is not configured.")
 

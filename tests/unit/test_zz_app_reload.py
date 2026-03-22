@@ -1,12 +1,16 @@
 """
 Tests for app.py module-level initialization code via importlib.reload().
 
-These tests cover ImportError handlers and initialization blocks that
-only execute when app.py is first imported - before coverage starts tracking.
-By reloading with modified sys.modules/env vars, we re-execute these paths
-under coverage.
+These tests cover initialization paths that only execute when app.py is
+first imported — before coverage starts tracking. By reloading with
+modified sys.modules / env vars, we re-execute these paths under coverage.
 
-Named test_zz_* so it runs LAST and doesn't affect other tests.
+Named test_zz_* so it runs LAST and doesn't interfere with other tests.
+
+NOTE: After the factory refactor (core/factory.py), tests for CSRF, Celery,
+and rate-limiting initialization live in tests/unit/test_factory.py.
+This file only tests app.py-level concerns: module loads, factory is called,
+main block behaviour.
 """
 import pytest
 import sys
@@ -17,105 +21,44 @@ from flask import jsonify
 
 
 def _safe_reload_app():
-    """Reload app module, catching errors from duplicate route registration etc."""
+    """Reload app module, catching errors from duplicate route registration."""
     import app as app_module
     try:
         importlib.reload(app_module)
     except Exception:
-        pass  # Some reloads may partially fail; that's OK for coverage
+        pass  # Partial reload failures are OK for coverage purposes
     return app_module
 
 
-class TestAppImportErrorPdfProcessor:
-    """Cover app.py lines 27-29: pdf_processor ImportError"""
+class TestAppLoads:
+    """Verify the app module loads and exposes the expected public interface."""
 
-    def test_pdf_processor_import_fails(self):
+    def test_app_is_flask_instance(self):
         import app as app_module
-        orig = sys.modules.get("pdf_processor")
-        try:
-            sys.modules["pdf_processor"] = None
-            _safe_reload_app()
-            assert app_module.extract_text_from_pdf_bytes is None
-        finally:
-            if orig is not None:
-                sys.modules["pdf_processor"] = orig
-            else:
-                sys.modules.pop("pdf_processor", None)
-            _safe_reload_app()
+        from flask import Flask
+        assert isinstance(app_module.app, Flask)
 
+    def test_create_app_returns_flask_instance(self):
+        from app import create_app
+        from flask import Flask
+        fresh = create_app()
+        assert isinstance(fresh, Flask)
 
-class TestAppImportErrorExerciseGenerator:
-    """Cover app.py lines 33-35: exercise_generator ImportError"""
-
-    def test_exercise_generator_import_fails(self):
+    def test_all_blueprints_registered(self):
         import app as app_module
-        orig = sys.modules.get("exercise_generator")
-        try:
-            sys.modules["exercise_generator"] = None
-            _safe_reload_app()
-            assert app_module.generate_exercises_from_pdf_content is None
-        finally:
-            if orig is not None:
-                sys.modules["exercise_generator"] = orig
-            else:
-                sys.modules.pop("exercise_generator", None)
-            _safe_reload_app()
-
-
-class TestAppImportErrorFlaskMail:
-    """Flask-Mail is not used — verify app still loads without it."""
-
-    def test_flask_mail_import_fails(self):
-        # Flask-Mail is not part of the codebase; just verify the app
-        # module loads successfully when flask_mail is unavailable.
-        import app as app_module
-        assert app_module.app is not None
-
-
-class TestAppImportErrorFlaskLimiter:
-    """Limiter now comes from extensions.py — verify app still loads without error"""
-
-    def test_flask_limiter_import_fails(self):
-        # Limiter is initialized in extensions.py, not app.py, so blocking
-        # flask_limiter at app reload time doesn't affect the limiter object.
-        # Just verify the app module still has a limiter attribute.
-        import app as app_module
-        import core.extensions as extensions
-        assert hasattr(app_module, "limiter") or hasattr(extensions, "limiter")
-
-
-class TestAppImportErrorFlaskWTF:
-    """Cover app.py: flask_wtf ImportError sets generate_csrf to None"""
-
-    def test_flask_wtf_import_fails(self):
-        import app as app_module
-        orig_wtf = sys.modules.get("flask_wtf")
-        orig_csrf = sys.modules.get("flask_wtf.csrf")
-        try:
-            sys.modules["flask_wtf"] = None
-            sys.modules["flask_wtf.csrf"] = None
-            _safe_reload_app()
-            # generate_csrf is set to None in the ImportError handler
-            assert app_module.generate_csrf is None
-            # csrf module-level attribute is initialized to None
-            assert app_module.csrf is None
-        finally:
-            if orig_wtf is not None:
-                sys.modules["flask_wtf"] = orig_wtf
-            else:
-                sys.modules.pop("flask_wtf", None)
-            if orig_csrf is not None:
-                sys.modules["flask_wtf.csrf"] = orig_csrf
-            else:
-                sys.modules.pop("flask_wtf.csrf", None)
-            _safe_reload_app()
+        expected = {
+            "auth", "users", "classes", "chapters", "exercises",
+            "ai", "health", "lti", "superadmin", "tenant_admin",
+            "sso", "content_import", "flywheel", "platform",
+        }
+        registered = set(app_module.app.blueprints.keys())
+        assert expected.issubset(registered)
 
 
 class TestAppImportErrorSwaggerUi:
-    """Cover app.py lines 168-169: flask_swagger_ui ImportError"""
+    """App should start even when flask_swagger_ui is not installed."""
 
-    def test_swagger_ui_import_fails(self):
-        import app as app_module
+    def test_swagger_ui_import_fails_gracefully(self):
         orig = sys.modules.get("flask_swagger_ui")
         try:
             sys.modules["flask_swagger_ui"] = None
@@ -129,23 +72,31 @@ class TestAppImportErrorSwaggerUi:
 
 
 class TestAppCsrfEnabled:
-    """Cover app.py: csrf.init_app when FEATURE_CSRF_PROTECTION=True"""
+    """CSRF protection is initialized in factory.setup_csrf; verify via config."""
 
-    def test_csrf_protection_enabled(self):
-        import app as app_module
+    def test_csrf_feature_flag_reflects_config(self):
         import config as config_module
+        import importlib
         try:
             with patch.dict(os.environ, {"FEATURE_CSRF": "True"}):
-                # Reload config first so it picks up the new env var
                 importlib.reload(config_module)
                 assert config_module.FEATURE_CSRF_PROTECTION is True
-                _safe_reload_app()
-                # When CSRF is enabled, app.csrf is set to the CSRFProtect instance
-                assert app_module.csrf is not None
         finally:
             with patch.dict(os.environ, {"FEATURE_CSRF": "False"}):
                 importlib.reload(config_module)
-                _safe_reload_app()
+
+
+class TestAppCeleryInit:
+    """Celery initialization is handled by factory.setup_celery."""
+
+    def test_celery_feature_flag_off_by_default(self):
+        """Verify Celery feature flag defaults to False when env var is absent."""
+        import config as config_module
+        with patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("FEATURE_ASYNC_TASKS", None)
+            import importlib
+            importlib.reload(config_module)
+            assert config_module.FEATURE_ASYNC_TASKS is False
 
 
 class TestAppSwaggerUiInit:
@@ -158,31 +109,6 @@ class TestAppSwaggerUiInit:
         _safe_reload_app()
         # If flask_swagger_ui is installed, the /api/docs endpoint should exist
         # The reload triggers coverage for lines 145-167
-
-
-class TestAppCeleryInit:
-    """Cover app.py lines 184, 187-190: Celery init paths"""
-
-    def test_celery_disabled_print(self):
-        """Line 184: Celery async tasks disabled"""
-        import app as app_module
-        # Default env has FEATURE_ASYNC_TASKS=False, so line 184 is the else branch
-        _safe_reload_app()
-
-    def test_celery_import_fails(self):
-        """Lines 187-190: Celery ImportError"""
-        import app as app_module
-        orig = sys.modules.get("celery_app")
-        try:
-            sys.modules["celery_app"] = None
-            _safe_reload_app()
-            assert app_module.FEATURE_ASYNC_TASKS is False
-        finally:
-            if orig is not None:
-                sys.modules["celery_app"] = orig
-            else:
-                sys.modules.pop("celery_app", None)
-            _safe_reload_app()
 
 
 class TestAppApiDocsSpec:
