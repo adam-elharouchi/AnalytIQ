@@ -15,9 +15,10 @@ forwarded_allow_ips = '*'  # trust X-Forwarded-* from Cloudflare/Render proxy
 def post_fork(server, worker):
     """Reset inherited DB pool after fork — workers must not share connections."""
     try:
-        from core.database import db_pool
-        if db_pool is not None:
-            db_pool.closeall()
+        import core.database as _db
+        if _db.db_pool is not None:
+            _db.db_pool.closeall()
+            _db.db_pool = None  # Reset so the first request reinitializes cleanly
         server.log.info("Worker %s: DB pool reset after fork", worker.pid)
     except Exception as e:
         server.log.warning("Worker %s: Could not reset DB pool: %s", worker.pid, e)
