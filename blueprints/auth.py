@@ -9,7 +9,6 @@ Routes:
 """
 
 import logging
-import os
 import uuid
 from datetime import datetime
 
@@ -324,7 +323,7 @@ def forgot_password():
             auth_repo.insert_password_reset_token(conn, email, token, expires_at)
             conn.commit()
 
-            frontend_url = os.getenv("FRONTEND_URL")
+            frontend_url = config.FRONTEND_URL
             if not frontend_url and request.host_url and "onrender.com" in request.host_url:
                 frontend_url = "https://www.myanalytiq.org"
             base_url = (frontend_url or request.host_url).rstrip("/") + "/"

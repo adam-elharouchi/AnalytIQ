@@ -451,7 +451,7 @@ class TestFlywheelEndpoints:
         assert resp.status_code == 403
 
     def test_compute_quality_runs_synchronously_in_test_mode(self, client, monkeypatch):
-        monkeypatch.setattr("app.get_db_connection", lambda: MagicMock())
+        monkeypatch.setattr("core.database.get_db_connection", lambda: MagicMock())
 
         with patch("workers.tasks.compute_exercise_quality_scores", return_value={"exercises_scored": 3}):
             resp = client.post(
