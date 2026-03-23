@@ -434,6 +434,19 @@ def register_frontend_routes(app) -> None:
 
     app.url_map.converters["no_api_path"] = NoApiPathConverter
 
+    @app.route("/api/csrf-token", methods=["GET"])
+    def get_csrf_token():
+        """Return a fresh CSRF token so the React SPA can include it in POST headers."""
+        try:
+            from flask_wtf.csrf import generate_csrf
+
+            token = generate_csrf()
+        except Exception:
+            token = ""
+        resp = jsonify({"csrfToken": token})
+        resp.headers["Cache-Control"] = "no-store"
+        return resp
+
     @app.route("/", methods=["GET"])
     def serve_index():
         return render_template("landing.html")
