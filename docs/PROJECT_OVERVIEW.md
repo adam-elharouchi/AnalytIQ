@@ -7,7 +7,7 @@
 ## 🌟 1. Executive Summary & Vision
 
 ### What is AnalytIQ?
-AnalytIQ is a modern, monolithic, AI-augmented Learning Management System (LMS) and interactive coding environment. It bridges the gap between passive consumption of educational material (reading slides) and active, hands-on learning (writing and debugging code). Built with a striking Middle Eastern-inspired dark aesthetic featuring glassmorphism and animated accents, it provides a premium user experience that feels less like a traditional academic portal and more like a modern developer tool.
+AnalytIQ is a modern, AI-augmented Learning Management System (LMS) and interactive coding environment. It bridges the gap between passive consumption of educational material (reading slides) and active, hands-on learning (writing and debugging code). Built with a striking dark aesthetic featuring glassmorphism and animated accents, it provides a premium user experience that feels less like a traditional academic portal and more like a modern developer tool.
 
 ### Who is it For? (Core Personas)
 1. **The Student:** Wants a unified space to view lectures, practice coding immediately contextually relevant to the material, track their progress, and get instant, non-judgmental help from an AI tutor when stuck.
@@ -18,26 +18,26 @@ AnalytIQ is a modern, monolithic, AI-augmented Learning Management System (LMS) 
 
 ## 🏗️ 2. System Architecture & The "How It Works" Flow
 
-AnalytIQ employs a **Client-Server Architecture** heavily relying on a **Monolithic Flask Backend** rendering dynamic HTML via Jinja2, coupled with **Vanilla JavaScript** managing localized DOM state and asynchronous data fetching.
+AnalytIQ uses a **Flask Blueprint API backend** + **React 18 SPA frontend**, following a strangler-fig migration from the original Jinja2/vanilla JS architecture. Static/informational pages still use Jinja2; all interactive user-facing pages have been migrated to React.
 
 ### The Request Lifecycle (A Deep Dive)
-1. **Client Interaction:** A user clicks a button (e.g., "Submit Code"). Validated locally, `api-helper.js` intercepts the request.
-2. **Token Injection:** `api-helper.js` retrieves the user's JSON Web Token (JWT) securely from `localStorage` and attaches it to the `Authorization: Bearer <token>` header.
-3. **Network Transit & CORS:** The browser fires a preflight `OPTIONS` request. `app.py` handles this dynamically, allowing specific origins (development vs. production URLs).
-4. **Backend Gateway (`app.py`):** 
+1. **Client Interaction:** A user clicks a button (e.g., "Submit Code"). The React frontend calls `apiClient` (a typed Axios-style wrapper in `frontend/src/api/client.ts`).
+2. **Token Injection:** `apiClient` reads the JWT from `localStorage` and attaches it as `Authorization: Bearer <token>` to every request.
+3. **Network Transit & CORS:** The browser fires a preflight `OPTIONS` request. `core/factory.py` handles CORS globally via a `before_request` hook.
+4. **Backend Gateway (`app.py` → `core/factory.py`):**
    - **Rate Limiting:** `Flask-Limiter` checks (via Redis or Memory) if the user has exceeded their endpoint quota (preventing DDoS or AI abuse).
-   - **CSRF Check:** `Flask-WTF` validates the Cross-Site Request Forgery token if it's a mutating request (POST/PUT/DELETE).
+   - **CSRF Check:** `Flask-WTF` validates the CSRF token for mutating requests (POST/PUT/DELETE); `@csrf_exempt` is applied to stateless JWT API endpoints.
    - **Error Tracking:** `Sentry SDK` attaches a unique `request_id` context to the transaction.
-5. **Blueprint Routing:** The request hits a specific Flask Blueprint (e.g., `/blueprints/exercises.py -> submit_exercise()`).
-6. **Authentication Validation (`@token_required`):** A decorator decodes the JWT, verifies the signature using `config.SECRET_KEY`, checks expiration, and mounts the `user_id` and `role` to the Flask `g` object.
-7. **Database Transaction (`db.py`):** 
-   - A connection is pulled from the `psycopg2.pool.ThreadedConnectionPool`.
-   - Raw, parameterized SQL executes against the PostgreSQL database (preventing SQL injection).
-   - The connection is returned to the pool, and the result is serialized into a JSON dictionary.
+5. **Blueprint Routing:** The request hits a specific Flask Blueprint (e.g., `blueprints/exercises.py → submit_exercise()`).
+6. **Authentication Validation (`@require_auth`):** Decodes the JWT, verifies the signature against `config.SECRET_KEY`, checks expiration, and sets `g.user_id`, `g.user_role`, `g.tenant_id`.
+7. **Database Transaction (`repositories/`):**
+   - A connection is pulled from the `psycopg2.pool.ThreadedConnectionPool` in `core/database.py`.
+   - Raw, parameterized SQL executes against PostgreSQL (preventing SQL injection).
+   - All query logic lives in `repositories/` — blueprints contain no raw SQL.
 8. **Heavy Processing (The AI Fork):**
-   - *If the request requires complex AI (e.g., parsing a 50-page PDF):* The backend kicks the job over to **Celery**. Celery queues the task in **Redis**. The user is immediately returned a `job_id` (HTTP 202 Accepted) and the frontend begins polling a status endpoint until the worker finishes.
-   - *If it's a fast task (like evaluating code):* The backend synchronously calls the Gemini API, awaits the response, formats it, and returns it.
-9. **Client Response & DOM Update:** The JSON payload arrives. Vanilla JavaScript parses it, conditionally applies CSS classes (e.g., turning a div green for a correct answer), and updates `localStorage` caches if necessary.
+   - *If the request requires complex AI (e.g., parsing a 50-page PDF):* The backend enqueues a Celery task via Redis. The user receives a `task_id` (HTTP 202 Accepted) and the frontend polls `GET /api/tasks/<task_id>` until complete.
+   - *If it's a fast task (like grading code):* The backend synchronously calls the Gemini API, formats the response, and returns JSON.
+9. **Client Response:** TanStack Query caches the JSON response; React re-renders only the affected components.
 
 ---
 
@@ -47,25 +47,29 @@ AnalytIQ employs a **Client-Server Architecture** heavily relying on a **Monolit
 AnalytIQ is in a **strangler-fig migration** from vanilla JS + Jinja2 to React + TypeScript. Both
 frontends coexist; Flask routes determine which one renders.
 
-#### React frontend (`frontend/`) — new pages
-*   **React 18 + TypeScript + Vite 6:** `/login`, `/classes`, `/dashboard`, `/admin` are served as a
-    React SPA (`static/react/index.html`). TanStack Query v5 manages data fetching with 30 s stale
-    time. React Router v6 handles client-side navigation.
-*   **Auth:** `AuthContext` + `useAuth()` hook; JWT stored in `localStorage`; expiry detected on
-    every request via the typed `apiClient` in `src/api/client.ts`.
-*   **Route guards:** `<PrivateRoute roles={[...]}>` redirects to `/login` if unauthenticated.
+#### React frontend (`frontend/`) — primary interface
+*   **React 18 + TypeScript + Vite 6:** All interactive pages are served as a React SPA
+    (`static/react/index.html`). TanStack Query v5 manages data fetching with 30 s stale time.
+    React Router v6 handles client-side navigation.
+*   **Migrated pages (14 total):** `/login`, `/classes`, `/classes/:classId`, `/chapter/:chapterId`,
+    `/exercise/:exerciseId`, `/dashboard`, `/professor-class/:classId`, `/admin` (superadmin +
+    tenant_admin), `/profile`, `/reset-password`, `/code-assistant`, `/upload-assistant`.
+*   **Auth:** `AuthContext` + `useAuth()` hook; JWT stored in `localStorage`; 401 interceptor in
+    `src/api/client.ts` redirects to `/login?reason=session_expired` (skipped for `/signin`
+    and `/signup` to allow wrong-password error display).
+*   **Route guards:** `<PrivateRoute roles={[...]}>` redirects to `/login` if unauthenticated or
+    unauthorized.
+*   **Lazy loading:** Every page is `React.lazy()`-wrapped so only the current page's JS bundle
+    is fetched.
 
-#### Legacy frontend (`templates/` + `static/js/`) — remaining pages
-*   **HTML5 / Jinja2:** Templates in `templates/` render other pages server-side.
+#### Legacy frontend (`templates/` + `static/js/`) — static/informational pages only
+*   **HTML5 / Jinja2:** `landing.html`, `contact.html`, `privacy.html`, `terms.html`,
+    `security-compliance.html`, `resources.html`, LTI templates, and `autologin.html` still
+    render server-side (low interactivity; React migration not required).
 *   **CSS3 (Custom Styling):** No Bootstrap or Tailwind. Built from scratch with CSS Variables
     (`:root`), Flexbox, Grid, and glassmorphism panels in `static/css/styles.css`.
-*   **JavaScript (Vanilla ES6+):** Modularized JS files (`api-helper.js`, `ui-states.js`, etc.).
-    Uses `Fetch API`, `async/await`, and standard DOM traversal.
-*   **State & Caching:**
-    - `localStorage`: JWT tokens, user preferences, non-sensitive structural data.
-    - `sessionStorage`: Ephemeral data (e.g., ongoing AI chat transcript).
-*   **Code Editor Component:** Custom `<textarea>` with syntax highlighting for
-    `practice-playground.html`.
+*   **JS modules** (`api-helper.js`, `ui-states.js`, `offline-detector.js`, etc.) are still loaded
+    by the Jinja base template for the remaining legacy pages.
 
 ### 🧠 Backend Layer (The Brain)
 *   **Python 3.x:** The core programming language, chosen for its vast data-science/AI ecosystem and readable syntax.
