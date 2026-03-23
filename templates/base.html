@@ -7,6 +7,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
   <link rel="stylesheet" href="/static/css/styles.css" />
+  <!-- JS load order — must not be reordered:
+       1. api-helper.js    — defines authFetch() + window.API_BASE; consumed by all pages
+       2. constants.js     — app-wide magic strings / feature flags (no deps)
+       3. api-client.js    — higher-level typed wrappers around authFetch() (depends on 1 & 2)
+       4. ui-states.js     — window.uiStates helpers: showLoading/showEmpty/showError (depends on 1)
+       5. offline-detector.js — listens for online/offline events, shows banner (depends on 4)
+       Per-page scripts are added via the extra_head block after these globals are available. -->
   <script src="/static/js/api-helper.js?v=2.6"></script>
   <script src="/static/js/constants.js?v=2.6"></script>
   <script src="/static/js/api-client.js?v=2.6"></script>

@@ -138,16 +138,13 @@ def extract_text_from_pdf_bytes(pdf_bytes):
         full_text = "\n\n".join(text_content)
 
         if not full_text.strip():
-            print("Warning: PDF appears to be empty or contains only images")
+            logger.warning("PDF appears to be empty or contains only images")
             return None
 
         return full_text
 
     except Exception as e:
-        print(f"Error extracting text from PDF: {e}")
-        import traceback
-
-        traceback.print_exc()
+        logger.error("Error extracting text from PDF: %s", e, exc_info=True)
         return None
 
 
@@ -166,5 +163,5 @@ def extract_text_from_pdf_file(pdf_path):
             pdf_bytes = file.read()
         return extract_text_from_pdf_bytes(pdf_bytes)
     except Exception as e:
-        print(f"Error reading PDF file: {e}")
+        logger.error("Error reading PDF file: %s", e)
         return None

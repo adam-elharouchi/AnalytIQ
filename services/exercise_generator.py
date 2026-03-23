@@ -5,7 +5,6 @@ Uses Google Gemini API to generate coding exercises from PDF content
 
 import hashlib
 import logging
-import os
 import re
 import time
 import json
@@ -129,7 +128,7 @@ def generate_exercises_from_pdf_content(
               Callers that do not need _gen_meta can ignore it.
     """
     if not api_key:
-        api_key = os.getenv("GEMINI_API_KEY")
+        api_key = config.GEMINI_API_KEY
 
     if not api_key:
         logger.error("GEMINI_API_KEY not found in environment variables")
@@ -437,7 +436,7 @@ def generate_test_cases_for_exercise(title, description, solution_code, language
               test_cases shape: [{description, input, expected_output, weight}, ...]
     """
     if not api_key:
-        api_key = os.getenv("GEMINI_API_KEY")
+        api_key = config.GEMINI_API_KEY
     if not api_key:
         raise Exception("GEMINI_API_KEY is not configured.")
 

@@ -9,7 +9,6 @@ Routes:
 """
 
 import logging
-import os
 import time
 from datetime import datetime
 
@@ -71,7 +70,7 @@ def _run_health_checks():
         logger.error("Health check: database unhealthy", exc_info=True)
 
     # 2. Gemini API (NON-CRITICAL)
-    gemini_api_key = os.getenv("GEMINI_API_KEY")
+    gemini_api_key = config.GEMINI_API_KEY
     if gemini_api_key and gemini_api_key != "your_gemini_api_key_here":
         health_status["services"]["gemini_api"] = {
             "status": "configured",
@@ -88,7 +87,7 @@ def _run_health_checks():
     try:
         import resend
 
-        if getattr(resend, "api_key", None) or os.getenv("RESEND_API_KEY"):
+        if getattr(resend, "api_key", None) or config.RESEND_API_KEY:
             health_status["services"]["email"] = {
                 "status": "configured",
                 "note": "Resend configured",
@@ -107,7 +106,7 @@ def _run_health_checks():
         logger.warning("Health check: Email service degraded", exc_info=True)
 
     # 4. Redis Cache (NON-CRITICAL)
-    if os.getenv("FEATURE_CACHING") == "True":
+    if config.FEATURE_CACHING:
         try:
             cache_status = cache_health_check()
             health_status["services"]["cache"] = cache_status
@@ -184,9 +183,8 @@ def get_csrf_token():
         )
 
     try:
-        # Import generate_csrf from app where it's set up
         try:
-            from app import generate_csrf
+            from flask_wtf.csrf import generate_csrf
         except ImportError:
             generate_csrf = None
 

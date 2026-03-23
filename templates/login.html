@@ -4,109 +4,109 @@
 
 {% block content %}
 <div class="login-container">
-    <div class="login-card">
-      <div class="login-header">
-        <h1><span class="logo-analyt">Analyt</span><span class="logo-iq">IQ</span></h1>
-        <p>Sign in to access Code and learning resources</p>
-      </div>
+  <div class="login-card">
+    <div class="login-header">
+      <a href="/" class="login-brand">
+        <span class="logo-analyt">Analyt</span><span class="logo-iq">IQ</span>
+      </a>
+      <p class="login-tagline">AI-powered learning platform</p>
+    </div>
 
-      <div class="login-tabs">
-        <button class="login-tab active" onclick="showTab('signin', this)">Sign In</button>
-        <button class="login-tab" onclick="showTab('signup', this)">Sign Up</button>
-      </div>
+    <div class="login-tabs">
+      <button class="login-tab active" onclick="showTab('signin', this)">Sign In</button>
+      <button class="login-tab" onclick="showTab('signup', this)">Sign Up</button>
+    </div>
 
-      <div id="signinTab" class="login-tab-content active">
-        <form id="signinForm" onsubmit="handleSignIn(event)">
-          <div class="form-group">
-            <label for="signinEmail">Email</label>
-            <input type="email" id="signinEmail" required placeholder="your@email.com" autocomplete="email" />
-          </div>
-          <div class="form-group">
-            <label for="signinPassword">Password</label>
-            <input type="password" id="signinPassword" required placeholder="Enter your password"
-              autocomplete="current-password" maxlength="72" />
-            <div style="text-align: right; margin-top: 0.5rem;">
-              <a href="#" onclick="showForgotPasswordModal(event)"
-                style="color: var(--color-primary); text-decoration: none; font-size: 0.875rem;">Forgot Password?</a>
-            </div>
-          </div>
-          <button type="submit" class="btn btn-primary btn-full">Sign In</button>
-          <div id="signinError" class="error-message" style="display: none;"></div>
-        </form>
-
-        <!-- SSO providers — shown dynamically when FEATURE_SSO is enabled -->
-        <div id="ssoSection" style="display: none; margin-top: 1.25rem;">
-          <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
-            <hr style="flex: 1; border: none; border-top: 1px solid var(--color-border, #e2e8f0);" />
-            <span style="color: #94a3b8; font-size: 0.8rem; white-space: nowrap;">or sign in with</span>
-            <hr style="flex: 1; border: none; border-top: 1px solid var(--color-border, #e2e8f0);" />
-          </div>
-          <div id="ssoButtons" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
+    <div id="signinTab" class="login-tab-content active">
+      <form id="signinForm" onsubmit="handleSignIn(event)">
+        <div class="form-group">
+          <label for="signinEmail">Email</label>
+          <input type="email" id="signinEmail" required placeholder="your@email.com" autocomplete="email" />
         </div>
-      </div>
+        <div class="form-group">
+          <label for="signinPassword">Password</label>
+          <input type="password" id="signinPassword" required placeholder="Enter your password"
+            autocomplete="current-password" maxlength="72" />
+          <div style="text-align: right; margin-top: 0.5rem;">
+            <a href="#" onclick="showForgotPasswordModal(event)"
+              style="color: var(--color-primary); text-decoration: none; font-size: 0.875rem;">Forgot Password?</a>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full">Sign In</button>
+        <div id="signinError" class="error-message" style="display: none;"></div>
+      </form>
 
-      <div id="signupTab" class="login-tab-content">
-        <form id="signupForm" onsubmit="handleSignUp(event)">
-          <div class="form-group">
-            <label for="signupName">Full Name</label>
-            <input type="text" id="signupName" required placeholder="John Doe" autocomplete="name" />
-          </div>
-          <div class="form-group">
-            <label for="signupEmail">Email</label>
-            <input type="email" id="signupEmail" required placeholder="your@email.com" autocomplete="email" />
-          </div>
-          <div class="form-group">
-            <label for="signupPassword">Password</label>
-            <input type="password" id="signupPassword" required placeholder="Create a password" minlength="8" maxlength="72"
-              autocomplete="new-password" />
+      <!-- SSO providers — shown dynamically when FEATURE_SSO is enabled -->
+      <div id="ssoSection" style="display: none; margin-top: 1.25rem;">
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+          <hr style="flex: 1; border: none; border-top: 1px solid var(--border-color);" />
+          <span style="color: #94a3b8; font-size: 0.8rem; white-space: nowrap;">or sign in with</span>
+          <hr style="flex: 1; border: none; border-top: 1px solid var(--border-color);" />
+        </div>
+        <div id="ssoButtons" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
+      </div>
+    </div>
+
+    <div id="signupTab" class="login-tab-content">
+      <form id="signupForm" onsubmit="handleSignUp(event)">
+        <div class="form-group">
+          <label for="signupName">Full Name</label>
+          <input type="text" id="signupName" required placeholder="John Doe" autocomplete="name" />
+        </div>
+        <div class="form-group">
+          <label for="signupEmail">Email</label>
+          <input type="email" id="signupEmail" required placeholder="your@email.com" autocomplete="email" />
+        </div>
+        <div class="form-group">
+          <label for="signupPassword">Password</label>
+          <input type="password" id="signupPassword" required placeholder="Create a password" minlength="8" maxlength="72"
+            autocomplete="new-password" />
             <small>Minimum 8 characters</small>
-          </div>
-          <div class="form-group">
-            <label for="signupConfirmPassword">Confirm Password</label>
-            <input type="password" id="signupConfirmPassword" required placeholder="Confirm your password"
-              autocomplete="new-password" maxlength="72" />
-          </div>
-          <button type="submit" class="btn btn-primary btn-full">Sign Up</button>
-          <div id="signupError" class="error-message" style="display: none;"></div>
-        </form>
-      </div>
+        </div>
+        <div class="form-group">
+          <label for="signupConfirmPassword">Confirm Password</label>
+          <input type="password" id="signupConfirmPassword" required placeholder="Confirm your password"
+            autocomplete="new-password" maxlength="72" />
+        </div>
+        <button type="submit" class="btn btn-primary btn-full">Sign Up</button>
+        <div id="signupError" class="error-message" style="display: none;"></div>
+      </form>
+    </div>
 
-      <div class="login-footer">
-        <p>By signing in, you agree to our <a href="/terms" style="color: var(--color-primary); text-decoration: none;">Terms and Conditions</a> and <a href="/privacy" style="color: var(--color-primary); text-decoration: none;">Privacy Policy</a>.</p>
-      </div>
+    <div class="login-footer">
+      <p>By signing in, you agree to our <a href="/terms" style="color: var(--color-primary); text-decoration: none;">Terms and Conditions</a> and <a href="/privacy" style="color: var(--color-primary); text-decoration: none;">Privacy Policy</a>.</p>
     </div>
   </div>
+</div>
 
-
-  <!-- Forgot Password Modal -->
-  <div id="forgotPasswordModal" class="modal" style="display: none;">
-    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="forgotPasswordModalTitle" style="max-width: 500px;">
-      <div class="modal-header">
-        <h2 id="forgotPasswordModalTitle">Reset Password</h2>
-        <button class="modal-close" onclick="closeForgotPasswordModal()" aria-label="Close dialog">&times;</button>
-      </div>
-      <div class="modal-body">
-        <p style="color: #64748b; margin-bottom: 1.5rem;">Enter your email address and we'll send you instructions to
-          reset your password.</p>
-        <form id="forgotPasswordForm" onsubmit="handleForgotPassword(event)">
-          <div class="form-group">
-            <label for="resetEmail">Email Address</label>
-            <input type="email" id="resetEmail" required placeholder="your@email.com" autocomplete="email" />
-          </div>
-          <div id="resetSuccess" class="success-message"
-            style="display: none; background: rgba(16,185,129,0.12); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.3); padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
-          </div>
-          <div id="resetError" class="error-message" style="display: none;"></div>
-          <div style="display: flex; gap: 1rem; justify-content: flex-end;">
-            <button type="button" class="btn btn-secondary" onclick="closeForgotPasswordModal()">Cancel</button>
-            <button type="submit" class="btn btn-primary">Send Reset Link</button>
-          </div>
-        </form>
-      </div>
+<!-- Forgot Password Modal -->
+<div id="forgotPasswordModal" class="modal" style="display: none;">
+  <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="forgotPasswordModalTitle" style="max-width: 500px;">
+    <div class="modal-header">
+      <h2 id="forgotPasswordModalTitle">Reset Password</h2>
+      <button class="modal-close" onclick="closeForgotPasswordModal()" aria-label="Close dialog">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p style="color: #64748b; margin-bottom: 1.5rem;">Enter your email address and we'll send you instructions to reset your password.</p>
+      <form id="forgotPasswordForm" onsubmit="handleForgotPassword(event)">
+        <div class="form-group">
+          <label for="resetEmail">Email Address</label>
+          <input type="email" id="resetEmail" required placeholder="your@email.com" autocomplete="email" />
+        </div>
+        <div id="resetSuccess" class="success-message"
+          style="display: none; background: rgba(16,185,129,0.12); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.3); padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+        </div>
+        <div id="resetError" class="error-message" style="display: none;"></div>
+        <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+          <button type="button" class="btn btn-secondary" onclick="closeForgotPasswordModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Send Reset Link</button>
+        </div>
+      </form>
     </div>
   </div>
+</div>
 
-  <!-- JS load order: api-helper.js (head) → auth.js -->
+<!-- JS load order: api-helper.js (head) → auth.js -->
 {% endblock %}
 
 {% block scripts %}
