@@ -57,7 +57,6 @@ function AppRoutes() {
           <Routes>
             {/* Public */}
             <Route path="/login" element={<Login />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
 
             {/* Student */}
             <Route
@@ -158,6 +157,9 @@ function AppRoutes() {
                 </PrivateRoute>
               }
             />
+
+            {/* Reset password — public */}
+            <Route path="/reset-password" element={<ResetPassword />} />
 
             {/* Root → role-based redirect */}
             <Route path="/" element={<HomeRedirect />} />
