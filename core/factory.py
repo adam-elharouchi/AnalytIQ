@@ -403,8 +403,21 @@ def register_frontend_routes(app) -> None:
     _ROOT = _os.path.dirname(_os.path.abspath(app.root_path))
     _REACT_DIR = _os.path.join(_ROOT, "static", "react")
 
-    # React-managed client routes — empty: all routes served by Jinja2 templates.
-    _REACT_ROUTES: set[str] = set()
+    # React-managed client routes — Flask sends index.html; React Router handles them.
+    _REACT_ROUTES = {
+        "login",
+        "classes",
+        "dashboard",
+        "home",
+        "admin",
+        "chapter",
+        "exercise",
+        "professor-class",
+        "profile",
+        "reset-password",
+        "code-assistant",
+        "upload-assistant",
+    }
 
     def _serve_react():
         """Send the React app shell so React Router can take over."""
