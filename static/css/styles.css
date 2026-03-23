@@ -366,14 +366,10 @@ body {
   padding: 2rem;
 }
 
+/* No card — transparent, full-page layout */
 .login-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: 1rem;
-  padding: 3rem;
   width: 100%;
   max-width: 450px;
-  box-shadow: var(--shadow-lg);
 }
 
 .login-header {
@@ -381,16 +377,24 @@ body {
   margin-bottom: 2rem;
 }
 
-.login-header h1 {
-  color: var(--color-primary);
+/* Brand link replaces old h1 */
+.login-brand {
+  display: inline-block;
   font-size: 2rem;
+  font-weight: 900;
+  text-decoration: none !important;
+  color: var(--text-primary) !important;
+  line-height: 1.1;
   margin-bottom: 0.5rem;
 }
 
-.login-header p {
+.login-tagline {
   color: var(--text-secondary);
   font-size: 0.875rem;
 }
+
+.logo-analyt { color: var(--text-primary); }
+.logo-iq     { color: var(--color-primary); }
 
 .login-tabs {
   display: flex;
