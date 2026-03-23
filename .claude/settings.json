@@ -32,7 +32,16 @@
       "Bash(find /Users/aelharouchi/Documents/GitHub/AnalytIQ -type f -name *assignment* -o -name *grade* -o -name *lti*)",
       "Bash(find /Users/aelharouchi/Documents/GitHub/AnalytIQ -name code_runner.py -o -name *code*runner*)",
       "Bash(grep -l \"practice_progress\\\\|class_exercises\" /Users/aelharouchi/Documents/GitHub/AnalytIQ/migrations/*.sql)",
-      "Bash(grep -i pandas requirements*.txt)"
+      "Bash(grep -i pandas requirements*.txt)",
+      "Bash(md5 .claude/worktrees/fervent-keller/templates/base.html)",
+      "Bash(pool is closed\" on the first request, causing sign-in to fail.:*)",
+      "Bash(git fetch:*)",
+      "Bash(git remote:*)",
+      "Bash(git pack-refs:*)",
+      "Bash(git show:*)"
+    ],
+    "additionalDirectories": [
+      "/Users/aelharouchi/Documents/GitHub/AnalytIQ/.git/refs/remotes/origin"
     ]
   }
 }
