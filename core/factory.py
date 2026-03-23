@@ -134,13 +134,37 @@ def setup_csrf(app) -> None:
     """
     Initialize Flask-WTF CSRF protection.
 
+    All /api/* routes are pre-exempted via a before_request hook registered
+    BEFORE CSRFProtect.init_app(), so our hook runs first in Flask's chain.
+    JWT Bearer tokens in Authorization headers make CSRF protection redundant
+    for API routes — browsers cannot set custom headers cross-origin without
+    CORS preflight.
+
     When FEATURE_CSRF_PROTECTION=True the CSRFProtect instance is attached to
     the app AND injected into core.extensions so blueprints can use
-    @csrf_exempt consistently.
+    @csrf_exempt for any remaining edge-cases.
     """
     try:
+        from flask import request as _req
         from flask_wtf.csrf import CSRFProtect, generate_csrf  # noqa: F401
         from core import extensions as _ext
+
+        # Register BEFORE init_app so this hook fires BEFORE Flask-WTF's hook.
+        # Permanently marks each /api/ view function as csrf_exempt the first
+        # time it is hit — safe because all API routes use JWT Bearer auth.
+        @app.before_request
+        def _exempt_api_routes_from_csrf():
+            if _req.path.startswith("/api/") and _req.method not in (
+                "GET",
+                "HEAD",
+                "OPTIONS",
+                "TRACE",
+            ):
+                endpoint = _req.endpoint
+                if endpoint:
+                    view = app.view_functions.get(endpoint)
+                    if view and not getattr(view, "csrf_exempt", False):
+                        view.csrf_exempt = True
 
         app.config["WTF_CSRF_ENABLED"] = config.WTF_CSRF_ENABLED
         app.config["WTF_CSRF_TIME_LIMIT"] = config.WTF_CSRF_TIME_LIMIT
@@ -151,7 +175,7 @@ def setup_csrf(app) -> None:
         if config.FEATURE_CSRF_PROTECTION:
             csrf_instance.init_app(app)
             _ext.csrf = csrf_instance
-            logger.info("CSRF protection enabled")
+            logger.info("CSRF protection enabled (API routes pre-exempted)")
         else:
             logger.info("CSRF protection disabled (FEATURE_CSRF_PROTECTION=False)")
     except ImportError:
