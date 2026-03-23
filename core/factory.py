@@ -400,7 +400,7 @@ def register_frontend_routes(app) -> None:
     from jinja2 import TemplateNotFound
     from werkzeug.routing import BaseConverter
 
-    _ROOT = _os.path.dirname(_os.path.abspath(app.root_path))
+    _ROOT = _os.path.abspath(app.root_path)
     _REACT_DIR = _os.path.join(_ROOT, "static", "react")
 
     # React-managed client routes — Flask sends index.html; React Router handles them.
@@ -437,10 +437,6 @@ def register_frontend_routes(app) -> None:
     @app.route("/", methods=["GET"])
     def serve_index():
         return render_template("landing.html")
-
-    @app.route("/home", methods=["GET"])
-    def serve_home():
-        return render_template("index.html")
 
     @app.route("/<no_api_path:path>", methods=["GET"])
     def serve_frontend(path):
