@@ -156,7 +156,7 @@ function PersonalInfoSection({ profile, onProfileUpdate }: PersonalInfoSectionPr
             <span className="avatar-initials">{initials}</span>
           )}
           <span className="avatar-overlay">
-            {uploadAvatarMutation.isPending ? '…' : '📷'}
+            {uploadAvatarMutation.isPending ? '…' : '✎'}
           </span>
         </button>
         <input
