@@ -1,9 +1,12 @@
 import { lazy, Suspense } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider, useAuth } from '@/contexts/AuthContext'
 import { Navigation } from '@/components/Navigation'
 import { PrivateRoute } from '@/components/PrivateRoute'
+
+// Routes that should NOT show the navigation bar
+const NO_NAV_ROUTES = new Set(['/login', '/reset-password'])
 
 // Lazy-load pages so each page bundle is only fetched when needed
 const Login                 = lazy(() => import('@/pages/Login'))
@@ -49,10 +52,13 @@ function HomeRedirect() {
 }
 
 function AppRoutes() {
+  const location = useLocation()
+  const showNav = !NO_NAV_ROUTES.has(location.pathname)
+
   return (
     <>
-      <Navigation />
-      <main className="main-content">
+      {showNav && <Navigation />}
+      <main className={showNav ? 'main-content' : ''}>
         <Suspense fallback={<div className="loading-state"><div className="spinner" /></div>}>
           <Routes>
             {/* Public */}

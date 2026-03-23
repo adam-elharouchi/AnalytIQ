@@ -281,6 +281,21 @@ input::placeholder, textarea::placeholder { color: var(--text-dim); }
 
 .auth-form { display: flex; flex-direction: column; gap: 0; }
 
+/* "Forgot Password?" sits right-aligned inside the password form-group */
+.forgot-link-wrap {
+  text-align: right;
+  margin-top: var(--space-2);
+}
+
+/* Footer beneath the auth card */
+.login-footer {
+  text-align: center;
+  margin-top: var(--space-6);
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+.login-footer a { color: var(--color-primary); }
+
 /* --- Page header ---------------------------------------------------------- */
 .page-header {
   display: flex;

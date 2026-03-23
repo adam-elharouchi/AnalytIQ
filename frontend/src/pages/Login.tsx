@@ -35,6 +35,7 @@ export default function Login() {
   const [name, setName] = useState('')
   const [signupEmail, setSignupEmail] = useState('')
   const [signupPassword, setSignupPassword] = useState('')
+  const [signupConfirmPassword, setSignupConfirmPassword] = useState('')
 
   // Forgot password
   const [showForgot, setShowForgot] = useState(false)
@@ -67,6 +68,12 @@ export default function Login() {
   async function handleSignUp(e: FormEvent) {
     e.preventDefault()
     setError(null)
+
+    if (signupPassword !== signupConfirmPassword) {
+      setError('Passwords do not match')
+      return
+    }
+
     setLoading(true)
 
     const { error, pendingApproval } = await signUp({
@@ -155,7 +162,7 @@ export default function Login() {
                     onChange={e => setEmail(e.target.value)}
                     required
                     autoComplete="email"
-                    placeholder="you@example.com"
+                    placeholder="your@email.com"
                   />
                 </div>
 
@@ -168,20 +175,22 @@ export default function Login() {
                     onChange={e => setPassword(e.target.value)}
                     required
                     autoComplete="current-password"
-                    placeholder="••••••••"
+                    placeholder="Enter your password"
+                    maxLength={72}
                   />
+                  <div className="forgot-link-wrap">
+                    <button
+                      type="button"
+                      className="btn-link"
+                      onClick={() => { setShowForgot(true); setError(null) }}
+                    >
+                      Forgot Password?
+                    </button>
+                  </div>
                 </div>
 
                 <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
                   {loading ? 'Signing in…' : 'Sign In'}
-                </button>
-
-                <button
-                  type="button"
-                  className="btn-link"
-                  onClick={() => { setShowForgot(true); setError(null) }}
-                >
-                  Forgot your password?
                 </button>
               </form>
             ) : (
@@ -194,7 +203,8 @@ export default function Login() {
                     value={name}
                     onChange={e => setName(e.target.value)}
                     required
-                    placeholder="Your name"
+                    placeholder="John Doe"
+                    autoComplete="name"
                   />
                 </div>
 
@@ -207,7 +217,7 @@ export default function Login() {
                     onChange={e => setSignupEmail(e.target.value)}
                     required
                     autoComplete="email"
-                    placeholder="you@example.com"
+                    placeholder="your@email.com"
                   />
                 </div>
 
@@ -220,13 +230,29 @@ export default function Login() {
                     onChange={e => setSignupPassword(e.target.value)}
                     required
                     autoComplete="new-password"
-                    placeholder="Min 8 characters"
+                    placeholder="Create a password"
                     minLength={8}
+                    maxLength={72}
+                  />
+                  <small>Minimum 8 characters</small>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="signup-confirm">Confirm Password</label>
+                  <input
+                    id="signup-confirm"
+                    type="password"
+                    value={signupConfirmPassword}
+                    onChange={e => setSignupConfirmPassword(e.target.value)}
+                    required
+                    autoComplete="new-password"
+                    placeholder="Confirm your password"
+                    maxLength={72}
                   />
                 </div>
 
                 <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
-                  {loading ? 'Creating account…' : 'Create Account'}
+                  {loading ? 'Creating account…' : 'Sign Up'}
                 </button>
               </form>
             )}
@@ -263,6 +289,12 @@ export default function Login() {
             </button>
           </form>
         )}
+      <div className="login-footer">
+        <p>By signing in, you agree to our{' '}
+          <a href="/terms">Terms and Conditions</a> and{' '}
+          <a href="/privacy">Privacy Policy</a>.
+        </p>
+      </div>
       </div>
     </div>
   )
