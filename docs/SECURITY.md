@@ -1,6 +1,6 @@
 # AnalytIQ Security Reference
 
-Last updated: 2026-03-15
+Last updated: 2026-03-22
 
 ---
 
@@ -33,6 +33,9 @@ Last updated: 2026-03-15
 - **Legacy hash migration:** on signin, if the stored hash is not a bcrypt hash (`$2b$`
   prefix), the legacy integer-XOR hash is verified and the password is transparently
   rehashed to bcrypt; `hash_password_legacy()` is kept only for this migration path.
+  Run `python scripts/audit_legacy_hashes.py` against production to count remaining
+  legacy-hash users; once the count reaches zero, `hash_password_legacy()` can be
+  deleted from `core/auth.py`.
 - **Reset tokens:** `secrets.token_urlsafe(32)`, stored in `password_resets` table,
   expire in 1 hour, deleted after use.
 
