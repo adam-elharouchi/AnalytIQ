@@ -10,6 +10,9 @@ const Login            = lazy(() => import('@/pages/Login'))
 const StudentClasses   = lazy(() => import('@/pages/StudentClasses'))
 const ProfessorDashboard = lazy(() => import('@/pages/ProfessorDashboard'))
 const NotFound         = lazy(() => import('@/pages/NotFound'))
+const StudentClass     = lazy(() => import('@/pages/StudentClass'))
+const ChapterView      = lazy(() => import('@/pages/ChapterView'))
+const ExercisePage     = lazy(() => import('@/pages/ExercisePage'))
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -47,6 +50,36 @@ function AppRoutes() {
               element={
                 <PrivateRoute roles={['student']}>
                   <StudentClasses />
+                </PrivateRoute>
+              }
+            />
+
+            {/* Student class detail */}
+            <Route
+              path="/classes/:classId"
+              element={
+                <PrivateRoute roles={['student', 'superadmin', 'tenant_admin']}>
+                  <StudentClass />
+                </PrivateRoute>
+              }
+            />
+
+            {/* Chapter PDF view */}
+            <Route
+              path="/chapter/:chapterId"
+              element={
+                <PrivateRoute roles={['student', 'superadmin', 'tenant_admin', 'professor']}>
+                  <ChapterView />
+                </PrivateRoute>
+              }
+            />
+
+            {/* Exercise / practice playground */}
+            <Route
+              path="/exercise/:exerciseId"
+              element={
+                <PrivateRoute roles={['student', 'superadmin', 'tenant_admin', 'professor']}>
+                  <ExercisePage />
                 </PrivateRoute>
               }
             />

@@ -9,6 +9,12 @@ import type {
   EnrolledClassesResponse,
   ClassDetailResponse,
   EnrollResponse,
+  ChaptersResponse,
+  ExercisesResponse,
+  Exercise,
+  ResourcesResponse,
+  LeaderboardResponse,
+  GradeResponse,
 } from '@/types'
 
 // ---------------------------------------------------------------------------
@@ -78,4 +84,52 @@ export const classesApi = {
 
   getProfessorClasses: () =>
     apiClient.get('/user/classes'),
+}
+
+// ---------------------------------------------------------------------------
+// Chapters
+// ---------------------------------------------------------------------------
+
+export const chaptersApi = {
+  getByClass: (classId: string) =>
+    apiClient.get<ChaptersResponse>(`/classes/${classId}/chapters`),
+
+  getById: (chapterId: string) =>
+    apiClient.get<{ chapter_id: string; title: string; description?: string; class_id: string; pdf_url?: string; source_type?: string; created_at?: string }>(`/chapters/${chapterId}`),
+
+  getExercises: (chapterId: string) =>
+    apiClient.get<ExercisesResponse>(`/chapters/${chapterId}/exercises`),
+}
+
+// ---------------------------------------------------------------------------
+// Exercises
+// ---------------------------------------------------------------------------
+
+export const exercisesApi = {
+  getById: (exerciseId: string) =>
+    apiClient.get<Exercise>(`/exercises/${exerciseId}`),
+
+  grade: (exerciseId: string, payload: { code: string; class_id?: string }) =>
+    apiClient.post<GradeResponse>(`/exercises/${exerciseId}/grade`, payload),
+}
+
+// ---------------------------------------------------------------------------
+// Resources
+// ---------------------------------------------------------------------------
+
+export const resourcesApi = {
+  getByClass: (classId: string) =>
+    apiClient.get<ResourcesResponse>(`/classes/${classId}/resources`),
+}
+
+// ---------------------------------------------------------------------------
+// Leaderboard
+// ---------------------------------------------------------------------------
+
+export const leaderboardApi = {
+  getAverage: (classId: string) =>
+    apiClient.get<LeaderboardResponse>(`/classes/${classId}/leaderboard/average`),
+
+  getByExercise: (classId: string, exerciseId: string) =>
+    apiClient.get<LeaderboardResponse>(`/classes/${classId}/leaderboard/exercise/${exerciseId}`),
 }

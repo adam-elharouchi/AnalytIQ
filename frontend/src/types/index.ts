@@ -62,3 +62,46 @@ export interface ApiError {
   error: string
   code?: string
 }
+
+export interface Resource {
+  resource_id: string
+  title: string
+  description?: string
+  resource_type: 'pdf' | 'tool' | 'dataset' | 'video' | 'article' | 'link' | 'csv' | 'excel' | 'ipynb' | 'json' | 'txt'
+  resource_url: string
+  is_default?: boolean
+  chapter_id?: string
+  is_chapter?: boolean
+}
+
+export interface LeaderboardEntry {
+  user_id: string
+  name: string
+  score: number
+  rank?: number
+  average_score?: number
+}
+
+export interface ChaptersResponse {
+  chapters: Chapter[]
+}
+
+export interface ExercisesResponse {
+  exercises: Exercise[]
+}
+
+export interface ResourcesResponse {
+  all_resources: Resource[]
+}
+
+export interface LeaderboardResponse {
+  leaderboard: LeaderboardEntry[]
+}
+
+export interface GradeResponse {
+  success: boolean
+  score?: number
+  feedback?: string
+  passed?: boolean
+  error?: string
+}
