@@ -23,6 +23,7 @@ const Profile               = lazy(() => import('@/pages/Profile'))
 const ResetPassword         = lazy(() => import('@/pages/ResetPassword'))
 const CodeAssistant         = lazy(() => import('@/pages/CodeAssistant'))
 const UploadAssistant       = lazy(() => import('@/pages/UploadAssistant'))
+const Home                  = lazy(() => import('@/pages/Home'))
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -41,14 +42,9 @@ function AdminDashboard() {
 }
 
 function HomeRedirect() {
-  const { user, isAuthenticated } = useAuth()
+  const { isAuthenticated } = useAuth()
   if (!isAuthenticated) return <Navigate to="/login" replace />
-  switch (user?.role) {
-    case 'professor':     return <Navigate to="/dashboard" replace />
-    case 'superadmin':
-    case 'tenant_admin':  return <Navigate to="/admin" replace />
-    default:              return <Navigate to="/classes" replace />
-  }
+  return <Navigate to="/home" replace />
 }
 
 function AppRoutes() {
@@ -63,6 +59,16 @@ function AppRoutes() {
           <Routes>
             {/* Public */}
             <Route path="/login" element={<Login />} />
+
+            {/* Home dashboard */}
+            <Route
+              path="/home"
+              element={
+                <PrivateRoute roles={['student', 'professor', 'superadmin', 'tenant_admin']}>
+                  <Home />
+                </PrivateRoute>
+              }
+            />
 
             {/* Student */}
             <Route
