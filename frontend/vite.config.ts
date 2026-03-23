@@ -10,6 +10,10 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  // Production base: assets must be served from /static/react/assets/
+  // so Flask's built-in /static/<path> handler can find them.
+  // In dev mode Vite serves everything itself so this has no effect locally.
+  base: '/static/react/',
   // In development, proxy /api requests to the Flask backend
   server: {
     port: 3000,
