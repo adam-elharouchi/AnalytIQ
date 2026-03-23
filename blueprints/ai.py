@@ -6,7 +6,6 @@ Routes:
 """
 
 import logging
-import os
 import threading
 import time
 
@@ -105,7 +104,7 @@ def proxy_ai_chat():
                 400,
             )
 
-        api_key = os.getenv("GEMINI_API_KEY")
+        api_key = config.GEMINI_API_KEY
         if not api_key:
             return jsonify({"error": "Server configuration error: AI API Key missing"}), 500
 

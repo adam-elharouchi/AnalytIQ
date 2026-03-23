@@ -385,28 +385,8 @@ def get_student_by_id(conn, student_id):
 
 
 def get_student_progress_for_class(conn, student_id, class_id):
-    cur = conn.cursor()
-    cur.execute(
-        """
-        SELECT
-            pp.class_exercise_id,
-            ce.title AS exercise_title,
-            ce.difficulty,
-            pp.best_score,
-            pp.best_accuracy,
-            pp.total_attempts,
-            pp.completed,
-            pp.last_completed_at
-        FROM practice_progress pp
-        JOIN class_exercises ce ON pp.class_exercise_id = ce.exercise_id
-        WHERE pp.user_id = %s AND pp.class_id = %s AND ce.class_id = %s
-        ORDER BY ce.exercise_number, ce.created_at
-        """,
-        (student_id, class_id, class_id),
-    )
-    rows = cur.fetchall()
-    cur.close()
-    return rows
+    """Alias of get_student_progress_by_class; used when the caller is a professor viewing a student."""
+    return get_student_progress_by_class(conn, student_id, class_id)
 
 
 def get_student_progress_for_professor(conn, student_id, professor_id):

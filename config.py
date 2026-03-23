@@ -140,6 +140,7 @@ MAIL_USE_TLS = os.getenv("MAIL_USE_TLS", "True").lower() == "true"
 MAIL_USERNAME = os.getenv("MAIL_USERNAME")
 MAIL_PASSWORD = os.getenv("MAIL_PASSWORD")
 MAIL_DEFAULT_SENDER = os.getenv("MAIL_DEFAULT_SENDER", "noreply@analytiq.com")
+RESEND_API_KEY = os.getenv("RESEND_API_KEY")
 
 # ============================================================================
 # LOGGING
@@ -175,7 +176,7 @@ PASSWORD_RESET_TOKEN_EXPIRY = timedelta(hours=PASSWORD_RESET_TOKEN_EXPIRY_HOURS)
 FEATURE_AI_EXERCISES = os.getenv("FEATURE_AI_EXERCISES", "True").lower() == "true"
 FEATURE_EMAIL_NOTIFICATIONS = os.getenv("FEATURE_EMAIL", "False").lower() == "true"
 FEATURE_ANALYTICS = os.getenv("FEATURE_ANALYTICS", "True").lower() == "true"
-FEATURE_CSRF_PROTECTION = os.getenv("FEATURE_CSRF", "False").lower() == "true"
+FEATURE_CSRF_PROTECTION = os.getenv("FEATURE_CSRF", "True").lower() == "true"
 FEATURE_ASYNC_TASKS = os.getenv("FEATURE_ASYNC_TASKS", "False").lower() == "true"
 
 
@@ -208,7 +209,8 @@ FEATURE_SSO = os.getenv("FEATURE_SSO", "False").lower() == "true"
 # Seconds an OAuth2 state token remains valid in Redis
 SSO_STATE_TTL = int(os.getenv("SSO_STATE_TTL", 600))  # 10 minutes
 # Base URL used to build SSO callback URIs and post-login redirects
-SSO_REDIRECT_BASE_URL = os.getenv("FRONTEND_URL", "https://myanalytiq.org")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "https://myanalytiq.org")
+SSO_REDIRECT_BASE_URL = FRONTEND_URL
 
 # ============================================================================
 # REDIS CACHING

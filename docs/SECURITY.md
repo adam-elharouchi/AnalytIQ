@@ -1,6 +1,6 @@
 # AnalytIQ Security Reference
 
-Last updated: 2026-03-15
+Last updated: 2026-03-22
 
 ---
 
@@ -33,6 +33,9 @@ Last updated: 2026-03-15
 - **Legacy hash migration:** on signin, if the stored hash is not a bcrypt hash (`$2b$`
   prefix), the legacy integer-XOR hash is verified and the password is transparently
   rehashed to bcrypt; `hash_password_legacy()` is kept only for this migration path.
+  Run `python scripts/audit_legacy_hashes.py` against production to count remaining
+  legacy-hash users; once the count reaches zero, `hash_password_legacy()` can be
+  deleted from `core/auth.py`.
 - **Reset tokens:** `secrets.token_urlsafe(32)`, stored in `password_resets` table,
   expire in 1 hour, deleted after use.
 
@@ -96,10 +99,9 @@ Directive: `default-src 'self'; script-src 'self' 'unsafe-inline' cdn.jsdelivr.n
 
 ## 8. CSRF
 
-- `WTF_CSRF_ENABLED` defaults to `False` (`FEATURE_CSRF=False` env var).
-- All API routes carry `@csrf_exempt`.
-- **Rationale:** stateless JWT Bearer auth — `Authorization` header is not sent by cross-origin forms.
-- **TODO:** re-enable if session-cookie auth is ever introduced.
+- `WTF_CSRF_ENABLED` defaults to `True` (`FEATURE_CSRF` env var; set to `False` to disable).
+- All API routes carry `@csrf_exempt` — CSRF protection is enforced only on form-based routes.
+- **Rationale:** stateless JWT Bearer auth — `Authorization` header is not sent by cross-origin forms, so API routes are safe without CSRF tokens. The default-on posture protects any future form-based flows.
 
 ## 9. FERPA Audit Log
 
@@ -123,6 +125,5 @@ Directive: `default-src 'self'; script-src 'self' 'unsafe-inline' cdn.jsdelivr.n
 
 - CSP is report-only; switch to enforcement after reviewing violations.
 - Bandit `continue-on-error: true` should be removed so failures block CI.
-- `FEATURE_CSRF` defaults to `False`; revisit if cookie-based flows are added.
-- Delete `hash_password_legacy()` once confirmed zero users with non-`$2b$` hashes.
+- Delete `hash_password_legacy()` once `scripts/audit_legacy_hashes.py` exits 0 (zero non-bcrypt rows).
 - `CORS_ORIGINS` defaults to `*`; set to `https://www.myanalytiq.org` in production.

@@ -160,10 +160,13 @@ def decode_jwt_token(token):
 
 def hash_password_legacy(password):
     """
-    DEPRECATED: Legacy hash function for backward compatibility only.
-    This function is insecure and should not be used for new passwords.
-    Kept only to verify old passwords during migration period.
-    Remove once all legacy hashes are confirmed migrated (run scripts/check_legacy_hashes.py).
+    DEPRECATED: insecure djb2-style hash kept only to verify passwords set before
+    the bcrypt migration.  New passwords always use hash_password() (bcrypt).
+
+    Removal checklist:
+    1. Run `python scripts/audit_legacy_hashes.py` — must exit 0 (zero rows).
+    2. Delete this function.
+    3. Remove the `else` branch in verify_password() that calls it.
     """
     hash_val = 0
     for char in password:

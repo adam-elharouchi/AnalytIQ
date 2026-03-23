@@ -7,7 +7,7 @@
 ## 🌟 1. Executive Summary & Vision
 
 ### What is AnalytIQ?
-AnalytIQ is a modern, monolithic, AI-augmented Learning Management System (LMS) and interactive coding environment. It bridges the gap between passive consumption of educational material (reading slides) and active, hands-on learning (writing and debugging code). Built with a striking Middle Eastern-inspired dark aesthetic featuring glassmorphism and animated accents, it provides a premium user experience that feels less like a traditional academic portal and more like a modern developer tool.
+AnalytIQ is a modern, AI-augmented Learning Management System (LMS) and interactive coding environment. It bridges the gap between passive consumption of educational material (reading slides) and active, hands-on learning (writing and debugging code). Built with a striking dark aesthetic featuring glassmorphism and animated accents, it provides a premium user experience that feels less like a traditional academic portal and more like a modern developer tool.
 
 ### Who is it For? (Core Personas)
 1. **The Student:** Wants a unified space to view lectures, practice coding immediately contextually relevant to the material, track their progress, and get instant, non-judgmental help from an AI tutor when stuck.
@@ -18,41 +18,58 @@ AnalytIQ is a modern, monolithic, AI-augmented Learning Management System (LMS) 
 
 ## 🏗️ 2. System Architecture & The "How It Works" Flow
 
-AnalytIQ employs a **Client-Server Architecture** heavily relying on a **Monolithic Flask Backend** rendering dynamic HTML via Jinja2, coupled with **Vanilla JavaScript** managing localized DOM state and asynchronous data fetching.
+AnalytIQ uses a **Flask Blueprint API backend** + **React 18 SPA frontend**, following a strangler-fig migration from the original Jinja2/vanilla JS architecture. Static/informational pages still use Jinja2; all interactive user-facing pages have been migrated to React.
 
 ### The Request Lifecycle (A Deep Dive)
-1. **Client Interaction:** A user clicks a button (e.g., "Submit Code"). Validated locally, `api-helper.js` intercepts the request.
-2. **Token Injection:** `api-helper.js` retrieves the user's JSON Web Token (JWT) securely from `localStorage` and attaches it to the `Authorization: Bearer <token>` header.
-3. **Network Transit & CORS:** The browser fires a preflight `OPTIONS` request. `app.py` handles this dynamically, allowing specific origins (development vs. production URLs).
-4. **Backend Gateway (`app.py`):** 
+1. **Client Interaction:** A user clicks a button (e.g., "Submit Code"). The React frontend calls `apiClient` (a typed Axios-style wrapper in `frontend/src/api/client.ts`).
+2. **Token Injection:** `apiClient` reads the JWT from `localStorage` and attaches it as `Authorization: Bearer <token>` to every request.
+3. **Network Transit & CORS:** The browser fires a preflight `OPTIONS` request. `core/factory.py` handles CORS globally via a `before_request` hook.
+4. **Backend Gateway (`app.py` → `core/factory.py`):**
    - **Rate Limiting:** `Flask-Limiter` checks (via Redis or Memory) if the user has exceeded their endpoint quota (preventing DDoS or AI abuse).
-   - **CSRF Check:** `Flask-WTF` validates the Cross-Site Request Forgery token if it's a mutating request (POST/PUT/DELETE).
+   - **CSRF Check:** `Flask-WTF` validates the CSRF token for mutating requests (POST/PUT/DELETE); `@csrf_exempt` is applied to stateless JWT API endpoints.
    - **Error Tracking:** `Sentry SDK` attaches a unique `request_id` context to the transaction.
-5. **Blueprint Routing:** The request hits a specific Flask Blueprint (e.g., `/blueprints/exercises.py -> submit_exercise()`).
-6. **Authentication Validation (`@token_required`):** A decorator decodes the JWT, verifies the signature using `config.SECRET_KEY`, checks expiration, and mounts the `user_id` and `role` to the Flask `g` object.
-7. **Database Transaction (`db.py`):** 
-   - A connection is pulled from the `psycopg2.pool.ThreadedConnectionPool`.
-   - Raw, parameterized SQL executes against the PostgreSQL database (preventing SQL injection).
-   - The connection is returned to the pool, and the result is serialized into a JSON dictionary.
+5. **Blueprint Routing:** The request hits a specific Flask Blueprint (e.g., `blueprints/exercises.py → submit_exercise()`).
+6. **Authentication Validation (`@require_auth`):** Decodes the JWT, verifies the signature against `config.SECRET_KEY`, checks expiration, and sets `g.user_id`, `g.user_role`, `g.tenant_id`.
+7. **Database Transaction (`repositories/`):**
+   - A connection is pulled from the `psycopg2.pool.ThreadedConnectionPool` in `core/database.py`.
+   - Raw, parameterized SQL executes against PostgreSQL (preventing SQL injection).
+   - All query logic lives in `repositories/` — blueprints contain no raw SQL.
 8. **Heavy Processing (The AI Fork):**
-   - *If the request requires complex AI (e.g., parsing a 50-page PDF):* The backend kicks the job over to **Celery**. Celery queues the task in **Redis**. The user is immediately returned a `job_id` (HTTP 202 Accepted) and the frontend begins polling a status endpoint until the worker finishes.
-   - *If it's a fast task (like evaluating code):* The backend synchronously calls the Gemini API, awaits the response, formats it, and returns it.
-9. **Client Response & DOM Update:** The JSON payload arrives. Vanilla JavaScript parses it, conditionally applies CSS classes (e.g., turning a div green for a correct answer), and updates `localStorage` caches if necessary.
+   - *If the request requires complex AI (e.g., parsing a 50-page PDF):* The backend enqueues a Celery task via Redis. The user receives a `task_id` (HTTP 202 Accepted) and the frontend polls `GET /api/tasks/<task_id>` until complete.
+   - *If it's a fast task (like grading code):* The backend synchronously calls the Gemini API, formats the response, and returns JSON.
+9. **Client Response:** TanStack Query caches the JSON response; React re-renders only the affected components.
 
 ---
 
 ## 🛠️ 3. The Exhaustive Tech Stack
 
 ### 🖥️ Frontend layer (The Visual Interface)
-The frontend deliberately avoids heavy SPA frameworks (React/Vue) to ensure lightning-fast initial page loads, utilizing standard web specifications.
+AnalytIQ is in a **strangler-fig migration** from vanilla JS + Jinja2 to React + TypeScript. Both
+frontends coexist; Flask routes determine which one renders.
 
-*   **HTML5 / Jinja2:** The structural backbone. Templates (`templates/`) use Jinja2 logic (`{% if user.role == 'professor' %}`) to conditionally render UI blocks server-side right on the initial document load.
-*   **CSS3 (Custom Styling):** No Bootstrap or Tailwind. The entire aesthetic is built from scratch utilizing CSS Variables (`:root`), Flexbox, Grid, and complex pseudo-elements for glassmorphism panels. The `local-dev-dark-theme.css` acts as the primary visual override.
-*   **JavaScript (Vanilla ES6+):** Highly modularized JS files (`auth.js`, `student-class.js`). It heavily utilizes the `Fetch API`, `async/await`, Promises, and standard DOM traversal (`document.querySelector`).
-*   **State & Caching:** 
-    - `localStorage`: Stores persistent data like JWT auth tokens, user themes, and non-sensitive structural data.
-    - `sessionStorage`: Stores ephemeral data (like the script of an ongoing AI chat) that should die when the tab closes.
-*   **Code Editor Component:** Integrated libraries (like Monaco or CodeMirror configurations) to provide syntax highlighting, line numbers, and auto-indentation within the `practice-playground.html`.
+#### React frontend (`frontend/`) — primary interface
+*   **React 18 + TypeScript + Vite 6:** All interactive pages are served as a React SPA
+    (`static/react/index.html`). TanStack Query v5 manages data fetching with 30 s stale time.
+    React Router v6 handles client-side navigation.
+*   **Migrated pages (14 total):** `/login`, `/classes`, `/classes/:classId`, `/chapter/:chapterId`,
+    `/exercise/:exerciseId`, `/dashboard`, `/professor-class/:classId`, `/admin` (superadmin +
+    tenant_admin), `/profile`, `/reset-password`, `/code-assistant`, `/upload-assistant`.
+*   **Auth:** `AuthContext` + `useAuth()` hook; JWT stored in `localStorage`; 401 interceptor in
+    `src/api/client.ts` redirects to `/login?reason=session_expired` (skipped for `/signin`
+    and `/signup` to allow wrong-password error display).
+*   **Route guards:** `<PrivateRoute roles={[...]}>` redirects to `/login` if unauthenticated or
+    unauthorized.
+*   **Lazy loading:** Every page is `React.lazy()`-wrapped so only the current page's JS bundle
+    is fetched.
+
+#### Legacy frontend (`templates/` + `static/js/`) — static/informational pages only
+*   **HTML5 / Jinja2:** `landing.html`, `contact.html`, `privacy.html`, `terms.html`,
+    `security-compliance.html`, `resources.html`, LTI templates, and `autologin.html` still
+    render server-side (low interactivity; React migration not required).
+*   **CSS3 (Custom Styling):** No Bootstrap or Tailwind. Built from scratch with CSS Variables
+    (`:root`), Flexbox, Grid, and glassmorphism panels in `static/css/styles.css`.
+*   **JS modules** (`api-helper.js`, `ui-states.js`, `offline-detector.js`, etc.) are still loaded
+    by the Jinja base template for the remaining legacy pages.
 
 ### 🧠 Backend Layer (The Brain)
 *   **Python 3.x:** The core programming language, chosen for its vast data-science/AI ecosystem and readable syntax.
@@ -73,14 +90,14 @@ The frontend deliberately avoids heavy SPA frameworks (React/Vue) to ensure ligh
 
 ### 🗄️ Database & Storage Layer (The Memory)
 *   **PostgreSQL:** The primary relational database. Chosen for ACID compliance, robust foreign-key constraints, and complex querying capabilities.
-    *   **Architecture:** We use raw SQL queries via `psycopg2` with `psycopg2.extras.DictCursor` (for dictionary-like row access). We employ a `ThreadedConnectionPool` (Min 1, Max 20 connections) to handle concurrent traffic without exhausting DB resources.
+    *   **Architecture:** Raw SQL via `psycopg2` (no ORM). `core/database.py` manages a `ThreadedConnectionPool` (min 1, max N connections). All queries live in the `repositories/` layer.
     *   **Core Tables Overview:**
-        *   `users`: ID, email, password_hash, role (student/professor), timestamps.
-        *   `classes`: ID, professor_id (FK), name, description, join_code.
-        *   `class_roster`: Junction table linking `users` (students) to `classes`.
-        *   `chapters`: ID, class_id (FK), title, sequence_order, pdf_url.
-        *   `exercises`: ID, chapter_id (FK), type (code/quiz), question, expected_logic.
-        *   `exercise_completions`: Tracks which student completed which exercise, their code snapshot, and timestamp.
+        *   `users`: `user_id` (UUID), email, password_hash (bcrypt), role, tenant_id.
+        *   `classes`: ID, professor_id (FK), name, description, class_id (join code).
+        *   `class_enrollments`: Junction table linking `users` (students) to `classes`.
+        *   `class_chapters`: ID, class_id (FK), title, sequence_order, pdf_url.
+        *   `class_exercises`: ID, chapter_id (FK), title, description, difficulty, solution_code, test_cases.
+        *   `exercise_progress`: Tracks per-student submission scores and timestamps.
 *   **Supabase Storage / Cloud Storage:** Used exclusively as an S3-compatible Blob store. When a professor uploads a PDF lecture, the binary file is streamed to a bucket, and a public/signed URL string is saved to the `chapters` table.
 
 ### 🤖 AI Integration (The Core Differentiator)
@@ -97,7 +114,7 @@ The frontend deliberately avoids heavy SPA frameworks (React/Vue) to ensure ligh
 ## 🛣️ 4. Comprehensive User Journeys
 
 ### The Student Journey
-1. **Onboarding:** Registers via `/api/auth/register`, inputs a unique class `join_code` provided by their professor.
+1. **Onboarding:** Registers via `POST /api/users/signup`, inputs a unique class `join_code` provided by their professor.
 2. **The Dashboard (`student-classes.html`):** Land on a grid of enrolled classes showing progress bars (calculated by joining `exercises` against `exercise_completions`).
 3. **The Chapter View (`chapter-view.html`):** An immersive, split-screen layout. The left pane renders the assigned PDF (via an embedded object or PDF.js). The right pane dynamically lists reading summaries, automatically generated quizzes, and coding challenges associated with that specific chapter.
 4. **The Practice Playground (`practice-playground.html`):**
@@ -153,32 +170,50 @@ AnalytIQ is not a walled garden; it is designed for enterprise university adopti
 /AnalytIQ
 │
 ├── ⚙️ ROOT CONFIGURATION & APPLICATION ENTRY
-│   ├── app.py                     # CORE HUB: Initializes Flask, configures Logging (jsonlogger), Sentry, CORS, Rate Limiting (limiter), CSRF, Blueprint registration, and API V1 aliases.
-│   ├── config.py                  # Single point of truth pulling keys from `.env` (DATABASE_URL, SECRET_KEY, CELERY_BROKER).
-│   ├── db.py                      # Initializes `psycopg2.pool.ThreadedConnectionPool` and context managers for executing raw UI.
-│   ├── extensions.py              # Instantiates Flask extensions (limiter, mail, csrf) globally to prevent circular imports.
-│   ├── sentry_config.py           # Configures error tracking, filtering out passwords or PII before sending crashes.
-│   ├── Procfile                   # Instructs Render/Heroku how to boot (`web: gunicorn app:app`).
-│   ├── requirements.txt           # Python dependency lockfile (Flask, psycopg2-binary, pyjwt, celery, google-generativeai, etc.).
-│   ├── start_server.sh            # Developer utility script to boot the local environment cleanly.
-│   └── tests/                     # The comprehensive `pytest` test suite covering unit authentication, API routing, and component boundaries.
+│   ├── app.py                     # create_app() entry point; delegates startup to core/factory.py.
+│   ├── config.py                  # Single source of truth for all env vars; validate_config() fails fast on startup.
+│   ├── Procfile                   # Boot commands for Render: web (gunicorn) + worker (celery).
+│   ├── requirements.txt           # Python dependency lockfile (Flask, psycopg2-binary, pyjwt, celery, etc.).
+│   └── tests/                     # pytest suite: unit/ (mock DB) + integration/ (live DB + Redis).
 │
-├── 🛣️ /blueprints/ (THE API ROUTES - RESTful Controllers)
-│   ├── __init__.py                # Package initializer.
-│   ├── auth.py                    # POST /login, POST /register, POST /reset-password (handles bcrypt hashing and JWT encoding/decoding).
-│   ├── users.py                   # GET /me, PUT /profile (user-specific CRUD).
-│   ├── classes.py                 # POST /classes (Professor creates config), GET /classes/student (Lists enrolled).
-│   ├── chapters.py                # CRUD for Modules/Syllabi. Includes logic for securing signed URLs for uploaded PDFs.
-│   ├── exercises.py               # POST /submit (Code evaluation), GET /metrics (Fetching completion aggregates).
-│   ├── ai.py                      # The Gemini Gateway. POST /chat (conversations), POST /hint (contextual debugging).
-│   ├── lti.py                     # The immensely complex OIDC handshake endpoints (`/login_initiator`, `/launch`, JWKS validation).
-│   └── health.py                  # A simple GET `/health` to allow Render/Load Balancers to verify the server hasn't crashed.
+├── 🧩 /core/ (INFRASTRUCTURE — imported across blueprints)
+│   ├── factory.py                 # Flask app startup helpers: setup_logging, register_blueprints, etc.
+│   ├── database.py                # ThreadedConnectionPool, get_db_connection().
+│   ├── auth.py                    # JWT helpers, bcrypt, @require_auth / @require_role decorators.
+│   ├── extensions.py              # Flask-Limiter + csrf_exempt (avoids circular imports).
+│   ├── cache.py                   # Redis cache helpers (get_cached, set_cached, cache_response decorator).
+│   ├── storage.py                 # Supabase Storage client.
+│   ├── audit.py                   # FERPA audit_log table + audit() helper.
+│   └── errors.py                  # Typed error classes (ApiError, NotFoundError, …).
 │
-├── 🧠 /python/ (HEAVY BACKEND UTILITIES)
-│   ├── \_\_init\_\_.py
-│   ├── pdf_processor.py           # Uses libraries like `PyPDF2` or `pdfplumber` to extract raw strings from binary file streams.
-│   ├── exercise_generator.py      # Contains the massive PROMPT templates. Constructs context, requests Structured JSON from Gemini, and validates the output structure.
-│   └── helpers.py                 # Generic string manipulators, date formatters, or sanitizers.
+├── 🛣️ /blueprints/ (API ROUTES — one file per domain)
+│   ├── auth.py                    # POST /api/users/signup|signin|forgot-password|reset-password.
+│   ├── users.py                   # /api/users/profile|settings|password|delete|conversations.
+│   ├── classes.py                 # /api/classes/** (CRUD, enrollment, leaderboard).
+│   ├── chapters.py                # /api/chapters/** (CRUD, PDF upload, exercise generation).
+│   ├── exercises.py               # /api/exercises/** + progress + leaderboard.
+│   ├── ai.py                      # POST /api/ai/chat (Gemini proxy, rate-limited, payload-capped).
+│   ├── lti.py                     # LTI 1.3 launch + AGS grade passback.
+│   ├── sso.py                     # OIDC SSO login flow + admin provider management.
+│   ├── tenant_admin.py            # /api/tenant-admin/** (tenant-scoped admin).
+│   ├── superadmin.py              # /api/superadmin/** (platform-wide admin).
+│   └── health.py                  # GET /api/health, /api/health/detail, /api/csrf-token, /api/tasks/<id>.
+│
+├── 🗃️ /repositories/ (SQL ONLY — no business logic)
+│   ├── auth_repository.py         # User lookup, insert, email-exists, tenant matching.
+│   ├── class_repository.py        # Class CRUD, enrollment, leaderboard queries.
+│   ├── chapter_repository.py      # Chapter CRUD, PDF metadata.
+│   ├── sso_repository.py          # OIDC provider config (Fernet-encrypted client_secret).
+│   └── (+ more per domain)
+│
+├── ⚙️ /services/ (BUSINESS LOGIC)
+│   ├── exercise_generator.py      # Gemini REST call → validated JSON exercise list.
+│   ├── content_extractor.py       # PyPDF2 / docx / csv / ipynb text extraction.
+│   └── code_runner.py             # Sandboxed code execution.
+│
+├── 🔄 /workers/ (CELERY ASYNC TASKS)
+│   ├── celery_app.py              # Celery app factory + task routing + beat schedule.
+│   └── tasks.py                   # Task definitions with exponential-backoff retry logic.
 │
 ├── 🎨 /templates/ (THE VIEW LAYER - Server Rendered HTML/Jinja)
 │   ├── base.html                  # THE MASTER TEMPLATE: Contains the `<head>`, global navbars, footer, and `{% block content %}`. All other pages `extend` this.

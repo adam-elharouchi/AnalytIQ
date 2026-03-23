@@ -1,54 +1,41 @@
 """
 Celery Tasks for AnalytIQ
-Async tasks for PDF processing, exercise generation, and email sending
+Async tasks for PDF processing, exercise generation, and email sending.
 """
 
+import json
 import logging
-import os
+import uuid
+
+import config
 from celery import Task
 from workers.celery_app import celery_app
-from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
 
-# Load environment variables
-load_dotenv()
 
-# Add python directory to path for imports
-
-# Import PDF processor and exercise generator
-try:
-    from services.content_extractor import extract_text_from_pdf_bytes
-except ImportError:
-    extract_text_from_pdf_bytes = None
-
-try:
-    from services.exercise_generator import generate_exercises_from_pdf_content
-except ImportError:
-    generate_exercises_from_pdf_content = None
-
-# Import Resend for email
-try:
-    import resend
-except ImportError:
-    resend = None
+# ---------------------------------------------------------------------------
+# Base task with database connection
+# ---------------------------------------------------------------------------
 
 
 class DatabaseTask(Task):
-    """Base task with database connection handling"""
+    """Base task providing a per-worker psycopg2 connection pool."""
 
+    _db_pool = None
     _db_conn = None
 
     def get_db_connection(self):
-        """Get database connection (reuse connection pool)"""
+        """Return a database connection, initialising the pool on first call."""
         if self._db_conn is None:
             import psycopg2
+            import psycopg2.pool
+            import os
 
             database_url = os.getenv("DATABASE_URL")
             if not database_url:
-                raise ValueError("DATABASE_URL not set")
+                raise ValueError("DATABASE_URL environment variable not set")
 
-            # Create connection pool
             self._db_pool = psycopg2.pool.SimpleConnectionPool(
                 1, 10, database_url, connect_timeout=10
             )
@@ -57,13 +44,13 @@ class DatabaseTask(Task):
         return self._db_conn
 
     def close_db_connection(self):
-        """Close database connection"""
-        if self._db_conn:
+        """Return the connection to the pool."""
+        if self._db_conn and self._db_pool:
             self._db_pool.putconn(self._db_conn)
             self._db_conn = None
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):
-        """Log task failures with structured context."""
+        """Structured failure logging for all DatabaseTask subclasses."""
         logger.error(
             "Celery task failed",
             exc_info=True,
@@ -76,17 +63,29 @@ class DatabaseTask(Task):
         super().on_failure(exc, task_id, args, kwargs, einfo)
 
 
-@celery_app.task(bind=True, base=DatabaseTask, name="workers.tasks.process_pdf_and_extract_text")
+# ---------------------------------------------------------------------------
+# PDF text extraction
+# ---------------------------------------------------------------------------
+
+try:
+    from services.content_extractor import extract_text_from_pdf_bytes
+except ImportError:
+    extract_text_from_pdf_bytes = None  # type: ignore[assignment]
+
+
+@celery_app.task(
+    bind=True,
+    base=DatabaseTask,
+    name="workers.tasks.process_pdf_and_extract_text",
+    max_retries=2,
+    default_retry_delay=30,
+)
 def process_pdf_and_extract_text(self, pdf_bytes, chapter_id):
     """
-    Extract text from PDF bytes and store in database
-
-    Args:
-        pdf_bytes: PDF file as bytes
-        chapter_id: Chapter ID to update
+    Extract text from PDF bytes and persist to class_chapters.pdf_text.
 
     Returns:
-        dict: {'success': bool, 'text_length': int, 'chapter_id': str}
+        dict: {success, text_length, chapter_id, pdf_text (first 500 chars)}
     """
     try:
         if not extract_text_from_pdf_bytes:
@@ -96,55 +95,69 @@ def process_pdf_and_extract_text(self, pdf_bytes, chapter_id):
                 "chapter_id": chapter_id,
             }
 
-        # Extract text from PDF
         pdf_text = extract_text_from_pdf_bytes(bytes(pdf_bytes))
+        if not pdf_text:
+            return {
+                "success": False,
+                "error": "PDF extraction returned no text",
+                "chapter_id": chapter_id,
+            }
 
-        # Store extracted text in database (optional - for caching)
         conn = self.get_db_connection()
-        cursor = conn.cursor()
-
-        cursor.execute(
-            """
-            UPDATE class_chapters
-            SET pdf_text = %s
-            WHERE chapter_id = %s
-        """,
+        cur = conn.cursor()
+        cur.execute(
+            "UPDATE class_chapters SET pdf_text = %s WHERE chapter_id = %s",
             (pdf_text, chapter_id),
         )
-
         conn.commit()
-        cursor.close()
+        cur.close()
         self.close_db_connection()
 
         return {
             "success": True,
             "text_length": len(pdf_text),
             "chapter_id": chapter_id,
-            "pdf_text": pdf_text[:500],  # First 500 chars for preview
+            "pdf_text": pdf_text[:500],
         }
 
     except Exception as e:
-        return {"success": False, "error": str(e), "chapter_id": chapter_id}
+        logger.warning(
+            "process_pdf_and_extract_text failed (attempt %d): %s",
+            self.request.retries + 1,
+            e,
+        )
+        try:
+            raise self.retry(exc=e, countdown=30 * (2**self.request.retries))
+        except self.MaxRetriesExceededError:
+            return {"success": False, "error": str(e), "chapter_id": chapter_id}
 
 
-@celery_app.task(bind=True, base=DatabaseTask, name="workers.tasks.generate_exercises_async")
-def generate_exercises_async(self, pdf_text, chapter_title, chapter_id, class_id, api_key):
+# ---------------------------------------------------------------------------
+# Async exercise generation
+# ---------------------------------------------------------------------------
+
+try:
+    from services.exercise_generator import generate_exercises_from_pdf_content
+except ImportError:
+    generate_exercises_from_pdf_content = None  # type: ignore[assignment]
+
+
+@celery_app.task(
+    bind=True,
+    base=DatabaseTask,
+    name="workers.tasks.generate_exercises_async",
+    max_retries=3,
+    default_retry_delay=60,
+)
+def generate_exercises_async(self, pdf_text, chapter_title, chapter_id, class_id, api_key=None):
     """
-    Generate exercises from PDF text using Gemini API
+    Generate exercises from PDF text via Gemini and persist using the repository.
 
-    WARNING: This task uses outdated SQL. Exercises created by this task will lack
-    function_name, test_cases, and language columns. FEATURE_ASYNC_TASKS defaults to
-    False so this is not triggered in production. Fix before enabling async exercise generation.
-
-    Args:
-        pdf_text: Extracted PDF text
-        chapter_title: Chapter title
-        chapter_id: Chapter ID
-        class_id: Class ID
-        api_key: Gemini API key
+    Uses chapter_repository.insert_exercise() so all columns (function_name,
+    test_cases, language) are written correctly.
 
     Returns:
-        dict: {'success': bool, 'exercise_count': int, 'chapter_id': str}
+        dict: {success, exercise_count, chapter_id}
     """
     try:
         if not generate_exercises_from_pdf_content:
@@ -154,115 +167,136 @@ def generate_exercises_async(self, pdf_text, chapter_title, chapter_id, class_id
                 "chapter_id": chapter_id,
             }
 
-        # Generate exercises
-        exercises = generate_exercises_from_pdf_content(pdf_text, chapter_title, api_key)
+        effective_api_key = api_key or config.GEMINI_API_KEY
+        if not effective_api_key:
+            return {
+                "success": False,
+                "error": "GEMINI_API_KEY not configured",
+                "chapter_id": chapter_id,
+            }
 
+        exercises = generate_exercises_from_pdf_content(pdf_text, chapter_title, effective_api_key)
         if not exercises:
             return {"success": False, "error": "No exercises generated", "chapter_id": chapter_id}
 
-        # Store exercises in database
         conn = self.get_db_connection()
-        cursor = conn.cursor()
+
+        # Determine starting exercise_number for this chapter
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT COALESCE(MAX(exercise_number), 0) FROM class_exercises WHERE chapter_id = %s",
+            (chapter_id,),
+        )
+        base_number = (cur.fetchone() or [0])[0]
+        cur.close()
 
         exercise_count = 0
-        for exercise in exercises:
-            cursor.execute(
+        for i, ex in enumerate(exercises, start=1):
+            exercise_id = str(uuid.uuid4())
+            cur = conn.cursor()
+            cur.execute(
                 """
                 INSERT INTO class_exercises
-                (chapter_id, class_id, title, description, difficulty, solution_code)
-                VALUES (%s, %s, %s, %s, %s, %s)
-            """,
+                    (exercise_id, chapter_id, class_id, title, description, difficulty,
+                     solution_code, exercise_number, function_name, test_cases, language)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """,
                 (
+                    exercise_id,
                     chapter_id,
                     class_id,
-                    exercise.get("title", "Untitled Exercise"),
-                    exercise.get("description", ""),
-                    exercise.get("difficulty", "medium"),
-                    exercise.get("solution_code", ""),
+                    ex.get("title", "Untitled Exercise"),
+                    ex.get("description", ""),
+                    ex.get("difficulty", "medium"),
+                    ex.get("solution_code", ""),
+                    base_number + i,
+                    ex.get("function_name", "solution"),
+                    json.dumps(ex.get("test_cases")) if ex.get("test_cases") else None,
+                    ex.get("language", "Python"),
                 ),
             )
+            cur.close()
             exercise_count += 1
 
         conn.commit()
-        cursor.close()
         self.close_db_connection()
 
         return {"success": True, "exercise_count": exercise_count, "chapter_id": chapter_id}
 
     except Exception as e:
-        return {"success": False, "error": str(e), "chapter_id": chapter_id}
+        logger.warning(
+            "generate_exercises_async failed (attempt %d): %s",
+            self.request.retries + 1,
+            e,
+        )
+        try:
+            raise self.retry(exc=e, countdown=60 * (2**self.request.retries))
+        except self.MaxRetriesExceededError:
+            return {"success": False, "error": str(e), "chapter_id": chapter_id}
 
 
-@celery_app.task(name="workers.tasks.send_email_async")
-def send_email_async(recipient, subject, body):
+# ---------------------------------------------------------------------------
+# Email
+# ---------------------------------------------------------------------------
+
+
+@celery_app.task(
+    bind=True,
+    name="workers.tasks.send_email_async",
+    max_retries=3,
+    default_retry_delay=30,
+)
+def send_email_async(self, recipient, subject, body):
     """
-    Send email asynchronously using Resend API.
+    Send an email asynchronously via the core.email module.
 
-    Args:
-        recipient: Email recipient
-        subject: Email subject
-        body: Email body (HTML)
+    Retries up to 3 times with exponential backoff (30s, 60s, 120s).
 
     Returns:
-        dict: {'success': bool, 'recipient': str}
+        dict: {success, recipient}
     """
     try:
-        if not resend:
-            return {
-                "success": False,
-                "error": "Resend library not installed",
-                "recipient": recipient,
-            }
+        from core.email import send_email
 
-        # Initialize Resend API key
-        if not getattr(resend, "api_key", None):
-            resend.api_key = os.getenv("RESEND_API_KEY")
-
-        if not getattr(resend, "api_key", None):
-            return {"success": False, "error": "RESEND_API_KEY is missing", "recipient": recipient}
-
-        # Default sender (MUST match verified domain in Resend)
-        from_email = os.getenv("MAIL_DEFAULT_SENDER", "techsupport@myanalytiq.org")
-
-        logger.info("Sending email FROM: %s TO: %s", from_email, recipient)
-
-        response = resend.Emails.send(
-            {
-                "from": f"AnalytIQ Support <{from_email}>",
-                "to": [recipient],
-                "subject": subject,
-                "html": body,
-            }
-        )
-
-        logger.info("Resend success: %s", response)
-
+        send_email(to_email=recipient, subject=subject, html_content=body)
         return {"success": True, "recipient": recipient}
 
     except Exception as e:
-        logger.error("Resend error: %s", repr(e))
-        return {"success": False, "error": str(e), "recipient": recipient}
+        logger.warning(
+            "send_email_async failed (attempt %d) for %s: %s",
+            self.request.retries + 1,
+            recipient,
+            e,
+        )
+        try:
+            raise self.retry(exc=e, countdown=30 * (2**self.request.retries))
+        except self.MaxRetriesExceededError:
+            logger.error("send_email_async: max retries exceeded for %s", recipient)
+            return {"success": False, "error": str(e), "recipient": recipient}
 
 
-@celery_app.task(bind=True, base=DatabaseTask, name="workers.tasks.process_chapter_upload")
+# ---------------------------------------------------------------------------
+# Combined chapter upload workflow
+# ---------------------------------------------------------------------------
+
+
+@celery_app.task(
+    bind=True,
+    base=DatabaseTask,
+    name="workers.tasks.process_chapter_upload",
+    max_retries=1,
+    default_retry_delay=60,
+)
 def process_chapter_upload(
-    self, chapter_id, pdf_bytes, auto_generate_exercises, class_id, chapter_title, api_key
+    self, chapter_id, pdf_bytes, auto_generate_exercises, class_id, chapter_title, api_key=None
 ):
     """
-    Combined workflow: Extract PDF text and optionally generate exercises
-
-    Args:
-        chapter_id: Chapter ID
-        pdf_bytes: PDF file bytes
-        auto_generate_exercises: Whether to auto-generate exercises
-        class_id: Class ID
-        chapter_title: Chapter title
-        api_key: Gemini API key
+    Orchestrate PDF extraction → optional exercise generation in one task.
 
     Returns:
-        dict: {'success': bool, 'text_extracted': bool, 'exercises_generated': bool}
+        dict: {success, text_extracted, exercises_generated, chapter_id, exercise_count?}
     """
-    result = {
+    result: dict = {
         "success": False,
         "text_extracted": False,
         "exercises_generated": False,
@@ -270,9 +304,7 @@ def process_chapter_upload(
     }
 
     try:
-        # Step 1: Extract PDF text
-        extract_result = process_pdf_and_extract_text(pdf_bytes, chapter_id)
-
+        extract_result = process_pdf_and_extract_text(bytes(pdf_bytes), chapter_id)
         if not extract_result["success"]:
             result["error"] = f"PDF extraction failed: {extract_result.get('error')}"
             return result
@@ -280,12 +312,10 @@ def process_chapter_upload(
         result["text_extracted"] = True
         pdf_text = extract_result.get("pdf_text", "")
 
-        # Step 2: Generate exercises if requested
         if auto_generate_exercises and pdf_text:
             exercise_result = generate_exercises_async(
                 pdf_text, chapter_title, chapter_id, class_id, api_key
             )
-
             if exercise_result["success"]:
                 result["exercises_generated"] = True
                 result["exercise_count"] = exercise_result.get("exercise_count", 0)
@@ -296,29 +326,37 @@ def process_chapter_upload(
         return result
 
     except Exception as e:
+        logger.error("process_chapter_upload failed: %s", e, exc_info=True)
         result["error"] = str(e)
         return result
 
 
-@celery_app.task(bind=True, base=DatabaseTask, name="workers.tasks.compute_exercise_quality_scores")
+# ---------------------------------------------------------------------------
+# Quality score computation (scheduled every 6 hours)
+# ---------------------------------------------------------------------------
+
+
+@celery_app.task(
+    bind=True,
+    base=DatabaseTask,
+    name="workers.tasks.compute_exercise_quality_scores",
+)
 def compute_exercise_quality_scores(self, min_outcomes=5):
     """
-    Compute and upsert quality scores for exercises that have accumulated
-    enough new outcome events since the last computation.
+    Compute quality scores for exercises with enough outcome data.
 
     Scheduled every 6 hours via Celery beat.
-    Also callable manually via POST /api/flywheel/compute-quality (superadmin).
+    Also callable manually via POST /api/flywheel/compute-quality (superadmin only).
 
     Returns:
-        dict: {'success': bool, 'exercises_scored': int}
+        dict: {success, exercises_scored}
     """
-    try:
-        import statistics
+    import statistics
 
+    try:
         conn = self.get_db_connection()
         cur = conn.cursor()
 
-        # Import here to avoid circular import at module load time
         from repositories import flywheel_repository as flywheel_repo
 
         candidates = flywheel_repo.get_exercises_needing_quality_update(conn, min_outcomes)
@@ -346,7 +384,6 @@ def compute_exercise_quality_scores(self, min_outcomes=5):
                 total_attempts = len(rows)
                 unique_students = len({r[0] for r in rows})
 
-                # first_attempt_pass_rate: fraction of students who passed on attempt 1
                 first_attempts = [r for r in rows if r[1] == 1]
                 first_attempt_pass_rate = (
                     sum(1 for r in first_attempts if r[2]) / len(first_attempts)
@@ -356,12 +393,12 @@ def compute_exercise_quality_scores(self, min_outcomes=5):
 
                 overall_pass_rate = sum(1 for r in rows if r[2]) / total_attempts
 
-                # avg_attempts_to_pass: per-student first passing attempt_number
                 passing_attempts_per_user: dict = {}
                 for r in rows:
                     uid, attempt_num, passed = r[0], r[1], r[2]
                     if passed and uid not in passing_attempts_per_user:
                         passing_attempts_per_user[uid] = attempt_num
+
                 avg_attempts_to_pass = (
                     sum(passing_attempts_per_user.values()) / len(passing_attempts_per_user)
                     if passing_attempts_per_user
@@ -376,8 +413,6 @@ def compute_exercise_quality_scores(self, min_outcomes=5):
                 all_uids = {r[0] for r in rows}
                 passed_uids = set(passing_attempts_per_user.keys())
                 dropout_rate = len(all_uids - passed_uids) / len(all_uids) if all_uids else 0.0
-
-                avg_hints_before_pass = 0.0  # hints not yet tracked
 
                 failing_cats = [r[6] for r in rows if not r[2] and r[6]]
                 dominant_error_category = (
@@ -394,6 +429,7 @@ def compute_exercise_quality_scores(self, min_outcomes=5):
                     for i, t in enumerate(tr):
                         if not (t or {}).get("passed", True):
                             test_fail_counts[i] = test_fail_counts.get(i, 0) + 1
+
                 most_failed_index = (
                     max(test_fail_counts, key=test_fail_counts.get) if test_fail_counts else None
                 )
@@ -448,7 +484,7 @@ def compute_exercise_quality_scores(self, min_outcomes=5):
                         "overall_pass_rate": overall_pass_rate,
                         "avg_attempts_to_pass": avg_attempts_to_pass,
                         "median_time_to_pass_seconds": median_time_to_pass_seconds,
-                        "avg_hints_before_pass": avg_hints_before_pass,
+                        "avg_hints_before_pass": 0.0,  # hints not yet tracked
                         "dropout_rate": dropout_rate,
                         "quality_score": quality_score,
                         "quality_label": quality_label,
@@ -459,6 +495,7 @@ def compute_exercise_quality_scores(self, min_outcomes=5):
                 )
                 conn.commit()
                 exercises_scored += 1
+
             except Exception as ex_err:
                 logger.error(
                     "compute_exercise_quality_scores: failed for %s: %s",
@@ -478,30 +515,31 @@ def compute_exercise_quality_scores(self, min_outcomes=5):
         return {"success": False, "error": str(e), "exercises_scored": 0}
 
 
-@celery_app.task(name="workers.tasks.cleanup_expired_lti_sessions")
-def cleanup_expired_lti_sessions():
+# ---------------------------------------------------------------------------
+# LTI session cleanup (scheduled daily)
+# ---------------------------------------------------------------------------
+
+
+@celery_app.task(
+    bind=True,
+    base=DatabaseTask,
+    name="workers.tasks.cleanup_expired_lti_sessions",
+)
+def cleanup_expired_lti_sessions(self):
     """
-    Delete expired LTI sessions from the database.
-    Scheduled daily via Celery beat.
+    Delete expired LTI sessions. Scheduled daily via Celery beat.
 
     Returns:
-        dict: {'deleted': int} — number of rows removed
+        dict: {deleted: int}
     """
     try:
-        import psycopg2
-
-        database_url = os.getenv("DATABASE_URL")
-        if not database_url:
-            logger.error("cleanup_expired_lti_sessions: DATABASE_URL not set")
-            return {"deleted": 0}
-
-        conn = psycopg2.connect(database_url, connect_timeout=10)
+        conn = self.get_db_connection()
         cur = conn.cursor()
         cur.execute("DELETE FROM lti_sessions WHERE expires_at < NOW()")
         deleted = cur.rowcount
         conn.commit()
         cur.close()
-        conn.close()
+        self.close_db_connection()
         logger.info("cleanup_expired_lti_sessions: deleted %d expired sessions", deleted)
         return {"deleted": deleted}
     except Exception as e:
