@@ -383,6 +383,8 @@ def register_frontend_routes(app) -> None:
         "classes",
         "dashboard",
         "admin",
+        "chapter",
+        "exercise",
     }
 
     def _serve_react():
