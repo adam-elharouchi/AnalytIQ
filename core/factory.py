@@ -48,6 +48,7 @@ def setup_logging(app) -> None:
         def filter(self, record):
             try:
                 from flask import g as _g
+
                 record.request_id = getattr(_g, "request_id", "-")
             except RuntimeError:
                 record.request_id = "-"
@@ -90,6 +91,7 @@ def setup_sentry(app) -> None:
     """Initialize Sentry error tracking if configured."""
     try:
         from core.sentry import init_sentry
+
         init_sentry(app)
     except ImportError:
         logger.warning("core.sentry not available — Sentry inactive")
@@ -235,6 +237,7 @@ def register_request_hooks(app) -> None:
         g.request_id = str(uuid.uuid4())
         try:
             import sentry_sdk
+
             sentry_sdk.set_tag("request_id", g.request_id)
         except Exception:
             pass
@@ -276,15 +279,27 @@ def register_request_hooks(app) -> None:
             response.headers["X-Frame-Options"] = "DENY"
             response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
             if not config.DEBUG:
-                response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+                response.headers[
+                    "Strict-Transport-Security"
+                ] = "max-age=31536000; includeSubDomains"
             # Prevent CDN/proxy from caching auth-gated API responses
             response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
             response.headers["Pragma"] = "no-cache"
         else:
             if not config.DEBUG:
                 is_asset = request.path.endswith(
-                    (".css", ".js", ".png", ".jpg", ".jpeg", ".gif", ".svg",
-                     ".ico", ".woff", ".woff2")
+                    (
+                        ".css",
+                        ".js",
+                        ".png",
+                        ".jpg",
+                        ".jpeg",
+                        ".gif",
+                        ".svg",
+                        ".ico",
+                        ".woff",
+                        ".woff2",
+                    )
                 )
                 if is_asset:
                     response.headers["Cache-Control"] = "public, max-age=86400"
@@ -349,9 +364,20 @@ def register_blueprints(app) -> None:
     from blueprints.flywheel import bp as flywheel_bp
 
     for bp in (
-        health_bp, ai_bp, auth_bp, users_bp, chapters_bp,
-        exercises_bp, classes_bp, lti_bp, superadmin_bp,
-        content_import_bp, platform_bp, sso_bp, tenant_admin_bp, flywheel_bp,
+        health_bp,
+        ai_bp,
+        auth_bp,
+        users_bp,
+        chapters_bp,
+        exercises_bp,
+        classes_bp,
+        lti_bp,
+        superadmin_bp,
+        content_import_bp,
+        platform_bp,
+        sso_bp,
+        tenant_admin_bp,
+        flywheel_bp,
     ):
         app.register_blueprint(bp)
 
@@ -390,6 +416,7 @@ def register_frontend_routes(app) -> None:
 
     class NoApiPathConverter(BaseConverter):
         """Match any path that does NOT start with 'api' — keeps /api/* out of the catch-all."""
+
         regex = r"(?!api(?:\/|$)).+"
 
     app.url_map.converters["no_api_path"] = NoApiPathConverter

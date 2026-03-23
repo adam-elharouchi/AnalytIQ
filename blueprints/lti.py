@@ -206,7 +206,11 @@ def _upsert_lti_user(conn, launch_data):
                 auth_repo.create_default_preferences(conn, new_row[0])
                 auth_repo.create_default_ai_digest(conn, new_row[0])
             except Exception as e:
-                logger.debug("Non-critical: default profile creation failed for new LTI user %s: %s", new_row[0], e)
+                logger.debug(
+                    "Non-critical: default profile creation failed for new LTI user %s: %s",
+                    new_row[0],
+                    e,
+                )
             user_row = (new_row[0], new_row[1], new_row[2], role)
 
     if not user_row:

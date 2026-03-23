@@ -93,6 +93,8 @@ def server_error(message: str = _GENERIC_500, *, code: str | None = None):
     return error_response(message, 500, code=code)
 
 
-def service_unavailable(message: str = "Service temporarily unavailable", *, code: str | None = None):
+def service_unavailable(
+    message: str = "Service temporarily unavailable", *, code: str | None = None
+):
     """503 Service Unavailable."""
     return error_response(message, 503, code=code)
