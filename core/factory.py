@@ -379,10 +379,12 @@ def register_frontend_routes(app) -> None:
 
     # React-managed client routes — Flask sends index.html; React Router handles them.
     # NOTE: "login" is intentionally excluded — the React build is not deployed yet,
-    # so /login must fall through to the Jinja login.html template.
+    # All authenticated + auth routes go through React.
     _REACT_ROUTES = {
+        "login",
         "classes",
         "dashboard",
+        "home",
         "admin",
         "chapter",
         "exercise",
