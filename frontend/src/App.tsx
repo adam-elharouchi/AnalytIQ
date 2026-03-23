@@ -186,10 +186,14 @@ function AppRoutes() {
 }
 
 export default function App() {
+  // In Vite dev mode the app is served from /static/react/ so BrowserRouter
+  // needs that as its basename.  In production Flask serves the app at root
+  // paths (/home, /login …) so basename must be empty.
+  const basename = import.meta.env.DEV ? '/static/react' : ''
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <BrowserRouter>
+        <BrowserRouter basename={basename}>
           <AppRoutes />
         </BrowserRouter>
       </AuthProvider>

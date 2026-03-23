@@ -16,7 +16,7 @@ export default defineConfig({
   base: '/static/react/',
   // In development, proxy /api requests to the Flask backend
   server: {
-    port: 3000,
+    port: Number(process.env.PORT) || 3000,
     proxy: {
       '/api': {
         target: 'http://localhost:5001',
