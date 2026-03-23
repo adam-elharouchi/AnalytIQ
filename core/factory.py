@@ -385,6 +385,11 @@ def register_frontend_routes(app) -> None:
         "admin",
         "chapter",
         "exercise",
+        "professor-class",
+        "profile",
+        "reset-password",
+        "code-assistant",
+        "upload-assistant",
     }
 
     def _serve_react():
