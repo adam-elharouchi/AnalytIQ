@@ -36,7 +36,9 @@ class DatabaseTask(Task):
             if not database_url:
                 raise ValueError("DATABASE_URL environment variable not set")
 
-            self._db_pool = psycopg2.pool.SimpleConnectionPool(1, 10, database_url, connect_timeout=10)
+            self._db_pool = psycopg2.pool.SimpleConnectionPool(
+                1, 10, database_url, connect_timeout=10
+            )
             self._db_conn = self._db_pool.getconn()
 
         return self._db_conn
@@ -87,11 +89,19 @@ def process_pdf_and_extract_text(self, pdf_bytes, chapter_id):
     """
     try:
         if not extract_text_from_pdf_bytes:
-            return {"success": False, "error": "PDF processor not available", "chapter_id": chapter_id}
+            return {
+                "success": False,
+                "error": "PDF processor not available",
+                "chapter_id": chapter_id,
+            }
 
         pdf_text = extract_text_from_pdf_bytes(bytes(pdf_bytes))
         if not pdf_text:
-            return {"success": False, "error": "PDF extraction returned no text", "chapter_id": chapter_id}
+            return {
+                "success": False,
+                "error": "PDF extraction returned no text",
+                "chapter_id": chapter_id,
+            }
 
         conn = self.get_db_connection()
         cur = conn.cursor()
@@ -117,7 +127,7 @@ def process_pdf_and_extract_text(self, pdf_bytes, chapter_id):
             e,
         )
         try:
-            raise self.retry(exc=e, countdown=30 * (2 ** self.request.retries))
+            raise self.retry(exc=e, countdown=30 * (2**self.request.retries))
         except self.MaxRetriesExceededError:
             return {"success": False, "error": str(e), "chapter_id": chapter_id}
 
@@ -151,11 +161,19 @@ def generate_exercises_async(self, pdf_text, chapter_title, chapter_id, class_id
     """
     try:
         if not generate_exercises_from_pdf_content:
-            return {"success": False, "error": "Exercise generator not available", "chapter_id": chapter_id}
+            return {
+                "success": False,
+                "error": "Exercise generator not available",
+                "chapter_id": chapter_id,
+            }
 
         effective_api_key = api_key or config.GEMINI_API_KEY
         if not effective_api_key:
-            return {"success": False, "error": "GEMINI_API_KEY not configured", "chapter_id": chapter_id}
+            return {
+                "success": False,
+                "error": "GEMINI_API_KEY not configured",
+                "chapter_id": chapter_id,
+            }
 
         exercises = generate_exercises_from_pdf_content(pdf_text, chapter_title, effective_api_key)
         if not exercises:
@@ -212,7 +230,7 @@ def generate_exercises_async(self, pdf_text, chapter_title, chapter_id, class_id
             e,
         )
         try:
-            raise self.retry(exc=e, countdown=60 * (2 ** self.request.retries))
+            raise self.retry(exc=e, countdown=60 * (2**self.request.retries))
         except self.MaxRetriesExceededError:
             return {"success": False, "error": str(e), "chapter_id": chapter_id}
 
@@ -251,7 +269,7 @@ def send_email_async(self, recipient, subject, body):
             e,
         )
         try:
-            raise self.retry(exc=e, countdown=30 * (2 ** self.request.retries))
+            raise self.retry(exc=e, countdown=30 * (2**self.request.retries))
         except self.MaxRetriesExceededError:
             logger.error("send_email_async: max retries exceeded for %s", recipient)
             return {"success": False, "error": str(e), "recipient": recipient}
