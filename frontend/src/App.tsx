@@ -161,8 +161,9 @@ function AppRoutes() {
             {/* Reset password — public */}
             <Route path="/reset-password" element={<ResetPassword />} />
 
-            {/* Root → role-based redirect */}
+            {/* Root + /home → role-based redirect */}
             <Route path="/" element={<HomeRedirect />} />
+            <Route path="/home" element={<HomeRedirect />} />
 
             {/* 404 */}
             <Route path="*" element={<NotFound />} />

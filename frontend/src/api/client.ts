@@ -51,8 +51,8 @@ async function request<T>(
     if (res.status === 401 && !isAuthEndpoint) {
       localStorage.removeItem('authToken')
       localStorage.removeItem('currentUser')
-      const redirect = encodeURIComponent(window.location.href)
-      window.location.href = `/login?reason=session_expired&redirect=${redirect}`
+      // Stay inside the React app — /login is now a React route.
+      window.location.replace('/login')
       return { ok: false, data: null, error: 'Session expired', status: 401 }
     }
 
