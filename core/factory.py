@@ -370,7 +370,7 @@ def register_frontend_routes(app) -> None:
     - /static/react/* → built React assets served directly
     """
     import os as _os
-    from flask import jsonify, redirect, render_template, request, send_from_directory
+    from flask import jsonify, redirect, render_template, send_from_directory
     from jinja2 import TemplateNotFound
     from werkzeug.routing import BaseConverter
 

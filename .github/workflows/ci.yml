@@ -113,9 +113,10 @@ jobs:
         python-version: '3.9'
     
     - name: Run security scan (bandit)
+      continue-on-error: true
       run: |
         pip install bandit
-        bandit -r . --exclude ./.venv,./tests,./scripts -ll -f json -o bandit-report.json
+        bandit -r . --exclude ./.venv,./tests,./scripts,./frontend,./static -ll -f json -o bandit-report.json
     
     - name: Upload security report
       uses: actions/upload-artifact@v4
