@@ -6,10 +6,20 @@ import { Navigation } from '@/components/Navigation'
 import { PrivateRoute } from '@/components/PrivateRoute'
 
 // Lazy-load pages so each page bundle is only fetched when needed
-const Login            = lazy(() => import('@/pages/Login'))
-const StudentClasses   = lazy(() => import('@/pages/StudentClasses'))
-const ProfessorDashboard = lazy(() => import('@/pages/ProfessorDashboard'))
-const NotFound         = lazy(() => import('@/pages/NotFound'))
+const Login                 = lazy(() => import('@/pages/Login'))
+const StudentClasses        = lazy(() => import('@/pages/StudentClasses'))
+const ProfessorDashboard    = lazy(() => import('@/pages/ProfessorDashboard'))
+const ProfessorClass        = lazy(() => import('@/pages/ProfessorClass'))
+const SuperadminDashboard   = lazy(() => import('@/pages/SuperadminDashboard'))
+const TenantAdminDashboard  = lazy(() => import('@/pages/TenantAdminDashboard'))
+const NotFound              = lazy(() => import('@/pages/NotFound'))
+const StudentClass          = lazy(() => import('@/pages/StudentClass'))
+const ChapterView           = lazy(() => import('@/pages/ChapterView'))
+const ExercisePage          = lazy(() => import('@/pages/ExercisePage'))
+const Profile               = lazy(() => import('@/pages/Profile'))
+const ResetPassword         = lazy(() => import('@/pages/ResetPassword'))
+const CodeAssistant         = lazy(() => import('@/pages/CodeAssistant'))
+const UploadAssistant       = lazy(() => import('@/pages/UploadAssistant'))
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -19,6 +29,13 @@ const queryClient = new QueryClient({
     },
   },
 })
+
+/** Renders the correct admin dashboard based on the authenticated user's role. */
+function AdminDashboard() {
+  const { user } = useAuth()
+  if (user?.role === 'tenant_admin') return <TenantAdminDashboard />
+  return <SuperadminDashboard />
+}
 
 function HomeRedirect() {
   const { user, isAuthenticated } = useAuth()
@@ -40,6 +57,7 @@ function AppRoutes() {
           <Routes>
             {/* Public */}
             <Route path="/login" element={<Login />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
 
             {/* Student */}
             <Route
@@ -51,12 +69,92 @@ function AppRoutes() {
               }
             />
 
+            {/* Student class detail */}
+            <Route
+              path="/classes/:classId"
+              element={
+                <PrivateRoute roles={['student', 'superadmin', 'tenant_admin']}>
+                  <StudentClass />
+                </PrivateRoute>
+              }
+            />
+
+            {/* Chapter PDF view */}
+            <Route
+              path="/chapter/:chapterId"
+              element={
+                <PrivateRoute roles={['student', 'superadmin', 'tenant_admin', 'professor']}>
+                  <ChapterView />
+                </PrivateRoute>
+              }
+            />
+
+            {/* Exercise / practice playground */}
+            <Route
+              path="/exercise/:exerciseId"
+              element={
+                <PrivateRoute roles={['student', 'superadmin', 'tenant_admin', 'professor']}>
+                  <ExercisePage />
+                </PrivateRoute>
+              }
+            />
+
+            {/* Admin (superadmin + tenant_admin) */}
+            <Route
+              path="/admin"
+              element={
+                <PrivateRoute roles={['superadmin', 'tenant_admin']}>
+                  <AdminDashboard />
+                </PrivateRoute>
+              }
+            />
+
             {/* Professor */}
             <Route
               path="/dashboard"
               element={
                 <PrivateRoute roles={['professor']}>
                   <ProfessorDashboard />
+                </PrivateRoute>
+              }
+            />
+
+            {/* Professor class detail */}
+            <Route
+              path="/professor-class/:classId"
+              element={
+                <PrivateRoute roles={['professor', 'superadmin', 'tenant_admin']}>
+                  <ProfessorClass />
+                </PrivateRoute>
+              }
+            />
+
+            {/* Profile */}
+            <Route
+              path="/profile"
+              element={
+                <PrivateRoute roles={['student', 'professor', 'superadmin', 'tenant_admin']}>
+                  <Profile />
+                </PrivateRoute>
+              }
+            />
+
+            {/* Code assistant */}
+            <Route
+              path="/code-assistant"
+              element={
+                <PrivateRoute roles={['student', 'professor', 'superadmin', 'tenant_admin']}>
+                  <CodeAssistant />
+                </PrivateRoute>
+              }
+            />
+
+            {/* Upload assistant */}
+            <Route
+              path="/upload-assistant"
+              element={
+                <PrivateRoute roles={['professor', 'superadmin', 'tenant_admin']}>
+                  <UploadAssistant />
                 </PrivateRoute>
               }
             />
