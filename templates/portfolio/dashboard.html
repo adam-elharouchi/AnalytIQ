@@ -113,82 +113,91 @@
 
 </main>
 
-<!-- ══ New Project Modal ══ -->
-<div id="newProjectOverlay" class="student-drawer-overlay" style="display:none;" onclick="if(event.target===this)closeNewProjectModal()">
-  <div class="student-join-drawer" style="max-width:480px;">
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem;">
-      <h2 style="color:#f8fafc; font-size:1.25rem; margin:0;">Start New Project</h2>
-      <button onclick="closeNewProjectModal()" style="background:none; border:none; color:#64748b; cursor:pointer; font-size:1.5rem; line-height:1;">&times;</button>
+<!-- ══ New Project Drawer ══ -->
+<div class="student-drawer-overlay" id="newProjectOverlay" onclick="closeNewProjectModal()"></div>
+<div class="student-join-drawer" id="newProjectDrawer" role="dialog" aria-modal="true">
+  <div class="drawer-header">
+    <h2>Start New Project</h2>
+    <button onclick="closeNewProjectModal()" aria-label="Close"
+      style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#64748b;line-height:1;">&times;</button>
+  </div>
+  <div class="drawer-body">
+    <div style="margin-bottom:1.25rem;">
+      <label for="newProjectTitle">Project Title *</label>
+      <input type="text" id="newProjectTitle" placeholder="e.g. Stock Price Predictor" maxlength="200" autocomplete="off" />
     </div>
-    <div style="display:flex; flex-direction:column; gap:1rem;">
-      <div>
-        <label style="display:block; color:#94a3b8; font-size:0.85rem; margin-bottom:0.4rem;">Project Title *</label>
-        <input type="text" id="newProjectTitle" placeholder="e.g. Stock Price Predictor" maxlength="200"
-               style="width:100%; padding:0.65rem 0.9rem; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:0.5rem; color:#f8fafc; font-size:0.95rem; box-sizing:border-box;" />
-      </div>
-      <div>
-        <label style="display:block; color:#94a3b8; font-size:0.85rem; margin-bottom:0.4rem;">Language</label>
-        <select id="newProjectLanguage" style="width:100%; padding:0.65rem 0.9rem; background:rgba(30,41,59,0.9); border:1px solid rgba(255,255,255,0.1); border-radius:0.5rem; color:#f8fafc; font-size:0.95rem; box-sizing:border-box;">
-          <option value="python">Python</option>
-          <option value="sql">SQL</option>
-          <option value="r">R</option>
-          <option value="javascript">JavaScript</option>
-          <option value="java">Java</option>
-        </select>
-      </div>
-      <div>
-        <label style="display:block; color:#94a3b8; font-size:0.85rem; margin-bottom:0.4rem;">Description (optional)</label>
-        <textarea id="newProjectDesc" placeholder="What does this project do?" maxlength="1000" rows="3"
-                  style="width:100%; padding:0.65rem 0.9rem; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:0.5rem; color:#f8fafc; font-size:0.95rem; resize:vertical; box-sizing:border-box;"></textarea>
-      </div>
-      <button onclick="submitNewProject()" id="createProjectBtn" class="btn btn-primary" style="width:100%; padding:0.75rem; font-size:1rem; margin-top:0.5rem;">Create Project</button>
-      <p id="newProjectError" style="color:#ef4444; font-size:0.85rem; margin:0; display:none;"></p>
+    <div style="margin-bottom:1.25rem;">
+      <label for="newProjectLanguage">Language</label>
+      <select id="newProjectLanguage">
+        <option value="python">Python</option>
+        <option value="sql">SQL</option>
+        <option value="r">R</option>
+        <option value="javascript">JavaScript</option>
+        <option value="java">Java</option>
+      </select>
+    </div>
+    <div style="margin-bottom:1.5rem;">
+      <label for="newProjectDesc">Description (optional)</label>
+      <textarea id="newProjectDesc" placeholder="What does this project do?" maxlength="1000" rows="3" style="resize:vertical;"></textarea>
+    </div>
+    <div id="newProjectError" style="display:none;margin-bottom:1rem;background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.3);color:#f87171;padding:0.875rem;border-radius:0.5rem;font-size:0.875rem;"></div>
+    <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+      <button type="button" onclick="closeNewProjectModal()"
+        style="background:transparent;border:1px solid rgba(255,255,255,0.1);color:#94a3b8;padding:0.65rem 1.25rem;border-radius:0.375rem;cursor:pointer;font-size:0.875rem;">
+        Cancel
+      </button>
+      <button onclick="submitNewProject()" id="createProjectBtn" class="btn btn-primary">Create Project</button>
     </div>
   </div>
 </div>
 
-<!-- ══ Import Exercises Modal ══ -->
-<div id="importOverlay" class="student-drawer-overlay" style="display:none;" onclick="if(event.target===this)closeImportModal()">
-  <div class="student-join-drawer" style="max-width:560px; max-height:80vh; display:flex; flex-direction:column;">
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; flex-shrink:0;">
-      <h2 style="color:#f8fafc; font-size:1.25rem; margin:0;">Add from Class</h2>
-      <button onclick="closeImportModal()" style="background:none; border:none; color:#64748b; cursor:pointer; font-size:1.5rem; line-height:1;">&times;</button>
-    </div>
-    <div id="importExercisesList" style="overflow-y:auto; flex:1;">
+<!-- ══ Import Exercises Drawer ══ -->
+<div class="student-drawer-overlay" id="importOverlay" onclick="closeImportModal()"></div>
+<div class="student-join-drawer" id="importDrawer" role="dialog" aria-modal="true" style="display:flex;flex-direction:column;">
+  <div class="drawer-header">
+    <h2>Add from Class</h2>
+    <button onclick="closeImportModal()" aria-label="Close"
+      style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#64748b;line-height:1;">&times;</button>
+  </div>
+  <div class="drawer-body" style="flex:1;overflow-y:auto;">
+    <div id="importExercisesList">
       <p style="color:#64748b;">Loading completed exercises...</p>
     </div>
-    <div style="flex-shrink:0; margin-top:1rem;">
-      <button onclick="submitImport()" id="importBtn" class="btn btn-primary" style="width:100%;" disabled>Import Selected</button>
-      <p id="importError" style="color:#ef4444; font-size:0.85rem; margin-top:0.5rem; display:none;"></p>
-    </div>
+  </div>
+  <div style="padding:1.25rem 2rem;border-top:1px solid rgba(255,255,255,0.05);flex-shrink:0;">
+    <div id="importError" style="display:none;margin-bottom:0.75rem;background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.3);color:#f87171;padding:0.875rem;border-radius:0.5rem;font-size:0.875rem;"></div>
+    <button onclick="submitImport()" id="importBtn" class="btn btn-primary" style="width:100%;" disabled>Import Selected</button>
   </div>
 </div>
 
-<!-- ══ External Link Modal ══ -->
-<div id="externalLinkOverlay" class="student-drawer-overlay" style="display:none;" onclick="if(event.target===this)closeExternalLinkModal()">
-  <div class="student-join-drawer" style="max-width:480px;">
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem;">
-      <h2 style="color:#f8fafc; font-size:1.25rem; margin:0;">Add External Link</h2>
-      <button onclick="closeExternalLinkModal()" style="background:none; border:none; color:#64748b; cursor:pointer; font-size:1.5rem; line-height:1;">&times;</button>
+<!-- ══ External Link Drawer ══ -->
+<div class="student-drawer-overlay" id="externalLinkOverlay" onclick="closeExternalLinkModal()"></div>
+<div class="student-join-drawer" id="externalLinkDrawer" role="dialog" aria-modal="true">
+  <div class="drawer-header">
+    <h2>Add External Link</h2>
+    <button onclick="closeExternalLinkModal()" aria-label="Close"
+      style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#64748b;line-height:1;">&times;</button>
+  </div>
+  <div class="drawer-body">
+    <div style="margin-bottom:1.25rem;">
+      <label for="extTitle">Title *</label>
+      <input type="text" id="extTitle" placeholder="e.g. My GitHub Project" maxlength="200" />
     </div>
-    <div style="display:flex; flex-direction:column; gap:1rem;">
-      <div>
-        <label style="display:block; color:#94a3b8; font-size:0.85rem; margin-bottom:0.4rem;">Title *</label>
-        <input type="text" id="extTitle" placeholder="e.g. My GitHub Project" maxlength="200"
-               style="width:100%; padding:0.65rem 0.9rem; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:0.5rem; color:#f8fafc; font-size:0.95rem; box-sizing:border-box;" />
-      </div>
-      <div>
-        <label style="display:block; color:#94a3b8; font-size:0.85rem; margin-bottom:0.4rem;">URL *</label>
-        <input type="url" id="extUrl" placeholder="https://github.com/..."
-               style="width:100%; padding:0.65rem 0.9rem; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:0.5rem; color:#f8fafc; font-size:0.95rem; box-sizing:border-box;" />
-      </div>
-      <div>
-        <label style="display:block; color:#94a3b8; font-size:0.85rem; margin-bottom:0.4rem;">Description (optional)</label>
-        <textarea id="extDesc" maxlength="1000" rows="2"
-                  style="width:100%; padding:0.65rem 0.9rem; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:0.5rem; color:#f8fafc; font-size:0.95rem; resize:vertical; box-sizing:border-box;"></textarea>
-      </div>
-      <button onclick="submitExternalLink()" class="btn btn-primary" style="width:100%; padding:0.75rem; font-size:1rem; margin-top:0.5rem;">Add Link</button>
-      <p id="extError" style="color:#ef4444; font-size:0.85rem; margin:0; display:none;"></p>
+    <div style="margin-bottom:1.25rem;">
+      <label for="extUrl">URL *</label>
+      <input type="url" id="extUrl" placeholder="https://github.com/..." />
+    </div>
+    <div style="margin-bottom:1.5rem;">
+      <label for="extDesc">Description (optional)</label>
+      <textarea id="extDesc" maxlength="1000" rows="2" style="resize:vertical;"></textarea>
+    </div>
+    <div id="extError" style="display:none;margin-bottom:1rem;background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.3);color:#f87171;padding:0.875rem;border-radius:0.5rem;font-size:0.875rem;"></div>
+    <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+      <button type="button" onclick="closeExternalLinkModal()"
+        style="background:transparent;border:1px solid rgba(255,255,255,0.1);color:#94a3b8;padding:0.65rem 1.25rem;border-radius:0.375rem;cursor:pointer;font-size:0.875rem;">
+        Cancel
+      </button>
+      <button onclick="submitExternalLink()" class="btn btn-primary">Add Link</button>
     </div>
   </div>
 </div>
@@ -339,19 +348,15 @@ function copyPortfolioLink() {
   navigator.clipboard.writeText(url).then(() => alert('Portfolio link copied!')).catch(() => prompt('Copy this link:', url));
 }
 
-// ── New Project Modal ──────────────────────────────────────────────────────
+// ── New Project Drawer ─────────────────────────────────────────────────────
 function openNewProjectModal() {
-  const ov = document.getElementById('newProjectOverlay');
-  ov.style.display = 'flex';
-  ov.classList.add('visible');
-  ov.querySelector('.student-join-drawer').classList.add('visible');
+  document.getElementById('newProjectOverlay').classList.add('visible');
+  document.getElementById('newProjectDrawer').classList.add('visible');
   setTimeout(() => document.getElementById('newProjectTitle').focus(), 50);
 }
 function closeNewProjectModal() {
-  const ov = document.getElementById('newProjectOverlay');
-  ov.classList.remove('visible');
-  ov.querySelector('.student-join-drawer').classList.remove('visible');
-  setTimeout(() => { ov.style.display = 'none'; }, 300);
+  document.getElementById('newProjectOverlay').classList.remove('visible');
+  document.getElementById('newProjectDrawer').classList.remove('visible');
   document.getElementById('newProjectTitle').value = '';
   document.getElementById('newProjectDesc').value = '';
   document.getElementById('newProjectError').style.display = 'none';
@@ -389,10 +394,8 @@ async function submitNewProject() {
 
 // ── Import Modal ───────────────────────────────────────────────────────────
 async function openImportModal() {
-  const ov = document.getElementById('importOverlay');
-  ov.style.display = 'flex';
-  ov.classList.add('visible');
-  ov.querySelector('.student-join-drawer').classList.add('visible');
+  document.getElementById('importOverlay').classList.add('visible');
+  document.getElementById('importDrawer').classList.add('visible');
   selectedImportIds.clear();
   document.getElementById('importBtn').disabled = true;
   const listEl = document.getElementById('importExercisesList');
@@ -428,10 +431,8 @@ function toggleImportSelect(checkbox) {
   document.getElementById('importBtn').disabled = selectedImportIds.size === 0;
 }
 function closeImportModal() {
-  const ov = document.getElementById('importOverlay');
-  ov.classList.remove('visible');
-  ov.querySelector('.student-join-drawer').classList.remove('visible');
-  setTimeout(() => { ov.style.display = 'none'; }, 300);
+  document.getElementById('importOverlay').classList.remove('visible');
+  document.getElementById('importDrawer').classList.remove('visible');
 }
 async function submitImport() {
   const btn = document.getElementById('importBtn');
@@ -461,16 +462,12 @@ async function submitImport() {
 
 // ── External Link Modal ────────────────────────────────────────────────────
 function openExternalLinkModal() {
-  const ov = document.getElementById('externalLinkOverlay');
-  ov.style.display = 'flex';
-  ov.classList.add('visible');
-  ov.querySelector('.student-join-drawer').classList.add('visible');
+  document.getElementById('externalLinkOverlay').classList.add('visible');
+  document.getElementById('externalLinkDrawer').classList.add('visible');
 }
 function closeExternalLinkModal() {
-  const ov = document.getElementById('externalLinkOverlay');
-  ov.classList.remove('visible');
-  ov.querySelector('.student-join-drawer').classList.remove('visible');
-  setTimeout(() => { ov.style.display = 'none'; }, 300);
+  document.getElementById('externalLinkOverlay').classList.remove('visible');
+  document.getElementById('externalLinkDrawer').classList.remove('visible');
   document.getElementById('extTitle').value = '';
   document.getElementById('extUrl').value = '';
   document.getElementById('extDesc').value = '';
