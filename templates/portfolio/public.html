@@ -76,8 +76,16 @@
       transition: border-color 0.15s, transform 0.15s;
     }
     .pub-card:hover { border-color: rgba(37,105,244,0.35); transform: translateY(-2px); }
+    .pub-card.expanded { border-color: rgba(37,105,244,0.5); border-radius: 0.75rem 0.75rem 0 0; transform: none; }
 
     .pub-card-title { font-weight: 600; color: #f8fafc; font-size: 0.95rem; margin: 0 0 0.5rem; }
+
+    .pub-chevron {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 20px; height: 20px; flex-shrink: 0;
+      color: #475569; transition: transform 0.2s, color 0.2s;
+    }
+    .pub-card.expanded .pub-chevron { transform: rotate(180deg); color: var(--color-primary); }
     .pub-card-source { color: #64748b; font-size: 0.8rem; margin-top: 0.75rem; }
 
     .lang-badge {
@@ -88,11 +96,12 @@
     /* Expanded detail */
     .pub-detail {
       display: none;
-      background: var(--bg-primary, #0f172a);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 0.75rem;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(37,105,244,0.3);
+      border-top: none;
+      border-radius: 0 0 0.75rem 0.75rem;
       padding: 1.5rem;
-      margin-top: 0.5rem;
+      margin-top: 0;
       grid-column: 1 / -1;
     }
     .pub-detail.open { display: block; }
@@ -259,35 +268,50 @@ function renderCard(item, prefix, idx) {
   ).join('');
   const score = item.show_score && item.score != null ? `<span style="color:#10b981;font-size:0.78rem;">${Math.round(item.score)}%</span>` : '';
 
-  let detail = '';
+  // Build detail panel — always rendered so toggle always works
+  let detailInner = '';
+  if (item.description) {
+    detailInner += `<p style="color:#94a3b8;font-size:0.875rem;line-height:1.6;margin:0 0 1rem;">${escHtml(item.description)}</p>`;
+  }
   if (item.code_content) {
     const extMap = { python:'python', sql:'sql', r:'r', javascript:'javascript', java:'java' };
     const hlLang = extMap[lang] || 'plaintext';
     const codeEsc = escHtml(item.code_content);
-    detail = `
-      <div class="pub-detail" id="detail-${prefix}-${idx}">
-        ${item.description ? `<p style="color:#94a3b8;font-size:0.875rem;line-height:1.6;margin:0 0 1rem;">${escHtml(item.description)}</p>` : ''}
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
-          <span style="color:#64748b;font-size:0.78rem;">${escHtml(lang)}</span>
-          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-        </div>
-        <pre><code class="language-${hlLang}">${codeEsc}</code></pre>
-        ${item.external_url ? `<a href="${escHtml(item.external_url)}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:0.4rem;color:var(--color-primary);font-size:0.85rem;margin-top:1rem;text-decoration:none;">View on GitHub →</a>` : ''}
-      </div>`;
-  } else if (item.external_url) {
-    detail = `
-      <div class="pub-detail" id="detail-${prefix}-${idx}">
-        ${item.description ? `<p style="color:#94a3b8;font-size:0.875rem;line-height:1.6;margin:0 0 1rem;">${escHtml(item.description)}</p>` : ''}
-        <a href="${escHtml(item.external_url)}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:0.4rem;color:var(--color-primary);font-size:0.9rem;text-decoration:none;">Open Project →</a>
-      </div>`;
+    detailInner += `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
+        <span style="color:#64748b;font-size:0.78rem;font-family:var(--font-mono);">${escHtml(lang)}</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      </div>
+      <pre><code class="language-${hlLang}">${codeEsc}</code></pre>`;
   }
+  if (item.external_url) {
+    detailInner += `<a href="${escHtml(item.external_url)}" target="_blank" rel="noopener noreferrer"
+      style="display:inline-flex;align-items:center;gap:0.4rem;color:var(--color-primary);font-size:0.9rem;text-decoration:none;margin-top:${item.code_content?'1rem':'0'};">
+      Open Project →</a>`;
+  }
+  if (!detailInner) {
+    // Fallback: no code yet, show metadata
+    const metaLines = [];
+    if (item.source_class_name) metaLines.push(`<span>📚 ${escHtml(item.source_class_name)}</span>`);
+    if (item.score != null) metaLines.push(`<span>✅ Score: ${Math.round(item.score)}%</span>`);
+    if (item.completed_at) metaLines.push(`<span>📅 Completed ${new Date(item.completed_at).toLocaleDateString()}</span>`);
+    detailInner = `<div style="display:flex;flex-wrap:wrap;gap:0.75rem;color:#64748b;font-size:0.85rem;">${metaLines.join('')}</div>
+      <p style="color:#475569;font-size:0.8rem;margin:0.75rem 0 0;font-style:italic;">Code not yet published by the author.</p>`;
+  }
+
+  const detail = `<div class="pub-detail" id="detail-${prefix}-${idx}">${detailInner}</div>`;
 
   return `
     <div style="display:contents;">
-      <div class="pub-card" onclick="toggleDetail('${prefix}', ${idx})">
+      <div class="pub-card" id="card-${prefix}-${idx}" onclick="toggleDetail('${prefix}', ${idx})">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.5rem;margin-bottom:0.5rem;">
           <p class="pub-card-title">${escHtml(item.title)}</p>
-          <span class="lang-badge" style="background:${color}22;color:${color};border:1px solid ${color}44;flex-shrink:0;">${lang.toUpperCase()}</span>
+          <div style="display:flex;align-items:center;gap:0.4rem;flex-shrink:0;">
+            <span class="lang-badge" style="background:${color}22;color:${color};border:1px solid ${color}44;">${lang.toUpperCase()}</span>
+            <span class="pub-chevron">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </span>
+          </div>
         </div>
         ${tags ? `<div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.5rem;">${tags}</div>` : ''}
         <div style="display:flex;align-items:center;justify-content:space-between;">
@@ -301,9 +325,12 @@ function renderCard(item, prefix, idx) {
 
 function toggleDetail(prefix, idx) {
   const el = document.getElementById(`detail-${prefix}-${idx}`);
+  const card = document.getElementById(`card-${prefix}-${idx}`);
   if (!el) return;
+  const opening = !el.classList.contains('open');
   el.classList.toggle('open');
-  if (el.classList.contains('open')) hljs.highlightAll();
+  if (card) card.classList.toggle('expanded', opening);
+  if (opening) hljs.highlightAll();
 }
 
 function copyCode(btn) {
