@@ -6,9 +6,21 @@
 <nav class="navbar" id="navbar"></nav>
 
   <main class="container">
-    <div class="profile-container">
-      <h1>Manage Profile</h1>
 
+    <div class="workspace-header-bento">
+      <div class="workspace-header-main">
+        <div>
+          <div class="workspace-status-line">
+            <span class="workspace-status-dot" id="profileStatusDot"></span>
+            <span class="workspace-status-label">Profile Active</span>
+          </div>
+          <h1 class="workspace-header-title" id="profileHeaderTitle">Manage Profile</h1>
+          <p class="workspace-header-desc">Update your personal information, password, and account settings.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="profile-container">
       <div class="profile-content">
         <!-- Profile Picture Section -->
         <div class="profile-section">
@@ -109,6 +121,12 @@
       const authManager = new AuthManager();
       if (!authManager.requireAuth()) {
         return; // Will redirect to login
+      }
+      const currentUser = authManager.getCurrentUser();
+      if (currentUser && currentUser.name) {
+        const firstName = currentUser.name.split(' ')[0];
+        const el = document.getElementById('profileHeaderTitle');
+        if (el) el.textContent = firstName + "'s Profile";
       }
     });
   </script>

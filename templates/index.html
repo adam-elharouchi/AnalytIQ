@@ -22,8 +22,8 @@
   <div class="home-layout">
     <div class="home-content-left">
       <div class="hero-section">
-        <h1>Welcome to <span class="logo-analyt">Analyt</span><span class="logo-iq">IQ</span></h1>
-        <p>Your comprehensive platform for mastering data analytics. Learn, practice, and master data analytics skills
+        <h1 id="heroGreeting">Welcome to <span class="logo-analyt">Analyt</span><span class="logo-iq">IQ</span></h1>
+        <p id="heroSubtitle">Your comprehensive platform for mastering data analytics. Learn, practice, and master data analytics skills
           with interactive tools and resources.</p>
       </div>
 
@@ -50,25 +50,6 @@
 {% endblock %}
 
 {% block scripts %}
-<footer class="home-footer" role="contentinfo">
-  <div class="container home-footer-inner">
-    <div class="home-footer-top-row">
-      <div class="home-footer-left-links" id="footerLeftLinks">
-        <!-- Portal-specific links will be dynamically inserted here -->
-      </div>
-      <div class="home-footer-brand-center">
-        <div class="home-footer-brand"><span class="logo-analyt">Analyt</span><span class="logo-iq">IQ</span></div>
-      </div>
-      <div class="home-footer-right-links" id="footerRightLinks">
-        <!-- Portal-specific links will be dynamically inserted here -->
-      </div>
-    </div>
-    <div class="home-footer-bottom-row">
-      <div class="home-footer-text-line">Your comprehensive platform for mastering data analytics © <span
-          id="footerYear"></span> AnalytIQ. All rights reserved. Adam El Harouchi.</div>
-    </div>
-  </div>
-</footer>
 
 <!-- JS load order: api-helper.js (head) → home-animation.js → auth.js → navigation.js -->
 <script src="/static/js/home-animation.js"></script>
@@ -90,6 +71,15 @@
     const isProfessor = currentUser && currentUser.role === 'professor';
     const isSuperAdmin = currentUser && currentUser.role === 'superadmin';
     const isTenantAdmin = currentUser && currentUser.role === 'tenant_admin';
+
+    // Personalise greeting
+    if (currentUser && currentUser.name) {
+      const firstName = currentUser.name.split(' ')[0];
+      const greetingEl = document.getElementById('heroGreeting');
+      if (greetingEl) greetingEl.innerHTML = `Welcome back, <span class="logo-analyt">${firstName}</span>`;
+      const subEl = document.getElementById('heroSubtitle');
+      if (subEl) subEl.textContent = "Your comprehensive platform for mastering data analytics. Pick up where you left off.";
+    }
 
     const navigationGrid = document.getElementById('pageNavigationGrid');
 
@@ -166,12 +156,19 @@
           </a>
         `;
     } else {
-      // Student navigation cards: My Classes, Code, Profile
+      // Student navigation cards: My Classes, Portfolio, Code, Profile
+      const ICON_PORTFOLIO = `<svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="15" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>`;
       navigationGrid.innerHTML = `
           <a href="/student-classes" class="page-nav-card">
             <span class="page-nav-icon">${ICON_CLASSES}</span>
             <h2>My Classes</h2>
             <p>Access your enrolled classes, view modules, practice exercises, and resources for each course.</p>
+          </a>
+
+          <a href="/portfolio" class="page-nav-card">
+            <span class="page-nav-icon">${ICON_PORTFOLIO}</span>
+            <h2>Portfolio</h2>
+            <p>Showcase your class exercises and personal projects. Share your coding portfolio with employers.</p>
           </a>
 
           <a href="/code-assistant" class="page-nav-card">
