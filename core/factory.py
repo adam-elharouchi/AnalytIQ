@@ -367,6 +367,7 @@ def register_blueprints(app) -> None:
     from blueprints.sso import bp as sso_bp
     from blueprints.tenant_admin import bp as tenant_admin_bp
     from blueprints.flywheel import bp as flywheel_bp
+    from blueprints.portfolio import bp as portfolio_bp
 
     for bp in (
         health_bp,
@@ -383,6 +384,7 @@ def register_blueprints(app) -> None:
         sso_bp,
         tenant_admin_bp,
         flywheel_bp,
+        portfolio_bp,
     ):
         app.register_blueprint(bp)
 
@@ -393,44 +395,13 @@ def register_blueprints(app) -> None:
 
 
 def register_frontend_routes(app) -> None:
-    """Register the SPA catch-all and named page routes.
-
-    Routing strategy (strangler-fig migration):
-    - /login, /classes, /dashboard, /class/* → React app (static/react/index.html)
-    - All other non-API paths → legacy Jinja templates
-    - /static/react/* → built React assets served directly
-    """
+    """Register the catch-all and named page routes for Jinja2 templates."""
     import os as _os
     from flask import jsonify, redirect, render_template, send_from_directory
     from jinja2 import TemplateNotFound
     from werkzeug.routing import BaseConverter
 
     _ROOT = _os.path.abspath(app.root_path)
-    _REACT_DIR = _os.path.join(_ROOT, "static", "react")
-
-    # React-managed client routes — Flask sends index.html; React Router handles them.
-    _REACT_ROUTES = {
-        "login",
-        "classes",
-        "dashboard",
-        "home",
-        "admin",
-        "chapter",
-        "exercise",
-        "professor-class",
-        "profile",
-        "reset-password",
-        "code-assistant",
-        "upload-assistant",
-    }
-
-    def _serve_react():
-        """Send the React app shell so React Router can take over."""
-        react_index = _os.path.join(_REACT_DIR, "index.html")
-        if _os.path.isfile(react_index):
-            return send_from_directory(_REACT_DIR, "index.html")
-        # Fallback: React build not present yet (dev without a build step)
-        return render_template("landing.html")
 
     class NoApiPathConverter(BaseConverter):
         """Match any path that does NOT start with 'api' — keeps /api/* out of the catch-all."""
@@ -441,7 +412,7 @@ def register_frontend_routes(app) -> None:
 
     @app.route("/api/csrf-token", methods=["GET"])
     def get_csrf_token():
-        """Return a fresh CSRF token so the React SPA can include it in POST headers."""
+        """Return a fresh CSRF token for AJAX requests."""
         try:
             from flask_wtf.csrf import generate_csrf
 
@@ -467,18 +438,13 @@ def register_frontend_routes(app) -> None:
             clean = safe[:-5] or "/"
             return redirect(f"/{clean}", 301)
 
-        # React routes: send the React shell
-        top_segment = safe.split("/")[0]
-        if top_segment in _REACT_ROUTES:
-            return _serve_react()
-
-        # Legacy Jinja templates
+        # Jinja2 templates
         try:
             return render_template(f"{safe}.html")
         except TemplateNotFound:
             pass
 
-        # Static files (e.g. /static/react/assets/*)
+        # Static files
         full = _os.path.join(_ROOT, safe)
         if _os.path.isfile(full):
             return send_from_directory(_ROOT, safe)
