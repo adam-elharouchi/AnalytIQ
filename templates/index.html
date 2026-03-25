@@ -82,7 +82,7 @@
         ? first
         : currentUser.name; // fall back to full name
       const greetingEl = document.getElementById('heroGreeting');
-      if (greetingEl) greetingEl.innerHTML = `Welcome back, <span class="logo-analyt">${displayName}</span>`;
+      if (greetingEl) greetingEl.innerHTML = `Welcome back to <span class="logo-analyt">Analyt</span><span class="logo-iq">IQ</span>, ${displayName}`;
       const subEl = document.getElementById('heroSubtitle');
       if (subEl) subEl.textContent = "Pick up where you left off.";
     }
