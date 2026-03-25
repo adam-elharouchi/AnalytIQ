@@ -404,6 +404,7 @@ def import_exercise():
             "source_institution": ex[5],
             "score": ex[6],
             "show_score": False,
+            "project_status": "published",
             "is_visible": True,
             "is_pinned": False,
             "completed_at": ex[7],
