@@ -72,11 +72,17 @@
     const isSuperAdmin = currentUser && currentUser.role === 'superadmin';
     const isTenantAdmin = currentUser && currentUser.role === 'tenant_admin';
 
-    // Personalise greeting
+    // Personalise greeting — use first name only if it's a real given name
     if (currentUser && currentUser.name) {
-      const firstName = currentUser.name.split(' ')[0];
+      const parts = currentUser.name.trim().split(/\s+/);
+      // A real first name: >1 char, not a role-hint word like "New", "Test", "Admin"
+      const roleWords = new Set(['new', 'test', 'admin', 'user', 'professor', 'student', 'demo']);
+      const first = parts[0];
+      const displayName = (first.length > 1 && !roleWords.has(first.toLowerCase()))
+        ? first
+        : currentUser.name; // fall back to full name
       const greetingEl = document.getElementById('heroGreeting');
-      if (greetingEl) greetingEl.innerHTML = `Welcome back, <span class="logo-analyt">${firstName}</span>`;
+      if (greetingEl) greetingEl.innerHTML = `Welcome back, <span class="logo-analyt">${displayName}</span>`;
       const subEl = document.getElementById('heroSubtitle');
       if (subEl) subEl.textContent = "Your comprehensive platform for mastering data analytics. Pick up where you left off.";
     }
