@@ -308,11 +308,11 @@ def get_importable_exercises(conn, user_id, portfolio_id):
             pp.best_score,
             pp.last_completed_at,
             c.class_name,
-            ch.name AS chapter_name
+            ch.title AS chapter_name
         FROM practice_progress pp
         LEFT JOIN class_exercises ce ON ce.exercise_id = pp.exercise_id
         LEFT JOIN classes c ON c.class_id = pp.class_id
-        LEFT JOIN chapters ch ON ch.chapter_id = ce.chapter_id
+        LEFT JOIN class_chapters ch ON ch.chapter_id = ce.chapter_id
         WHERE pp.user_id = %s
           AND pp.completed = TRUE
           AND pp.exercise_id NOT IN (

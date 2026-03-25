@@ -372,13 +372,12 @@ def import_exercise():
         cur = conn.cursor()
         cur.execute(
             """
-            SELECT ce.exercise_id, ce.title, ce.language, ce.chapter_id,
-                   c.class_name, ch.name AS chapter_name, t.name AS tenant_name,
-                   pp.best_score, pp.last_completed_at, ce.class_id,
-                   pp.best_submission_code
+            SELECT ce.exercise_id, ce.title, ce.language,
+                   c.class_name, ch.title AS chapter_name, t.name AS tenant_name,
+                   pp.best_score, pp.last_completed_at, ce.class_id
             FROM class_exercises ce
             LEFT JOIN classes c ON c.class_id = ce.class_id
-            LEFT JOIN chapters ch ON ch.chapter_id = ce.chapter_id
+            LEFT JOIN class_chapters ch ON ch.chapter_id = ce.chapter_id
             LEFT JOIN tenants t ON t.tenant_id = c.tenant_id
             LEFT JOIN practice_progress pp
                    ON pp.exercise_id = ce.exercise_id AND pp.user_id = %s
@@ -397,18 +396,17 @@ def import_exercise():
             "portfolio_id": profile[0],
             "item_type": "class_exercise",
             "exercise_id": ex[0],
-            "class_id": ex[9],
+            "class_id": ex[8],
             "title": ex[1] or "Untitled Exercise",
             "language": ex[2] or "python",
-            "source_class_name": ex[4],
-            "source_chapter_name": ex[5],
-            "source_institution": ex[6],
-            "score": ex[7],
+            "source_class_name": ex[3],
+            "source_chapter_name": ex[4],
+            "source_institution": ex[5],
+            "score": ex[6],
             "show_score": False,
-            "code_content": ex[10],
             "is_visible": True,
             "is_pinned": False,
-            "completed_at": ex[8],
+            "completed_at": ex[7],
         }
 
         repo.insert_item(conn, item)
