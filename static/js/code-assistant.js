@@ -177,15 +177,18 @@ function renderConversationHistory() {
         <div class="conversation-item-date">${conv.date}</div>
       </div>
       <div class="conversation-item-actions">
-        <button class="conversation-action-btn archive-btn" 
-                onclick="event.stopPropagation(); archiveConversation('${conv.id}')" 
+        <button class="conversation-action-btn archive-btn"
+                onclick="event.stopPropagation(); archiveConversation('${conv.id}')"
                 title="${conv.archived ? 'Unarchive' : 'Archive'}">
-          ${conv.archived ? 'Unarchive' : 'Archive'}
+          ${conv.archived
+            ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.9"/></svg>'
+            : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>'
+          }
         </button>
         <button class="conversation-action-btn delete-btn"
                 onclick="event.stopPropagation(); deleteConversation('${conv.id}')"
                 title="Delete">
-          Delete
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
         </button>
       </div>
     </div>
