@@ -5148,15 +5148,16 @@ body.hero-bg-active .nav-links a.active {
 .student-join-drawer .drawer-body input,
 .student-join-drawer .drawer-body select,
 .student-join-drawer .drawer-body textarea {
-  width: 100%;
-  padding: 0.75rem;
-  border-radius: 0.375rem;
-  font-size: 0.9rem;
+  width: 100% !important;
+  padding: 0.75rem !important;
+  border-radius: 0.375rem !important;
+  font-size: 0.9rem !important;
   background: rgba(0, 0, 0, 0.25) !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   color: #f8fafc !important;
-  font-family: var(--font-mono);
-  box-sizing: border-box;
+  font-family: var(--font-mono) !important;
+  box-sizing: border-box !important;
+  display: block !important;
 }
 
 .student-join-drawer .drawer-body input {
@@ -5165,12 +5166,14 @@ body.hero-bg-active .nav-links a.active {
 }
 
 .student-join-drawer .drawer-body select {
-  appearance: none;
-  -webkit-appearance: none;
+  appearance: none !important;
+  -webkit-appearance: none !important;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") !important;
   background-repeat: no-repeat !important;
   background-position: right 0.75rem center !important;
-  cursor: pointer;
+  background-size: 12px !important;
+  padding-right: 2rem !important;
+  cursor: pointer !important;
 }
 
 .student-join-drawer .drawer-body select option {
@@ -5179,9 +5182,10 @@ body.hero-bg-active .nav-links a.active {
 }
 
 .student-join-drawer .drawer-body textarea {
-  resize: vertical;
-  line-height: 1.5;
-  min-height: 80px;
+  resize: vertical !important;
+  line-height: 1.5 !important;
+  min-height: 120px !important;
+  height: auto !important;
 }
 
 .student-join-drawer .drawer-body input:focus,
@@ -5192,13 +5196,58 @@ body.hero-bg-active .nav-links a.active {
   box-shadow: 0 0 0 2px rgba(37, 105, 244, 0.2);
 }
 
-/* Exercise import list — reset the uppercase/mono label styling */
+/* Exercise import list — reset the drawer's label styling for checkbox rows */
 #importExercisesList label {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.75rem !important;
+  margin-bottom: 0 !important;
+  padding: 0.75rem !important;
+  border-radius: 0.5rem !important;
+  cursor: pointer !important;
+  border: 1px solid transparent !important;
+  transition: border-color 0.15s !important;
   text-transform: none !important;
   letter-spacing: normal !important;
   font-family: inherit !important;
   font-size: 0.875rem !important;
   color: inherit !important;
+  background: transparent !important;
+  width: auto !important;
+  box-sizing: border-box !important;
+}
+#importExercisesList label:hover {
+  border-color: rgba(37, 105, 244, 0.3) !important;
+}
+#importExercisesList label input[type="checkbox"] {
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px !important;
+  display: inline-block !important;
+  flex-shrink: 0 !important;
+  accent-color: var(--color-primary) !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  border: none !important;
+  background: none !important;
+}
+#importExercisesList .ex-info {
+  flex: 1;
+  min-width: 0;
+}
+#importExercisesList .ex-title {
+  color: #f8fafc;
+  font-size: 0.9rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#importExercisesList .ex-meta {
+  color: #64748b;
+  font-size: 0.8rem;
 }
 
 /* Oval pill buttons — match secondary button style */

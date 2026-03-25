@@ -83,7 +83,7 @@
     </div>
 
     <!-- Filter Tabs -->
-    <div class="terminal-tab-nav" style="margin-bottom:1.5rem;">
+    <div class="terminal-tab-nav" style="margin-bottom:1.5rem;justify-content:flex-start;flex-wrap:nowrap;overflow-x:auto;">
       <button class="terminal-tab-btn active" onclick="filterItems('all')" id="tabAll">
         <span class="terminal-tab-num">1</span> All
       </button>
@@ -138,7 +138,7 @@
     </div>
     <div style="margin-bottom:1.5rem;">
       <label for="newProjectDesc">Description (optional)</label>
-      <textarea id="newProjectDesc" placeholder="What does this project do?" maxlength="1000" rows="3" style="resize:vertical;"></textarea>
+      <textarea id="newProjectDesc" placeholder="What does this project do?" maxlength="1000"></textarea>
     </div>
     <div id="newProjectError" style="display:none;margin-bottom:1rem;background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.3);color:#f87171;padding:0.875rem;border-radius:0.5rem;font-size:0.875rem;"></div>
     <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
@@ -189,7 +189,7 @@
     </div>
     <div style="margin-bottom:1.5rem;">
       <label for="extDesc">Description (optional)</label>
-      <textarea id="extDesc" maxlength="1000" rows="2" style="resize:vertical;"></textarea>
+      <textarea id="extDesc" maxlength="1000" placeholder="Optional: describe this project briefly..."></textarea>
     </div>
     <div id="extError" style="display:none;margin-bottom:1rem;background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.3);color:#f87171;padding:0.875rem;border-radius:0.5rem;font-size:0.875rem;"></div>
     <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
@@ -410,15 +410,14 @@ async function openImportModal() {
       return;
     }
     listEl.innerHTML = exercises.map(ex => `
-      <label style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem;border-radius:0.5rem;cursor:pointer;border:1px solid transparent;transition:border-color 0.15s;"
-             onmouseover="this.style.borderColor='rgba(37,105,244,0.3)'" onmouseout="if(!this.querySelector('input').checked)this.style.borderColor='transparent'">
-        <input type="checkbox" value="${ex.exercise_id}" onchange="toggleImportSelect(this)" style="accent-color:var(--color-primary);" />
-        <div style="flex:1;min-width:0;">
-          <div style="color:#f8fafc;font-size:0.9rem;font-weight:500;">${escHtml(ex.title)}</div>
-          <div style="color:#64748b;font-size:0.8rem;">${escHtml(ex.class_name||'')}${ex.chapter_name?' · '+escHtml(ex.chapter_name):''}</div>
+      <label>
+        <input type="checkbox" value="${ex.exercise_id}" onchange="toggleImportSelect(this)" />
+        <div class="ex-info">
+          <div class="ex-title">${escHtml(ex.title)}</div>
+          <div class="ex-meta">${escHtml(ex.class_name||'')}${ex.chapter_name?' · '+escHtml(ex.chapter_name):''}</div>
         </div>
-        ${ex.best_score!=null ? `<span style="color:#10b981;font-size:0.8rem;white-space:nowrap;">${Math.round(ex.best_score)}%</span>` : ''}
-        <span style="background:rgba(59,130,246,0.15);color:#60a5fa;border-radius:0.25rem;padding:0.1rem 0.5rem;font-size:0.75rem;font-weight:600;">${(ex.language||'PY').toUpperCase()}</span>
+        ${ex.best_score!=null ? `<span style="color:#10b981;font-size:0.8rem;white-space:nowrap;flex-shrink:0;">${Math.round(ex.best_score)}%</span>` : ''}
+        <span style="background:rgba(59,130,246,0.15);color:#60a5fa;border-radius:0.25rem;padding:0.1rem 0.5rem;font-size:0.75rem;font-weight:600;flex-shrink:0;">${(ex.language||'PY').toUpperCase()}</span>
       </label>
     `).join('');
   } catch(e) {
