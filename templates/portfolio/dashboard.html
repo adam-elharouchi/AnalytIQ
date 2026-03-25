@@ -341,11 +341,17 @@ function copyPortfolioLink() {
 
 // ── New Project Modal ──────────────────────────────────────────────────────
 function openNewProjectModal() {
-  document.getElementById('newProjectOverlay').style.display = 'flex';
-  document.getElementById('newProjectTitle').focus();
+  const ov = document.getElementById('newProjectOverlay');
+  ov.style.display = 'flex';
+  ov.classList.add('visible');
+  ov.querySelector('.student-join-drawer').classList.add('visible');
+  setTimeout(() => document.getElementById('newProjectTitle').focus(), 50);
 }
 function closeNewProjectModal() {
-  document.getElementById('newProjectOverlay').style.display = 'none';
+  const ov = document.getElementById('newProjectOverlay');
+  ov.classList.remove('visible');
+  ov.querySelector('.student-join-drawer').classList.remove('visible');
+  setTimeout(() => { ov.style.display = 'none'; }, 300);
   document.getElementById('newProjectTitle').value = '';
   document.getElementById('newProjectDesc').value = '';
   document.getElementById('newProjectError').style.display = 'none';
@@ -383,7 +389,10 @@ async function submitNewProject() {
 
 // ── Import Modal ───────────────────────────────────────────────────────────
 async function openImportModal() {
-  document.getElementById('importOverlay').style.display = 'flex';
+  const ov = document.getElementById('importOverlay');
+  ov.style.display = 'flex';
+  ov.classList.add('visible');
+  ov.querySelector('.student-join-drawer').classList.add('visible');
   selectedImportIds.clear();
   document.getElementById('importBtn').disabled = true;
   const listEl = document.getElementById('importExercisesList');
@@ -419,7 +428,10 @@ function toggleImportSelect(checkbox) {
   document.getElementById('importBtn').disabled = selectedImportIds.size === 0;
 }
 function closeImportModal() {
-  document.getElementById('importOverlay').style.display = 'none';
+  const ov = document.getElementById('importOverlay');
+  ov.classList.remove('visible');
+  ov.querySelector('.student-join-drawer').classList.remove('visible');
+  setTimeout(() => { ov.style.display = 'none'; }, 300);
 }
 async function submitImport() {
   const btn = document.getElementById('importBtn');
@@ -448,9 +460,17 @@ async function submitImport() {
 }
 
 // ── External Link Modal ────────────────────────────────────────────────────
-function openExternalLinkModal() { document.getElementById('externalLinkOverlay').style.display = 'flex'; }
+function openExternalLinkModal() {
+  const ov = document.getElementById('externalLinkOverlay');
+  ov.style.display = 'flex';
+  ov.classList.add('visible');
+  ov.querySelector('.student-join-drawer').classList.add('visible');
+}
 function closeExternalLinkModal() {
-  document.getElementById('externalLinkOverlay').style.display = 'none';
+  const ov = document.getElementById('externalLinkOverlay');
+  ov.classList.remove('visible');
+  ov.querySelector('.student-join-drawer').classList.remove('visible');
+  setTimeout(() => { ov.style.display = 'none'; }, 300);
   document.getElementById('extTitle').value = '';
   document.getElementById('extUrl').value = '';
   document.getElementById('extDesc').value = '';
