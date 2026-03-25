@@ -322,11 +322,11 @@ function renderItemCard(item) {
 
 function filterItems(type) {
   currentFilter = type;
-  ['all','class_exercise','personal_project','external_link'].forEach(t => {
-    const el = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1).replace('_','').replace('exercise','Class').replace('project','Personal').replace('link','External'));
+  const tabMap = { all:'tabAll', class_exercise:'tabClass', personal_project:'tabPersonal', external_link:'tabExternal' };
+  Object.values(tabMap).forEach(id => {
+    const el = document.getElementById(id);
     if (el) el.classList.remove('active');
   });
-  const tabMap = { all:'tabAll', class_exercise:'tabClass', personal_project:'tabPersonal', external_link:'tabExternal' };
   const tabEl = document.getElementById(tabMap[type]);
   if (tabEl) tabEl.classList.add('active');
   renderItems();

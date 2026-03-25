@@ -307,7 +307,7 @@ def get_importable_exercises(conn, user_id, portfolio_id):
             ce.language,
             pp.best_score,
             pp.last_completed_at,
-            c.class_name,
+            c.name AS class_name,
             ch.title AS chapter_name
         FROM practice_progress pp
         LEFT JOIN class_exercises ce ON ce.exercise_id = pp.exercise_id

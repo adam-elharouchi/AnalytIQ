@@ -373,7 +373,7 @@ def import_exercise():
         cur.execute(
             """
             SELECT ce.exercise_id, ce.title, ce.language,
-                   c.class_name, ch.title AS chapter_name, t.name AS tenant_name,
+                   c.name AS class_name, ch.title AS chapter_name, t.name AS tenant_name,
                    pp.best_score, pp.last_completed_at, ce.class_id
             FROM class_exercises ce
             LEFT JOIN classes c ON c.class_id = ce.class_id
