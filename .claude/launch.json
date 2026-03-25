@@ -3,16 +3,9 @@
   "configurations": [
     {
       "name": "Flask Dev Server",
-      "runtimeExecutable": "/bin/bash",
-      "runtimeArgs": ["-c", "cd /Users/aelharouchi/Documents/GitHub/AnalytIQ/.claude/worktrees/fervent-keller && python3 app.py"],
+      "runtimeExecutable": "/usr/bin/python3",
+      "runtimeArgs": ["/Users/aelharouchi/Documents/GitHub/AnalytIQ/start_dev.py"],
       "port": 5001
-    },
-    {
-      "name": "Vite Frontend",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["--prefix", "frontend", "run", "dev"],
-      "port": 3000,
-      "autoPort": true
     },
     {
       "name": "Celery Worker",
