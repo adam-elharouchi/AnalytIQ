@@ -5192,6 +5192,35 @@ body.hero-bg-active .nav-links a.active {
   box-shadow: 0 0 0 2px rgba(37, 105, 244, 0.2);
 }
 
+/* Exercise import list — reset the uppercase/mono label styling */
+#importExercisesList label {
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  font-family: inherit !important;
+  font-size: 0.875rem !important;
+  color: inherit !important;
+}
+
+/* Oval pill buttons — match secondary button style */
+.oval-btn {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #94a3b8 !important;
+}
+.oval-btn:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
+  color: #e2e8f0 !important;
+  transform: none;
+  box-shadow: none;
+}
+.oval-btn span {
+  color: #94a3b8 !important;
+}
+.oval-btn:hover span {
+  color: #e2e8f0 !important;
+}
+
 .student-join-drawer .drawer-hint {
   margin-top: 0.5rem;
   font-family: var(--font-mono);
