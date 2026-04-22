@@ -426,6 +426,22 @@ def lti_launch():
 
     try:
         flask_req = FlaskRequest()
+        # Log raw id_token deployment claim before validation for debugging
+        try:
+            import base64, json as _json
+            raw_token = request.form.get("id_token", "")
+            if raw_token:
+                payload_b64 = raw_token.split(".")[1]
+                payload_b64 += "=" * (-len(payload_b64) % 4)
+                raw_claims = _json.loads(base64.urlsafe_b64decode(payload_b64))
+                logger.info(
+                    "LTI launch raw claims — iss=%s client_id=%s deployment_id=%s",
+                    raw_claims.get("iss"),
+                    raw_claims.get("aud"),
+                    raw_claims.get("https://purl.imsglobal.org/spec/lti/claim/deployment_id"),
+                )
+        except Exception:
+            pass
         message_launch = FlaskMessageLaunch(
             flask_req, tool_conf, launch_data_storage=_get_lti_storage()
         )
