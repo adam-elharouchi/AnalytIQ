@@ -427,7 +427,8 @@ def lti_launch():
     # Decode raw JWT claims before validation so we can surface debug info on failure
     raw_deployment_id = None
     try:
-        import base64 as _b64, json as _json
+        import base64 as _b64
+        import json as _json
         raw_token = request.form.get("id_token", "")
         if raw_token:
             payload_b64 = raw_token.split(".")[1]
