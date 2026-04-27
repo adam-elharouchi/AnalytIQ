@@ -424,32 +424,40 @@ def lti_launch():
     if tool_conf is None:
         return jsonify({"error": "LTI not configured"}), 500
 
+    # Decode raw JWT claims before validation so we can surface debug info on failure
+    raw_deployment_id = None
+    try:
+        import base64 as _b64, json as _json
+        raw_token = request.form.get("id_token", "")
+        if raw_token:
+            payload_b64 = raw_token.split(".")[1]
+            payload_b64 += "=" * (-len(payload_b64) % 4)
+            raw_claims = _json.loads(_b64.urlsafe_b64decode(payload_b64))
+            raw_deployment_id = raw_claims.get(
+                "https://purl.imsglobal.org/spec/lti/claim/deployment_id"
+            )
+            logger.info(
+                "LTI launch raw claims — iss=%s client_id=%s deployment_id=%s",
+                raw_claims.get("iss"),
+                raw_claims.get("aud"),
+                raw_deployment_id,
+            )
+    except Exception:
+        pass
+
     try:
         flask_req = FlaskRequest()
-        # Log raw id_token deployment claim before validation for debugging
-        try:
-            import base64, json as _json
-            raw_token = request.form.get("id_token", "")
-            if raw_token:
-                payload_b64 = raw_token.split(".")[1]
-                payload_b64 += "=" * (-len(payload_b64) % 4)
-                raw_claims = _json.loads(base64.urlsafe_b64decode(payload_b64))
-                logger.info(
-                    "LTI launch raw claims — iss=%s client_id=%s deployment_id=%s",
-                    raw_claims.get("iss"),
-                    raw_claims.get("aud"),
-                    raw_claims.get("https://purl.imsglobal.org/spec/lti/claim/deployment_id"),
-                )
-        except Exception:
-            pass
         message_launch = FlaskMessageLaunch(
             flask_req, tool_conf, launch_data_storage=_get_lti_storage()
         )
         launch_data = message_launch.get_launch_data()
     except Exception as e:
         logger.warning("LTI launch validation failed: %s", e)
+        error_msg = f"LTI launch validation failed: {e}"
+        if "deployment" in str(e).lower() and raw_deployment_id:
+            error_msg += f" | Canvas sent deployment_id: {raw_deployment_id}"
         return (
-            render_template("lti-launch-error.html", error=f"LTI launch validation failed: {e}"),
+            render_template("lti-launch-error.html", error=error_msg),
             400,
         )
 
