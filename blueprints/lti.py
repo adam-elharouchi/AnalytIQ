@@ -191,7 +191,20 @@ def _upsert_lti_user(conn, launch_data):
         if email_row:
             # email_row = (user_id, name, email, password_hash, role)
             lti_repo.link_lti_identity(conn, email_row[0], lti_sub, issuer)
-            user_row = (email_row[0], email_row[1], email_row[2], email_row[4])
+            existing_role = email_row[4]
+            # Promote to professor if Canvas says Instructor but account is student.
+            # Never demote an existing professor/admin via LTI.
+            effective_role = (
+                role if role == "professor" and existing_role == "student" else existing_role
+            )
+            if effective_role != existing_role:
+                cur = conn.cursor()
+                cur.execute(
+                    "UPDATE users SET role = %s WHERE user_id = %s",
+                    (effective_role, email_row[0]),
+                )
+                cur.close()
+            user_row = (email_row[0], email_row[1], email_row[2], effective_role)
 
     # 3. Create new account
     if not user_row:
