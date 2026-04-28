@@ -813,6 +813,101 @@ def delete_class_admin(class_id):
         return jsonify({"error": "Failed to delete class"}), 500
 
 
+@bp.route("/api/superadmin/tenants/<tenant_id>/lti-config", methods=["GET"])
+@csrf_exempt
+@require_auth
+@require_super_admin
+def get_tenant_lti_config(tenant_id):
+    """Return the lti_configurations row for this tenant's issuer, or null."""
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT lti_issuer FROM tenants WHERE tenant_id = %s", (tenant_id,))
+        row = cur.fetchone()
+        if not row:
+            return jsonify({"error": "Tenant not found"}), 404
+        issuer = row[0]
+        if not issuer:
+            return jsonify({"config": None})
+        cur.execute(
+            """SELECT config_id, platform_name, issuer, client_id,
+                      auth_login_url, auth_token_url, key_set_url, deployment_ids
+               FROM lti_configurations WHERE issuer = %s
+               ORDER BY created_at DESC LIMIT 1""",
+            (issuer,),
+        )
+        cfg = cur.fetchone()
+        cur.close()
+        if not cfg:
+            return jsonify({"config": None})
+        cols = ["config_id", "platform_name", "issuer", "client_id",
+                "auth_login_url", "auth_token_url", "key_set_url", "deployment_ids"]
+        return jsonify({"config": dict(zip(cols, cfg))})
+    except Exception as e:
+        logger.error("Failed to get tenant LTI config: %s", e)
+        return jsonify({"error": "Failed to load LTI config"}), 500
+
+
+@bp.route("/api/superadmin/tenants/<tenant_id>/lti-config", methods=["PUT"])
+@csrf_exempt
+@require_auth
+@require_super_admin
+def upsert_tenant_lti_config(tenant_id):
+    """Create or update the lti_configurations entry for this tenant."""
+    try:
+        data = request.json or {}
+        required = ["client_id", "auth_login_url", "auth_token_url", "key_set_url"]
+        missing = [f for f in required if not data.get(f)]
+        if missing:
+            return jsonify({"error": f"Missing: {', '.join(missing)}"}), 400
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT lti_issuer, name FROM tenants WHERE tenant_id = %s", (tenant_id,))
+        row = cur.fetchone()
+        if not row:
+            return jsonify({"error": "Tenant not found"}), 404
+        issuer, tenant_name = row
+
+        if not issuer:
+            return jsonify({"error": "Set the LTI Issuer URL on the tenant first"}), 400
+
+        deployment_ids = [d.strip() for d in (data.get("deployment_ids") or "").split(",") if d.strip()]
+
+        cur.execute(
+            """INSERT INTO lti_configurations
+                   (platform_name, issuer, client_id, auth_login_url,
+                    auth_token_url, key_set_url, deployment_ids, created_by)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+               ON CONFLICT (issuer, client_id) DO UPDATE SET
+                   platform_name  = EXCLUDED.platform_name,
+                   auth_login_url = EXCLUDED.auth_login_url,
+                   auth_token_url = EXCLUDED.auth_token_url,
+                   key_set_url    = EXCLUDED.key_set_url,
+                   deployment_ids = EXCLUDED.deployment_ids
+               RETURNING config_id""",
+            (
+                data.get("platform_name") or tenant_name,
+                issuer,
+                data["client_id"].strip(),
+                data["auth_login_url"].strip(),
+                data["auth_token_url"].strip(),
+                data["key_set_url"].strip(),
+                deployment_ids,
+                g.user_id,
+            ),
+        )
+        config_id = cur.fetchone()[0]
+        audit(conn, "UPSERT_LTI_CONFIG", resource_type="lti_config", resource_id=config_id,
+              details={"tenant_id": tenant_id, "issuer": issuer})
+        conn.commit()
+        cur.close()
+        return jsonify({"success": True, "config_id": config_id})
+    except Exception as e:
+        logger.error("Failed to upsert tenant LTI config: %s", e)
+        return jsonify({"error": "Failed to save LTI config"}), 500
+
+
 @bp.route("/api/superadmin/tenants/<tenant_id>", methods=["DELETE"])
 @csrf_exempt
 @require_auth
