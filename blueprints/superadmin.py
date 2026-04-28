@@ -840,8 +840,16 @@ def get_tenant_lti_config(tenant_id):
         cur.close()
         if not cfg:
             return jsonify({"config": None})
-        cols = ["config_id", "platform_name", "issuer", "client_id",
-                "auth_login_url", "auth_token_url", "key_set_url", "deployment_ids"]
+        cols = [
+            "config_id",
+            "platform_name",
+            "issuer",
+            "client_id",
+            "auth_login_url",
+            "auth_token_url",
+            "key_set_url",
+            "deployment_ids",
+        ]
         return jsonify({"config": dict(zip(cols, cfg))})
     except Exception as e:
         logger.error("Failed to get tenant LTI config: %s", e)
@@ -872,7 +880,9 @@ def upsert_tenant_lti_config(tenant_id):
         if not issuer:
             return jsonify({"error": "Set the LTI Issuer URL on the tenant first"}), 400
 
-        deployment_ids = [d.strip() for d in (data.get("deployment_ids") or "").split(",") if d.strip()]
+        deployment_ids = [
+            d.strip() for d in (data.get("deployment_ids") or "").split(",") if d.strip()
+        ]
 
         cur.execute(
             """INSERT INTO lti_configurations
@@ -898,8 +908,13 @@ def upsert_tenant_lti_config(tenant_id):
             ),
         )
         config_id = cur.fetchone()[0]
-        audit(conn, "UPSERT_LTI_CONFIG", resource_type="lti_config", resource_id=config_id,
-              details={"tenant_id": tenant_id, "issuer": issuer})
+        audit(
+            conn,
+            "UPSERT_LTI_CONFIG",
+            resource_type="lti_config",
+            resource_id=config_id,
+            details={"tenant_id": tenant_id, "issuer": issuer},
+        )
         conn.commit()
         cur.close()
         return jsonify({"success": True, "config_id": config_id})

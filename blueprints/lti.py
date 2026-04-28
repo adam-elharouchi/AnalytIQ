@@ -429,6 +429,7 @@ def lti_launch():
     try:
         import base64 as _b64
         import json as _json
+
         raw_token = request.form.get("id_token", "")
         if raw_token:
             payload_b64 = raw_token.split(".")[1]
