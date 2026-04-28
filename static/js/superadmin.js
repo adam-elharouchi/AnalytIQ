@@ -529,6 +529,14 @@ class SuperAdminDashboard {
         this._switchTenantTab(tab);
         // Populate LTI registration URLs panel
         this._fillLtiRegUrls('td-lti-reg-urls');
+        // Reset LTI config cache so it re-fetches on next expand
+        const ltiFields = document.getElementById('td-lti-config-fields');
+        if (ltiFields) {
+            delete ltiFields.dataset.loaded;
+            ltiFields.innerHTML = '<div style="color:var(--text-muted);font-size:0.82rem;">Click to load current config…</div>';
+        }
+        const ltiSection = document.getElementById('td-lti-config-section');
+        if (ltiSection) ltiSection.removeAttribute('open');
         // Show modal
         document.getElementById('tenantDetailModal').style.display = 'flex';
         // If opening SSO tab, load providers
@@ -577,6 +585,76 @@ class SuperAdminDashboard {
             }
         } catch (error) {
             showError(error.message || 'Failed to update tenant');
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // LTI Platform Config Management (within Tenant Detail)
+    // -----------------------------------------------------------------------
+
+    async loadTenantLtiConfig() {
+        const tenantId = document.getElementById('editTenantId').value;
+        const container = document.getElementById('td-lti-config-fields');
+        if (!container || !tenantId) return;
+        // Only fetch once per open
+        if (container.dataset.loaded === tenantId) return;
+        container.dataset.loaded = tenantId;
+        container.innerHTML = '<div style="color:var(--text-muted);font-size:0.82rem;">Loading…</div>';
+        try {
+            const res = await authFetch(`${this.baseAdminUrl}/tenants/${tenantId}/lti-config`);
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to load');
+            const cfg = data.config || {};
+            const field = (id, label, val, placeholder, hint) => `
+              <div>
+                <label style="display:block;margin-bottom:0.3rem;color:var(--text-primary,#f0f4ff);font-size:0.82rem;font-weight:500;">${label}</label>
+                <input id="${id}" value="${escapeHtml(val || '')}" placeholder="${placeholder}"
+                  style="width:100%;padding:0.6rem;border:1px solid var(--border-color,rgba(255,255,255,0.1));border-radius:0.375rem;background:rgba(17,24,39,0.7);color:var(--text-primary,#f0f4ff);font-size:0.85rem;box-sizing:border-box;" />
+                ${hint ? `<small style="color:var(--text-secondary,#64748b);font-size:0.75rem;display:block;margin-top:0.25rem;">${hint}</small>` : ''}
+              </div>`;
+            container.innerHTML = `
+              ${field('tdLtiClientId', 'Client ID *', cfg.client_id, 'Assigned by the LMS', '')}
+              ${field('tdLtiDeploymentIds', 'Deployment ID(s)', (cfg.deployment_ids || []).join(', '), 'e.g. 1170972:4d02...', 'Comma-separated. Leave empty to accept any.')}
+              ${field('tdLtiAuthLoginUrl', 'Auth Login URL *', cfg.auth_login_url, 'https://…/api/lti/authorize_redirect', '')}
+              ${field('tdLtiAuthTokenUrl', 'Auth Token URL *', cfg.auth_token_url, 'https://…/login/oauth2/token', '')}
+              ${field('tdLtiKeySetUrl', 'Key Set URL (JWKS) *', cfg.key_set_url, 'https://…/api/lti/security/jwks', '')}
+              <div style="display:flex;justify-content:flex-end;">
+                <button onclick="window.adminApp.saveTenantLtiConfig()"
+                  style="padding:0.5rem 1.1rem;border:none;border-radius:0.375rem;background:var(--color-primary,#2569f4);color:#fff;cursor:pointer;font-size:0.85rem;font-weight:600;">
+                  Save LTI Config
+                </button>
+              </div>`;
+        } catch (err) {
+            container.innerHTML = `<div style="color:var(--color-error,#ef4444);font-size:0.82rem;">${escapeHtml(err.message)}</div>`;
+        }
+    }
+
+    async saveTenantLtiConfig() {
+        const tenantId = document.getElementById('editTenantId').value;
+        const body = {
+            client_id:      (document.getElementById('tdLtiClientId')?.value || '').trim(),
+            deployment_ids: (document.getElementById('tdLtiDeploymentIds')?.value || '').trim(),
+            auth_login_url: (document.getElementById('tdLtiAuthLoginUrl')?.value || '').trim(),
+            auth_token_url: (document.getElementById('tdLtiAuthTokenUrl')?.value || '').trim(),
+            key_set_url:    (document.getElementById('tdLtiKeySetUrl')?.value || '').trim(),
+        };
+        if (!body.client_id || !body.auth_login_url || !body.auth_token_url || !body.key_set_url) {
+            showError('Client ID, Auth Login URL, Auth Token URL, and Key Set URL are required');
+            return;
+        }
+        try {
+            const res = await authFetch(`${this.baseAdminUrl}/tenants/${tenantId}/lti-config`, {
+                method: 'PUT',
+                body: JSON.stringify(body),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to save');
+            // Reset so next open re-fetches
+            const container = document.getElementById('td-lti-config-fields');
+            if (container) delete container.dataset.loaded;
+            showSuccess('LTI config saved');
+        } catch (err) {
+            showError(err.message || 'Failed to save LTI config');
         }
     }
 
