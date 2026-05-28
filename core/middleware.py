@@ -33,6 +33,7 @@ _MAINTENANCE_EXEMPT: frozenset = frozenset(
         "/api/users/reset-password",
         "/api/platform/status",
         "/api/health",
+        "/api/superadmin/platform-config",
     }
 )
 
@@ -125,7 +126,7 @@ def check_maintenance_mode():
     if auth_header.startswith("Bearer "):
         try:
             import jwt
-            from config import Config as _config
+            import config as _config
 
             payload = jwt.decode(
                 auth_header[7:],
