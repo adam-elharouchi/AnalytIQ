@@ -192,6 +192,7 @@ FUNCTION STRUCTURE (critical for automated grading)
 SOLUTION CODE SIZE
   • 5 to 10 lines of actual code (import/library lines do not count toward the limit).
   • If you need more lines, the exercise covers too much — split it.
+  • Do NOT add a standalone function call below the definition (e.g. no `calculate_mean([1,2,3])` at the bottom). The print statement inside the function is sufficient — there is no need for an extra call line.
 
 COMMENT EVERY LINE
   • Every single line of code must have an inline comment explaining what it does.
@@ -227,8 +228,8 @@ DATA
 
 DIFFICULTY
   • First 2–3 exercises: "easy" (single operation, one function/method call).
-  • Remaining exercises: "medium" (combine two concepts, still one idea per exercise).
-  • Never use "hard".
+  • Next 2–3 exercises: "medium" (combine two concepts, still one idea per exercise).
+  • Remaining exercises (if any): "hard" (multi-step logic, conditional branching, or real-world data wrangling — still one idea per exercise).
 
 TEST CASES (critical for automated grading)
   • Generate 5–8 test cases per exercise.
@@ -250,7 +251,7 @@ Return your response as a JSON array with ONLY this structure — no markdown, n
     "language": "The detected language name, e.g. Python, R, SQL, JavaScript",
     "title": "Short action-oriented title describing the exact goal, e.g. 'Calculate the Mean of Test Scores'",
     "description": "EXACTLY 2 sentences — no more. Sentence 1: state the specific data the student will work with (include the actual values from the chapter, e.g. 'You have the following test scores: [10, 15, 12, 14, 17, 17, 20, 8, 5, 13].'). Sentence 2: state exactly what the student must do and what function to write, e.g. 'Write a function called calculate_mean(scores) that computes and returns the mean of a list of numbers.' CRITICAL RULES: (a) NEVER reference another exercise — every exercise is standalone; (b) NEVER say 'using the DataFrame/list/variable from the previous exercise' — define the data fresh in every description; (c) keep both sentences concise and specific.",
-    "difficulty": "easy|medium",
+    "difficulty": "easy|medium|hard",
     "function_name": "snake_case function name the student must define",
     "solution_code": "Code in the detected language — every line commented, result output at end, 5-10 lines max",
     "test_cases": [
