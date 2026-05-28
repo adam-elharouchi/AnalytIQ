@@ -367,7 +367,6 @@ def register_blueprints(app) -> None:
     from blueprints.sso import bp as sso_bp
     from blueprints.tenant_admin import bp as tenant_admin_bp
     from blueprints.flywheel import bp as flywheel_bp
-    from blueprints.portfolio import bp as portfolio_bp
 
     for bp in (
         health_bp,
@@ -384,7 +383,6 @@ def register_blueprints(app) -> None:
         sso_bp,
         tenant_admin_bp,
         flywheel_bp,
-        portfolio_bp,
     ):
         app.register_blueprint(bp)
 

@@ -38,7 +38,10 @@
       "Bash(git fetch:*)",
       "Bash(git remote:*)",
       "Bash(git pack-refs:*)",
-      "Bash(git show:*)"
+      "Bash(git show:*)",
+      "Bash(git checkout *)",
+      "Bash(git cherry-pick *)",
+      "Bash(python -m black blueprints/lti.py blueprints/superadmin.py)"
     ],
     "additionalDirectories": [
       "/Users/aelharouchi/Documents/GitHub/AnalytIQ/.git/refs/remotes/origin"
