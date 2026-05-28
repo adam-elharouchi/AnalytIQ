@@ -249,18 +249,6 @@ MAX_AI_CONVERSATION_MESSAGES = 100
 # Generic text
 MAX_GENERIC_TEXT_LENGTH = 10_000
 
-# Portfolio
-PORTFOLIO_ENABLED = True
-PORTFOLIO_MAX_ITEMS = 100
-PORTFOLIO_MAX_CODE_LENGTH = 50_000
-PORTFOLIO_EXECUTION_TIMEOUT = 30        # seconds
-PORTFOLIO_AUTOSAVE_INTERVAL = 30_000    # milliseconds (frontend)
-
-# GitHub OAuth (for portfolio GitHub sync)
-GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID")
-GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
-GITHUB_REDIRECT_URI = os.getenv("GITHUB_REDIRECT_URI")
-GITHUB_DEFAULT_REPO_NAME = "analytiq-portfolio"
 
 
 # ============================================================================
