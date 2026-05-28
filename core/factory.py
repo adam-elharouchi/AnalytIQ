@@ -232,10 +232,9 @@ def register_request_hooks(app) -> None:
     """Register before/after request hooks: request-ID, CORS, OPTIONS, security headers."""
     from flask import g, request
 
-    from core.middleware import check_ip_blocklist, check_maintenance_mode
+    from core.middleware import check_ip_blocklist
 
     app.before_request(check_ip_blocklist)
-    app.before_request(check_maintenance_mode)
 
     @app.before_request
     def assign_request_id():
@@ -367,7 +366,6 @@ def register_blueprints(app) -> None:
     from blueprints.sso import bp as sso_bp
     from blueprints.tenant_admin import bp as tenant_admin_bp
     from blueprints.flywheel import bp as flywheel_bp
-    from blueprints.portfolio import bp as portfolio_bp
 
     for bp in (
         health_bp,
@@ -384,7 +382,6 @@ def register_blueprints(app) -> None:
         sso_bp,
         tenant_admin_bp,
         flywheel_bp,
-        portfolio_bp,
     ):
         app.register_blueprint(bp)
 
