@@ -232,10 +232,9 @@ def register_request_hooks(app) -> None:
     """Register before/after request hooks: request-ID, CORS, OPTIONS, security headers."""
     from flask import g, request
 
-    from core.middleware import check_ip_blocklist, check_maintenance_mode
+    from core.middleware import check_ip_blocklist
 
     app.before_request(check_ip_blocklist)
-    app.before_request(check_maintenance_mode)
 
     @app.before_request
     def assign_request_id():
