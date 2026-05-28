@@ -2,7 +2,7 @@
 Platform Blueprint — public-facing status and announcement endpoints.
 
 Routes (no auth required):
-  GET  /api/platform/status        — maintenance mode flag + active announcements
+  GET  /api/platform/status        — active announcements
 """
 
 import logging
@@ -17,20 +17,12 @@ bp = Blueprint("platform", __name__)
 @bp.route("/api/platform/status", methods=["GET"])
 def platform_status():
     """
-    Public endpoint: returns maintenance mode status and any active announcements.
+    Public endpoint: returns active announcements.
     Used by base.html on every page load to show announcement banners.
     """
     try:
         conn = get_db_connection()
         cur = conn.cursor()
-
-        # Maintenance mode + message
-        cur.execute(
-            "SELECT key, value FROM platform_config WHERE key IN ('maintenance_mode', 'maintenance_message')"
-        )
-        config = {r[0]: r[1] for r in cur.fetchall()}
-        maintenance = config.get("maintenance_mode", "false") == "true"
-        maintenance_msg = config.get("maintenance_message", "")
 
         # Active announcements (not expired)
         # Supports optional ?role= and ?tenant_id= params to filter results.
@@ -97,17 +89,7 @@ def platform_status():
                 }
             )
 
-        return (
-            jsonify(
-                {
-                    "maintenance": maintenance,
-                    "maintenance_message": maintenance_msg,
-                    "announcements": announcements,
-                }
-            ),
-            200,
-        )
+        return jsonify({"announcements": announcements}), 200
     except Exception as e:
         logger.error("Failed to fetch platform status: %s", e)
-        # Fail open — clients should not be blocked by a status check failure
-        return jsonify({"maintenance": False, "announcements": []}), 200
+        return jsonify({"announcements": []}), 200
