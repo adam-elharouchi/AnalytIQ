@@ -33,6 +33,7 @@ _MAINTENANCE_EXEMPT: frozenset = frozenset(
         "/api/users/reset-password",
         "/api/platform/status",
         "/api/health",
+        "/api/csrf-token",
         "/api/superadmin/platform-config",
     }
 )
