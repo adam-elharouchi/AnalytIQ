@@ -11,7 +11,6 @@ class SuperAdminDashboard {
             ? `${_base}/superadmin`
             : `${window.location.protocol}//${window.location.host}${_base}/superadmin`;
         this._auditPage = 1;
-        this._maintenanceActive = false;
         this.init();
     }
 
@@ -87,7 +86,7 @@ class SuperAdminDashboard {
                     case 'analytics-section':         this.loadAnalytics(); break;
                     case 'classes-admin-section':     this.loadAllClasses(); break;
                     case 'announcements-section':     this.loadAnnouncements(); break;
-                    case 'platform-settings-section': this.loadPlatformSettings(); break;
+                    case 'platform-settings-section': this.loadIpBlocklist(); break;
                     case 'audit-section':             this.loadAuditLog(1); break;
                     case 'approvals-section':         this.loadPendingApprovals(true); break;
                 }
@@ -1818,62 +1817,6 @@ class SuperAdminDashboard {
     // ==========================================
     // Platform Settings & IP Blocklist
     // ==========================================
-
-    async loadPlatformSettings() {
-        try {
-            const res = await authFetch(`${this.baseAdminUrl}/platform-config`);
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Failed to load settings');
-
-            this._maintenanceActive = data.maintenance_mode === 'true' || data.maintenance_mode === true;
-            const badge = document.getElementById('maint-status-badge');
-            const btn   = document.getElementById('maint-toggle-btn');
-            if (badge) {
-                badge.className = `status-badge ${this._maintenanceActive ? 'disabled' : 'active'}`;
-                badge.textContent = this._maintenanceActive ? 'ON — Maintenance Active' : 'OFF — Platform Running';
-            }
-            if (btn) btn.textContent = this._maintenanceActive ? 'Disable Maintenance' : 'Enable Maintenance';
-
-            const msgEl = document.getElementById('maint-message');
-            if (msgEl) msgEl.value = data.maintenance_message || '';
-        } catch (err) {
-            showError(err.message);
-        }
-        this.loadIpBlocklist();
-    }
-
-    async toggleMaintenanceMode() {
-        const newState = !this._maintenanceActive;
-        const action = newState ? 'enable' : 'disable';
-        if (!confirm(`${action.charAt(0).toUpperCase() + action.slice(1)} maintenance mode?\n${newState ? 'All non-superadmin API requests will return 503.' : 'The platform will resume normal operation.'}`)) return;
-        try {
-            const res = await authFetch(`${this.baseAdminUrl}/platform-config`, {
-                method: 'PATCH',
-                body: JSON.stringify({ maintenance_mode: newState ? 'true' : 'false' })
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Update failed');
-            showSuccess(`Maintenance mode ${newState ? 'enabled' : 'disabled'}.`);
-            this.loadPlatformSettings();
-        } catch (err) {
-            showError(err.message);
-        }
-    }
-
-    async savePlatformSettings() {
-        const msg = document.getElementById('maint-message')?.value.trim() || '';
-        try {
-            const res = await authFetch(`${this.baseAdminUrl}/platform-config`, {
-                method: 'PATCH',
-                body: JSON.stringify({ maintenance_message: msg })
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Save failed');
-            showSuccess('Maintenance message saved.');
-        } catch (err) {
-            showError(err.message);
-        }
-    }
 
     async loadIpBlocklist() {
         const tbody = document.getElementById('ip-blocklist-body');
