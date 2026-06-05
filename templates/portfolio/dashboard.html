@@ -1,0 +1,534 @@
+{% extends "base.html" %}
+
+{% block title %}My Portfolio{% endblock %}
+
+{% block extra_head %}
+<script src="/static/js/navigation.js?v=2.6"></script>
+{% endblock %}
+
+{% block content %}
+<nav class="navbar" id="navbar"></nav>
+
+<main class="container">
+
+  <!-- ══ Portfolio Header ══ -->
+  <div class="workspace-header-bento" id="portfolioHeader">
+    <div class="workspace-header-main">
+      <div>
+        <div class="workspace-status-line">
+          <span class="workspace-status-dot" id="wsStatusDot"></span>
+          <span class="workspace-status-label" id="wsStatusLabel">Portfolio Active</span>
+        </div>
+        <h1 class="workspace-header-title" id="portfolioTitle">My Portfolio</h1>
+        <p class="workspace-header-desc" id="portfolioDesc">Build your coding portfolio and share it with the world.</p>
+      </div>
+      <div id="portfolioShareBtn" style="display:none; margin-top:1rem;">
+        <button onclick="copyPortfolioLink()" class="btn btn-secondary" style="font-size:0.85rem;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:0.4rem;vertical-align:middle;"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          Share Portfolio
+        </button>
+      </div>
+    </div>
+
+    <div class="workspace-header-action" onclick="openNewProjectModal()" style="cursor:pointer;">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(37,105,244,0.8)" stroke-width="1.5" style="margin-bottom:0.5rem;">
+        <path d="M12 5v14M5 12h14"/>
+      </svg>
+      <div style="font-size:0.95rem; font-weight:600; color:#f8fafc; margin-bottom:0.25rem;">Start New Project</div>
+      <p style="margin:0; color:#64748b; font-size:0.8rem;">Build something from scratch</p>
+    </div>
+  </div>
+
+  <!-- ══ Setup Prompt (shown when no portfolio exists) ══ -->
+  <div id="setupPrompt" style="display:none; width:100%; max-width:600px; margin:3rem auto; text-align:center;">
+    <div style="background:var(--color-dark); border-radius:1rem; border:1px solid rgba(255,255,255,0.1); padding:3rem 2rem;">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="1.5" style="margin-bottom:1.5rem;">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+      <h2 style="color:#f8fafc; margin-bottom:0.75rem;">Set Up Your Portfolio</h2>
+      <p style="color:#94a3b8; margin-bottom:2rem; line-height:1.6;">Your portfolio is a public page where you can showcase your class exercises and personal projects. Share it with employers and recruiters.</p>
+      <button onclick="createPortfolio()" class="btn btn-primary" style="padding:0.75rem 2rem; font-size:1rem;">Create My Portfolio</button>
+    </div>
+  </div>
+
+  <!-- ══ Loading State ══ -->
+  <div id="loadingState" class="terminal-loading-state">
+    <div class="terminal-loading-dots"><span></span><span></span><span></span></div>
+    <p class="terminal-loading-text">Loading portfolio<span style="animation:blink 1s step-end infinite;display:inline-block;">_</span></p>
+  </div>
+
+  <!-- ══ Portfolio Content ══ -->
+  <div id="portfolioContent" style="display:none;">
+
+    <!-- Action Bar -->
+    <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1.5rem; flex-wrap:wrap;">
+      <button onclick="openNewProjectModal()" class="btn btn-primary" style="display:flex;align-items:center;gap:0.4rem;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        Start New Project
+      </button>
+      <button onclick="openImportModal()" class="btn btn-secondary" style="display:flex;align-items:center;gap:0.4rem;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Add from Class
+      </button>
+      <button onclick="openExternalLinkModal()" class="btn btn-secondary" style="display:flex;align-items:center;gap:0.4rem;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        Add External Link
+      </button>
+      <div style="margin-left:auto; display:flex; align-items:center; gap:0.5rem;">
+        <a href="/portfolio/settings" style="color:#64748b; font-size:0.85rem; text-decoration:none; display:flex; align-items:center; gap:0.4rem;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M12 2v2M12 20v2M2 12h2M20 12h2M4.93 19.07l1.41-1.41M19.07 19.07l-1.41-1.41"/></svg>
+          Settings
+        </a>
+      </div>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="terminal-tab-nav" style="margin-bottom:1.5rem;justify-content:flex-start;flex-wrap:nowrap;overflow-x:auto;">
+      <button class="terminal-tab-btn active" onclick="filterItems('all')" id="tabAll">
+        <span class="terminal-tab-num">1</span> All
+      </button>
+      <button class="terminal-tab-btn" onclick="filterItems('class_exercise')" id="tabClass">
+        <span class="terminal-tab-num">2</span> Class Exercises
+      </button>
+      <button class="terminal-tab-btn" onclick="filterItems('personal_project')" id="tabPersonal">
+        <span class="terminal-tab-num">3</span> Personal Projects
+      </button>
+      <button class="terminal-tab-btn" onclick="filterItems('external_link')" id="tabExternal">
+        <span class="terminal-tab-num">4</span> External Links
+      </button>
+    </div>
+
+    <!-- Empty State -->
+    <div id="emptyState" style="display:none; text-align:center; padding:4rem 2rem; color:#64748b;">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="margin-bottom:1.5rem; opacity:0.4;">
+        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+      </svg>
+      <p style="font-size:1.1rem; margin-bottom:0.5rem;">No projects yet</p>
+      <p style="font-size:0.875rem;">Start a new project or import completed exercises from your classes.</p>
+    </div>
+
+    <!-- Project Grid -->
+    <div id="projectGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:1.25rem;"></div>
+  </div>
+
+</main>
+
+<!-- ══ New Project Drawer ══ -->
+<div class="student-drawer-overlay" id="newProjectOverlay" onclick="closeNewProjectModal()"></div>
+<div class="student-join-drawer" id="newProjectDrawer" role="dialog" aria-modal="true">
+  <div class="drawer-header">
+    <h2>Start New Project</h2>
+    <button onclick="closeNewProjectModal()" aria-label="Close"
+      style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#64748b;line-height:1;">&times;</button>
+  </div>
+  <div class="drawer-body">
+    <div style="margin-bottom:1.25rem;">
+      <label for="newProjectTitle">Project Title *</label>
+      <input type="text" id="newProjectTitle" placeholder="e.g. Stock Price Predictor" maxlength="200" autocomplete="off" />
+    </div>
+    <div style="margin-bottom:1.25rem;">
+      <label for="newProjectLanguage">Language</label>
+      <select id="newProjectLanguage">
+        <option value="python">Python</option>
+        <option value="sql">SQL</option>
+        <option value="r">R</option>
+        <option value="javascript">JavaScript</option>
+        <option value="java">Java</option>
+      </select>
+    </div>
+    <div style="margin-bottom:1.5rem;">
+      <label for="newProjectDesc">Description (optional)</label>
+      <textarea id="newProjectDesc" placeholder="What does this project do?" maxlength="1000"></textarea>
+    </div>
+    <div id="newProjectError" style="display:none;margin-bottom:1rem;background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.3);color:#f87171;padding:0.875rem;border-radius:0.5rem;font-size:0.875rem;"></div>
+    <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+      <button type="button" onclick="closeNewProjectModal()"
+        style="background:transparent;border:1px solid rgba(255,255,255,0.1);color:#94a3b8;padding:0.65rem 1.25rem;border-radius:0.375rem;cursor:pointer;font-size:0.875rem;">
+        Cancel
+      </button>
+      <button onclick="submitNewProject()" id="createProjectBtn" class="btn btn-primary">Create Project</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Import Exercises Drawer ══ -->
+<div class="student-drawer-overlay" id="importOverlay" onclick="closeImportModal()"></div>
+<div class="student-join-drawer" id="importDrawer" role="dialog" aria-modal="true" style="display:flex;flex-direction:column;">
+  <div class="drawer-header">
+    <h2>Add from Class</h2>
+    <button onclick="closeImportModal()" aria-label="Close"
+      style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#64748b;line-height:1;">&times;</button>
+  </div>
+  <div class="drawer-body" style="flex:1;overflow-y:auto;">
+    <div id="importExercisesList">
+      <p style="color:#64748b;">Loading completed exercises...</p>
+    </div>
+  </div>
+  <div style="padding:1.25rem 2rem;border-top:1px solid rgba(255,255,255,0.05);flex-shrink:0;">
+    <div id="importError" style="display:none;margin-bottom:0.75rem;background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.3);color:#f87171;padding:0.875rem;border-radius:0.5rem;font-size:0.875rem;"></div>
+    <button onclick="submitImport()" id="importBtn" class="btn btn-primary" style="width:100%;" disabled>Import Selected</button>
+  </div>
+</div>
+
+<!-- ══ External Link Drawer ══ -->
+<div class="student-drawer-overlay" id="externalLinkOverlay" onclick="closeExternalLinkModal()"></div>
+<div class="student-join-drawer" id="externalLinkDrawer" role="dialog" aria-modal="true">
+  <div class="drawer-header">
+    <h2>Add External Link</h2>
+    <button onclick="closeExternalLinkModal()" aria-label="Close"
+      style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#64748b;line-height:1;">&times;</button>
+  </div>
+  <div class="drawer-body">
+    <div style="margin-bottom:1.25rem;">
+      <label for="extTitle">Title *</label>
+      <input type="text" id="extTitle" placeholder="e.g. My GitHub Project" maxlength="200" />
+    </div>
+    <div style="margin-bottom:1.25rem;">
+      <label for="extUrl">URL *</label>
+      <input type="url" id="extUrl" placeholder="https://github.com/..." />
+    </div>
+    <div style="margin-bottom:1.5rem;">
+      <label for="extDesc">Description (optional)</label>
+      <textarea id="extDesc" maxlength="1000" placeholder="Optional: describe this project briefly..."></textarea>
+    </div>
+    <div id="extError" style="display:none;margin-bottom:1rem;background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.3);color:#f87171;padding:0.875rem;border-radius:0.5rem;font-size:0.875rem;"></div>
+    <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+      <button type="button" onclick="closeExternalLinkModal()"
+        style="background:transparent;border:1px solid rgba(255,255,255,0.1);color:#94a3b8;padding:0.65rem 1.25rem;border-radius:0.375rem;cursor:pointer;font-size:0.875rem;">
+        Cancel
+      </button>
+      <button onclick="submitExternalLink()" class="btn btn-primary">Add Link</button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const API = window.API_BASE || '';
+let portfolioProfile = null;
+let portfolioItems = [];
+let selectedImportIds = new Set();
+let currentFilter = 'all';
+
+// ── Bootstrap ─────────────────────────────────────────────────────────────
+(async function init() {
+  const token = localStorage.getItem('authToken');
+  if (!token) { window.location.href = '/login'; return; }
+
+  try {
+    const res = await authFetch('/api/portfolio/profile');
+    const data = await res.json();
+
+    document.getElementById('loadingState').style.display = 'none';
+
+    if (!data.profile) {
+      document.getElementById('setupPrompt').style.display = 'block';
+      document.getElementById('portfolioHeader').style.display = 'none';
+      return;
+    }
+
+    portfolioProfile = data.profile;
+    applyProfile(portfolioProfile);
+
+    const itemsRes = await authFetch('/api/portfolio/items');
+    const itemsData = await itemsRes.json();
+    portfolioItems = itemsData.items || [];
+
+    document.getElementById('portfolioContent').style.display = 'block';
+    renderItems();
+  } catch (e) {
+    document.getElementById('loadingState').innerHTML = '<p style="color:#ef4444;">Failed to load portfolio. Please refresh.</p>';
+  }
+})();
+
+function applyProfile(p) {
+  document.getElementById('portfolioTitle').textContent = p.portfolio_title || 'My Portfolio';
+  if (p.headline) document.getElementById('portfolioDesc').textContent = p.headline;
+  if (p.is_public) {
+    document.getElementById('portfolioShareBtn').style.display = 'block';
+  }
+  document.querySelector('#wsStatusLabel').textContent = p.is_public ? 'Public Portfolio' : 'Portfolio Active';
+}
+
+// ── Create portfolio ───────────────────────────────────────────────────────
+async function createPortfolio() {
+  try {
+    const res = await authFetch('/api/portfolio/profile', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({}) });
+    const data = await res.json();
+    if (!res.ok) { alert(data.error || 'Failed to create portfolio.'); return; }
+    portfolioProfile = data.profile;
+    document.getElementById('setupPrompt').style.display = 'none';
+    document.getElementById('portfolioHeader').style.display = '';
+    applyProfile(portfolioProfile);
+    document.getElementById('portfolioContent').style.display = 'block';
+    renderItems();
+  } catch (e) { alert('Failed to create portfolio. Please try again.'); }
+}
+
+// ── Render items ───────────────────────────────────────────────────────────
+function renderItems() {
+  const filtered = currentFilter === 'all'
+    ? portfolioItems
+    : portfolioItems.filter(i => i.item_type === currentFilter);
+
+  const grid = document.getElementById('projectGrid');
+  const empty = document.getElementById('emptyState');
+
+  if (!filtered.length) {
+    grid.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  grid.innerHTML = filtered.map(renderItemCard).join('');
+}
+
+const LANG_COLORS = { python:'#3b82f6', sql:'#f59e0b', r:'#10b981', javascript:'#f97316', java:'#8b5cf6' };
+
+function renderItemCard(item) {
+  const langColor = LANG_COLORS[item.language] || '#64748b';
+  const source = item.source_class_name || (item.item_type === 'personal_project' ? 'Personal Project' : 'External');
+  const tags = (item.tags || []).slice(0, 3).map(t => `<span style="background:rgba(255,255,255,0.06);border-radius:0.25rem;padding:0.15rem 0.5rem;font-size:0.75rem;color:#94a3b8;">${escHtml(t)}</span>`).join('');
+  const pinIcon = item.is_pinned ? '<span style="color:#f59e0b;font-size:0.75rem;">📌</span>' : '';
+  const editLink = item.item_type === 'personal_project' ? `<a href="/portfolio/projects/${item.id}/edit" style="color:var(--color-primary);font-size:0.8rem;text-decoration:none;">Open Editor →</a>` : '';
+  const score = item.show_score && item.score != null ? `<span style="color:#10b981;font-size:0.8rem;">${Math.round(item.score)}%</span>` : '';
+  const statusBadge = item.item_type === 'personal_project' && item.project_status === 'draft'
+    ? '<span style="background:rgba(245,158,11,0.15);color:#fcd34d;border-radius:0.25rem;padding:0.1rem 0.5rem;font-size:0.72rem;border:1px solid rgba(245,158,11,0.3);">Draft</span>'
+    : '';
+
+  return `
+    <div style="background:var(--bg-card,rgba(34,44,62,0.82));border:1px solid rgba(255,255,255,0.08);border-radius:0.75rem;padding:1.25rem;display:flex;flex-direction:column;gap:0.75rem;transition:border-color 0.2s;"
+         onmouseover="this.style.borderColor='rgba(37,105,244,0.35)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.5rem;">
+        <div style="display:flex;align-items:center;gap:0.5rem;flex:1;min-width:0;">
+          ${pinIcon}
+          <span style="font-weight:600;color:#f8fafc;font-size:0.95rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(item.title)}</span>
+        </div>
+        <div style="display:flex;gap:0.4rem;flex-shrink:0;">
+          ${statusBadge}
+          <span style="background:${langColor}22;color:${langColor};border-radius:0.25rem;padding:0.15rem 0.6rem;font-size:0.75rem;font-weight:600;border:1px solid ${langColor}44;">${(item.language||'').toUpperCase()}</span>
+        </div>
+      </div>
+      ${item.description ? `<p style="color:#94a3b8;font-size:0.85rem;margin:0;line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${escHtml(item.description)}</p>` : ''}
+      ${tags ? `<div style="display:flex;flex-wrap:wrap;gap:0.35rem;">${tags}</div>` : ''}
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:0.5rem;border-top:1px solid rgba(255,255,255,0.05);">
+        <span style="color:#64748b;font-size:0.78rem;">${escHtml(source)}</span>
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+          ${score}
+          ${editLink}
+          <button onclick="deleteItem('${item.id}')" style="background:none;border:none;color:#64748b;cursor:pointer;padding:0.2rem;" title="Remove">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+          </button>
+          <button onclick="togglePin('${item.id}', ${item.is_pinned})" style="background:none;border:none;color:${item.is_pinned?'#f59e0b':'#64748b'};cursor:pointer;padding:0.2rem;" title="${item.is_pinned?'Unpin':'Pin'}">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="${item.is_pinned?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function filterItems(type) {
+  currentFilter = type;
+  const tabMap = { all:'tabAll', class_exercise:'tabClass', personal_project:'tabPersonal', external_link:'tabExternal' };
+  Object.values(tabMap).forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('active');
+  });
+  const tabEl = document.getElementById(tabMap[type]);
+  if (tabEl) tabEl.classList.add('active');
+  renderItems();
+}
+
+// ── Share ──────────────────────────────────────────────────────────────────
+function copyPortfolioLink() {
+  if (!portfolioProfile) return;
+  const url = `${window.location.origin}/portfolio/${portfolioProfile.slug}`;
+  navigator.clipboard.writeText(url).then(() => alert('Portfolio link copied!')).catch(() => prompt('Copy this link:', url));
+}
+
+// ── New Project Drawer ─────────────────────────────────────────────────────
+function openNewProjectModal() {
+  document.getElementById('newProjectOverlay').classList.add('visible');
+  document.getElementById('newProjectDrawer').classList.add('visible');
+  setTimeout(() => document.getElementById('newProjectTitle').focus(), 50);
+}
+function closeNewProjectModal() {
+  document.getElementById('newProjectOverlay').classList.remove('visible');
+  document.getElementById('newProjectDrawer').classList.remove('visible');
+  document.getElementById('newProjectTitle').value = '';
+  document.getElementById('newProjectDesc').value = '';
+  document.getElementById('newProjectError').style.display = 'none';
+}
+async function submitNewProject() {
+  const title = document.getElementById('newProjectTitle').value.trim();
+  const language = document.getElementById('newProjectLanguage').value;
+  const description = document.getElementById('newProjectDesc').value.trim() || null;
+  const errEl = document.getElementById('newProjectError');
+  errEl.style.display = 'none';
+
+  if (!title) { errEl.textContent = 'Title is required.'; errEl.style.display = 'block'; return; }
+
+  const btn = document.getElementById('createProjectBtn');
+  btn.disabled = true; btn.textContent = 'Creating...';
+
+  try {
+    // Ensure portfolio exists
+    if (!portfolioProfile) await createPortfolio();
+
+    const res = await authFetch('/api/portfolio/projects', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ title, language, description })
+    });
+    const data = await res.json();
+    if (!res.ok) { errEl.textContent = data.error || 'Failed to create project.'; errEl.style.display = 'block'; return; }
+
+    closeNewProjectModal();
+    window.location.href = `/portfolio/projects/${data.item.id}/edit`;
+  } finally {
+    btn.disabled = false; btn.textContent = 'Create Project';
+  }
+}
+
+// ── Import Modal ───────────────────────────────────────────────────────────
+async function openImportModal() {
+  document.getElementById('importOverlay').classList.add('visible');
+  document.getElementById('importDrawer').classList.add('visible');
+  selectedImportIds.clear();
+  document.getElementById('importBtn').disabled = true;
+  const listEl = document.getElementById('importExercisesList');
+  listEl.innerHTML = '<p style="color:#64748b;">Loading...</p>';
+
+  try {
+    const res = await authFetch('/api/portfolio/available-exercises');
+    const data = await res.json();
+    const exercises = data.exercises || [];
+    if (!exercises.length) {
+      listEl.innerHTML = '<p style="color:#64748b;">No completed exercises available to import. Complete some class exercises first!</p>';
+      return;
+    }
+    listEl.innerHTML = exercises.map(ex => `
+      <label>
+        <input type="checkbox" value="${ex.exercise_id}" onchange="toggleImportSelect(this)" />
+        <div class="ex-info">
+          <div class="ex-title">${escHtml(ex.title)}</div>
+          <div class="ex-meta">${escHtml(ex.class_name||'')}${ex.chapter_name?' · '+escHtml(ex.chapter_name):''}</div>
+        </div>
+        ${ex.best_score!=null ? `<span style="color:#10b981;font-size:0.8rem;white-space:nowrap;flex-shrink:0;">${Math.round(ex.best_score)}%</span>` : ''}
+        <span style="background:rgba(59,130,246,0.15);color:#60a5fa;border-radius:0.25rem;padding:0.1rem 0.5rem;font-size:0.75rem;font-weight:600;flex-shrink:0;">${(ex.language||'PY').toUpperCase()}</span>
+      </label>
+    `).join('');
+  } catch(e) {
+    listEl.innerHTML = '<p style="color:#ef4444;">Failed to load exercises.</p>';
+  }
+}
+function toggleImportSelect(checkbox) {
+  if (checkbox.checked) selectedImportIds.add(checkbox.value);
+  else selectedImportIds.delete(checkbox.value);
+  document.getElementById('importBtn').disabled = selectedImportIds.size === 0;
+}
+function closeImportModal() {
+  document.getElementById('importOverlay').classList.remove('visible');
+  document.getElementById('importDrawer').classList.remove('visible');
+}
+async function submitImport() {
+  const btn = document.getElementById('importBtn');
+  const errEl = document.getElementById('importError');
+  errEl.style.display = 'none';
+  btn.disabled = true; btn.textContent = 'Importing...';
+
+  try {
+    for (const exerciseId of selectedImportIds) {
+      const res = await authFetch('/api/portfolio/import-exercise', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ exercise_id: exerciseId })
+      });
+      const data = await res.json();
+      if (res.ok) portfolioItems.unshift(data.item);
+    }
+    closeImportModal();
+    renderItems();
+  } catch(e) {
+    errEl.textContent = 'Failed to import exercises.';
+    errEl.style.display = 'block';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Import Selected';
+  }
+}
+
+// ── External Link Modal ────────────────────────────────────────────────────
+function openExternalLinkModal() {
+  document.getElementById('externalLinkOverlay').classList.add('visible');
+  document.getElementById('externalLinkDrawer').classList.add('visible');
+}
+function closeExternalLinkModal() {
+  document.getElementById('externalLinkOverlay').classList.remove('visible');
+  document.getElementById('externalLinkDrawer').classList.remove('visible');
+  document.getElementById('extTitle').value = '';
+  document.getElementById('extUrl').value = '';
+  document.getElementById('extDesc').value = '';
+  document.getElementById('extError').style.display = 'none';
+}
+async function submitExternalLink() {
+  const title = document.getElementById('extTitle').value.trim();
+  const url = document.getElementById('extUrl').value.trim();
+  const description = document.getElementById('extDesc').value.trim() || null;
+  const errEl = document.getElementById('extError');
+  errEl.style.display = 'none';
+
+  if (!title) { errEl.textContent = 'Title is required.'; errEl.style.display = 'block'; return; }
+  if (!url) { errEl.textContent = 'URL is required.'; errEl.style.display = 'block'; return; }
+
+  try {
+    const res = await authFetch('/api/portfolio/items', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ item_type: 'external_link', title, description, external_url: url })
+    });
+    const data = await res.json();
+    if (!res.ok) { errEl.textContent = data.error || 'Failed to add link.'; errEl.style.display = 'block'; return; }
+    portfolioItems.unshift(data.item);
+    closeExternalLinkModal();
+    renderItems();
+  } catch(e) {
+    errEl.textContent = 'Failed to add link.';
+    errEl.style.display = 'block';
+  }
+}
+
+// ── Item actions ───────────────────────────────────────────────────────────
+async function deleteItem(itemId) {
+  if (!confirm('Remove this item from your portfolio?')) return;
+  try {
+    const res = await authFetch(`/api/portfolio/items/${itemId}`, { method: 'DELETE' });
+    if (res.ok) {
+      portfolioItems = portfolioItems.filter(i => i.id !== itemId);
+      renderItems();
+    }
+  } catch(e) { alert('Failed to remove item.'); }
+}
+
+async function togglePin(itemId, isPinned) {
+  try {
+    const res = await authFetch(`/api/portfolio/items/${itemId}`, {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ is_pinned: !isPinned })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      const idx = portfolioItems.findIndex(i => i.id === itemId);
+      if (idx !== -1) portfolioItems[idx] = data.item;
+      renderItems();
+    }
+  } catch(e) {}
+}
+
+function escHtml(s) {
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+{% endblock %}
