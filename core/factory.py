@@ -134,9 +134,12 @@ def setup_csrf(app) -> None:
     """
     Initialize Flask-WTF CSRF protection.
 
-    When FEATURE_CSRF_PROTECTION=True the CSRFProtect instance is attached to
-    the app AND injected into core.extensions so blueprints can use
-    @csrf_exempt consistently.
+    WTF_CSRF_CHECK_DEFAULT is always False because every route in this app is
+    an API endpoint protected by JWT Bearer tokens.  Browsers cannot set the
+    Authorization header cross-origin without a CORS preflight, so CSRF is not
+    a meaningful threat vector here.  The CSRFProtect instance is still
+    registered so generate_csrf() / the /api/csrf-token endpoint are available
+    if a future traditional form-submit route needs explicit @csrf.protect.
     """
     try:
         from flask_wtf.csrf import CSRFProtect, generate_csrf  # noqa: F401
@@ -145,13 +148,15 @@ def setup_csrf(app) -> None:
         app.config["WTF_CSRF_ENABLED"] = config.WTF_CSRF_ENABLED
         app.config["WTF_CSRF_TIME_LIMIT"] = config.WTF_CSRF_TIME_LIMIT
         app.config["WTF_CSRF_SSL_STRICT"] = config.WTF_CSRF_SSL_STRICT
-        app.config["WTF_CSRF_CHECK_DEFAULT"] = config.WTF_CSRF_CHECK_DEFAULT
+        # Always False: auto-enforcement is disabled app-wide.
+        # JWT Bearer auth makes per-route CSRF redundant (see docstring).
+        app.config["WTF_CSRF_CHECK_DEFAULT"] = False
 
         csrf_instance = CSRFProtect()
         if config.FEATURE_CSRF_PROTECTION:
             csrf_instance.init_app(app)
             _ext.csrf = csrf_instance
-            logger.info("CSRF protection enabled")
+            logger.info("CSRF protection enabled (check_default=False; JWT Bearer auth)")
         else:
             logger.info("CSRF protection disabled (FEATURE_CSRF_PROTECTION=False)")
     except ImportError:
@@ -227,10 +232,9 @@ def register_request_hooks(app) -> None:
     """Register before/after request hooks: request-ID, CORS, OPTIONS, security headers."""
     from flask import g, request
 
-    from core.middleware import check_ip_blocklist, check_maintenance_mode
+    from core.middleware import check_ip_blocklist
 
     app.before_request(check_ip_blocklist)
-    app.before_request(check_maintenance_mode)
 
     @app.before_request
     def assign_request_id():
@@ -388,44 +392,13 @@ def register_blueprints(app) -> None:
 
 
 def register_frontend_routes(app) -> None:
-    """Register the SPA catch-all and named page routes.
-
-    Routing strategy (strangler-fig migration):
-    - /login, /classes, /dashboard, /class/* → React app (static/react/index.html)
-    - All other non-API paths → legacy Jinja templates
-    - /static/react/* → built React assets served directly
-    """
+    """Register the catch-all and named page routes for Jinja2 templates."""
     import os as _os
     from flask import jsonify, redirect, render_template, send_from_directory
     from jinja2 import TemplateNotFound
     from werkzeug.routing import BaseConverter
 
     _ROOT = _os.path.abspath(app.root_path)
-    _REACT_DIR = _os.path.join(_ROOT, "static", "react")
-
-    # React-managed client routes — Flask sends index.html; React Router handles them.
-    _REACT_ROUTES = {
-        "login",
-        "classes",
-        "dashboard",
-        "home",
-        "admin",
-        "chapter",
-        "exercise",
-        "professor-class",
-        "profile",
-        "reset-password",
-        "code-assistant",
-        "upload-assistant",
-    }
-
-    def _serve_react():
-        """Send the React app shell so React Router can take over."""
-        react_index = _os.path.join(_REACT_DIR, "index.html")
-        if _os.path.isfile(react_index):
-            return send_from_directory(_REACT_DIR, "index.html")
-        # Fallback: React build not present yet (dev without a build step)
-        return render_template("landing.html")
 
     class NoApiPathConverter(BaseConverter):
         """Match any path that does NOT start with 'api' — keeps /api/* out of the catch-all."""
@@ -434,13 +407,22 @@ def register_frontend_routes(app) -> None:
 
     app.url_map.converters["no_api_path"] = NoApiPathConverter
 
+    @app.route("/api/csrf-token", methods=["GET"])
+    def get_csrf_token():
+        """Return a fresh CSRF token for AJAX requests."""
+        try:
+            from flask_wtf.csrf import generate_csrf
+
+            token = generate_csrf()
+        except Exception:
+            token = ""
+        resp = jsonify({"csrfToken": token})
+        resp.headers["Cache-Control"] = "no-store"
+        return resp
+
     @app.route("/", methods=["GET"])
     def serve_index():
         return render_template("landing.html")
-
-    @app.route("/home", methods=["GET"])
-    def serve_home():
-        return render_template("index.html")
 
     @app.route("/<no_api_path:path>", methods=["GET"])
     def serve_frontend(path):
@@ -453,18 +435,13 @@ def register_frontend_routes(app) -> None:
             clean = safe[:-5] or "/"
             return redirect(f"/{clean}", 301)
 
-        # React routes: send the React shell
-        top_segment = safe.split("/")[0]
-        if top_segment in _REACT_ROUTES:
-            return _serve_react()
-
-        # Legacy Jinja templates
+        # Jinja2 templates
         try:
             return render_template(f"{safe}.html")
         except TemplateNotFound:
             pass
 
-        # Static files (e.g. /static/react/assets/*)
+        # Static files
         full = _os.path.join(_ROOT, safe)
         if _os.path.isfile(full):
             return send_from_directory(_ROOT, safe)

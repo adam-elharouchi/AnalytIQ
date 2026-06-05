@@ -1611,61 +1611,6 @@ def delete_announcement(announcement_id):
 
 
 # ---------------------------------------------------------------------------
-# Platform Config (maintenance mode, registration gate)
-# ---------------------------------------------------------------------------
-
-
-@bp.route("/api/superadmin/platform-config", methods=["GET"])
-@require_auth
-@require_super_admin
-def get_platform_config():
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("SELECT key, value FROM platform_config ORDER BY key")
-        config = {r[0]: r[1] for r in cur.fetchall()}
-        cur.close()
-        return jsonify({"config": config}), 200
-    except Exception as e:
-        logger.error("Failed to get platform config: %s", e)
-        return jsonify({"error": "Failed to get config"}), 500
-
-
-@bp.route("/api/superadmin/platform-config", methods=["PATCH"])
-@csrf_exempt
-@require_auth
-@require_super_admin
-def update_platform_config():
-    data = request.json or {}
-    allowed_keys = {"maintenance_mode", "maintenance_message", "registration_open"}
-    updates = {k: v for k, v in data.items() if k in allowed_keys}
-    if not updates:
-        return jsonify({"error": "No valid config keys provided"}), 400
-
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        for key, value in updates.items():
-            cur.execute(
-                """
-                INSERT INTO platform_config (key, value, updated_by, updated_at)
-                VALUES (%s, %s, %s, NOW())
-                ON CONFLICT (key) DO UPDATE
-                    SET value = EXCLUDED.value,
-                        updated_by = EXCLUDED.updated_by,
-                        updated_at = NOW()
-                """,
-                (key, str(value), g.user_id),
-            )
-        conn.commit()
-        cur.close()
-        return jsonify({"success": True, "updated": list(updates.keys())}), 200
-    except Exception as e:
-        logger.error("Failed to update platform config: %s", e)
-        return jsonify({"error": "Failed to update config"}), 500
-
-
-# ---------------------------------------------------------------------------
 # IP Blocklist
 # ---------------------------------------------------------------------------
 

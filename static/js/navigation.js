@@ -110,6 +110,25 @@ document.addEventListener('DOMContentLoaded', function () {
   if (isAuthenticated) {
     updateNavProfilePicture();
 
+    // If no picture cached yet, fetch from API once and cache it
+    const profileData = JSON.parse(localStorage.getItem('userProfile') || '{}');
+    if (!currentUser.profilePicture && !profileData.profilePicture) {
+      const token = localStorage.getItem('authToken');
+      if (token) {
+        fetch('/api/users/profile', { headers: { Authorization: `Bearer ${token}` } })
+          .then(r => r.ok ? r.json() : null)
+          .then(data => {
+            if (data && data.profilePicture) {
+              const cached = JSON.parse(localStorage.getItem('userProfile') || '{}');
+              cached.profilePicture = data.profilePicture;
+              localStorage.setItem('userProfile', JSON.stringify(cached));
+              updateNavProfilePicture();
+            }
+          })
+          .catch(() => {});
+      }
+    }
+
     // Listen for storage changes to update profile picture
     window.addEventListener('storage', function (e) {
       if (e.key === 'currentUser' || e.key === 'userProfile') {

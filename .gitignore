@@ -37,3 +37,4 @@ uploads/*
 
 # Sensitive documents (credentials removed from history)
 docs/SECURITY_AUDIT_COMPLETE.md
+.claude/worktrees/
