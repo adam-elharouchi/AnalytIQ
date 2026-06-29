@@ -132,6 +132,16 @@ def create_tables():
         """
         )
 
+        # Create platform_config table
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS platform_config (
+                key   VARCHAR(255) PRIMARY KEY,
+                value TEXT NOT NULL DEFAULT ''
+            );
+        """
+        )
+
         # Create practice_progress table (track exercise scores and progress)
         cursor.execute(
             """

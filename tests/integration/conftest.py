@@ -70,6 +70,11 @@ CREATE TABLE IF NOT EXISTS user_preferences (
     updated_at       TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS platform_config (
+    key   VARCHAR(255) PRIMARY KEY,
+    value TEXT NOT NULL DEFAULT ''
+);
+
 CREATE TABLE IF NOT EXISTS ai_agent_digest (
     id             SERIAL       PRIMARY KEY,
     user_id        VARCHAR(255) UNIQUE NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
