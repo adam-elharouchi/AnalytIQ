@@ -360,7 +360,7 @@ if (typeof window.aiAgentAPI === 'undefined') {
 if (typeof window.preferencesAPI === 'undefined') {
     window.preferencesAPI = {
         async get() {
-            if (!getCurrentUserId()) return { currentLanguage: 'python', geminiModel: 'gemini-3-pro-preview', aiProvider: 'gemini' };
+            if (!getCurrentUserId()) return { currentLanguage: 'python', geminiModel: 'gemini-3.5-flash', aiProvider: 'gemini' };
 
             try {
                 const url = `${window.API_BASE_URL}/users/preferences`;
@@ -371,7 +371,7 @@ if (typeof window.preferencesAPI === 'undefined') {
             } catch (error) {
                 console.error('Error fetching preferences:', error);
             }
-            return { currentLanguage: 'python', geminiModel: 'gemini-3-pro-preview', aiProvider: 'gemini' };
+            return { currentLanguage: 'python', geminiModel: 'gemini-3.5-flash', aiProvider: 'gemini' };
         },
 
         async update(preferences) {

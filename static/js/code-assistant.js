@@ -11,7 +11,7 @@ let conversationContext = {
 };
 let aiProvider = 'gemini'; // Only Gemini supported
 let aiAgentInitialized = false;
-let geminiModel = 'gemini-3-pro-preview'; // Default: Best Balance
+let geminiModel = 'gemini-3.5-flash'; // Default: Best Balance
 // Default API key - accessible to all users
 // Default API key - Managed Server-Side
 const GEMINI_API_KEY = null; // Key is no longer exposed client-side
@@ -656,16 +656,11 @@ async function updateGeminiModel() {
   if (display) {
     // Show shortened model name
     const modelNames = {
-      // Flagship Gemini 3 Series (2026)
-      'gemini-3-pro-preview': 'Gemini 3 Pro',        // Best for: Complex reasoning, advanced coding, multi-step analysis
-      'gemini-3-flash-preview': 'Gemini 3 Flash',    // Best for: Fast responses, everyday tasks, quick code fixes
-
-      // Stable Gemini 2.5 Series
-      'gemini-2.5-pro': 'Gemini 2.5 Pro',            // Best for: Production apps, reliable coding, balanced performance
-      'gemini-2.5-flash': 'Gemini 2.5 Flash',        // Best for: High-speed tasks, simple queries, cost efficiency
-
-      // Specialty & Legacy
-      'gemini-3-pro-image-preview': 'Gemini 3 Vision', // Best for: Image analysis, visual understanding, charts/diagrams
+      'gemini-3.5-flash': 'Gemini 3.5 Flash',
+      'gemini-3.1-pro': 'Gemini 3.1 Pro',
+      'gemini-3.1-flash-lite': 'Gemini 3.1 Flash-Lite',
+      'gemini-2.5-pro': 'Gemini 2.5 Pro',
+      'gemini-2.5-flash': 'Gemini 2.5 Flash',
     };
     display.textContent = modelNames[geminiModel] || 'Gemini';
   }
@@ -687,22 +682,17 @@ async function initializeGemini() {
       const prefs = await preferencesAPI.get();
       currentLanguage = prefs.currentLanguage || 'python';
 
-      // Force update to Gemini 3 if user was on old default
-      if (prefs.geminiModel === 'gemini-2.5-flash' || !prefs.geminiModel) {
-        geminiModel = 'gemini-3-pro-preview';
-      } else {
-        geminiModel = prefs.geminiModel;
-      }
+      geminiModel = prefs.geminiModel || 'gemini-3.5-flash';
       aiProvider = prefs.aiProvider || 'gemini';
     } else {
       // Fallback to localStorage if preferencesAPI not available
-      geminiModel = localStorage.getItem('geminiModel') || 'gemini-3-pro-preview';
+      geminiModel = localStorage.getItem('geminiModel') || 'gemini-3.5-flash';
       aiProvider = localStorage.getItem('aiProvider') || 'gemini';
     }
   } catch (error) {
     console.error('Error loading preferences:', error);
     // Fallback to localStorage
-    geminiModel = localStorage.getItem('geminiModel') || 'gemini-3-pro-preview';
+    geminiModel = localStorage.getItem('geminiModel') || 'gemini-3.5-flash';
     aiProvider = localStorage.getItem('aiProvider') || 'gemini';
   }
 
@@ -728,7 +718,7 @@ async function initializeGemini() {
 async function testAPIConnection(apiKey) {
   try {
     const testResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: {
