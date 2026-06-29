@@ -118,17 +118,17 @@ def proxy_ai_chat():
                 503,
             )
 
-        model = data.get("model", "gemini-2.5-flash")
+        model = data.get("model", "gemini-3.5-flash")
         allowed_models = [
-            "gemini-3-pro-preview",
-            "gemini-3-flash-preview",
+            "gemini-3.5-flash",
+            "gemini-3.1-pro",
+            "gemini-3.1-flash-lite",
             "gemini-2.5-pro",
             "gemini-2.5-flash",
-            "gemini-3-pro-image-preview",
         ]
 
         if model not in allowed_models:
-            model = "gemini-2.5-flash"
+            model = "gemini-3.5-flash"
 
         url = (
             f"https://generativelanguage.googleapis.com/v1beta/models"

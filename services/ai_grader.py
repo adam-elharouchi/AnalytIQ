@@ -21,7 +21,7 @@ import config
 
 logger = logging.getLogger(__name__)
 
-_GEMINI_MODEL = config.GEMINI_MODEL or "gemini-2.5-flash"
+_GEMINI_MODEL = config.GEMINI_MODEL or "gemini-3.5-flash"
 
 
 def grade_with_ai(

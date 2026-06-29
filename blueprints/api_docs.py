@@ -1641,7 +1641,7 @@ def create_api_spec() -> APISpec:
                                             },
                                         },
                                     },
-                                    "model": {"type": "string", "default": "gemini-2.0-flash"},
+                                    "model": {"type": "string", "default": "gemini-3.5-flash"},
                                     "system_instruction": {"type": "string"},
                                 },
                             }
