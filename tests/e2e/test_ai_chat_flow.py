@@ -18,7 +18,7 @@ class TestAiChatFlow:
     def test_valid_message_returns_200(self, professor_token):
         r = requests.post(
             f"{API_URL}/ai/chat",
-            json={"contents": _VALID_MSG, "model": "gemini-2.0-flash"},
+            json={"contents": _VALID_MSG, "model": "gemini-3.5-flash"},
             headers=auth_headers(professor_token),
             timeout=30,
         )
@@ -28,7 +28,7 @@ class TestAiChatFlow:
     def test_empty_contents_returns_400(self, professor_token):
         r = requests.post(
             f"{API_URL}/ai/chat",
-            json={"contents": [], "model": "gemini-2.0-flash"},
+            json={"contents": [], "model": "gemini-3.5-flash"},
             headers=auth_headers(professor_token),
             timeout=10,
         )
@@ -37,7 +37,7 @@ class TestAiChatFlow:
     def test_missing_contents_key_returns_400(self, professor_token):
         r = requests.post(
             f"{API_URL}/ai/chat",
-            json={"model": "gemini-2.0-flash"},
+            json={"model": "gemini-3.5-flash"},
             headers=auth_headers(professor_token),
             timeout=10,
         )
@@ -48,7 +48,7 @@ class TestAiChatFlow:
         big_text = "x" * 60_000
         r = requests.post(
             f"{API_URL}/ai/chat",
-            json={"contents": [{"role": "user", "parts": [{"text": big_text}]}], "model": "gemini-2.0-flash"},
+            json={"contents": [{"role": "user", "parts": [{"text": big_text}]}], "model": "gemini-3.5-flash"},
             headers=auth_headers(professor_token),
             timeout=10,
         )
@@ -58,7 +58,7 @@ class TestAiChatFlow:
         messages = [{"role": "user", "parts": [{"text": f"msg {i}"}]} for i in range(101)]
         r = requests.post(
             f"{API_URL}/ai/chat",
-            json={"contents": messages, "model": "gemini-2.0-flash"},
+            json={"contents": messages, "model": "gemini-3.5-flash"},
             headers=auth_headers(professor_token),
             timeout=10,
         )
@@ -67,7 +67,7 @@ class TestAiChatFlow:
     def test_unauthenticated_request_returns_401(self):
         r = requests.post(
             f"{API_URL}/ai/chat",
-            json={"contents": _VALID_MSG, "model": "gemini-2.0-flash"},
+            json={"contents": _VALID_MSG, "model": "gemini-3.5-flash"},
             timeout=10,
         )
         assert r.status_code == 401

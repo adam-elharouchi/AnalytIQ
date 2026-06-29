@@ -567,7 +567,7 @@ def get_preferences():
                 jsonify(
                     {
                         "currentLanguage": "python",
-                        "geminiModel": "gemini-2.5-flash",
+                        "geminiModel": "gemini-3.5-flash",
                         "aiProvider": "gemini",
                     }
                 ),
@@ -578,7 +578,7 @@ def get_preferences():
             jsonify(
                 {
                     "currentLanguage": result[0] or "python",
-                    "geminiModel": result[1] or "gemini-2.5-flash",
+                    "geminiModel": result[1] or "gemini-3.5-flash",
                     "aiProvider": result[2] or "gemini",
                 }
             ),

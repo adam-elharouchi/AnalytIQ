@@ -18,8 +18,8 @@ logger = logging.getLogger(__name__)
 PROMPT_TEMPLATE_VERSION = "v1.3"
 
 # Use the model configured in config.py / GEMINI_MODEL env var.
-# Defaults to gemini-2.5-flash if not set.
-_GEMINI_MODEL = config.GEMINI_MODEL or "gemini-2.5-flash"
+# Defaults to gemini-3.5-flash if not set.
+_GEMINI_MODEL = config.GEMINI_MODEL or "gemini-3.5-flash"
 _GENERATION_PARAMS = {"temperature": 0.7, "maxOutputTokens": 8192}
 _TRUNCATION_LIMIT = 10_000
 

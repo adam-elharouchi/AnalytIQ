@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS user_preferences (
     id               SERIAL       PRIMARY KEY,
     user_id          VARCHAR(255) UNIQUE NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
     current_language VARCHAR(50)  DEFAULT 'python',
-    gemini_model     VARCHAR(100) DEFAULT 'gemini-2.5-flash',
+    gemini_model     VARCHAR(100) DEFAULT 'gemini-3.5-flash',
     ai_provider      VARCHAR(50)  DEFAULT 'gemini',
     created_at       TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
     updated_at       TIMESTAMP    DEFAULT CURRENT_TIMESTAMP

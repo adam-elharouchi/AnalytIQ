@@ -528,7 +528,7 @@ class TestPreferences:
     def test_get_preferences_returns_expected_keys(self, client, mock_db):
         """GET preferences returns currentLanguage, geminiModel, aiProvider."""
         cursor = mock_db.cursor()
-        cursor.fetchone.return_value = ("python", "gemini-2.5-flash", "gemini")
+        cursor.fetchone.return_value = ("python", "gemini-3.5-flash", "gemini")
 
         resp = client.get("/api/users/preferences", headers=AUTH)
 
@@ -539,7 +539,7 @@ class TestPreferences:
         assert "aiProvider" in data
 
     def test_get_preferences_no_row_returns_defaults(self, client, mock_db):
-        """When no preferences row exists, returns python/gemini-2.5-flash defaults."""
+        """When no preferences row exists, returns python/gemini-3.5-flash defaults."""
         cursor = mock_db.cursor()
         cursor.fetchone.return_value = None
 
@@ -548,14 +548,14 @@ class TestPreferences:
         assert resp.status_code == 200
         data = resp.get_json()
         assert data["currentLanguage"] == "python"
-        assert data["geminiModel"] == "gemini-2.5-flash"
+        assert data["geminiModel"] == "gemini-3.5-flash"
 
     def test_update_preferences_returns_200(self, client, mock_db):
         """PUT preferences returns 200 with success."""
         resp = client.put(
             "/api/users/preferences",
             headers=AUTH,
-            json={"currentLanguage": "javascript", "geminiModel": "gemini-2.5-flash"},
+            json={"currentLanguage": "javascript", "geminiModel": "gemini-3.5-flash"},
         )
 
         assert resp.status_code == 200
