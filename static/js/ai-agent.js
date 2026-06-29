@@ -5,7 +5,7 @@ class CodeWriterAgent {
   constructor() {
     this.apiKey = null;
     this.apiProvider = 'gemini';
-    this.geminiModel = 'gemini-3-pro-preview';
+    this.geminiModel = 'gemini-3.5-flash';
     this.digest = {
       userGoal: '',
       constraints: [],
@@ -24,7 +24,7 @@ class CodeWriterAgent {
   }
 
   // Initialize with API key
-  async initialize(apiKey, provider = 'gemini', geminiModel = 'gemini-3-pro-preview') {
+  async initialize(apiKey, provider = 'gemini', geminiModel = 'gemini-3.5-flash') {
     this.apiKey = apiKey;
     this.apiProvider = 'gemini';
     this.geminiModel = geminiModel;

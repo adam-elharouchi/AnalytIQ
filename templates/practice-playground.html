@@ -989,7 +989,7 @@
             // Fallback: initialize directly if function not available yet
             const apiKey = localStorage.getItem('geminiApiKey') || localStorage.getItem('aiApiKey') || (typeof GEMINI_API_KEY !== 'undefined' ? GEMINI_API_KEY : '');
             if (apiKey && typeof codeWriterAgent !== 'undefined') {
-              await codeWriterAgent.initialize(apiKey, 'gemini', 'gemini-3-pro-preview');
+              await codeWriterAgent.initialize(apiKey, 'gemini', 'gemini-3.5-flash');
             }
           }
           console.log('Playground AI agent ready');
