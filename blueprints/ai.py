@@ -3,6 +3,7 @@ AI proxy blueprint.
 
 Routes:
   POST /api/ai/chat
+  GET  /api/ai/models
 """
 
 import logging
@@ -118,17 +119,9 @@ def proxy_ai_chat():
                 503,
             )
 
-        model = data.get("model", "gemini-3.5-flash")
-        allowed_models = [
-            "gemini-3.5-flash",
-            "gemini-3.1-pro",
-            "gemini-3.1-flash-lite",
-            "gemini-2.5-pro",
-            "gemini-2.5-flash",
-        ]
-
-        if model not in allowed_models:
-            model = "gemini-3.5-flash"
+        model = data.get("model", "gemini-flash-latest")
+        if not isinstance(model, str) or not model.startswith("gemini-"):
+            model = "gemini-flash-latest"
 
         url = (
             f"https://generativelanguage.googleapis.com/v1beta/models"
@@ -165,3 +158,74 @@ def proxy_ai_chat():
     except Exception as e:
         logger.error("Unexpected error in AI chat: %s", e, exc_info=True)
         return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
+
+
+# ---------------------------------------------------------------------------
+# Model discovery
+# ---------------------------------------------------------------------------
+
+_MODELS_CACHE: dict = {"data": None, "fetched_at": 0.0}
+_MODELS_CACHE_TTL = 300  # 5 minutes
+
+_FALLBACK_MODELS = [
+    {"id": "gemini-flash-latest", "display_name": "Gemini Flash (latest)"},
+    {"id": "gemini-3.5-flash",    "display_name": "Gemini 3.5 Flash"},
+    {"id": "gemini-3.1-pro",      "display_name": "Gemini 3.1 Pro"},
+    {"id": "gemini-3.1-flash-lite","display_name": "Gemini 3.1 Flash-Lite"},
+    {"id": "gemini-2.5-pro",      "display_name": "Gemini 2.5 Pro"},
+    {"id": "gemini-2.5-flash",    "display_name": "Gemini 2.5 Flash"},
+]
+
+
+def _fetch_gemini_models(api_key: str) -> list:
+    """Call Gemini models.list and return chat-capable models, newest first."""
+    resp = requests.get(
+        "https://generativelanguage.googleapis.com/v1beta/models",
+        params={"key": api_key},
+        timeout=10,
+    )
+    resp.raise_for_status()
+    raw = resp.json().get("models", [])
+    models = []
+    for m in raw:
+        name = m.get("name", "")          # "models/gemini-3.5-flash"
+        model_id = name.removeprefix("models/")
+        if not model_id.startswith("gemini-"):
+            continue
+        if "generateContent" not in m.get("supportedGenerationMethods", []):
+            continue
+        models.append({
+            "id": model_id,
+            "display_name": m.get("displayName", model_id),
+        })
+    # Sort: latest aliases first, then by id descending
+    aliases = [m for m in models if m["id"].endswith("-latest")]
+    versioned = sorted(
+        [m for m in models if not m["id"].endswith("-latest")],
+        key=lambda m: m["id"],
+        reverse=True,
+    )
+    return aliases + versioned
+
+
+@bp.route("/api/ai/models", methods=["GET"])
+@csrf_exempt
+@require_auth
+def list_ai_models():
+    """Return available Gemini models, cached for 5 minutes."""
+    now = time.monotonic()
+    if _MODELS_CACHE["data"] and now - _MODELS_CACHE["fetched_at"] < _MODELS_CACHE_TTL:
+        return jsonify({"models": _MODELS_CACHE["data"], "cached": True})
+
+    api_key = config.GEMINI_API_KEY
+    if not api_key:
+        return jsonify({"models": _FALLBACK_MODELS, "cached": False, "source": "fallback"})
+
+    try:
+        models = _fetch_gemini_models(api_key)
+        _MODELS_CACHE["data"] = models
+        _MODELS_CACHE["fetched_at"] = now
+        return jsonify({"models": models, "cached": False})
+    except Exception as e:
+        logger.warning("Failed to fetch Gemini model list: %s", e)
+        return jsonify({"models": _FALLBACK_MODELS, "cached": False, "source": "fallback"})
