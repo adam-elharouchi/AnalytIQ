@@ -188,16 +188,18 @@ def _fetch_gemini_models(api_key: str) -> list:
     raw = resp.json().get("models", [])
     models = []
     for m in raw:
-        name = m.get("name", "")          # "models/gemini-3.5-flash"
+        name = m.get("name", "")  # "models/gemini-3.5-flash"
         model_id = name.removeprefix("models/")
         if not model_id.startswith("gemini-"):
             continue
         if "generateContent" not in m.get("supportedGenerationMethods", []):
             continue
-        models.append({
-            "id": model_id,
-            "display_name": m.get("displayName", model_id),
-        })
+        models.append(
+            {
+                "id": model_id,
+                "display_name": m.get("displayName", model_id),
+            }
+        )
     # Sort: latest aliases first, then by id descending
     aliases = [m for m in models if m["id"].endswith("-latest")]
     versioned = sorted(
