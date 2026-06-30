@@ -273,7 +273,7 @@ class TestGenerateExercisesGenMeta:
 
         assert len(result) == 1
         meta = result[0]["_gen_meta"]
-        assert meta["gemini_model"] == "gemini-3.5-flash"
+        assert meta["gemini_model"] == "gemini-flash-latest"
         assert meta["prompt_tokens"] == 100
         assert meta["completion_tokens"] == 200
         assert meta["difficulty_generated"] == "easy"
