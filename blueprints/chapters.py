@@ -352,10 +352,11 @@ def get_class_chapters(class_id):
             return jsonify({"error": "Class not found"}), 404
 
         role = getattr(g, "user_role", None) or "student"
-        is_professor = role == "professor"
         is_owner = owner == user_id
 
-        if not is_owner and not is_professor:
+        # Ownership, superadmin, or enrollment. A bare 'professor' role does NOT
+        # grant access to a class the user does not own (cross-class isolation).
+        if not is_owner and role != "superadmin":
             if not class_repo.check_enrollment(conn, class_id, user_id):
                 return jsonify({"error": "Access denied"}), 403
 
@@ -594,10 +595,10 @@ def get_chapter_exercises(chapter_id):
         professor_id = chapter_info[1]
 
         role = getattr(g, "user_role", None) or "student"
-        is_professor = role == "professor"
         is_owner = professor_id == user_id
+        can_manage = is_owner or role == "superadmin"
 
-        if not is_owner and not is_professor:
+        if not can_manage:
             if not class_repo.check_enrollment(conn, class_id_result, user_id):
                 return jsonify({"error": "Access denied"}), 403
 
@@ -611,7 +612,8 @@ def get_chapter_exercises(chapter_id):
                 "difficulty": row[3],
                 "exercise_number": row[4],
                 "created_at": row[5].isoformat() if row[5] else None,
-                "solution_code": row[6] or "",
+                # solution_code is an answer key: only the owner/superadmin sees it.
+                "solution_code": (row[6] or "") if can_manage else "",
             }
             for row in rows
         ]
@@ -681,9 +683,42 @@ def create_exercise(class_id, chapter_id):
         return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
+@bp.route("/api/chapters/<chapter_id>/access-token", methods=["GET"])
+@require_auth
+def get_chapter_access_token(chapter_id):
+    """Mint a short-lived token authorizing the caller to fetch this chapter's PDF.
+
+    The browser loads the PDF via an <iframe>/pdf.js and cannot send an
+    Authorization header, so the client first calls this authenticated endpoint
+    and appends the returned token to the PDF URL as ?token=...
+    """
+    from core.auth import create_media_token
+
+    conn = get_db_connection()
+    info = chapter_repo.get_chapter_class_info(conn, chapter_id)
+    if not info:
+        return jsonify({"error": "Chapter not found"}), 404
+
+    class_id, professor_id = info[0], info[1]
+    role = getattr(g, "user_role", None) or "student"
+    if professor_id != g.user_id and role != "superadmin":
+        if not class_repo.check_enrollment(conn, class_id, g.user_id):
+            return jsonify({"error": "Access denied"}), 403
+
+    return jsonify({"token": create_media_token("chapter", chapter_id)}), 200
+
+
 @bp.route("/api/chapters/<chapter_id>/pdf", methods=["GET"])
 def serve_chapter_pdf(chapter_id):
-    """Serve PDF file from database binary storage or filesystem (backward compatibility)"""
+    """Serve a chapter PDF/HTML.
+
+    Authorized via a short-lived ?token= capability minted by
+    /api/chapters/<id>/access-token (iframe/pdf.js cannot send auth headers).
+    """
+    from core.auth import verify_media_token
+
+    if not verify_media_token(request.args.get("token", ""), "chapter", chapter_id):
+        return jsonify({"error": "Authentication required"}), 401
     try:
         conn = get_db_connection()
         result = chapter_repo.get_chapter_pdf(conn, chapter_id)

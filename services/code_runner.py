@@ -42,6 +42,49 @@ logger = logging.getLogger(__name__)
 
 MAX_CODE_BYTES = 50_000
 
+
+# ---------------------------------------------------------------------------
+# Sandbox environment isolation
+# ---------------------------------------------------------------------------
+# Student code runs in a child process of the web/Celery worker. Without an
+# explicit env, that child inherits the parent's entire environment —
+# DATABASE_URL, JWT_SECRET_KEY/SECRET_KEY, GEMINI_API_KEY, SUPABASE_KEY,
+# RESEND_API_KEY, etc. — which untrusted code could read via os.environ and
+# exfiltrate. We pass an allowlisted, secret-free environment instead and run
+# from a neutral working directory so relative paths cannot reach app source.
+#
+# NOTE: this closes the secret-exposure vector. True isolation (separate
+# locked-down container / microVM, network namespace, seccomp, non-priv uid)
+# remains the recommended long-term hardening — see the security audit.
+
+
+def _sandbox_env() -> dict:
+    """Return a minimal, secret-free environment for student subprocesses."""
+    allow = (
+        "PATH",
+        "HOME",  # needed for interpreter/user-site & library config discovery
+        "LANG",
+        "LC_ALL",
+        "LC_CTYPE",
+        "TMPDIR",
+        "TEMP",
+        "TMP",
+        "SYSTEMROOT",
+        "VIRTUAL_ENV",
+        "PYTHONPATH",
+        "JAVA_HOME",
+    )
+    env = {k: os.environ[k] for k in allow if k in os.environ}
+    env.setdefault("PATH", "/usr/bin:/bin")
+    env["PYTHONUNBUFFERED"] = "1"
+    env["PYTHONDONTWRITEBYTECODE"] = "1"
+    return env
+
+
+# Computed once at import — the relevant vars are stable for the process life.
+_SANDBOX_ENV = _sandbox_env()
+_SANDBOX_CWD = tempfile.gettempdir()
+
 BLOCKED_PY_MODULES: frozenset = frozenset(
     {
         "subprocess",
@@ -379,6 +422,8 @@ def _run_python_free(student_code: str, timeout: int) -> dict:
             text=True,
             timeout=timeout,
             stdin=subprocess.DEVNULL,
+            env=_SANDBOX_ENV,
+            cwd=_SANDBOX_CWD,
         )
         raw = (proc.stdout or "").strip()
         if not raw:
@@ -465,6 +510,8 @@ def _run_python(student_code: str, fn_name: str, tc: dict, timeout: int) -> dict
             text=True,
             timeout=timeout,
             stdin=subprocess.DEVNULL,
+            env=_SANDBOX_ENV,
+            cwd=_SANDBOX_CWD,
         )
         return _parse_proc(proc.stdout, proc.stderr)
     except subprocess.TimeoutExpired:
@@ -524,6 +571,8 @@ def _run_javascript(student_code: str, fn_name: str, tc: dict, timeout: int) -> 
             text=True,
             timeout=timeout,
             stdin=subprocess.DEVNULL,
+            env=_SANDBOX_ENV,
+            cwd=_SANDBOX_CWD,
         )
         return _parse_proc(proc.stdout, proc.stderr)
     except subprocess.TimeoutExpired:
@@ -576,6 +625,8 @@ def _run_r(student_code: str, fn_name: str, tc: dict, timeout: int) -> dict:
             text=True,
             timeout=timeout,
             stdin=subprocess.DEVNULL,
+            env=_SANDBOX_ENV,
+            cwd=_SANDBOX_CWD,
         )
         return _parse_proc(proc.stdout, proc.stderr)
     except subprocess.TimeoutExpired:
@@ -663,7 +714,14 @@ def _run_java(student_code: str, fn_name: str, tc: dict, timeout: int) -> dict:
         src = os.path.join(tmpdir, "_Harness.java")
         with open(src, "w") as f:
             f.write(_JAVA_HARNESS.format(student_code=student_code, fn_name=fn_name))
-        cp = subprocess.run(["javac", src], capture_output=True, text=True, timeout=15, cwd=tmpdir)
+        cp = subprocess.run(
+            ["javac", src],
+            capture_output=True,
+            text=True,
+            timeout=15,
+            cwd=tmpdir,
+            env=_SANDBOX_ENV,
+        )
         if cp.returncode != 0:
             return {"result": None, "printed": None, "error": f"Compile error: {cp.stderr[:500]}"}
         try:
@@ -674,6 +732,7 @@ def _run_java(student_code: str, fn_name: str, tc: dict, timeout: int) -> dict:
                 timeout=timeout,
                 stdin=subprocess.DEVNULL,
                 cwd=tmpdir,
+                env=_SANDBOX_ENV,
             )
             return _parse_proc(rp.stdout, rp.stderr)
         except subprocess.TimeoutExpired:

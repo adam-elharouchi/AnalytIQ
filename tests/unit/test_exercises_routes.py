@@ -272,7 +272,21 @@ class TestGetExerciseDetails:
         assert ex["title"] == "Write a loop"
         assert ex["difficulty"] == "easy"
         assert ex["description"] == "Print 1 to 10"
+        # Students must NOT receive the solution code (answer key) — it is redacted.
+        assert ex["solution_code"] == ""
+
+    def test_owner_sees_solution_code(self, client, mock_db):
+        # get_exercise_detail → EXERCISE_ROW, then get_class_owner → ("prof-id",)
+        mock_db.cursor().fetchone.side_effect = [EXERCISE_ROW, ("prof-id",)]
+        resp = client.get("/api/exercises/ex-1", headers=AUTH_PROF)
+        ex = resp.get_json()["exercise"]
         assert "range(10)" in ex["solution_code"]
+
+    def test_student_solution_code_redacted(self, client, mock_db):
+        # Even when an owner exists, a non-owner student receives an empty solution.
+        mock_db.cursor().fetchone.side_effect = [EXERCISE_ROW, ("prof-id",)]
+        resp = client.get("/api/exercises/ex-1", headers=AUTH_STUDENT)
+        assert resp.get_json()["exercise"]["solution_code"] == ""
 
     def test_not_found_returns_404_with_error(self, client, mock_db):
         mock_db.cursor().fetchone.return_value = None

@@ -35,6 +35,27 @@ export default function ChapterView() {
     enabled: Boolean(chapterId),
   })
 
+  // The PDF endpoint is loaded via <iframe> and cannot send an Authorization
+  // header, so we mint a short-lived capability token and append it as ?token=.
+  const { data: tokenData } = useQuery({
+    queryKey: ['chapter-token', chapterId],
+    queryFn: async () => {
+      const result = await apiClient.get<{ token: string }>(
+        `/chapters/${chapterId}/access-token`,
+      )
+      if (!result.ok) throw new Error(result.error ?? 'Failed to authorize chapter')
+      return result.data
+    },
+    enabled: Boolean(chapterId) && Boolean(data?.pdf_url),
+  })
+
+  const pdfSrc =
+    data?.pdf_url && tokenData?.token
+      ? `${data.pdf_url}${data.pdf_url.includes('?') ? '&' : '?'}token=${encodeURIComponent(
+          tokenData.token,
+        )}`
+      : null
+
   const backHref = classId ? `/class/${encodeURIComponent(classId)}` : '/classes'
 
   return (
@@ -89,17 +110,24 @@ export default function ChapterView() {
 
           {/* PDF viewer */}
           {data.pdf_url ? (
-            <iframe
-              src={data.pdf_url}
-              title={data.title}
-              style={{
-                width: '100%',
-                height: 'calc(100vh - 200px)',
-                border: 'none',
-                borderRadius: '0.5rem',
-                display: 'block',
-              }}
-            />
+            pdfSrc ? (
+              <iframe
+                src={pdfSrc}
+                title={data.title}
+                style={{
+                  width: '100%',
+                  height: 'calc(100vh - 200px)',
+                  border: 'none',
+                  borderRadius: '0.5rem',
+                  display: 'block',
+                }}
+              />
+            ) : (
+              <div className="loading-state">
+                <div className="spinner" />
+                <p>Authorizing…</p>
+              </div>
+            )
           ) : (
             <div className="empty-state">
               <p className="empty-state-title">No PDF available</p>
