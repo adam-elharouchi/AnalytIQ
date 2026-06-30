@@ -77,11 +77,12 @@
             </label>
             <label class="oval-btn gemini-oval-btn" title="Gemini Model" aria-label="Gemini model selector">
               <select id="geminiModelSelect" class="oval-select" onchange="updateGeminiModel()" title="Gemini Model">
-                <option value="gemini-3.5-flash" selected>Gemini 3.5 Flash - Fast &amp; efficient</option>
-                <option value="gemini-3.1-pro">Gemini 3.1 Pro - Advanced reasoning</option>
-                <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash-Lite - Quick responses</option>
-                <option value="gemini-2.5-pro">Gemini 2.5 Pro - Production reliable</option>
-                <option value="gemini-2.5-flash">Gemini 2.5 Flash - Balanced speed</option>
+                <option value="gemini-flash-latest" selected>Gemini Flash (latest)</option>
+                <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
+                <option value="gemini-3.1-pro">Gemini 3.1 Pro</option>
+                <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash-Lite</option>
+                <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
               </select>
               <span id="geminiModelDisplay">Gemini</span>
             </label>
@@ -129,24 +130,40 @@
       // Initialize Gemini AI
       initializeGemini();
 
-      // Load preferences and set defaults
+      // Load preferences and populate model dropdown dynamically
       (async () => {
+        const modelSelect = document.getElementById('geminiModelSelect');
+
+        // Fetch available models from backend (falls back to hardcoded list on error)
+        try {
+          const resp = await fetch(`${window.API_BASE_URL}/ai/models`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+          });
+          if (resp.ok) {
+            const { models } = await resp.json();
+            if (models && models.length) {
+              modelSelect.innerHTML = models
+                .map(m => `<option value="${m.id}">${m.display_name}</option>`)
+                .join('');
+            }
+          }
+        } catch (e) {
+          console.warn('Could not fetch model list, using defaults:', e);
+        }
+
         try {
           const prefs = await preferencesAPI.get();
           currentLanguage = prefs.currentLanguage || 'python';
-          geminiModel = prefs.geminiModel || 'gemini-3.5-flash';
+          geminiModel = prefs.geminiModel || 'gemini-flash-latest';
 
-          // Update UI
           const langSelect = document.getElementById('languageSelect');
           if (langSelect) langSelect.value = currentLanguage;
-          const modelSelect = document.getElementById('geminiModelSelect');
           if (modelSelect) modelSelect.value = geminiModel;
 
           updateLanguage();
           updateGeminiModel();
         } catch (error) {
           console.error('Error loading preferences:', error);
-          // Fallback to localStorage
           const savedLang = localStorage.getItem('currentLanguage');
           if (savedLang) {
             currentLanguage = savedLang;
@@ -157,10 +174,8 @@
           const savedModel = localStorage.getItem('geminiModel');
           if (savedModel) {
             geminiModel = savedModel;
-            const modelSelect = document.getElementById('geminiModelSelect');
             if (modelSelect) modelSelect.value = geminiModel;
           }
-          // Call updateGeminiModel to update the display label
           updateGeminiModel();
         }
       })();
