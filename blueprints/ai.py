@@ -169,11 +169,11 @@ _MODELS_CACHE_TTL = 300  # 5 minutes
 
 _FALLBACK_MODELS = [
     {"id": "gemini-flash-latest", "display_name": "Gemini Flash (latest)"},
-    {"id": "gemini-3.5-flash",    "display_name": "Gemini 3.5 Flash"},
-    {"id": "gemini-3.1-pro",      "display_name": "Gemini 3.1 Pro"},
-    {"id": "gemini-3.1-flash-lite","display_name": "Gemini 3.1 Flash-Lite"},
-    {"id": "gemini-2.5-pro",      "display_name": "Gemini 2.5 Pro"},
-    {"id": "gemini-2.5-flash",    "display_name": "Gemini 2.5 Flash"},
+    {"id": "gemini-3.5-flash", "display_name": "Gemini 3.5 Flash"},
+    {"id": "gemini-3.1-pro", "display_name": "Gemini 3.1 Pro"},
+    {"id": "gemini-3.1-flash-lite", "display_name": "Gemini 3.1 Flash-Lite"},
+    {"id": "gemini-2.5-pro", "display_name": "Gemini 2.5 Pro"},
+    {"id": "gemini-2.5-flash", "display_name": "Gemini 2.5 Flash"},
 ]
 
 
