@@ -154,6 +154,46 @@ def decode_jwt_token(token):
 
 
 # ---------------------------------------------------------------------------
+# Short-lived media access tokens (capability URLs)
+# ---------------------------------------------------------------------------
+# Media endpoints (chapter PDFs, resource downloads) are loaded via <iframe src>
+# / <a href> / pdf.js, which cannot attach an Authorization header. An authorized
+# client first mints a short-lived, single-resource capability token (below) and
+# appends it as ?token=...  The serve endpoint then verifies the token matches the
+# requested (kind, resource_id) and is unexpired. Authorization is checked once,
+# at mint time, by the authenticated mint endpoint.
+
+MEDIA_TOKEN_TTL_SECONDS = int(os.getenv("MEDIA_TOKEN_TTL", 600))  # 10 minutes
+
+
+def create_media_token(kind, resource_id, ttl_seconds=MEDIA_TOKEN_TTL_SECONDS):
+    """Return a signed, short-lived token granting read access to one resource."""
+    payload = {
+        "scope": "media",
+        "kind": kind,
+        "rid": str(resource_id),
+        "iat": datetime.utcnow(),
+        "exp": datetime.utcnow() + timedelta(seconds=ttl_seconds),
+    }
+    return jwt.encode(payload, config.JWT_SECRET_KEY, algorithm=config.JWT_ALGORITHM)
+
+
+def verify_media_token(token, kind, resource_id):
+    """Return True iff *token* is a valid, unexpired media token for (kind, resource_id)."""
+    if not token:
+        return False
+    try:
+        payload = jwt.decode(token, config.JWT_SECRET_KEY, algorithms=[config.JWT_ALGORITHM])
+    except jwt.InvalidTokenError:
+        return False
+    return (
+        payload.get("scope") == "media"
+        and payload.get("kind") == kind
+        and payload.get("rid") == str(resource_id)
+    )
+
+
+# ---------------------------------------------------------------------------
 # Password hashing
 # ---------------------------------------------------------------------------
 

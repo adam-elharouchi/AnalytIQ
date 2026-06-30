@@ -232,6 +232,14 @@ def _upsert_sso_user(conn, provider: dict, claims: dict):
     cur.close()
 
     if email_user:
+        # SECURITY: never federate an SSO identity into a privileged account via
+        # an email-claim match — that would let an IdP login mint an admin
+        # session for a matching email. Privileged users must sign in directly.
+        if email_user[3] in ("superadmin", "tenant_admin"):
+            raise PermissionError(
+                "This email is associated with a privileged account that cannot "
+                "be accessed via SSO."
+            )
         user_id = email_user[0]
         sso_repo.link_sso_identity(conn, user_id, provider_id, sub)
         return user_id, email_user[1], email_user[2], email_user[3], tenant_id

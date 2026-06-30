@@ -736,10 +736,27 @@ def update_practice_progress():
         current_best_score = existing[0] if existing and existing[0] else 0
         current_attempts = existing[1] if existing and existing[1] else 0
 
+        # SECURITY: the client-submitted score is NOT trusted as the source of
+        # truth. Cap it to the maximum score the server actually graded (written
+        # into exercise_attempts by /api/exercises/<id>/grade). Every scoring
+        # flow calls /grade first, so honest clients are unaffected, while a
+        # client that posts an inflated score is capped to the real grade.
+        try:
+            client_score = float(score)
+        except (TypeError, ValueError):
+            client_score = 0.0
+        client_score = max(0.0, min(100.0, client_score))
+        server_max = user_repo.get_max_attempt_score(conn, user_id, exercise_id)
+        score = int(round(min(client_score, float(server_max)))) if server_max is not None else 0
+
         is_new_best = score > current_best_score
         new_best_score = max(score, current_best_score)
 
-        accuracy = progress_data.get("accuracy", 0) if progress_data else 0
+        try:
+            accuracy = float(progress_data.get("accuracy", 0)) if progress_data else 0.0
+        except (TypeError, ValueError):
+            accuracy = 0.0
+        accuracy = max(0.0, min(1.0, accuracy))
         time_spent_seconds = time_spent if time_spent else 0
 
         class_id = data.get("class_id")

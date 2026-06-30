@@ -12,9 +12,12 @@ Routes:
 """
 
 import html as _html_mod
+import ipaddress
 import logging
 import re
+import socket
 import time
+from urllib.parse import urljoin, urlparse
 
 import requests
 from bs4 import BeautifulSoup
@@ -23,7 +26,7 @@ from flask import Blueprint, g, jsonify, request
 import repositories.chapter_repository as chapter_repo
 import repositories.class_repository as class_repo
 from core.audit import audit
-from core.auth import require_auth
+from core.auth import require_auth, require_role
 from core.database import get_db_connection
 from core.extensions import csrf_exempt
 
@@ -32,7 +35,58 @@ bp = Blueprint("content_import", __name__)
 
 _HTTP_TIMEOUT = 15  # seconds
 _MAX_CONTENT_BYTES = 5 * 1024 * 1024  # 5 MB cap on external fetches
+_MAX_REDIRECTS = 5
 _OPENSTAX_CMS = "https://openstax.org/apps/cms/api/v2/pages"
+
+
+# ---------------------------------------------------------------------------
+# SSRF guard
+# ---------------------------------------------------------------------------
+
+
+def _is_public_host(host: str) -> bool:
+    """Return True only if every IP *host* resolves to is a public address.
+
+    Blocks private, loopback, link-local (incl. 169.254.169.254 cloud metadata),
+    multicast, reserved, and unspecified ranges. Returns False on resolution
+    failure (fail closed).
+    """
+    try:
+        infos = socket.getaddrinfo(host, None)
+    except Exception:
+        return False
+    if not infos:
+        return False
+    for info in infos:
+        ip_str = info[4][0]
+        # Strip IPv6 scope id if present (e.g. "fe80::1%eth0")
+        ip_str = ip_str.split("%", 1)[0]
+        try:
+            addr = ipaddress.ip_address(ip_str)
+        except ValueError:
+            return False
+        if (
+            addr.is_private
+            or addr.is_loopback
+            or addr.is_link_local
+            or addr.is_multicast
+            or addr.is_reserved
+            or addr.is_unspecified
+        ):
+            return False
+    return True
+
+
+def _assert_public_url(url: str) -> None:
+    """Raise ValueError if *url* is not an http(s) URL whose host is public."""
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        raise ValueError("Only http/https URLs are allowed")
+    host = parsed.hostname
+    if not host:
+        raise ValueError("URL has no host")
+    if not _is_public_host(host):
+        raise ValueError("URL resolves to a non-public/internal address")
 
 
 # ---------------------------------------------------------------------------
@@ -41,18 +95,40 @@ _OPENSTAX_CMS = "https://openstax.org/apps/cms/api/v2/pages"
 
 
 def _fetch_bytes(url: str) -> bytes:
-    """GET a URL with a size cap; returns bytes or raises on failure."""
+    """GET a URL with an SSRF guard, manual redirect validation, and a size cap.
+
+    Redirects are followed manually so each hop's destination is re-validated
+    against the SSRF allowlist (a server that 302s to http://169.254.169.254/
+    or http://10.0.0.1/ is rejected).
+    """
     headers = {"User-Agent": "AnalytIQ/1.0 (+https://myanalytiq.org)"}
-    resp = requests.get(url, timeout=_HTTP_TIMEOUT, stream=True, headers=headers)
-    resp.raise_for_status()
-    chunks = []
-    total = 0
-    for chunk in resp.iter_content(65536):
-        chunks.append(chunk)
-        total += len(chunk)
-        if total > _MAX_CONTENT_BYTES:
-            break
-    return b"".join(chunks)
+    current = url
+    for _ in range(_MAX_REDIRECTS + 1):
+        _assert_public_url(current)
+        resp = requests.get(
+            current,
+            timeout=_HTTP_TIMEOUT,
+            stream=True,
+            headers=headers,
+            allow_redirects=False,
+        )
+        if resp.is_redirect or resp.is_permanent_redirect:
+            location = resp.headers.get("Location")
+            resp.close()
+            if not location:
+                raise ValueError("Redirect without Location header")
+            current = urljoin(current, location)
+            continue
+        resp.raise_for_status()
+        chunks = []
+        total = 0
+        for chunk in resp.iter_content(65536):
+            chunks.append(chunk)
+            total += len(chunk)
+            if total > _MAX_CONTENT_BYTES:
+                break
+        return b"".join(chunks)
+    raise ValueError("Too many redirects")
 
 
 def _parse_html(raw: bytes, source_url: str = "") -> tuple:
@@ -220,6 +296,7 @@ def _route_fetch(data: dict) -> dict:
 
 @bp.route("/api/import/openstax/books", methods=["GET"])
 @require_auth
+@require_role("professor", "superadmin")
 def openstax_books():
     """List all OpenStax textbooks via the public CMS API."""
     try:
@@ -251,6 +328,7 @@ def openstax_books():
 
 @bp.route("/api/import/openstax/books/<book_slug>/toc", methods=["GET"])
 @require_auth
+@require_role("professor", "superadmin")
 def openstax_toc(book_slug: str):
     """Scrape the table of contents for one OpenStax book."""
     if not re.match(r"^[a-z0-9\-]+$", book_slug):
@@ -303,6 +381,7 @@ _LIBRETEXTS_LIBS = [
 
 @bp.route("/api/import/libretexts/libraries", methods=["GET"])
 @require_auth
+@require_role("professor", "superadmin")
 def libretexts_libraries():
     """Return the list of LibreTexts subject libraries."""
     return jsonify({"libraries": _LIBRETEXTS_LIBS}), 200
@@ -310,6 +389,7 @@ def libretexts_libraries():
 
 @bp.route("/api/import/libretexts/search", methods=["GET"])
 @require_auth
+@require_role("professor", "superadmin")
 def libretexts_search():
     """Search a LibreTexts library and return matching page links."""
     query = request.args.get("q", "").strip()
@@ -349,6 +429,7 @@ def libretexts_search():
 
 @bp.route("/api/import/oer/search", methods=["GET"])
 @require_auth
+@require_role("professor", "superadmin")
 def oer_search():
     """Search OER Commons for open educational resources."""
     query = request.args.get("q", "").strip()
@@ -400,6 +481,7 @@ def oer_search():
 @bp.route("/api/import/preview", methods=["POST"])
 @csrf_exempt
 @require_auth
+@require_role("professor", "superadmin")
 def import_preview():
     """Return title, description and a short text snippet — no chapter saved."""
     data = request.json or {}
