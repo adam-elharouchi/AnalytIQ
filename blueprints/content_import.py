@@ -158,18 +158,41 @@ def _parse_html(raw: bytes, source_url: str = "") -> tuple:
     if not main:
         return title, description, f"<p>{_html_mod.escape(soup.get_text()[:5000])}</p>"
 
-    # Strip inline styles / class bloat, keep semantic attrs only
+    # Strip inline styles / class bloat, keep semantic attrs only, and neutralise
+    # dangerous URL schemes (javascript:, vbscript:, non-image data:) in href/src.
+    # Combined with the script/iframe/style removal above and the sandboxing CSP
+    # applied when the stored HTML is served, this prevents stored XSS.
     for tag in main.find_all(True):
-        tag.attrs = {k: v for k, v in tag.attrs.items() if k in ("href", "src", "alt", "title")}
+        attrs = {k: v for k, v in tag.attrs.items() if k in ("href", "src", "alt", "title")}
+        for url_attr in ("href", "src"):
+            val = attrs.get(url_attr)
+            if isinstance(val, str) and not _is_safe_content_url(val, url_attr):
+                attrs.pop(url_attr, None)
+        tag.attrs = attrs
 
     return title, description, str(main)
 
 
+# Allow only http(s), mailto, fragment, and relative URLs (plus inline images for src).
+_SAFE_URL_RE = re.compile(r"^(https?:|mailto:|/|#|\.)", re.I)
+
+
+def _is_safe_content_url(value: str, attr: str) -> bool:
+    """Return True if *value* is a safe URL for imported content href/src."""
+    v = value.strip()
+    if not v:
+        return False
+    if attr == "src" and v.lower().startswith("data:image/"):
+        return True  # inline images are safe to keep
+    return bool(_SAFE_URL_RE.match(v))
+
+
 def _wrap_html(body: str, title: str, source_url: str = "") -> str:
     """Wrap an HTML body in a clean standalone document."""
+    _safe_source = _html_mod.escape(source_url, quote=True) if source_url else ""
     source_line = (
         f'<p style="font-size:0.8em;color:#888">Source: '
-        f'<a href="{source_url}">{source_url}</a></p>'
+        f'<a href="{_safe_source}">{_safe_source}</a></p>'
         if source_url
         else ""
     )

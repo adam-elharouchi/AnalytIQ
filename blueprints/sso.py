@@ -31,7 +31,12 @@ from flask import Blueprint, g, jsonify, redirect, request
 
 import config
 from core.audit import audit
-from core.auth import create_jwt_token, require_auth, require_tenant_admin
+from core.auth import (
+    create_jwt_token,
+    get_user_token_version,
+    require_auth,
+    require_tenant_admin,
+)
 from core.database import get_db_connection
 from core.extensions import csrf_exempt, limiter
 from repositories import auth_repository as auth_repo
@@ -104,6 +109,28 @@ def _discovery_url_for_provider(provider: dict) -> str:
         return _MICROSOFT_DISCOVERY_TEMPLATE.format(tenant=raw)
     # generic oidc — discovery_url is the full URL
     return provider["discovery_url"]
+
+
+def _verify_id_token(
+    id_token: str, jwks_uri: str, client_id: str, issuer: Optional[str] = None
+) -> dict:
+    """Verify an OIDC id_token's signature (via the provider JWKS) and claims.
+
+    Enforces audience == client_id, expiry, and (when known) issuer. Raises on
+    any verification failure so the caller can reject the login.
+    """
+    import jwt as pyjwt
+    from jwt import PyJWKClient
+
+    signing_key = PyJWKClient(jwks_uri).get_signing_key_from_jwt(id_token)
+    decode_kwargs = {
+        "algorithms": ["RS256", "RS384", "RS512", "ES256"],
+        "audience": client_id,
+        "options": {"require": ["exp", "iat"]},
+    }
+    if issuer:
+        decode_kwargs["issuer"] = issuer
+    return pyjwt.decode(id_token, signing_key.key, **decode_kwargs)
 
 
 # ---------------------------------------------------------------------------
@@ -239,6 +266,15 @@ def _upsert_sso_user(conn, provider: dict, claims: dict):
             raise PermissionError(
                 "This email is associated with a privileged account that cannot "
                 "be accessed via SSO."
+            )
+        # Only auto-link to a pre-existing account when the IdP asserts the email
+        # is verified — otherwise an attacker with an unverified same-email IdP
+        # account could take over the existing account.
+        if claims.get("email_verified") not in (True, "true", "True", 1):
+            raise PermissionError(
+                "An account with this email already exists but the identity "
+                "provider did not confirm the email is verified. Automatic "
+                "linking was refused; sign in with your password instead."
             )
         user_id = email_user[0]
         sso_repo.link_sso_identity(conn, user_id, provider_id, sub)
@@ -407,38 +443,53 @@ def sso_callback(provider_id):
 
         tokens = token_resp.json()
         access_token = tokens.get("access_token", "")
+        id_token = tokens.get("id_token", "")
 
-        # Fetch userinfo claims
+        # Identity comes from the id_token, whose signature and claims we verify
+        # against the provider's JWKS. An unverified id_token is never trusted.
         claims: dict = {}
-        if userinfo_endpoint and access_token:
-            ui_resp = http_client.get(
-                userinfo_endpoint,
-                headers={"Authorization": f"Bearer {access_token}"},
-                timeout=10,
-            )
-            if ui_resp.ok:
-                claims = ui_resp.json()
-
-        # Decode id_token claims as fallback (without verifying signature here —
-        # the token was obtained directly from the IdP token endpoint over TLS,
-        # so MITM is not a concern; full signature verification can be added later
-        # using discovery["jwks_uri"]).
-        if not claims.get("sub") and "id_token" in tokens:
-            import base64 as _b64
-
-            id_token = tokens["id_token"]
+        if id_token:
+            jwks_uri = discovery.get("jwks_uri")
+            if not jwks_uri:
+                logger.error("Provider %s exposes no jwks_uri; cannot verify id_token", provider_id)
+                return redirect(f"{login_page}?sso_error=Provider+identity+cannot+be+verified")
             try:
-                payload_b64 = id_token.split(".")[1]
-                # Add padding
-                payload_b64 += "=" * (-len(payload_b64) % 4)
-                claims = json.loads(_b64.urlsafe_b64decode(payload_b64))
-            except Exception:
-                pass
+                claims = _verify_id_token(
+                    id_token, jwks_uri, provider["client_id"], discovery.get("issuer")
+                )
+            except Exception as exc:
+                logger.warning("id_token verification failed for %s: %s", provider_id, exc)
+                return redirect(f"{login_page}?sso_error=Identity+verification+failed")
+
+        # userinfo (fetched over TLS with the access token) only *supplements*
+        # missing profile fields; it never overrides a verified id_token claim.
+        if userinfo_endpoint and access_token:
+            try:
+                ui_resp = http_client.get(
+                    userinfo_endpoint,
+                    headers={"Authorization": f"Bearer {access_token}"},
+                    timeout=10,
+                )
+                if ui_resp.ok:
+                    for _k, _v in ui_resp.json().items():
+                        claims.setdefault(_k, _v)
+            except Exception as exc:
+                logger.debug("userinfo fetch failed for %s: %s", provider_id, exc)
+
+        if not claims.get("sub"):
+            return redirect(f"{login_page}?sso_error=Could+not+establish+a+verified+identity")
 
         user_id, name, email, role, tenant_id = _upsert_sso_user(conn, provider, claims)
         conn.commit()
 
-        token = create_jwt_token(user_id, role=role, name=name, email=email, tenant_id=tenant_id)
+        token = create_jwt_token(
+            user_id,
+            role=role,
+            name=name,
+            email=email,
+            tenant_id=tenant_id,
+            token_version=get_user_token_version(conn, user_id),
+        )
         return redirect(f"{login_page}?sso_token={token}")
 
     except PermissionError as exc:

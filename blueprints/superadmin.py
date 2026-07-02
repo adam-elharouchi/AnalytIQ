@@ -15,7 +15,13 @@ import psycopg2
 from flask import Blueprint, jsonify, request, g
 
 import config
-from core.auth import require_auth, require_super_admin, create_jwt_token
+from core.auth import (
+    require_auth,
+    require_super_admin,
+    create_jwt_token,
+    get_user_token_version,
+    bump_user_token_version,
+)
 from core.audit import audit
 from core.database import get_db_connection
 from core.extensions import csrf_exempt, rate_limit
@@ -311,6 +317,10 @@ def update_user_status(user_id):
         if not cur.fetchone():
             return jsonify({"error": "User not found"}), 404
 
+        # Disabling an account must also revoke its outstanding JWTs.
+        if status == "disabled":
+            bump_user_token_version(conn, user_id)
+
         action = "DISABLE_USER" if status == "disabled" else "ENABLE_USER"
         audit(conn, action, resource_type="user", resource_id=user_id, details={"status": status})
         conn.commit()
@@ -368,6 +378,7 @@ def impersonate_user(user_id):
             impersonator_id=impersonator_id,
             expires_hours=1,
             tenant_id=target_user[4],  # carry tenant_id so tenant_admin dashboard works
+            token_version=get_user_token_version(conn, target_user[0]),
         )
 
         return (
@@ -1101,7 +1112,9 @@ def force_password_reset(user_id):
         cur.execute(
             """
             UPDATE users
-            SET requires_password_reset = TRUE, updated_at = CURRENT_TIMESTAMP
+            SET requires_password_reset = TRUE,
+                token_version = COALESCE(token_version, 0) + 1,
+                updated_at = CURRENT_TIMESTAMP
             WHERE user_id = %s
             RETURNING user_id, name, email
             """,

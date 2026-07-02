@@ -26,6 +26,7 @@ import core.cache as cache
 import core.pagination as utils
 from core.audit import audit
 from core.auth import (
+    bump_user_token_version,
     hash_password,
     require_auth,
     validate_email,
@@ -205,6 +206,9 @@ def update_password():
 
         new_hash = hash_password(new_password)
         user_repo.update_password_hash(conn, user_id, new_hash)
+        # Revoke all outstanding JWTs (including this session) — the user must
+        # re-authenticate with the new password.
+        bump_user_token_version(conn, user_id)
         audit(conn, "UPDATE_PASSWORD", resource_type="user", resource_id=user_id)
         conn.commit()
 
