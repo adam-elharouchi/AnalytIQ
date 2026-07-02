@@ -1701,3 +1701,53 @@ def remove_ip_from_blocklist(entry_id):
     except Exception as e:
         logger.error("Failed to remove IP from blocklist: %s", e)
         return jsonify({"error": "Failed to remove IP"}), 500
+
+
+# ---------------------------------------------------------------------------
+# Platform Config
+# ---------------------------------------------------------------------------
+
+
+@bp.route("/api/superadmin/platform-config", methods=["GET"])
+@csrf_exempt
+@require_auth
+@require_super_admin
+def get_platform_config():
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT key, value FROM platform_config ORDER BY key")
+        rows = cur.fetchall()
+        cur.close()
+        return jsonify({row[0]: row[1] for row in rows}), 200
+    except Exception as e:
+        logger.error("Failed to fetch platform config: %s", e)
+        return jsonify({"error": "Failed to fetch platform config"}), 500
+
+
+@bp.route("/api/superadmin/platform-config", methods=["PATCH"])
+@csrf_exempt
+@require_auth
+@require_super_admin
+def update_platform_config():
+    try:
+        data = request.get_json(silent=True) or {}
+        if not data:
+            return jsonify({"error": "No config values provided"}), 400
+        conn = get_db_connection()
+        cur = conn.cursor()
+        for key, value in data.items():
+            cur.execute(
+                """
+                INSERT INTO platform_config (key, value)
+                VALUES (%s, %s)
+                ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
+                """,
+                (key, str(value)),
+            )
+        conn.commit()
+        cur.close()
+        return jsonify({"success": True}), 200
+    except Exception as e:
+        logger.error("Failed to update platform config: %s", e)
+        return jsonify({"error": "Failed to update platform config"}), 500

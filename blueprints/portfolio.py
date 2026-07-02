@@ -9,7 +9,7 @@ import requests
 from flask import Blueprint, g, jsonify, render_template, request
 
 import config
-from core.auth import require_auth, validate_fields
+from core.auth import require_auth
 from core.database import get_db_connection
 from core.extensions import csrf_exempt
 from repositories import portfolio_repository as repo
@@ -28,6 +28,7 @@ _VALID_ITEM_TYPES = {"class_exercise", "personal_project", "external_link"}
 # Helper
 # ---------------------------------------------------------------------------
 
+
 def _get_user_portfolio(conn, user_id):
     """Return portfolio profile row or None."""
     return repo.get_profile_by_user(conn, user_id)
@@ -44,6 +45,7 @@ def _require_portfolio(conn, user_id):
 # ---------------------------------------------------------------------------
 # Portfolio Profile — Private API
 # ---------------------------------------------------------------------------
+
 
 @bp.route("/api/portfolio/profile", methods=["GET"])
 @require_auth
@@ -113,9 +115,17 @@ def update_profile():
             return err
 
         allowed = {
-            "portfolio_title", "display_name", "headline", "bio", "avatar_url",
-            "accent_color", "layout_style", "linkedin_url", "github_username",
-            "personal_website", "is_public",
+            "portfolio_title",
+            "display_name",
+            "headline",
+            "bio",
+            "avatar_url",
+            "accent_color",
+            "layout_style",
+            "linkedin_url",
+            "github_username",
+            "personal_website",
+            "is_public",
         }
         fields = {k: v for k, v in data.items() if k in allowed}
 
@@ -123,7 +133,14 @@ def update_profile():
         if "slug" in data:
             new_slug = str(data["slug"]).lower().strip()
             if not _SLUG_RE.match(new_slug):
-                return jsonify({"error": "Slug must be 3–60 chars, lowercase letters, numbers, hyphens only."}), 400
+                return (
+                    jsonify(
+                        {
+                            "error": "Slug must be 3–60 chars, lowercase letters, numbers, hyphens only."
+                        }
+                    ),
+                    400,
+                )
             if repo.slug_exists(conn, new_slug, exclude_user_id=g.user_id):
                 return jsonify({"error": "That URL is already taken."}), 409
             fields["slug"] = new_slug
@@ -161,6 +178,7 @@ def delete_profile():
 # Portfolio Items — Private API
 # ---------------------------------------------------------------------------
 
+
 @bp.route("/api/portfolio/items", methods=["GET"])
 @require_auth
 def list_items():
@@ -191,7 +209,10 @@ def add_item():
 
         item_type = data.get("item_type", "")
         if item_type not in _VALID_ITEM_TYPES:
-            return jsonify({"error": f"item_type must be one of: {', '.join(_VALID_ITEM_TYPES)}"}), 400
+            return (
+                jsonify({"error": f"item_type must be one of: {', '.join(_VALID_ITEM_TYPES)}"}),
+                400,
+            )
 
         title = (data.get("title") or "").strip()
         if not title:
@@ -254,8 +275,16 @@ def update_item(item_id):
             return jsonify({"error": "Item not found."}), 404
 
         allowed = {
-            "title", "description", "language", "tags", "external_url",
-            "show_score", "is_visible", "is_pinned", "display_order", "project_status",
+            "title",
+            "description",
+            "language",
+            "tags",
+            "external_url",
+            "show_score",
+            "is_visible",
+            "is_pinned",
+            "display_order",
+            "project_status",
         }
         fields = {k: v for k, v in data.items() if k in allowed}
         if "title" in fields and not fields["title"]:
@@ -324,6 +353,7 @@ def reorder_items():
 # Import from classes
 # ---------------------------------------------------------------------------
 
+
 @bp.route("/api/portfolio/available-exercises", methods=["GET"])
 @require_auth
 def available_exercises():
@@ -337,15 +367,17 @@ def available_exercises():
         rows = repo.get_importable_exercises(conn, g.user_id, profile[0])
         exercises = []
         for row in rows:
-            exercises.append({
-                "exercise_id": row[0],
-                "title": row[1],
-                "language": row[2],
-                "best_score": float(row[3]) if row[3] is not None else None,
-                "last_completed_at": row[4].isoformat() if row[4] else None,
-                "class_name": row[5],
-                "chapter_name": row[6],
-            })
+            exercises.append(
+                {
+                    "exercise_id": row[0],
+                    "title": row[1],
+                    "language": row[2],
+                    "best_score": float(row[3]) if row[3] is not None else None,
+                    "last_completed_at": row[4].isoformat() if row[4] else None,
+                    "class_name": row[5],
+                    "chapter_name": row[6],
+                }
+            )
         return jsonify({"exercises": exercises}), 200
     except Exception as e:
         logger.error("available_exercises error: %s", e, exc_info=True)
@@ -423,6 +455,7 @@ def import_exercise():
 # ---------------------------------------------------------------------------
 # Personal Projects — code execution + AI assistant
 # ---------------------------------------------------------------------------
+
 
 @bp.route("/api/portfolio/projects", methods=["POST"])
 @csrf_exempt
@@ -590,14 +623,12 @@ def project_assistant(item_id):
 
         system_prompt = (
             f"You are a coding assistant helping a student build a personal project.\n"
-            f"The student is working in {language} on a project called \"{title}\".\n"
+            f'The student is working in {language} on a project called "{title}".\n'
         )
         if description:
             system_prompt += f"Project description: {description}\n"
         if code_snippet:
-            system_prompt += (
-                f"\nCurrent code:\n```{language}\n{code_snippet}\n```\n"
-            )
+            system_prompt += f"\nCurrent code:\n```{language}\n{code_snippet}\n```\n"
         system_prompt += (
             "\nHelp the student build their project. You can write code, debug errors, "
             "suggest architecture, refactor, explain concepts, and provide complete "
@@ -608,7 +639,10 @@ def project_assistant(item_id):
         # Prepend system prompt as first user message if not already present
         full_contents = [
             {"role": "user", "parts": [{"text": system_prompt}]},
-            {"role": "model", "parts": [{"text": "Understood. I'm ready to help you build your project!"}]},
+            {
+                "role": "model",
+                "parts": [{"text": "Understood. I'm ready to help you build your project!"}],
+            },
         ] + contents
 
         api_key = config.GEMINI_API_KEY
@@ -644,6 +678,7 @@ def project_assistant(item_id):
 # Analytics
 # ---------------------------------------------------------------------------
 
+
 @bp.route("/api/portfolio/analytics", methods=["GET"])
 @require_auth
 def get_analytics():
@@ -665,6 +700,7 @@ def get_analytics():
 # Public API — no auth required
 # ---------------------------------------------------------------------------
 
+
 @bp.route("/api/portfolio/public/<slug>", methods=["GET"])
 def public_portfolio_api(slug):
     """JSON API for a public portfolio page."""
@@ -685,11 +721,16 @@ def public_portfolio_api(slug):
         view_count = repo.get_view_count(conn, profile[0])
         items = repo.get_items(conn, profile[0], include_hidden=False)
 
-        return jsonify({
-            "profile": svc.profile_to_dict(profile),
-            "items": [svc.item_to_dict(r) for r in items],
-            "view_count": view_count,
-        }), 200
+        return (
+            jsonify(
+                {
+                    "profile": svc.profile_to_dict(profile),
+                    "items": [svc.item_to_dict(r) for r in items],
+                    "view_count": view_count,
+                }
+            ),
+            200,
+        )
     except Exception as e:
         logger.error("public_portfolio_api error: %s", e, exc_info=True)
         return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
@@ -698,6 +739,7 @@ def public_portfolio_api(slug):
 # ---------------------------------------------------------------------------
 # Page routes — Jinja2 templates
 # ---------------------------------------------------------------------------
+
 
 @bp.route("/portfolio", methods=["GET"])
 def portfolio_dashboard():

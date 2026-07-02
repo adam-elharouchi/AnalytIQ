@@ -114,7 +114,11 @@ def delete_profile(conn, user_id):
 def get_items(conn, portfolio_id, include_hidden=True):
     """Return all items for a portfolio ordered by pinned first, then display_order."""
     cur = conn.cursor()
-    where = "" if include_hidden else "AND is_visible = TRUE AND (project_status IS NULL OR project_status = 'published')"
+    where = (
+        ""
+        if include_hidden
+        else "AND is_visible = TRUE AND (project_status IS NULL OR project_status = 'published')"
+    )
     cur.execute(
         f"""
         SELECT id, portfolio_id, item_type, exercise_id, class_id,
