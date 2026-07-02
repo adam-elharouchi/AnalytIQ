@@ -14,7 +14,7 @@ from core.extensions import csrf_exempt, limiter
 from repositories import exercise_repository as exercise_repo
 from repositories import flywheel_repository as flywheel_repo
 from services.ai_grader import grade_with_ai
-from services.code_runner import run_code
+from services.code_runner import run_code, run_test_cases
 
 logger = logging.getLogger(__name__)
 bp = Blueprint("exercises", __name__)
@@ -370,44 +370,93 @@ def grade_exercise(exercise_id):
         # row: (exercise_id, chapter_id, class_id, title, description, difficulty, solution_code)
         _, _, _, title, description, _, _ = row
 
-        # Language is stored in the test_cases row; default to Python
-        _, language, _ = exercise_repo.get_exercise_test_cases(conn, exercise_id)
+        # Function name + language + test cases (stored on the exercise row)
+        function_name, language, test_cases = exercise_repo.get_exercise_test_cases(
+            conn, exercise_id
+        )
         language = language or "Python"
 
-        # ── Step 1: Run the code in a sandbox, capture output ─────────────────
-        _run_t0 = time.monotonic()
-        run_result = run_code(student_code, language=language, timeout=10)
-        execution_time_ms = int((time.monotonic() - _run_t0) * 1000)
+        stdout = ""
+        timed_out = False
 
-        stdout = run_result.get("stdout", "")
-        stderr = run_result.get("stderr", "")
-        timed_out = run_result.get("timed_out", False)
+        if test_cases:
+            # ── Deterministic grading against stored test cases ───────────────
+            # Output-based: the student's function is run against fixed inputs and
+            # its result compared to expected output. This is immune to prompt
+            # injection — nothing a student writes in code or comments can change
+            # the score, and it runs in the network-blocked grading sandbox.
+            _run_t0 = time.monotonic()
+            tc_result = run_test_cases(
+                student_code, language, function_name or "solution", test_cases
+            )
+            execution_time_ms = int((time.monotonic() - _run_t0) * 1000)
 
-        if timed_out:
-            actual_output = "[Code timed out after 10 seconds — possible infinite loop]"
-        elif stderr and not stdout:
-            actual_output = stderr
-        elif stderr:
-            actual_output = f"{stdout}\n{stderr}".strip()
+            tests_passed = tc_result.get("tests_passed", 0)
+            tests_total = tc_result.get("tests_total", 0)
+            passed = tests_total > 0 and tests_passed >= tests_total
+            if passed:
+                feedback = f"All {tests_total} test cases passed. Well done!"
+            else:
+                _first_fail = next(
+                    (r for r in tc_result.get("results", []) if not r.get("passed")), None
+                )
+                _detail = ""
+                if _first_fail:
+                    _detail = " " + str(
+                        _first_fail.get("error")
+                        or f"Expected {_first_fail.get('expected')!r}, "
+                        f"got {_first_fail.get('actual')!r}."
+                    )
+                feedback = f"Passed {tests_passed}/{tests_total} test cases.{_detail}"[:400]
+
+            result = {
+                "total_score": tc_result.get("total_score", 0),
+                "correctness_score": tc_result.get("correctness_score", 0),
+                "quality_score": tc_result.get("quality_score", 0),
+                "feedback": feedback,
+                "passed": passed,
+                "graded_by": "tests",
+                "tests_passed": tests_passed,
+                "tests_total": tests_total,
+            }
         else:
-            actual_output = stdout
+            # ── No test cases → AI grading of code + captured output ──────────
+            _run_t0 = time.monotonic()
+            run_result = run_code(student_code, language=language, timeout=10)
+            execution_time_ms = int((time.monotonic() - _run_t0) * 1000)
 
-        # ── Step 2: AI grades the code + output against the description ───────
-        result = grade_with_ai(
-            title=title,
-            description=description,
-            language=language,
-            student_code=student_code,
-            actual_output=actual_output,
-            api_key=config.GEMINI_API_KEY,
-        )
+            stdout = run_result.get("stdout", "")
+            stderr = run_result.get("stderr", "")
+            timed_out = run_result.get("timed_out", False)
+
+            if timed_out:
+                actual_output = "[Code timed out after 10 seconds — possible infinite loop]"
+            elif stderr and not stdout:
+                actual_output = stderr
+            elif stderr:
+                actual_output = f"{stdout}\n{stderr}".strip()
+            else:
+                actual_output = stdout
+
+            result = grade_with_ai(
+                title=title,
+                description=description,
+                language=language,
+                student_code=student_code,
+                actual_output=actual_output,
+                api_key=config.GEMINI_API_KEY,
+            )
 
         audit(
             conn,
             "GRADE_EXERCISE",
             resource_type="exercise",
             resource_id=exercise_id,
-            details={"score": result["total_score"], "language": language, "graded_by": "ai"},
+            details={
+                "score": result["total_score"],
+                "language": language,
+                "graded_by": result.get("graded_by", "ai"),
+            },
         )
 
         # ── Flywheel: record outcome event (must never break grading) ─────────
