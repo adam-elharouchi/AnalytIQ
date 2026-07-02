@@ -22,7 +22,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 import config
-from core.auth import create_jwt_token, require_auth, require_role
+from core.auth import create_jwt_token, get_user_token_version, require_auth, require_role
 from core.database import get_db_connection
 from core.extensions import csrf_exempt
 from flask import Blueprint, g, jsonify, render_template, request
@@ -239,7 +239,13 @@ def _upsert_lti_user(conn, launch_data):
         raise RuntimeError("Failed to resolve LTI user")
 
     user_id, user_name, user_email, user_role = user_row[0], user_row[1], user_row[2], user_row[3]
-    jwt_token = create_jwt_token(user_id, user_role, user_name, user_email)
+    jwt_token = create_jwt_token(
+        user_id,
+        user_role,
+        user_name,
+        user_email,
+        token_version=get_user_token_version(conn, user_id),
+    )
     return (user_id, user_name, user_email, user_role), jwt_token
 
 

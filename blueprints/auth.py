@@ -19,6 +19,7 @@ from core.audit import audit
 from core.auth import (
     create_jwt_token,
     detect_role_from_email,
+    get_user_token_version,
     hash_password,
     validate_email,
     verify_password,
@@ -258,7 +259,12 @@ def signin():
             conn.rollback()
 
         token = create_jwt_token(
-            user_id, role=role, name=name, email=user_email, tenant_id=tenant_id
+            user_id,
+            role=role,
+            name=name,
+            email=user_email,
+            tenant_id=tenant_id,
+            token_version=get_user_token_version(conn, user_id),
         )
         resp = {
             "id": user_id,
@@ -389,6 +395,13 @@ def reset_password():
         new_hash = hash_password(new_password)
         auth_repo.reset_password(conn, email, new_hash)
         auth_repo.delete_reset_token(conn, email, token)
+        # Revoke all outstanding JWTs for this account (password changed).
+        _revcur = conn.cursor()
+        _revcur.execute(
+            "UPDATE users SET token_version = COALESCE(token_version, 0) + 1 WHERE email = %s",
+            (email,),
+        )
+        _revcur.close()
         audit(conn, "RESET_PASSWORD", resource_type="user", resource_id=email)
         conn.commit()
 

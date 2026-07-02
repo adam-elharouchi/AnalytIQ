@@ -746,6 +746,15 @@ def serve_chapter_pdf(chapter_id):
                 mimetype = "application/pdf"
             response = Response(pdf_bytes, mimetype=mimetype)
             response.headers["Content-Disposition"] = f'inline; filename="{pdf_filename}"'
+            # Imported HTML is user-influenced content served same-origin. Sandbox
+            # it and block all script execution so it cannot run stored XSS.
+            if mimetype.startswith("text/html"):
+                response.headers["Content-Security-Policy"] = (
+                    "default-src 'none'; img-src 'self' data: https:; "
+                    "style-src 'unsafe-inline'; font-src data: https:; "
+                    "media-src 'self' data: https:; sandbox"
+                )
+                response.headers["X-Content-Type-Options"] = "nosniff"
             cors_origin = _get_cors_origin(request)
             if cors_origin:
                 response.headers["Access-Control-Allow-Origin"] = cors_origin
