@@ -393,6 +393,49 @@ if (typeof window.preferencesAPI === 'undefined') {
     };
 }
 
+// ---------------------------------------------------------------------------
+// Capability-token interceptor for media downloads
+// ---------------------------------------------------------------------------
+// Resource downloads are plain <a href> links that cannot send an Authorization
+// header. The backend now protects /api/resources/<id>/download with a
+// short-lived capability token. Intercept clicks on those links, mint a token,
+// and navigate with ?token= appended so downloads keep working for authorized
+// users while remaining closed to anonymous callers.
+async function fetchResourceAccessToken(resourceId) {
+    try {
+        const resp = await authFetch(
+            `${window.API_BASE_URL}/resources/${encodeURIComponent(resourceId)}/access-token`
+        );
+        if (resp.ok) return (await resp.json()).token || '';
+    } catch (e) { /* ignore — navigation will 401 without a token */ }
+    return '';
+}
+
+if (typeof document !== 'undefined' && !window.__mediaTokenInterceptor) {
+    window.__mediaTokenInterceptor = true;
+    document.addEventListener('click', async function (e) {
+        const anchor = e.target && e.target.closest && e.target.closest('a[href]');
+        if (!anchor) return;
+        const href = anchor.getAttribute('href') || '';
+        if (href.indexOf('token=') !== -1) return; // already tokenized
+
+        const dl = href.match(/\/api\/resources\/([^/?#]+)\/download/);
+        const legacy = href.match(/\/api\/resources\/files\//);
+        if (!dl && !legacy) return;
+
+        e.preventDefault();
+        const target = anchor.getAttribute('target') || '_self';
+        let token = '';
+        if (dl) {
+            token = await fetchResourceAccessToken(dl[1]);
+        } else {
+            token = localStorage.getItem('authToken') || ''; // legacy /files/ accepts a JWT
+        }
+        const sep = href.indexOf('?') !== -1 ? '&' : '?';
+        window.open(href + sep + 'token=' + encodeURIComponent(token), target);
+    }, true);
+}
+
 // Get a Supabase presigned upload URL for direct browser-to-storage PDF uploads (Task 34)
 async function getPresignedUploadUrl(filename) {
     try {

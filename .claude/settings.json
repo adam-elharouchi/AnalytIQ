@@ -41,7 +41,10 @@
       "Bash(git show:*)",
       "Bash(git checkout *)",
       "Bash(git cherry-pick *)",
-      "Bash(python -m black blueprints/lti.py blueprints/superadmin.py)"
+      "Bash(python -m black blueprints/lti.py blueprints/superadmin.py)",
+      "Bash(git branch *)",
+      "Bash(git worktree *)",
+      "Bash(python -c \"from blueprints.portfolio import bp; print\\('blueprint imports OK'\\)\")"
     ],
     "additionalDirectories": [
       "/Users/aelharouchi/Documents/GitHub/AnalytIQ/.git/refs/remotes/origin"

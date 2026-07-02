@@ -567,6 +567,35 @@ def get_resource_file(conn, resource_id):
     return row
 
 
+def get_resource_class(conn, resource_id):
+    """Return the class_id a resource belongs to, or None if it doesn't exist."""
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT class_id FROM class_resources WHERE resource_id = %s",
+        (resource_id,),
+    )
+    row = cur.fetchone()
+    cur.close()
+    return row[0] if row else None
+
+
+def get_resource_file_with_class(conn, resource_id):
+    """Return (file_data, filename, resource_type, class_id) or None.
+
+    Used by the download endpoint to authorize the caller against the owning
+    class before streaming the file.
+    """
+    cur = conn.cursor()
+    cur.execute(
+        """SELECT file_data, filename, resource_type, class_id
+           FROM class_resources WHERE resource_id = %s""",
+        (resource_id,),
+    )
+    row = cur.fetchone()
+    cur.close()
+    return row
+
+
 def delete_resource(conn, resource_id):
     cur = conn.cursor()
     cur.execute("DELETE FROM class_resources WHERE resource_id = %s", (resource_id,))

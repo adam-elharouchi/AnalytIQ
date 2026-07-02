@@ -46,6 +46,41 @@ def _get_other_resources(conn, class_id):
         return []
 
 
+def _authorize_class_manage(conn, class_id):
+    """Authorize the current user to MANAGE (write/delete) a class's content.
+
+    Returns (owner_id, None) when allowed, or (owner_id, (response, status)) when
+    denied/not-found.  Allowed = the class owner or a platform superadmin.
+    Must be called inside a @require_auth view so g.user_id is set.
+    """
+    owner = class_repo.get_class_owner(conn, class_id)
+    if owner is None:
+        return None, (jsonify({"error": "Class not found"}), 404)
+    role = getattr(g, "user_role", None) or "student"
+    if owner != g.user_id and role != "superadmin":
+        return owner, (jsonify({"error": "Not authorized"}), 403)
+    return owner, None
+
+
+def _authorize_class_view(conn, class_id):
+    """Authorize the current user to VIEW a class's content.
+
+    Returns (owner_id, None) when allowed, or (owner_id, (response, status)) when
+    denied/not-found.  Allowed = the class owner, a platform superadmin, or an
+    enrolled student.  Note: a bare 'professor' role does NOT grant access to
+    classes the user does not own (prevents cross-class/cross-tenant reads).
+    """
+    owner = class_repo.get_class_owner(conn, class_id)
+    if owner is None:
+        return None, (jsonify({"error": "Class not found"}), 404)
+    role = getattr(g, "user_role", None) or "student"
+    if owner == g.user_id or role == "superadmin":
+        return owner, None
+    if class_repo.check_enrollment(conn, class_id, g.user_id):
+        return owner, None
+    return owner, (jsonify({"error": "Access denied"}), 403)
+
+
 # ============================================================================
 # Classes CRUD
 # ============================================================================
@@ -188,10 +223,11 @@ def get_class(class_id):
             return jsonify({"error": "Class not found"}), 404
 
         role = getattr(g, "user_role", None) or "student"
-        is_professor = role == "professor"
         is_owner = class_data[3] == user_id
 
-        if not is_owner and not is_professor:
+        # Ownership, superadmin, or enrollment — a bare 'professor' role does NOT
+        # grant access to a class the user does not own (cross-class isolation).
+        if not is_owner and role != "superadmin":
             if not class_repo.check_enrollment(conn, class_id, user_id):
                 return jsonify({"error": "Access denied. You are not enrolled in this class."}), 403
 
@@ -236,9 +272,9 @@ def get_class_resources(class_id):
 
         conn = get_db_connection()
 
-        owner = class_repo.get_class_owner(conn, class_id)
-        if owner is None:
-            return jsonify({"error": "Class not found"}), 404
+        _owner, denied = _authorize_class_view(conn, class_id)
+        if denied:
+            return denied
 
         chapters = class_repo.get_class_chapters_as_resources(conn, class_id)
 
@@ -796,11 +832,15 @@ def get_exercise_leaderboard_for_class(class_id, exercise_id):
 @csrf_exempt
 @require_auth
 def add_class_resource(class_id):
-    """Add a new resource (link) to the class"""
+    """Add a new resource (link) to the class (class owner / superadmin only)."""
     try:
         conn = get_db_connection()
 
-        data = request.json
+        _owner, denied = _authorize_class_manage(conn, class_id)
+        if denied:
+            return denied
+
+        data = request.json or {}
         user_id = g.user_id
         resource_id = f"res_{str(uuid.uuid4())}"
 
@@ -827,9 +867,13 @@ def add_class_resource(class_id):
 @csrf_exempt
 @require_auth
 def upload_class_resource(class_id):
-    """Upload a file as a resource"""
+    """Upload a file as a resource (class owner / superadmin only)."""
     try:
         conn = get_db_connection()
+
+        _owner, denied = _authorize_class_manage(conn, class_id)
+        if denied:
+            return denied
 
         if "file" not in request.files:
             return jsonify({"error": "No file part"}), 400
@@ -838,9 +882,29 @@ def upload_class_resource(class_id):
         if file.filename == "":
             return jsonify({"error": "No selected file"}), 400
 
+        # Validate extension against the central allowlist.
+        ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
+        if ext not in config.ALLOWED_EXTENSIONS:
+            return (
+                jsonify(
+                    {
+                        "error": "Invalid file type. Allowed: "
+                        + ", ".join(sorted(config.ALLOWED_EXTENSIONS))
+                    }
+                ),
+                400,
+            )
+
         user_id = g.user_id
         filename = secure_filename(file.filename)
         file_data = file.read()
+
+        # Per-resource size cap (independent of the global MAX_CONTENT_LENGTH).
+        if len(file_data) > config.MAX_PDF_SIZE_BYTES:
+            return (
+                jsonify({"error": f"File too large (max {config.MAX_PDF_SIZE_MB}MB)"}),
+                400,
+            )
 
         resource_id = f"res_{int(datetime.now().timestamp() * 1000)}"
         resource_url = f"/api/resources/{resource_id}/download"
@@ -869,9 +933,35 @@ def upload_class_resource(class_id):
         return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
+@bp.route("/api/resources/<resource_id>/access-token", methods=["GET"])
+@require_auth
+def get_resource_access_token(resource_id):
+    """Mint a short-lived token authorizing the caller to download this resource."""
+    from core.auth import create_media_token
+
+    conn = get_db_connection()
+    row = class_repo.get_resource_file_with_class(conn, resource_id)
+    if not row:
+        return jsonify({"error": "Resource not found"}), 404
+
+    _owner, denied = _authorize_class_view(conn, row[3])  # row[3] = class_id
+    if denied:
+        return denied
+
+    return jsonify({"token": create_media_token("resource", resource_id)}), 200
+
+
 @bp.route("/api/resources/<resource_id>/download", methods=["GET"])
 def serve_resource_download(resource_id):
-    """Serve resource file from database (BLOB)"""
+    """Serve resource file from database (BLOB).
+
+    Authorized via a short-lived ?token= capability minted by
+    /api/resources/<id>/access-token (anchor downloads cannot send auth headers).
+    """
+    from core.auth import verify_media_token
+
+    if not verify_media_token(request.args.get("token", ""), "resource", resource_id):
+        return jsonify({"error": "Authentication required"}), 401
     try:
         conn = get_db_connection()
         result = class_repo.get_resource_file(conn, resource_id)
@@ -916,28 +1006,54 @@ def serve_resource_download(resource_id):
 
 @bp.route("/api/classes/<class_id>/resources/<resource_id>", methods=["PUT", "DELETE"])
 @csrf_exempt
+@require_auth
 def manage_resource(class_id, resource_id):
-    """Update or Delete a resource"""
+    """Update or Delete a resource (class owner / superadmin only)."""
     try:
         conn = get_db_connection()
 
+        _owner, denied = _authorize_class_manage(conn, class_id)
+        if denied:
+            return denied
+
+        # The resource must actually belong to this class — prevents a class
+        # owner from manipulating a resource that lives under another class.
+        resource_class = class_repo.get_resource_class(conn, resource_id)
+        if resource_class is None:
+            return jsonify({"error": "Resource not found"}), 404
+        if resource_class != class_id:
+            return jsonify({"error": "Resource does not belong to this class"}), 403
+
         if request.method == "DELETE":
             class_repo.delete_resource(conn, resource_id)
-            conn.commit()
-            return jsonify({"success": True}), 200
-
-        elif request.method == "PUT":
-            data = request.json
-            class_repo.update_resource(
+            audit(
                 conn,
-                resource_id,
-                data.get("title"),
-                data.get("description"),
-                data.get("resource_type"),
-                data.get("resource_url"),
+                "DELETE_RESOURCE",
+                resource_type="resource",
+                resource_id=resource_id,
+                details={"class_id": class_id},
             )
             conn.commit()
             return jsonify({"success": True}), 200
+
+        data = request.json or {}
+        class_repo.update_resource(
+            conn,
+            resource_id,
+            data.get("title"),
+            data.get("description"),
+            data.get("resource_type"),
+            data.get("resource_url"),
+        )
+        audit(
+            conn,
+            "UPDATE_RESOURCE",
+            resource_type="resource",
+            resource_id=resource_id,
+            details={"class_id": class_id},
+        )
+        conn.commit()
+        return jsonify({"success": True}), 200
 
     except Exception as e:
         logger.error("Unexpected error: %s", e, exc_info=True)
@@ -946,7 +1062,20 @@ def manage_resource(class_id, resource_id):
 
 @bp.route("/api/resources/files/<filename>", methods=["GET"])
 def serve_resource_file(filename):
-    """Serve uploaded resource file (Legacy - kept for older non-migrated files)"""
+    """Serve uploaded resource file (Legacy - kept for older non-migrated files).
+
+    Requires a valid auth token (Authorization header or ?token=) — previously
+    this served any file in the upload folder to anonymous callers.
+    """
+    from core.auth import decode_jwt_token
+
+    auth_header = request.headers.get("Authorization", "")
+    token = auth_header.split(" ", 1)[1] if auth_header.startswith("Bearer ") else ""
+    token = token or request.args.get("token", "")
+    try:
+        decode_jwt_token(token)
+    except Exception:
+        return jsonify({"error": "Authentication required"}), 401
     try:
         return send_from_directory(current_app.config["UPLOAD_FOLDER"], filename)
     except Exception:

@@ -1627,7 +1627,14 @@
         document.getElementById('chapterTitle').textContent = chapter.title || 'Untitled Chapter';
         document.getElementById('chapterDescription').textContent = chapter.description || '';
 
-        pdfUrl = `${apiUrl}/chapters/${encodeURIComponent(chapter.chapter_id)}/pdf`;
+        // The /pdf endpoint is loaded by pdf.js (no auth header possible), so we
+        // mint a short-lived capability token and append it as ?token=.
+        let pdfToken = '';
+        try {
+          const tokResp = await authFetch(`${apiUrl}/chapters/${encodeURIComponent(chapter.chapter_id)}/access-token`);
+          if (tokResp.ok) pdfToken = (await tokResp.json()).token || '';
+        } catch (e) { /* fall through — server will 401 without a token */ }
+        pdfUrl = `${apiUrl}/chapters/${encodeURIComponent(chapter.chapter_id)}/pdf?token=${encodeURIComponent(pdfToken)}`;
         await renderPDFPages(pdfUrl, container);
 
         getStudyData();

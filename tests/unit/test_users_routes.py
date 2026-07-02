@@ -602,12 +602,14 @@ class TestPracticeProgress:
         assert "best_score" in data
 
     def test_update_practice_progress_returns_200(self, client, mock_db):
-        """PUT practice-progress returns 200 with is_new_best and best_score."""
+        """PUT practice-progress returns 200; an honest client score within the
+        server-graded cap is recorded unchanged."""
         cursor = mock_db.cursor()
-        # user_exists -> True; get_current_progress -> existing record
+        # user_exists -> True; get_current_progress -> existing; get_max_attempt_score
         cursor.fetchone.side_effect = [
             ("student-user-id",),  # user_exists
-            (70, 2),               # get_current_progress
+            (70, 2),               # get_current_progress (best=70, attempts=2)
+            (90,),                 # get_max_attempt_score (server graded max = 90)
         ]
 
         resp = client.put(
@@ -626,7 +628,44 @@ class TestPracticeProgress:
         data = resp.get_json()
         assert data["success"] is True
         assert "is_new_best" in data
-        assert "best_score" in data
+        assert data["best_score"] == 90  # equals the server-graded max
+
+    def test_practice_progress_score_capped_to_server_grade(self, client, mock_db):
+        """A client cannot inflate best_score above the server-graded maximum."""
+        cursor = mock_db.cursor()
+        cursor.fetchone.side_effect = [
+            ("student-user-id",),  # user_exists
+            (40, 1),               # get_current_progress (best=40)
+            (70,),                 # get_max_attempt_score (server graded max = 70)
+        ]
+
+        resp = client.put(
+            "/api/users/practice-progress",
+            headers=AUTH,
+            json={"exercise_id": "ex-1", "score": 100, "accuracy": 0.9, "time_spent": 5},
+        )
+
+        assert resp.status_code == 200
+        # 100 is forged; the server only graded 70 → best_score is capped at 70.
+        assert resp.get_json()["best_score"] == 70
+
+    def test_practice_progress_no_server_grade_earns_no_credit(self, client, mock_db):
+        """Without a server-graded attempt, a client-posted score earns 0."""
+        cursor = mock_db.cursor()
+        cursor.fetchone.side_effect = [
+            ("student-user-id",),  # user_exists
+            None,                  # get_current_progress (no prior progress)
+            None,                  # get_max_attempt_score (never graded by server)
+        ]
+
+        resp = client.put(
+            "/api/users/practice-progress",
+            headers=AUTH,
+            json={"exercise_id": "ex-1", "score": 100, "accuracy": 1.0, "time_spent": 5},
+        )
+
+        assert resp.status_code == 200
+        assert resp.get_json()["best_score"] == 0
 
     def test_update_practice_progress_missing_exercise_id_returns_400(self, client, mock_db):
         """PUT without exercise_id returns 400."""
