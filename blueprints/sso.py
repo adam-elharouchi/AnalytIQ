@@ -33,6 +33,7 @@ import config
 from core.audit import audit
 from core.auth import (
     create_jwt_token,
+    create_refresh_token,
     get_user_token_version,
     require_auth,
     require_tenant_admin,
@@ -482,15 +483,17 @@ def sso_callback(provider_id):
         user_id, name, email, role, tenant_id = _upsert_sso_user(conn, provider, claims)
         conn.commit()
 
+        _tv = get_user_token_version(conn, user_id)
         token = create_jwt_token(
             user_id,
             role=role,
             name=name,
             email=email,
             tenant_id=tenant_id,
-            token_version=get_user_token_version(conn, user_id),
+            token_version=_tv,
         )
-        return redirect(f"{login_page}?sso_token={token}")
+        refresh = create_refresh_token(user_id, token_version=_tv)
+        return redirect(f"{login_page}?sso_token={token}&sso_refresh={refresh}")
 
     except PermissionError as exc:
         logger.warning("SSO domain restriction for provider %s: %s", provider_id, exc)

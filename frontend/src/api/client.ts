@@ -20,11 +20,41 @@ function getToken(): string | null {
   return localStorage.getItem('authToken')
 }
 
+// Single in-flight refresh so a burst of 401s triggers only one /refresh call.
+let refreshPromise: Promise<boolean> | null = null
+
+async function tryRefresh(): Promise<boolean> {
+  if (refreshPromise) return refreshPromise
+  const rt = localStorage.getItem('refreshToken')
+  if (!rt) return false
+  refreshPromise = fetch(API_BASE + '/users/refresh', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refresh_token: rt }),
+  })
+    .then(async (r) => {
+      if (!r.ok) return false
+      const d = (await r.json().catch(() => null)) as {
+        token?: string
+        refresh_token?: string
+      } | null
+      if (d?.token) localStorage.setItem('authToken', d.token)
+      if (d?.refresh_token) localStorage.setItem('refreshToken', d.refresh_token)
+      return Boolean(d?.token)
+    })
+    .catch(() => false)
+    .finally(() => {
+      refreshPromise = null
+    })
+  return refreshPromise
+}
+
 async function request<T>(
   method: string,
   path: string,
   body?: unknown,
   extraHeaders?: Record<string, string>,
+  retried?: boolean,
 ): Promise<ApiResult<T>> {
   const headers: Record<string, string> = {}
 
@@ -45,11 +75,16 @@ async function request<T>(
   try {
     const res = await fetch(API_BASE + path, init)
 
-    // 401 — session expired; redirect to login.
-    // Skip auth endpoints: a 401 from signin/signup means wrong credentials, not expiry.
-    const isAuthEndpoint = path === '/users/signin' || path === '/users/signup'
+    // 401 — try to silently refresh the access token once, then retry. If refresh
+    // fails, clear auth and redirect to login. Skip the auth endpoints themselves.
+    const isAuthEndpoint =
+      path === '/users/signin' || path === '/users/signup' || path === '/users/refresh'
     if (res.status === 401 && !isAuthEndpoint) {
+      if (!retried && (await tryRefresh())) {
+        return request<T>(method, path, body, extraHeaders, true)
+      }
       localStorage.removeItem('authToken')
+      localStorage.removeItem('refreshToken')
       localStorage.removeItem('currentUser')
       // Stay inside the React app — /login is now a React route.
       window.location.replace('/login')

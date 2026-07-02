@@ -64,10 +64,12 @@
   <script>
     (function () {
       var token    = {{ jwt_token | tojson }};
+      var refresh  = {{ refresh_token | tojson }};
       var redirect = {{ redirect_url | tojson }};
 
       try {
         localStorage.setItem('authToken', token);
+        if (refresh) localStorage.setItem('refreshToken', refresh);
         // Decode payload for quick role/name access without another API call
         var parts = token.split('.');
         if (parts.length === 3) {

@@ -22,7 +22,13 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 import config
-from core.auth import create_jwt_token, get_user_token_version, require_auth, require_role
+from core.auth import (
+    create_jwt_token,
+    create_refresh_token,
+    get_user_token_version,
+    require_auth,
+    require_role,
+)
 from core.database import get_db_connection
 from core.extensions import csrf_exempt
 from flask import Blueprint, g, jsonify, render_template, request
@@ -239,14 +245,16 @@ def _upsert_lti_user(conn, launch_data):
         raise RuntimeError("Failed to resolve LTI user")
 
     user_id, user_name, user_email, user_role = user_row[0], user_row[1], user_row[2], user_row[3]
+    _tv = get_user_token_version(conn, user_id)
     jwt_token = create_jwt_token(
         user_id,
         user_role,
         user_name,
         user_email,
-        token_version=get_user_token_version(conn, user_id),
+        token_version=_tv,
     )
-    return (user_id, user_name, user_email, user_role), jwt_token
+    refresh_token = create_refresh_token(user_id, token_version=_tv)
+    return (user_id, user_name, user_email, user_role), jwt_token, refresh_token
 
 
 def _store_lti_session(conn, launch_data, user_id, class_id):
@@ -496,7 +504,7 @@ def lti_launch():
         return _handle_deep_link(conn, message_launch, launch_data)
 
     try:
-        user_tuple, jwt_token = _upsert_lti_user(conn, launch_data)
+        user_tuple, jwt_token, refresh_token = _upsert_lti_user(conn, launch_data)
         user_id = user_tuple[0]
 
         # Determine which AnalytIQ class matches this LTI course context
@@ -537,6 +545,7 @@ def lti_launch():
         return render_template(
             "lti-launch.html",
             jwt_token=jwt_token,
+            refresh_token=refresh_token,
             redirect_url=redirect_url,
             user_name=user_tuple[1],
         )
@@ -555,7 +564,7 @@ def lti_launch():
 def _handle_deep_link(conn, message_launch, launch_data):
     """Render chapter/exercise selector so a professor can embed content in the LMS."""
     try:
-        user_tuple, _ = _upsert_lti_user(conn, launch_data)
+        user_tuple, _, _ = _upsert_lti_user(conn, launch_data)
         professor_id = user_tuple[0]
         conn.commit()
     except Exception as e:
@@ -868,7 +877,7 @@ def sync_roster(class_id):
         }
 
         try:
-            user_tuple, _ = _upsert_lti_user(conn, member_launch)
+            user_tuple, _, _ = _upsert_lti_user(conn, member_launch)
             student_id = user_tuple[0]
             if not class_repo.check_enrollment(conn, class_id, student_id):
                 class_repo.enroll_student(conn, class_id, student_id)
