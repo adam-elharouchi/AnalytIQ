@@ -30,6 +30,8 @@ AUTH_STUDENT = {"X-Test-User-ID": "student-id", "X-Test-User-Role": "student"}
 
 TEST_CASES = [{"description": "basic", "input": "[1, 2]", "expected_output": "3", "weight": 1}]
 TEST_CASES_ROW = ("solution", "Python", TEST_CASES)
+# No test cases → grade_exercise uses the AI path (these tests mock grade_with_ai).
+NO_TEST_CASES_ROW = ("solution", "Python", [])
 EXERCISE_ROW = ("ex-1", "ch-1", "class-1", "Write a loop", "Print 1 to 10", "easy",
                 "for i in range(10): print(i)")
 
@@ -57,7 +59,7 @@ RUN_CODE_RESULT = {"stdout": "Hello\n", "stderr": "", "timed_out": False}
 def _fetchone_seq(lti_sub=("lti-sub-abc",)):
     return [
         EXERCISE_ROW,          # get_exercise_detail
-        TEST_CASES_ROW,        # get_exercise_test_cases (language lookup)
+        NO_TEST_CASES_ROW,     # get_exercise_test_cases (AI path — no test cases)
         ("ch-1", "class-1"),   # get_exercise_location
         None,                   # get_generation_event_by_exercise
         (0,),                   # get_outcome_count_for_user_exercise
@@ -335,7 +337,7 @@ class TestGradeEndpointAgsPassback:
         """Exercises not linked to a class have no class_id → no passback attempt."""
         mock_db.cursor().fetchone.side_effect = [
             EXERCISE_ROW,      # get_exercise_detail
-            TEST_CASES_ROW,    # get_exercise_test_cases (language)
+            NO_TEST_CASES_ROW,  # get_exercise_test_cases (AI path — no test cases)
             None,               # get_exercise_location returns None → class_id_for_flywheel = None
             None,               # get_generation_event_by_exercise
             (0,),               # get_outcome_count_for_user_exercise
