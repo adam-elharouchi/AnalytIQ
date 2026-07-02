@@ -10,7 +10,7 @@ import config
 from core.audit import audit
 from core.auth import require_auth, validate_fields
 from core.database import get_db_connection
-from core.extensions import csrf_exempt
+from core.extensions import csrf_exempt, limiter
 from repositories import exercise_repository as exercise_repo
 from repositories import flywheel_repository as flywheel_repo
 from services.ai_grader import grade_with_ai
@@ -18,6 +18,19 @@ from services.code_runner import run_code
 
 logger = logging.getLogger(__name__)
 bp = Blueprint("exercises", __name__)
+
+
+def _code_exec_key():
+    """Rate-limit key: the authenticated user_id (set by @require_auth)."""
+    return getattr(g, "user_id", None) or "anonymous"
+
+
+def _apply_code_exec_limit(f):
+    """Per-user rate limit for code execution (bounds subprocess spawning DoS)."""
+    if limiter is None:
+        return f
+    return limiter.limit("30 per minute", key_func=_code_exec_key)(f)
+
 
 # ---------------------------------------------------------------------------
 # Unicode sanitisation for student code submissions
@@ -561,6 +574,7 @@ def rate_exercise(exercise_id):
 @bp.route("/api/code/run", methods=["POST"])
 @csrf_exempt
 @require_auth
+@_apply_code_exec_limit
 def run_code_endpoint():
     """
     Execute code in a live sandbox and return stdout/stderr — no grading.

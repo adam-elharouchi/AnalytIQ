@@ -11,13 +11,23 @@ from flask import Blueprint, g, jsonify, render_template, request
 import config
 from core.auth import require_auth
 from core.database import get_db_connection
-from core.extensions import csrf_exempt
+from core.extensions import csrf_exempt, limiter
 from repositories import portfolio_repository as repo
 from services import portfolio_service as svc
 from services.portfolio_execution_service import execute_project_code
 
 logger = logging.getLogger(__name__)
 bp = Blueprint("portfolio", __name__)
+
+
+def _apply_run_limit(f):
+    """Per-user rate limit for project code execution (bounds subprocess DoS)."""
+    if limiter is None:
+        return f
+    return limiter.limit(
+        "30 per minute", key_func=lambda: getattr(g, "user_id", None) or "anonymous"
+    )(f)
+
 
 _SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9-]{1,58}[a-z0-9]$")
 _VALID_LANGUAGES = {"python", "javascript", "sql", "r", "java"}
@@ -537,6 +547,7 @@ def save_code(item_id):
 @bp.route("/api/portfolio/projects/<item_id>/run", methods=["POST"])
 @csrf_exempt
 @require_auth
+@_apply_run_limit
 def run_project(item_id):
     """Execute personal project code in sandbox."""
     try:
