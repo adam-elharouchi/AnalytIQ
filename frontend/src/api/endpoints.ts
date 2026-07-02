@@ -33,6 +33,8 @@ export interface SignUpPayload {
 }
 
 export interface AuthResponse extends User {
+  token?: string
+  refresh_token?: string
   success?: boolean
   pending_approval?: boolean
   message?: string

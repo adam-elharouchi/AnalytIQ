@@ -34,6 +34,7 @@ interface AuthContextValue extends AuthState {
 // ---------------------------------------------------------------------------
 
 const STORAGE_TOKEN = 'authToken'
+const STORAGE_REFRESH = 'refreshToken'
 const STORAGE_USER = 'currentUser'
 
 function loadStoredAuth(): AuthState {
@@ -47,13 +48,15 @@ function loadStoredAuth(): AuthState {
   }
 }
 
-function saveAuth(user: User, token: string) {
+function saveAuth(user: User, token: string, refreshToken?: string | null) {
   localStorage.setItem(STORAGE_TOKEN, token)
+  if (refreshToken) localStorage.setItem(STORAGE_REFRESH, refreshToken)
   localStorage.setItem(STORAGE_USER, JSON.stringify(user))
 }
 
 function clearAuth() {
   localStorage.removeItem(STORAGE_TOKEN)
+  localStorage.removeItem(STORAGE_REFRESH)
   localStorage.removeItem(STORAGE_USER)
 }
 
@@ -81,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       tenant_id: data.tenant_id,
     }
 
-    saveAuth(user, data.token)
+    saveAuth(user, data.token, data.refresh_token)
     setAuth({ user, token: data.token })
     return { error: null, requiresReset: data.requires_password_reset }
   }, [])
@@ -105,7 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       tenant_id: data.tenant_id,
     }
 
-    saveAuth(user, data.token)
+    saveAuth(user, data.token, data.refresh_token)
     setAuth({ user, token: data.token })
     return { error: null, pendingApproval: false }
   }, [])

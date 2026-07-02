@@ -34,9 +34,15 @@ class AuthManager {
     localStorage.setItem('authToken', token);
   }
 
-  // Remove JWT token
+  // Save refresh token (used by authFetch to silently mint new access tokens)
+  saveRefreshToken(refreshToken) {
+    if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
+  }
+
+  // Remove JWT + refresh token
   removeToken() {
     localStorage.removeItem('authToken');
+    localStorage.removeItem('refreshToken');
   }
 
   // Sign up new user
@@ -69,6 +75,9 @@ class AuthManager {
       // Save JWT token
       if (data.token) {
         this.saveToken(data.token);
+      }
+      if (data.refresh_token) {
+        this.saveRefreshToken(data.refresh_token);
       }
 
       // Auto sign in - save user with consistent user_id
@@ -128,6 +137,9 @@ class AuthManager {
       // Save JWT token
       if (data.token) {
         this.saveToken(data.token);
+      }
+      if (data.refresh_token) {
+        this.saveRefreshToken(data.refresh_token);
       }
 
       // Save current user (without password) - store user_id consistently
@@ -375,6 +387,7 @@ async function initSSOLogin(providerId) {
 function handleSSOTokenParam() {
   const params = new URLSearchParams(window.location.search);
   const ssoToken = params.get('sso_token');
+  const ssoRefresh = params.get('sso_refresh');
   const ssoError = params.get('sso_error');
 
   if (ssoError) {
@@ -392,6 +405,7 @@ function handleSSOTokenParam() {
       const payloadB64 = ssoToken.split('.')[1];
       const payload = JSON.parse(atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/')));
       authManager.saveToken(ssoToken);
+      if (ssoRefresh) authManager.saveRefreshToken(ssoRefresh);
       authManager.saveUser({
         id: payload.user_id,
         user_id: payload.user_id,
@@ -401,6 +415,7 @@ function handleSSOTokenParam() {
       });
     } catch (_) {
       authManager.saveToken(ssoToken);
+      if (ssoRefresh) authManager.saveRefreshToken(ssoRefresh);
     }
     window.location.href = '/home';
   }

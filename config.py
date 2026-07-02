@@ -102,7 +102,12 @@ SESSION_COOKIE_SAMESITE = "None" if ENV == "production" else "Lax"
 
 # JWT Authentication
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", SECRET_KEY)
-JWT_ACCESS_TOKEN_EXPIRES_HOURS = int(os.getenv("JWT_EXPIRY_HOURS", 168))  # 7 days default
+JWT_ACCESS_TOKEN_EXPIRES_HOURS = int(os.getenv("JWT_EXPIRY_HOURS", 168))  # legacy (unused default)
+# Short-lived access token + long-lived refresh token (see /api/users/refresh).
+# Conservative default (24h) for a safe rollout; lower to 1 once the refresh
+# flow is verified in staging. Fully env-tunable — no code change/deploy needed.
+JWT_ACCESS_TTL_HOURS = int(os.getenv("JWT_ACCESS_TTL_HOURS", 24))
+JWT_REFRESH_TTL_DAYS = int(os.getenv("JWT_REFRESH_TTL_DAYS", 30))
 JWT_ALGORITHM = "HS256"
 
 # ============================================================================

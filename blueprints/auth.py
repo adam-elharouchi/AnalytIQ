@@ -13,11 +13,14 @@ import uuid
 from datetime import datetime
 
 import config
+import jwt
 from flask import Blueprint, jsonify, request
 
 from core.audit import audit
 from core.auth import (
     create_jwt_token,
+    create_refresh_token,
+    decode_jwt_token,
     detect_role_from_email,
     get_user_token_version,
     hash_password,
@@ -141,6 +144,7 @@ def signup():
             "email": user[2],
             "role": user_role,
             "token": token,
+            "refresh_token": create_refresh_token(created_user_id, token_version=0),
             "success": True,
         }
         if pending_approval:
@@ -258,13 +262,14 @@ def signin():
         except Exception:
             conn.rollback()
 
+        _tv = get_user_token_version(conn, user_id)
         token = create_jwt_token(
             user_id,
             role=role,
             name=name,
             email=user_email,
             tenant_id=tenant_id,
-            token_version=get_user_token_version(conn, user_id),
+            token_version=_tv,
         )
         resp = {
             "id": user_id,
@@ -273,6 +278,7 @@ def signin():
             "email": user_email,
             "role": role,
             "token": token,
+            "refresh_token": create_refresh_token(user_id, token_version=_tv),
         }
         if requires_reset:
             resp["requires_password_reset"] = True
@@ -283,6 +289,85 @@ def signin():
             conn.rollback()
         logger.error("Unexpected error: %s", e, exc_info=True)
         return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
+
+
+@bp.route("/api/users/refresh", methods=["POST"])
+@csrf_exempt
+@limiter.limit("60 per hour")
+def refresh():
+    """Exchange a valid refresh token for a fresh access + refresh token pair.
+
+    The refresh token is validated for signature/expiry, its type=="refresh", and
+    its tv against the user's current token_version (so a password change/reset or
+    account disable revokes it). Role/name/email/tenant are re-read from the DB so
+    changes take effect on refresh.
+    """
+    data = request.json or {}
+    rtoken = (data.get("refresh_token") or "").strip()
+    if not rtoken:
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            rtoken = auth_header.split(" ", 1)[1]
+    if not rtoken:
+        return jsonify({"error": "refresh_token is required"}), 400
+
+    try:
+        payload = decode_jwt_token(rtoken)
+    except jwt.ExpiredSignatureError:
+        return jsonify({"error": "Session expired. Please sign in again."}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({"error": "Invalid refresh token."}), 401
+
+    if payload.get("type") != "refresh":
+        return jsonify({"error": "Invalid refresh token."}), 401
+    user_id = str(payload.get("user_id") or "")
+    if not user_id:
+        return jsonify({"error": "Invalid refresh token."}), 401
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT name, email, role, tenant_id, account_status, token_version "
+            "FROM users WHERE user_id = %s",
+            (user_id,),
+        )
+        row = cur.fetchone()
+        cur.close()
+    except Exception as e:
+        logger.error("Refresh lookup failed: %s", e, exc_info=True)
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
+
+    if not row:
+        return jsonify({"error": "Invalid refresh token."}), 401
+    name, email, role, tenant_id, account_status, tv = (
+        row[0],
+        row[1],
+        row[2],
+        row[3],
+        row[4],
+        row[5],
+    )
+
+    # Revocation: refresh token tv must still match the stored counter.
+    if tv is not None and int(tv) != int(payload.get("tv", 0)):
+        return jsonify({"error": "Session expired. Please sign in again."}), 401
+    if account_status in ("disabled", "denied"):
+        return jsonify({"error": "Account is not active. Contact support."}), 403
+    if account_status == "pending_approval":
+        return jsonify({"error": "Account pending approval by an administrator."}), 403
+
+    tvv = int(tv or 0)
+    new_access = create_jwt_token(
+        user_id,
+        role=role or "student",
+        name=name,
+        email=email,
+        tenant_id=tenant_id,
+        token_version=tvv,
+    )
+    new_refresh = create_refresh_token(user_id, token_version=tvv)
+    return jsonify({"token": new_access, "refresh_token": new_refresh}), 200
 
 
 def _send_reset_email(to_email, user_name, reset_link):

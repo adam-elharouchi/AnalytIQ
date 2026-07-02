@@ -77,8 +77,31 @@ function getAuthHeaders(extraHeaders = {}) {
     return headers;
 }
 
-// Authenticated fetch wrapper - adds JWT token and CSRF token to all requests
-async function authFetch(url, options = {}) {
+// Single in-flight refresh so a burst of 401s triggers only one /refresh call.
+window._refreshPromise = window._refreshPromise || null;
+
+async function refreshAccessToken() {
+    if (window._refreshPromise) return window._refreshPromise;
+    const rt = localStorage.getItem('refreshToken');
+    if (!rt) return false;
+    window._refreshPromise = fetch(window.API_BASE_URL + '/users/refresh', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: rt })
+    }).then(async function (r) {
+        if (!r.ok) return false;
+        const data = await r.json();
+        if (data.token) localStorage.setItem('authToken', data.token);
+        if (data.refresh_token) localStorage.setItem('refreshToken', data.refresh_token);
+        return !!data.token;
+    }).catch(function () { return false; })
+      .finally(function () { window._refreshPromise = null; });
+    return window._refreshPromise;
+}
+
+// Authenticated fetch wrapper - adds JWT token + CSRF, and on a 401 transparently
+// refreshes the access token once and retries the request.
+async function authFetch(url, options = {}, _retried) {
     options.headers = options.headers || {};
     // Always set Content-Type for non-FormData requests (including unauthenticated ones like sign-in)
     if (!(options.body instanceof FormData)) {
@@ -96,7 +119,19 @@ async function authFetch(url, options = {}) {
             options.headers['X-CSRFToken'] = csrfToken;
         }
     }
-    return fetch(url, options);
+    const resp = await fetch(url, options);
+    // Transparent refresh: on the first 401, try to mint a new access token and
+    // retry once. Skip the auth endpoints themselves to avoid loops.
+    if (resp.status === 401 && !_retried
+        && url.indexOf('/users/refresh') === -1
+        && url.indexOf('/users/signin') === -1
+        && url.indexOf('/users/signup') === -1) {
+        const ok = await refreshAccessToken();
+        if (ok) {
+            return authFetch(url, options, true);
+        }
+    }
+    return resp;
 }
 
 // Fetch with Cache Wrapper

@@ -118,10 +118,11 @@ def create_jwt_token(
     Returns:
         str: Encoded JWT token
     """
-    ttl = expires_hours if expires_hours is not None else config.JWT_ACCESS_TOKEN_EXPIRES_HOURS
+    ttl = expires_hours if expires_hours is not None else config.JWT_ACCESS_TTL_HOURS
     payload = {
         "user_id": user_id,
         "role": role,
+        "type": "access",
         "tv": int(token_version or 0),  # revocation counter (see users.token_version)
         "iat": datetime.utcnow(),
         "exp": datetime.utcnow() + timedelta(hours=ttl),
@@ -135,6 +136,23 @@ def create_jwt_token(
     if tenant_id:
         payload["tenant_id"] = tenant_id
 
+    return jwt.encode(payload, config.JWT_SECRET_KEY, algorithm=config.JWT_ALGORITHM)
+
+
+def create_refresh_token(user_id, token_version=0):
+    """Create a long-lived refresh token used to mint fresh access tokens.
+
+    Carries only the user_id, a ``type: "refresh"`` marker, and the revocation
+    counter (tv). It is exchanged at /api/users/refresh for a new short-lived
+    access token. A refresh token is NEVER accepted by require_auth.
+    """
+    payload = {
+        "user_id": user_id,
+        "type": "refresh",
+        "tv": int(token_version or 0),
+        "iat": datetime.utcnow(),
+        "exp": datetime.utcnow() + timedelta(days=config.JWT_REFRESH_TTL_DAYS),
+    }
     return jwt.encode(payload, config.JWT_SECRET_KEY, algorithm=config.JWT_ALGORITHM)
 
 
@@ -366,6 +384,9 @@ def require_auth(f):
 
         try:
             payload = decode_jwt_token(token)
+            # A refresh token must never be usable as an access token.
+            if payload.get("type") == "refresh":
+                return jsonify({"error": "Invalid token. Please sign in again."}), 401
             g.user_id = str(payload["user_id"])
             g.user_role = payload.get("role", "student")
             g.user_email = payload.get("email", "")
