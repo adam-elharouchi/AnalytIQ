@@ -22,7 +22,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 import config
-from core.auth import create_jwt_token, require_auth, require_role
+from core.auth import create_jwt_token, get_user_token_version, require_auth, require_role
 from core.database import get_db_connection
 from core.extensions import csrf_exempt
 from flask import Blueprint, g, jsonify, render_template, request
@@ -190,8 +190,17 @@ def _upsert_lti_user(conn, launch_data):
         email_row = auth_repo.get_user_by_email(conn, email)
         if email_row:
             # email_row = (user_id, name, email, password_hash, role)
-            lti_repo.link_lti_identity(conn, email_row[0], lti_sub, issuer)
             existing_role = email_row[4]
+            # SECURITY: never federate an LTI identity into a privileged account
+            # via an email-claim match. Without this, an LMS launch carrying
+            # email=<an admin's email> would mint a JWT for that admin account.
+            # Privileged users must sign in directly.
+            if existing_role in ("superadmin", "tenant_admin"):
+                raise PermissionError(
+                    "This email is associated with a privileged account that "
+                    "cannot be accessed via LMS launch."
+                )
+            lti_repo.link_lti_identity(conn, email_row[0], lti_sub, issuer)
             # Promote to professor if Canvas says Instructor but account is student.
             # Never demote an existing professor/admin via LTI.
             effective_role = (
@@ -230,7 +239,13 @@ def _upsert_lti_user(conn, launch_data):
         raise RuntimeError("Failed to resolve LTI user")
 
     user_id, user_name, user_email, user_role = user_row[0], user_row[1], user_row[2], user_row[3]
-    jwt_token = create_jwt_token(user_id, user_role, user_name, user_email)
+    jwt_token = create_jwt_token(
+        user_id,
+        user_role,
+        user_name,
+        user_email,
+        token_version=get_user_token_version(conn, user_id),
+    )
     return (user_id, user_name, user_email, user_role), jwt_token
 
 
@@ -639,9 +654,15 @@ def list_lti_configs():
 @bp.route("/api/lti/config", methods=["POST"])
 @csrf_exempt
 @require_auth
-@require_role("professor", "superadmin")
+@require_role("superadmin")
 def create_lti_config():
-    """Register a new LMS platform."""
+    """Register a new LMS platform (superadmin only).
+
+    An LTI platform registration declares a TRUSTED issuer + JWKS key set used
+    to validate launch tokens. Allowing arbitrary professors to register
+    platforms would let them sign their own launches and impersonate any user,
+    so this is restricted to superadmins.
+    """
     data = request.json or {}
     required = [
         "platform_name",
@@ -693,9 +714,9 @@ def create_lti_config():
 @bp.route("/api/lti/config/<config_id>", methods=["DELETE"])
 @csrf_exempt
 @require_auth
-@require_role("professor", "superadmin")
+@require_role("superadmin")
 def delete_lti_config(config_id):
-    """Delete an LTI platform registration (only the creating professor can delete)."""
+    """Delete an LTI platform registration (superadmin only)."""
     conn = get_db_connection()
     deleted = lti_repo.delete_lti_config(conn, config_id, g.user_id)
     if not deleted:
@@ -933,17 +954,17 @@ def _push_ags_grade(conn, class_id, exercise_id, lti_user_id, score, max_score=1
 @csrf_exempt
 @require_auth
 def submit_grade(class_id, exercise_id):
-    """Submit a numeric score (0–100) to the LMS via AGS.
+    """Push the caller's server-graded score for an exercise to the LMS via AGS.
 
-    Called internally after a student submits an exercise attempt.
-    Body: { "score": 85, "max_score": 100 }
+    The score is NOT taken from the request body — it is read from the
+    authoritative server-graded record (exercise_attempts, written by
+    /api/exercises/<id>/grade). This prevents a student from POSTing an
+    arbitrary score (e.g. 100) straight to their LMS gradebook.
     """
-    data = request.json or {}
-    score = data.get("score")
-    max_score = data.get("max_score", 100)
+    from repositories import user_repository as user_repo
 
-    if score is None:
-        return jsonify({"error": "'score' is required"}), 400
+    data = request.json or {}
+    max_score = data.get("max_score", 100)
 
     conn = get_db_connection()
 
@@ -957,9 +978,14 @@ def submit_grade(class_id, exercise_id):
     if not lti_user_id:
         return jsonify({"error": "No LTI identity for this user"}), 400
 
+    # Use the server-graded score, never a client-supplied value.
+    server_score = user_repo.get_max_attempt_score(conn, g.user_id, exercise_id)
+    if server_score is None:
+        return jsonify({"error": "No graded score on record for this exercise"}), 400
+
     try:
-        _push_ags_grade(conn, class_id, exercise_id, lti_user_id, score, max_score)
-        return jsonify({"submitted": True, "score": score, "max_score": max_score})
+        _push_ags_grade(conn, class_id, exercise_id, lti_user_id, server_score, max_score)
+        return jsonify({"submitted": True, "score": server_score, "max_score": max_score})
     except Exception as e:
         logger.error("AGS grade submission failed: %s", e, exc_info=True)
         return jsonify({"error": "Grade submission to LMS failed"}), 502

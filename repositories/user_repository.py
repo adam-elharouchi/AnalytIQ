@@ -536,3 +536,19 @@ def insert_exercise_attempt(
         (user_id, exercise_id, score, accuracy, time_spent, attempt_number),
     )
     cur.close()
+
+
+def get_max_attempt_score(conn, user_id, exercise_id):
+    """Return the highest recorded attempt score for (user, exercise), or None.
+
+    The authoritative server-graded score is written here by the /grade endpoint,
+    so callers can use this as the trusted ceiling for a client-submitted score.
+    """
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT MAX(score) FROM exercise_attempts WHERE user_id = %s AND exercise_id = %s",
+        (user_id, exercise_id),
+    )
+    row = cur.fetchone()
+    cur.close()
+    return row[0] if row and row[0] is not None else None

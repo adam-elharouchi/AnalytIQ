@@ -101,6 +101,7 @@ def create_jwt_token(
     impersonator_id=None,
     expires_hours=None,
     tenant_id=None,
+    token_version=0,
 ):
     """
     Create a JWT token for an authenticated user.
@@ -121,6 +122,7 @@ def create_jwt_token(
     payload = {
         "user_id": user_id,
         "role": role,
+        "tv": int(token_version or 0),  # revocation counter (see users.token_version)
         "iat": datetime.utcnow(),
         "exp": datetime.utcnow() + timedelta(hours=ttl),
     }
@@ -151,6 +153,88 @@ def decode_jwt_token(token):
         jwt.InvalidTokenError: If token is invalid
     """
     return jwt.decode(token, config.JWT_SECRET_KEY, algorithms=[config.JWT_ALGORITHM])
+
+
+def get_user_token_version(conn, user_id):
+    """Return the user's current token_version, or 0 on any error/missing column.
+
+    Rolls back on failure so a pooled connection is never returned in an aborted
+    transaction state.
+    """
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT token_version FROM users WHERE user_id = %s", (user_id,))
+        row = cur.fetchone()
+        cur.close()
+        return int(row[0]) if row and row[0] is not None else 0
+    except Exception:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        return 0
+
+
+def bump_user_token_version(conn, user_id):
+    """Increment the user's token_version, revoking all outstanding JWTs.
+
+    Best-effort: the caller commits. Returns True on success. Does NOT commit.
+    """
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "UPDATE users SET token_version = COALESCE(token_version, 0) + 1 WHERE user_id = %s",
+            (user_id,),
+        )
+        cur.close()
+        return True
+    except Exception as exc:
+        logger.warning("Failed to bump token_version for %s: %s", user_id, exc)
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        return False
+
+
+# ---------------------------------------------------------------------------
+# Short-lived media access tokens (capability URLs)
+# ---------------------------------------------------------------------------
+# Media endpoints (chapter PDFs, resource downloads) are loaded via <iframe src>
+# / <a href> / pdf.js, which cannot attach an Authorization header. An authorized
+# client first mints a short-lived, single-resource capability token (below) and
+# appends it as ?token=...  The serve endpoint then verifies the token matches the
+# requested (kind, resource_id) and is unexpired. Authorization is checked once,
+# at mint time, by the authenticated mint endpoint.
+
+MEDIA_TOKEN_TTL_SECONDS = int(os.getenv("MEDIA_TOKEN_TTL", 600))  # 10 minutes
+
+
+def create_media_token(kind, resource_id, ttl_seconds=MEDIA_TOKEN_TTL_SECONDS):
+    """Return a signed, short-lived token granting read access to one resource."""
+    payload = {
+        "scope": "media",
+        "kind": kind,
+        "rid": str(resource_id),
+        "iat": datetime.utcnow(),
+        "exp": datetime.utcnow() + timedelta(seconds=ttl_seconds),
+    }
+    return jwt.encode(payload, config.JWT_SECRET_KEY, algorithm=config.JWT_ALGORITHM)
+
+
+def verify_media_token(token, kind, resource_id):
+    """Return True iff *token* is a valid, unexpired media token for (kind, resource_id)."""
+    if not token:
+        return False
+    try:
+        payload = jwt.decode(token, config.JWT_SECRET_KEY, algorithms=[config.JWT_ALGORITHM])
+    except jwt.InvalidTokenError:
+        return False
+    return (
+        payload.get("scope") == "media"
+        and payload.get("kind") == kind
+        and payload.get("rid") == str(resource_id)
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -292,15 +376,19 @@ def require_auth(f):
         except jwt.InvalidTokenError:
             return jsonify({"error": "Invalid token. Please sign in again."}), 401
 
-        # Reject disabled accounts even when they hold a valid JWT.
-        # Fail open (pass through) if the DB check itself errors, so a DB
-        # hiccup does not lock out all users.
+        # Reject disabled accounts and revoked tokens even when the JWT is valid.
+        # Fail open (pass through) only if the DB check itself errors, so a DB
+        # hiccup does not lock out all users. A definite mismatch fails closed.
+        _revoked = False
         try:
             from core.database import get_db_connection
 
             _conn = get_db_connection()
             _cur = _conn.cursor()
-            _cur.execute("SELECT account_status FROM users WHERE user_id = %s", (g.user_id,))
+            _cur.execute(
+                "SELECT account_status, token_version FROM users WHERE user_id = %s",
+                (g.user_id,),
+            )
             _row = _cur.fetchone()
             _cur.close()
             if _row and _row[0] == "disabled":
@@ -314,8 +402,14 @@ def require_auth(f):
                     ),
                     403,
                 )
+            # Token revocation: the token's tv claim must match the stored counter.
+            if _row and _row[1] is not None and int(_row[1]) != int(payload.get("tv", 0)):
+                _revoked = True
         except Exception:
-            pass  # fail open
+            pass  # fail open on DB error
+
+        if _revoked:
+            return jsonify({"error": "Session expired. Please sign in again."}), 401
 
         return f(*args, **kwargs)
 

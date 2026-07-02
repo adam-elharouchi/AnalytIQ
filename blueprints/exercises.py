@@ -10,7 +10,7 @@ import config
 from core.audit import audit
 from core.auth import require_auth, validate_fields
 from core.database import get_db_connection
-from core.extensions import csrf_exempt
+from core.extensions import csrf_exempt, limiter
 from repositories import exercise_repository as exercise_repo
 from repositories import flywheel_repository as flywheel_repo
 from services.ai_grader import grade_with_ai
@@ -18,6 +18,19 @@ from services.code_runner import run_code
 
 logger = logging.getLogger(__name__)
 bp = Blueprint("exercises", __name__)
+
+
+def _code_exec_key():
+    """Rate-limit key: the authenticated user_id (set by @require_auth)."""
+    return getattr(g, "user_id", None) or "anonymous"
+
+
+def _apply_code_exec_limit(f):
+    """Per-user rate limit for code execution (bounds subprocess spawning DoS)."""
+    if limiter is None:
+        return f
+    return limiter.limit("30 per minute", key_func=_code_exec_key)(f)
+
 
 # ---------------------------------------------------------------------------
 # Unicode sanitisation for student code submissions
@@ -215,6 +228,15 @@ def get_exercise_details(exercise_id):
         if not row:
             return jsonify({"error": "Exercise not found"}), 404
 
+        # solution_code is an answer key — expose only to the owning professor
+        # or a superadmin; students must never receive it.
+        from repositories import class_repository as class_repo
+
+        class_id = row[2]
+        role = getattr(g, "user_role", None) or "student"
+        owner = class_repo.get_class_owner(conn, class_id) if class_id else None
+        can_see_solution = (owner is not None and owner == g.user_id) or role == "superadmin"
+
         return (
             jsonify(
                 {
@@ -225,7 +247,7 @@ def get_exercise_details(exercise_id):
                         "title": row[3],
                         "description": row[4],
                         "difficulty": row[5],
-                        "solution_code": row[6],
+                        "solution_code": row[6] if can_see_solution else "",
                     }
                 }
             ),
@@ -469,6 +491,34 @@ def grade_exercise(exercise_id):
         except Exception as ags_err:
             logger.warning("AGS passback skipped for %s: %s", exercise_id, ags_err)
 
+        # ── Record the AUTHORITATIVE server-graded attempt ────────────────────
+        # The trusted source of truth for leaderboards, progress, and AGS
+        # passback. The client /practice-progress and /ags endpoints cap the
+        # client-submitted score to this value, so a student cannot forge a grade.
+        try:
+            from repositories import user_repository as user_repo
+
+            _prev = user_repo.get_current_progress(conn, g.user_id, exercise_id)
+            _attempt_n = (_prev[1] if _prev and _prev[1] else 0) + 1
+            _time_spent = int(data["time_spent"]) if data.get("time_spent") else 0
+            user_repo.insert_exercise_attempt(
+                conn,
+                g.user_id,
+                exercise_id,
+                int(result["total_score"]),
+                round(result["total_score"] / 100.0, 4),
+                _time_spent,
+                _attempt_n,
+            )
+            conn.commit()
+        except Exception as _attempt_err:
+            conn.rollback()
+            logger.warning(
+                "Could not record authoritative graded attempt for %s: %s",
+                exercise_id,
+                _attempt_err,
+            )
+
         return (
             jsonify(
                 {
@@ -524,6 +574,7 @@ def rate_exercise(exercise_id):
 @bp.route("/api/code/run", methods=["POST"])
 @csrf_exempt
 @require_auth
+@_apply_code_exec_limit
 def run_code_endpoint():
     """
     Execute code in a live sandbox and return stdout/stderr — no grading.

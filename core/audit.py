@@ -45,6 +45,9 @@ ACTIONS = {
     # Chapters
     "CREATE_CHAPTER",
     "DELETE_CHAPTER",
+    # Resources
+    "UPDATE_RESOURCE",
+    "DELETE_RESOURCE",
     # Exercises
     "CREATE_EXERCISE",
     "DELETE_EXERCISE",

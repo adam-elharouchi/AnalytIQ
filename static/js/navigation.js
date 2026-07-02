@@ -74,10 +74,11 @@ document.addEventListener('DOMContentLoaded', function () {
         <li><a href="/code-assistant" ${currentPage === 'code-assistant' ? 'class="active"' : ''}>Code</a></li>
       `;
     } else {
-      // Students: My Classes, Code
+      // Students: My Classes, Code, Portfolio
       roleLinks = `<li><a href="/student-classes" ${currentPage === 'student-classes' || currentPage === 'student-class' ? 'class="active"' : ''}>My Classes</a></li>`;
       commonLinks = `
         <li><a href="/code-assistant" ${currentPage === 'code-assistant' ? 'class="active"' : ''}>Code</a></li>
+        <li><a href="/portfolio" ${window.location.pathname.startsWith('/portfolio') ? 'class="active"' : ''}>Portfolio</a></li>
       `;
     }
   } else {
