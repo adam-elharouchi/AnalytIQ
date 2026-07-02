@@ -311,6 +311,18 @@ def register_request_hooks(app) -> None:
                     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
                     response.headers["Pragma"] = "no-cache"
 
+        # Minimal ENFORCED CSP, applied wherever a view has not set its own
+        # stricter policy (e.g. the sandboxed chapter-HTML response). Both
+        # directives are safe to enforce globally — they do not depend on inline
+        # scripts or framing:
+        #   object-src 'none'  → blocks <object>/<embed>/plugin-based injection
+        #   base-uri 'self'    → blocks <base>-tag hijacking of relative URLs
+        # script-src is intentionally NOT enforced yet (the legacy templates use
+        # inline scripts); the Report-Only policy below tracks that for a future
+        # nonce migration and also monitors frame-ancestors for clickjacking.
+        if "Content-Security-Policy" not in response.headers:
+            response.headers["Content-Security-Policy"] = "object-src 'none'; base-uri 'self'"
+
         response.headers["Content-Security-Policy-Report-Only"] = (
             "default-src 'self'; "
             "script-src 'self' 'unsafe-inline' "
