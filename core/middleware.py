@@ -52,15 +52,42 @@ def _refresh_ip_blocklist():
 # ---------------------------------------------------------------------------
 
 
+def check_origin_verify():
+    """Reject requests that did not pass through Cloudflare (opt-in).
+
+    Only enforced when ORIGIN_VERIFY_SECRET is configured. Cloudflare injects a
+    matching X-Origin-Verify header via a Transform Rule; a request that skips
+    Cloudflare and hits the origin directly lacks it and is refused. This is what
+    makes CF-Connecting-IP (used for rate limiting and audit) trustworthy.
+
+    /api/health is exempt — Render's health probe hits the origin directly and
+    does not carry the header.
+    """
+    import config
+    from flask import request, jsonify
+
+    secret = config.ORIGIN_VERIFY_SECRET
+    if not secret:
+        return  # disabled until both Cloudflare + the env var are configured
+    if request.method == "OPTIONS":
+        return
+    path = request.path
+    if path.startswith("/api/health") or path == "/health":
+        return
+    if request.headers.get("X-Origin-Verify") != secret:
+        return (jsonify({"error": "Forbidden"}), 403)
+
+
 def check_ip_blocklist():
     """Block requests from IPs on the blocklist (403)."""
     from flask import request, jsonify
+    from core.extensions import get_client_ip
 
     if request.method == "OPTIONS":
         return  # handled by handle_options()
 
     _refresh_ip_blocklist()
 
-    remote_ip = request.remote_addr or ""
+    remote_ip = get_client_ip() or ""
     if remote_ip in _ip_cache["ips"]:
         return (jsonify({"error": "Access denied."}), 403)
