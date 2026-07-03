@@ -66,8 +66,16 @@ _VALID_PROVIDER_TYPES = {"google", "microsoft", "oidc"}
 
 
 def _get_fernet() -> Fernet:
-    """Derive a Fernet cipher from the application SECRET_KEY."""
-    key_bytes = hashlib.sha256(config.SECRET_KEY.encode()).digest()
+    """Derive the Fernet cipher for stored SSO client secrets.
+
+    Uses the dedicated SSO_ENCRYPTION_KEY when set, otherwise falls back to
+    SECRET_KEY (backward compatible — existing ciphertext still decrypts). Set a
+    distinct SSO_ENCRYPTION_KEY so rotating SECRET_KEY/JWT_SECRET_KEY does not
+    invalidate stored SSO secrets. Changing SSO_ENCRYPTION_KEY requires
+    re-entering each provider's client secret.
+    """
+    key_source = config.SSO_ENCRYPTION_KEY or config.SECRET_KEY
+    key_bytes = hashlib.sha256(key_source.encode()).digest()
     return Fernet(base64.urlsafe_b64encode(key_bytes))
 
 

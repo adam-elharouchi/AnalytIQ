@@ -117,7 +117,15 @@ jobs:
       run: |
         pip install bandit
         bandit -r . --exclude ./.venv,./tests,./scripts,./frontend,./static -ll -f json -o bandit-report.json
-    
+
+    - name: Dependency vulnerability scan (pip-audit)
+      # Non-gating for now — surfaces known CVEs in requirements without blocking.
+      # Flip to a failing gate once the reported advisories are triaged.
+      continue-on-error: true
+      run: |
+        pip install pip-audit
+        pip-audit -r requirements.txt --desc
+
     - name: Upload security report
       uses: actions/upload-artifact@v4
       with:

@@ -81,6 +81,13 @@ def configure_app(app) -> None:
     app.config["UPLOAD_FOLDER"] = config.UPLOAD_FOLDER
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
+    # Surface non-fatal security warnings (coupled secrets, missing origin verify).
+    try:
+        for _warning in config.config_security_warnings():
+            logger.warning("Config security warning: %s", _warning)
+    except Exception:
+        pass
+
 
 # ---------------------------------------------------------------------------
 # Sentry
@@ -232,8 +239,10 @@ def register_request_hooks(app) -> None:
     """Register before/after request hooks: request-ID, CORS, OPTIONS, security headers."""
     from flask import g, request
 
-    from core.middleware import check_ip_blocklist
+    from core.middleware import check_ip_blocklist, check_origin_verify
 
+    # Origin-verify runs first: reject traffic that bypassed Cloudflare (opt-in).
+    app.before_request(check_origin_verify)
     app.before_request(check_ip_blocklist)
 
     @app.before_request

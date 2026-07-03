@@ -130,6 +130,12 @@ _cors_default = "" if ENV == "production" else "*"
 CORS_ORIGINS = [o.strip() for o in os.getenv("CORS_ORIGINS", _cors_default).split(",") if o.strip()]
 CORS_MAX_AGE = int(os.getenv("CORS_MAX_AGE", 3600))
 
+# Shared secret injected by Cloudflare (Transform Rule → X-Origin-Verify header).
+# When set, requests missing the matching header are refused (except /api/health),
+# so the origin only serves traffic that came through Cloudflare — which makes
+# CF-Connecting-IP trustworthy. Unset → enforcement disabled.
+ORIGIN_VERIFY_SECRET = os.getenv("ORIGIN_VERIFY_SECRET")
+
 # ============================================================================
 # API CONFIGURATION
 # ============================================================================
@@ -215,6 +221,10 @@ SUPABASE_BUCKET = os.getenv("SUPABASE_BUCKET", "pdfs")
 # ============================================================================
 
 FEATURE_SSO = os.getenv("FEATURE_SSO", "False").lower() == "true"
+# Dedicated key for encrypting stored SSO client secrets (Fernet). Falls back to
+# SECRET_KEY when unset. Set a distinct value so rotating SECRET_KEY/JWT does not
+# invalidate stored SSO secrets. Changing it requires re-entering client secrets.
+SSO_ENCRYPTION_KEY = os.getenv("SSO_ENCRYPTION_KEY")
 # Seconds an OAuth2 state token remains valid in Redis
 SSO_STATE_TTL = int(os.getenv("SSO_STATE_TTL", 600))  # 10 minutes
 # Base URL used to build SSO callback URIs and post-login redirects
@@ -299,6 +309,28 @@ def validate_config():
         errors.append("SECRET_KEY must be changed in production")
 
     return errors
+
+
+def config_security_warnings():
+    """Non-fatal security warnings surfaced at startup (logged; do not block boot)."""
+    warnings = []
+    if ENV == "production":
+        if JWT_SECRET_KEY == SECRET_KEY:
+            warnings.append(
+                "JWT_SECRET_KEY is not set separately from SECRET_KEY — set a distinct "
+                "JWT_SECRET_KEY so rotating one key does not affect the other."
+            )
+        if FEATURE_SSO and not SSO_ENCRYPTION_KEY:
+            warnings.append(
+                "SSO_ENCRYPTION_KEY is unset — stored SSO client secrets are encrypted "
+                "with SECRET_KEY; set a dedicated SSO_ENCRYPTION_KEY."
+            )
+        if not ORIGIN_VERIFY_SECRET:
+            warnings.append(
+                "ORIGIN_VERIFY_SECRET is unset — the origin does not verify Cloudflare, "
+                "so CF-Connecting-IP could be spoofed via direct-to-origin requests."
+            )
+    return warnings
 
 
 # ============================================================================
