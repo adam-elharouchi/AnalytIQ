@@ -18,6 +18,7 @@ from flask import Blueprint, jsonify, request
 
 from core.audit import audit
 from core.auth import (
+    DUMMY_PASSWORD_HASH,
     create_jwt_token,
     create_refresh_token,
     decode_jwt_token,
@@ -199,6 +200,10 @@ def signin():
 
         user = auth_repo.get_user_by_email(conn, email)
         if not user:
+            # Run a real bcrypt comparison against a dummy hash so the response
+            # time matches the "user exists" path — prevents email enumeration
+            # via a timing side-channel.
+            verify_password(password or "", DUMMY_PASSWORD_HASH)
             return jsonify({"error": "Invalid email or password"}), 401
 
         user_id, name, user_email, stored_hash, role, tenant_id = user

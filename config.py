@@ -122,8 +122,12 @@ LTI_TOOL_URL = os.getenv("LTI_TOOL_URL", "https://myanalytiq.org")
 # Lifetime of LTI launch sessions stored in DB (seconds)
 LTI_SESSION_TTL = int(os.getenv("LTI_SESSION_TTL", 3600))
 
-# CORS
-CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*").split(",")
+# CORS — in production an explicit allowlist must be provided via the
+# CORS_ORIGINS env var; if it is missing the list is empty so no cross-origin
+# request is permitted (same-origin only). Non-production envs keep the "*"
+# convenience default. This prevents an accidentally wide-open prod deployment.
+_cors_default = "" if ENV == "production" else "*"
+CORS_ORIGINS = [o.strip() for o in os.getenv("CORS_ORIGINS", _cors_default).split(",") if o.strip()]
 CORS_MAX_AGE = int(os.getenv("CORS_MAX_AGE", 3600))
 
 # ============================================================================

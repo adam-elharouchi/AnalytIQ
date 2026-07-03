@@ -92,9 +92,11 @@ def audit(conn, action, *, resource_type=None, resource_id=None, details=None):
             user_id = None
 
         try:
-            from flask import g as flask_g, request as flask_request
+            from flask import g as flask_g
+            from core.extensions import get_client_ip
 
-            ip_address = flask_request.remote_addr
+            # Real client IP (Cloudflare-aware), not a spoofable X-Forwarded-For.
+            ip_address = get_client_ip()
 
             # Include impersonator ID so we can trace the real actor
             impersonator_id = getattr(flask_g, "impersonator_id", None)

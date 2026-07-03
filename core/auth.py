@@ -293,6 +293,14 @@ def hash_password(password):
     return hashed.decode("utf-8")
 
 
+# Precomputed bcrypt hash (computed once at import). Used by signin to run a
+# real bcrypt comparison even when the email is unknown, so response latency
+# cannot be used to enumerate which emails have accounts (timing oracle).
+DUMMY_PASSWORD_HASH = bcrypt.hashpw(b"analytiq-timing-equaliser", bcrypt.gensalt(rounds=12)).decode(
+    "utf-8"
+)
+
+
 def verify_password(password, hashed_password):
     """
     Verify password against bcrypt hash.

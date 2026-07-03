@@ -5,14 +5,39 @@ and later configured via init_app() in app.py.
 """
 
 # ---------------------------------------------------------------------------
+# Client IP resolution
+# ---------------------------------------------------------------------------
+
+
+def get_client_ip():
+    """Return the real client IP, resistant to X-Forwarded-For spoofing.
+
+    Prefers ``CF-Connecting-IP`` (Cloudflare sets this on every proxied request;
+    a client going through Cloudflare cannot forge it), then falls back to the
+    socket peer. Used as the rate-limit key and the audit-log IP so a client
+    cannot rotate X-Forwarded-For to bypass per-IP limits or poison audit rows.
+
+    NOTE: for complete protection the origin (Render) must only accept traffic
+    from Cloudflare — otherwise a request sent directly to the origin URL could
+    set a fake CF-Connecting-IP. Restrict origin ingress to Cloudflare ranges or
+    require a shared secret header at the infra layer.
+    """
+    from flask import request
+
+    cf = request.headers.get("CF-Connecting-IP")
+    if cf:
+        return cf.strip()
+    return request.remote_addr or "127.0.0.1"
+
+
+# ---------------------------------------------------------------------------
 # Rate Limiting
 # ---------------------------------------------------------------------------
 
 try:
     from flask_limiter import Limiter
-    from flask_limiter.util import get_remote_address
 
-    limiter = Limiter(key_func=get_remote_address)
+    limiter = Limiter(key_func=get_client_ip)
 except ImportError:
     limiter = None
 
