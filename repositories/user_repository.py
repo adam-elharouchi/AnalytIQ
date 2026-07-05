@@ -132,8 +132,25 @@ def update_password_hash(conn, user_id, new_hash):
 
 
 def delete_user(conn, user_id):
+    """Delete a user and their associated rows (mirrors the superadmin cascade).
+
+    Child rows are removed before the users row so foreign keys without ON DELETE
+    CASCADE don't block the delete. Newer tables (portfolio, flywheel, sso/lti
+    identities) are assumed to cascade from the users FK; if any do not, add them
+    here and to the superadmin delete.
+    """
     cur = conn.cursor()
-    cur.execute("DELETE FROM users WHERE user_id = %s", (user_id,))
+    cur.execute("DELETE FROM class_enrollments WHERE student_id  = %s", (user_id,))
+    cur.execute("DELETE FROM classes           WHERE professor_id = %s", (user_id,))
+    cur.execute("DELETE FROM conversations     WHERE user_id      = %s", (user_id,))
+    cur.execute("DELETE FROM exercise_attempts WHERE user_id      = %s", (user_id,))
+    cur.execute("DELETE FROM practice_progress WHERE user_id      = %s", (user_id,))
+    cur.execute("DELETE FROM ai_agent_memory   WHERE user_id      = %s", (user_id,))
+    cur.execute("DELETE FROM ai_agent_digest   WHERE user_id      = %s", (user_id,))
+    cur.execute("DELETE FROM user_profiles     WHERE user_id      = %s", (user_id,))
+    cur.execute("DELETE FROM user_settings     WHERE user_id      = %s", (user_id,))
+    cur.execute("DELETE FROM user_preferences  WHERE user_id      = %s", (user_id,))
+    cur.execute("DELETE FROM users             WHERE user_id      = %s", (user_id,))
     cur.close()
 
 

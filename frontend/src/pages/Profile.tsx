@@ -381,6 +381,25 @@ function NotificationsSection({ settings }: NotificationsSectionProps) {
     deleteMutation.mutate()
   }
 
+  async function handleExport() {
+    // Goes through apiClient so the 401→refresh flow applies; the export is JSON,
+    // which we re-serialise into a downloadable blob.
+    const result = await apiClient.get<Record<string, unknown>>('/users/export')
+    if (!result.ok || !result.data) {
+      setDeleteAlert({ message: result.error ?? 'Could not export your data.', type: 'error' })
+      return
+    }
+    const blob = new Blob([JSON.stringify(result.data, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'analytiq_data.json'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <section className="profile-section">
       <h2 className="profile-section-title">Notifications</h2>
@@ -403,6 +422,16 @@ function NotificationsSection({ settings }: NotificationsSectionProps) {
           <span>Email Notifications</span>
         </label>
         <p className="form-hint">Receive emails about activity in your classes.</p>
+      </div>
+
+      <div className="form-group">
+        <h3 className="profile-section-title">Your Data</h3>
+        <p className="form-hint">
+          Download a copy of the data AnalytIQ holds about your account (JSON).
+        </p>
+        <button type="button" className="btn btn-secondary" onClick={handleExport}>
+          Download My Data
+        </button>
       </div>
 
       <div className="danger-zone">
