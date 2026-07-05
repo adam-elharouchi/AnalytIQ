@@ -221,11 +221,118 @@ def update_password():
         return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
 
+@bp.route("/api/users/export", methods=["GET"])
+@require_auth
+def export_my_data():
+    """Export the authenticated user's own data as a JSON download (GDPR/FERPA).
+
+    Best-effort per section: a section whose query fails is returned as null
+    rather than failing the whole export.
+    """
+    import json as _json
+    from flask import Response
+
+    user_id = g.user_id
+    conn = get_db_connection()
+    data = {"exported_at": datetime.utcnow().isoformat() + "Z", "user_id": user_id}
+
+    def _section(name, fn):
+        try:
+            data[name] = fn()
+        except Exception as exc:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+            logger.warning("export: section %s failed: %s", name, exc)
+            data[name] = None
+
+    def _rows(sql, params):
+        cur = conn.cursor()
+        cur.execute(sql, params)
+        cols = [d[0] for d in cur.description]
+        out = [dict(zip(cols, row)) for row in cur.fetchall()]
+        cur.close()
+        return out
+
+    def _one(sql, params):
+        rows = _rows(sql, params)
+        return rows[0] if rows else {}
+
+    _section(
+        "account",
+        lambda: _one(
+            "SELECT user_id, name, email, role, account_status, created_at, last_login "
+            "FROM users WHERE user_id = %s",
+            (user_id,),
+        ),
+    )
+    if not data.get("account"):
+        return jsonify({"error": "User not found"}), 404
+
+    _section("profile", lambda: _one("SELECT * FROM user_profiles WHERE user_id = %s", (user_id,)))
+    _section("settings", lambda: _one("SELECT * FROM user_settings WHERE user_id = %s", (user_id,)))
+    _section(
+        "preferences",
+        lambda: _one("SELECT * FROM user_preferences WHERE user_id = %s", (user_id,)),
+    )
+    _section(
+        "ai_digest",
+        lambda: _one("SELECT * FROM ai_agent_digest WHERE user_id = %s", (user_id,)),
+    )
+    _section(
+        "ai_memory",
+        lambda: _rows("SELECT * FROM ai_agent_memory WHERE user_id = %s", (user_id,)),
+    )
+    _section(
+        "owned_classes",
+        lambda: _rows(
+            "SELECT class_id, name, description, created_at FROM classes WHERE professor_id = %s",
+            (user_id,),
+        ),
+    )
+    _section(
+        "enrolled_classes",
+        lambda: _rows(
+            "SELECT c.class_id, c.name, ce.enrolled_at "
+            "FROM class_enrollments ce JOIN classes c ON c.class_id = ce.class_id "
+            "WHERE ce.student_id = %s",
+            (user_id,),
+        ),
+    )
+    _section(
+        "exercise_attempts",
+        lambda: _rows(
+            "SELECT exercise_id, score, accuracy, time_spent, attempt_number, attempted_at "
+            "FROM exercise_attempts WHERE user_id = %s ORDER BY attempted_at DESC LIMIT 1000",
+            (user_id,),
+        ),
+    )
+    _section(
+        "practice_progress",
+        lambda: _rows("SELECT * FROM practice_progress WHERE user_id = %s", (user_id,)),
+    )
+    _section(
+        "conversations",
+        lambda: _rows("SELECT * FROM conversations WHERE user_id = %s LIMIT 500", (user_id,)),
+    )
+
+    payload = _json.dumps(data, indent=2, default=str)
+    email = (data.get("account") or {}).get("email") or user_id
+    safe_name = str(email).replace("@", "_").replace(".", "_")
+    return Response(
+        payload,
+        mimetype="application/json",
+        headers={"Content-Disposition": f'attachment; filename="analytiq_data_{safe_name}.json"'},
+    )
+
+
 @bp.route("/api/users/delete", methods=["DELETE"])
 @csrf_exempt
 @require_auth
 def delete_user():
-    """Delete user account"""
+    """Delete the caller's own account and all associated data."""
+    conn = None
     try:
         user_id = g.user_id
         conn = get_db_connection()
@@ -237,6 +344,8 @@ def delete_user():
         return jsonify({"success": True}), 200
 
     except Exception as e:
+        if conn:
+            conn.rollback()
         logger.error("Unexpected error: %s", e, exc_info=True)
         return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 

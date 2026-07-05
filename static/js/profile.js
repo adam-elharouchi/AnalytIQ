@@ -306,6 +306,28 @@ async function saveSettings() {
   }
 }
 
+// Export account data (GDPR/FERPA) — fetch with auth, then trigger a download.
+async function exportMyData() {
+  try {
+    const resp = await authFetch(`${window.API_BASE_URL}/users/export`);
+    if (!resp.ok) {
+      if (typeof showNotification === 'function') showNotification('Could not export your data. Please try again.', 'error');
+      return;
+    }
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'analytiq_data.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    if (typeof showNotification === 'function') showNotification('Could not export your data.', 'error');
+  }
+}
+
 // Delete account
 async function deleteAccount() {
   if (!confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
