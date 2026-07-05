@@ -178,6 +178,41 @@ def _pop_state(state: str) -> Optional[dict]:
     return None
 
 
+# Seconds a one-time SSO exchange code stays valid (kept short — it is redeemed
+# immediately by the login page).
+_SSO_CODE_TTL = 120
+
+
+def _store_sso_code(code: str, data: dict) -> bool:
+    """Store the issued token pair under a one-time code. Returns False if Redis
+    is unavailable (the caller then falls back to an error redirect)."""
+    try:
+        from core.cache import redis_client
+
+        if redis_client:
+            redis_client.setex(f"sso_code:{code}", _SSO_CODE_TTL, json.dumps(data))
+            return True
+    except Exception as exc:
+        logger.warning("Could not store SSO exchange code in Redis: %s", exc)
+    return False
+
+
+def _pop_sso_code(code: str) -> Optional[dict]:
+    """Retrieve and atomically delete a one-time SSO code (single use)."""
+    try:
+        from core.cache import redis_client
+
+        if redis_client:
+            key = f"sso_code:{code}"
+            raw = redis_client.get(key)
+            if raw:
+                redis_client.delete(key)
+                return json.loads(raw)
+    except Exception as exc:
+        logger.warning("Could not retrieve SSO exchange code from Redis: %s", exc)
+    return None
+
+
 # ---------------------------------------------------------------------------
 # Tenant access guard (for admin routes)
 # ---------------------------------------------------------------------------
@@ -501,7 +536,16 @@ def sso_callback(provider_id):
             token_version=_tv,
         )
         refresh = create_refresh_token(user_id, token_version=_tv)
-        return redirect(f"{login_page}?sso_token={token}&sso_refresh={refresh}")
+
+        # Deliver the tokens via a one-time code, NOT in the URL. The login page
+        # redeems the code at POST /api/sso/exchange. This keeps the JWTs out of
+        # browser history, server access logs, and Referer headers.
+        code = secrets.token_urlsafe(32)
+        if not _store_sso_code(code, {"token": token, "refresh_token": refresh}):
+            return redirect(
+                f"{login_page}?sso_error=Sign-in+session+unavailable.+Please+try+again."
+            )
+        return redirect(f"{login_page}?sso_code={code}")
 
     except PermissionError as exc:
         logger.warning("SSO domain restriction for provider %s: %s", provider_id, exc)
@@ -513,6 +557,34 @@ def sso_callback(provider_id):
             conn.rollback()
         logger.error("SSO callback error for provider %s: %s", provider_id, exc, exc_info=True)
         return redirect(f"{login_page}?sso_error=An+unexpected+error+occurred.+Please+try+again.")
+
+
+@bp.route("/api/sso/exchange", methods=["POST"])
+@csrf_exempt
+@limiter.limit("30 per minute")
+def sso_exchange():
+    """Redeem a one-time SSO code (from the callback redirect) for the token pair.
+
+    The code is single-use and short-lived; this keeps the JWTs out of the URL.
+    """
+    data = request.json or {}
+    code = (data.get("code") or "").strip()
+    if not code:
+        return jsonify({"error": "code is required"}), 400
+
+    payload = _pop_sso_code(code)
+    if not payload:
+        return jsonify({"error": "Invalid or expired sign-in code. Please sign in again."}), 400
+
+    return (
+        jsonify(
+            {
+                "token": payload.get("token"),
+                "refresh_token": payload.get("refresh_token"),
+            }
+        ),
+        200,
+    )
 
 
 # ---------------------------------------------------------------------------
