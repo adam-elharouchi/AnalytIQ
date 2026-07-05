@@ -381,31 +381,56 @@ async function initSSOLogin(providerId) {
 }
 
 /**
- * Handle an SSO callback token delivered as ?sso_token= in the URL.
- * The backend redirects here after a successful OIDC callback.
+ * Handle an SSO callback: the backend redirects here with a one-time ?sso_code=
+ * which we redeem at /api/sso/exchange for the token pair. Tokens are never put
+ * in the URL, so they don't leak into history / logs / Referer.
  */
-function handleSSOTokenParam() {
+async function handleSSOTokenParam() {
   const params = new URLSearchParams(window.location.search);
-  const ssoToken = params.get('sso_token');
-  const ssoRefresh = params.get('sso_refresh');
+  const ssoCode = params.get('sso_code');
   const ssoError = params.get('sso_error');
 
-  if (ssoError) {
+  const showSsoError = (msg) => {
     const errorDiv = document.getElementById('signinError');
     if (errorDiv) {
-      errorDiv.textContent = decodeURIComponent(ssoError.replace(/\+/g, ' '));
+      errorDiv.textContent = msg;
       errorDiv.style.display = 'block';
     }
+  };
+
+  if (ssoError) {
+    showSsoError(decodeURIComponent(ssoError.replace(/\+/g, ' ')));
     window.history.replaceState({}, '', window.location.pathname);
     return;
   }
 
-  if (ssoToken) {
+  if (!ssoCode) return;
+
+  // Strip the code from the URL immediately (single-use anyway).
+  window.history.replaceState({}, '', window.location.pathname);
+
+  try {
+    const resp = await fetch(`${window.API_BASE_URL}/sso/exchange`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: ssoCode }),
+    });
+    if (!resp.ok) {
+      const data = await resp.json().catch(() => ({}));
+      showSsoError(data.error || 'SSO sign-in failed. Please try again.');
+      return;
+    }
+    const data = await resp.json();
+    if (!data.token) {
+      showSsoError('SSO sign-in failed. Please try again.');
+      return;
+    }
+    authManager.saveToken(data.token);
+    if (data.refresh_token) authManager.saveRefreshToken(data.refresh_token);
     try {
-      const payloadB64 = ssoToken.split('.')[1];
-      const payload = JSON.parse(atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/')));
-      authManager.saveToken(ssoToken);
-      if (ssoRefresh) authManager.saveRefreshToken(ssoRefresh);
+      const payload = JSON.parse(
+        atob(data.token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))
+      );
       authManager.saveUser({
         id: payload.user_id,
         user_id: payload.user_id,
@@ -413,11 +438,10 @@ function handleSSOTokenParam() {
         email: payload.email || '',
         role: payload.role || 'student',
       });
-    } catch (_) {
-      authManager.saveToken(ssoToken);
-      if (ssoRefresh) authManager.saveRefreshToken(ssoRefresh);
-    }
+    } catch (_) { /* token stored; user record best-effort */ }
     window.location.href = '/home';
+  } catch (_) {
+    showSsoError('SSO sign-in failed. Please try again.');
   }
 }
 
