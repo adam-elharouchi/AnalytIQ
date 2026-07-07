@@ -118,7 +118,7 @@ LTI_PRIVATE_KEY = os.getenv("LTI_PRIVATE_KEY", "")
 LTI_PUBLIC_KEY = os.getenv("LTI_PUBLIC_KEY", "")
 LTI_KEY_ID = os.getenv("LTI_KEY_ID", "analytiq-lti-key-1")
 # Canonical base URL of this tool — used in deep linking and JWKS references
-LTI_TOOL_URL = os.getenv("LTI_TOOL_URL", "https://myanalytiq.org")
+LTI_TOOL_URL = os.getenv("LTI_TOOL_URL", "https://myanalytiq.com")
 # Lifetime of LTI launch sessions stored in DB (seconds)
 LTI_SESSION_TTL = int(os.getenv("LTI_SESSION_TTL", 3600))
 
@@ -228,7 +228,7 @@ SSO_ENCRYPTION_KEY = os.getenv("SSO_ENCRYPTION_KEY")
 # Seconds an OAuth2 state token remains valid in Redis
 SSO_STATE_TTL = int(os.getenv("SSO_STATE_TTL", 600))  # 10 minutes
 # Base URL used to build SSO callback URIs and post-login redirects
-FRONTEND_URL = os.getenv("FRONTEND_URL", "https://myanalytiq.org")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "https://myanalytiq.com")
 SSO_REDIRECT_BASE_URL = FRONTEND_URL
 
 # ============================================================================
