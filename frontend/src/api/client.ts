@@ -122,8 +122,8 @@ export const apiClient = {
   put: <T>(path: string, body?: unknown, headers?: Record<string, string>) =>
     request<T>('PUT', path, body, headers),
 
-  del: <T>(path: string, headers?: Record<string, string>) =>
-    request<T>('DELETE', path, undefined, headers),
+  del: <T>(path: string, body?: unknown, headers?: Record<string, string>) =>
+    request<T>('DELETE', path, body, headers),
 
   upload: <T>(path: string, formData: FormData, headers?: Record<string, string>) =>
     request<T>('POST', path, formData, headers),

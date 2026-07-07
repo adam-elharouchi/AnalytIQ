@@ -348,10 +348,24 @@ async function deleteAccount() {
     return;
   }
 
+  // Re-confirm identity with the account password before this destructive,
+  // cascading delete. SSO/Google/Microsoft accounts have no password — they can
+  // leave this blank and the server proceeds on the authenticated session alone.
+  const password = prompt(
+    'Enter your password to confirm deletion.\n' +
+    '(If you sign in with Google/Microsoft SSO, leave this blank and click OK.)'
+  );
+  if (password === null) {
+    // User cancelled the prompt — abort the deletion.
+    return;
+  }
+
   try {
     // Delete via API - ensure user_id is a string
     const response = await authFetch(`${window.API_BASE_URL}/users/delete`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: password })
     });
 
     const data = await response.json();
