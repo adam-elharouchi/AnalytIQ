@@ -351,7 +351,7 @@ function NotificationsSection({ settings }: NotificationsSectionProps) {
   })
 
   const deleteMutation = useMutation({
-    mutationFn: () => apiClient.del('/users/delete'),
+    mutationFn: (password: string) => apiClient.del('/users/delete', { password }),
     onSuccess: (result) => {
       if (!result.ok) {
         setDeleteAlert({ message: result.error ?? 'Failed to delete account', type: 'error' })
@@ -378,7 +378,16 @@ function NotificationsSection({ settings }: NotificationsSectionProps) {
     )
     if (!second) return
 
-    deleteMutation.mutate()
+    // Re-confirm identity with the account password before this destructive,
+    // cascading delete. SSO accounts have no password — leaving this blank lets
+    // the server proceed on the authenticated session alone.
+    const password = window.prompt(
+      'Enter your password to confirm deletion.\n' +
+        '(If you sign in with Google/Microsoft SSO, leave this blank and click OK.)',
+    )
+    if (password === null) return // cancelled
+
+    deleteMutation.mutate(password)
   }
 
   async function handleExport() {

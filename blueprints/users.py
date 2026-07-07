@@ -331,11 +331,28 @@ def export_my_data():
 @csrf_exempt
 @require_auth
 def delete_user():
-    """Delete the caller's own account and all associated data."""
+    """Delete the caller's own account and all associated data.
+
+    Account deletion is destructive and cascades across every child table, so we
+    re-confirm the caller's identity: a password-backed account must supply its
+    current password. SSO/LTI-only accounts (password_hash IS NULL) have no
+    password to check — the valid session token is the only credential they have —
+    so they are allowed through on the authenticated request alone.
+    """
     conn = None
     try:
         user_id = g.user_id
         conn = get_db_connection()
+
+        stored_hash = user_repo.get_password_hash(conn, user_id)
+        if stored_hash:
+            data = request.get_json(silent=True) or {}
+            password = data.get("password") or data.get("currentPassword")
+            if not password:
+                return jsonify({"error": "Password confirmation required"}), 400
+            is_valid, _ = verify_password(password, stored_hash)
+            if not is_valid:
+                return jsonify({"error": "Password is incorrect"}), 401
 
         user_repo.delete_user(conn, user_id)
         audit(conn, "DELETE_USER", resource_type="user", resource_id=user_id)
