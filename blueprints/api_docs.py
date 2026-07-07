@@ -109,7 +109,7 @@ def create_api_spec() -> APISpec:
             contact=dict(name="AnalytIQ Support", email="support@myanalytiq.org"),
         ),
         servers=[
-            dict(url="https://myanalytiq.org", description="Production"),
+            dict(url="https://myanalytiq.com", description="Production"),
             dict(url="http://localhost:5000", description="Local dev"),
         ],
         tags=[

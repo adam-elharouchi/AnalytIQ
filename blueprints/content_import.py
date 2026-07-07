@@ -101,7 +101,7 @@ def _fetch_bytes(url: str) -> bytes:
     against the SSRF allowlist (a server that 302s to http://169.254.169.254/
     or http://10.0.0.1/ is rejected).
     """
-    headers = {"User-Agent": "AnalytIQ/1.0 (+https://myanalytiq.org)"}
+    headers = {"User-Agent": "AnalytIQ/1.0 (+https://myanalytiq.com)"}
     current = url
     for _ in range(_MAX_REDIRECTS + 1):
         _assert_public_url(current)
