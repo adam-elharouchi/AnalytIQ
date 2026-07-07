@@ -7,6 +7,8 @@ Extracted from app.py as Phase 1 of Blueprint extraction.
 import logging
 import os
 import re
+import time
+import threading
 import functools
 from datetime import datetime, timedelta
 
@@ -333,6 +335,55 @@ def verify_password(password, hashed_password):
 
 
 # ---------------------------------------------------------------------------
+# Auth-status resilience cache
+# ---------------------------------------------------------------------------
+# require_auth verifies account_status + token_version against the DB on every
+# request. A naive fail-closed on a DB error would mass-log-out every user during
+# a brief DB blip; the old fail-open let disabled/revoked users slip through while
+# the DB was unreachable. We split the difference with a short-lived, per-process
+# cache of each user's last known status: on a DB error we fall back to that
+# cached value (within a grace window) so recently-active users ride through the
+# blip, and we fail CLOSED (503) only when we have nothing cached to reason about.
+# Best-effort and per-worker by design — it is a resilience layer, not a source
+# of truth; the DB remains authoritative whenever it is reachable.
+
+# Grace window (seconds) a cached status stays usable after a DB error.
+_AUTH_STATUS_STALE_GRACE = int(os.getenv("AUTH_STATUS_CACHE_TTL", 300))
+_auth_status_cache = {}  # user_id -> (account_status, token_version, cached_at_monotonic)
+_auth_status_lock = threading.Lock()
+
+
+def _cache_auth_status(user_id, account_status, token_version):
+    """Record the latest DB-confirmed auth status for *user_id* (thread-safe)."""
+    now = time.monotonic()
+    with _auth_status_lock:
+        _auth_status_cache[user_id] = (account_status, token_version, now)
+        # Bound memory: prune stale entries once the map grows large.
+        if len(_auth_status_cache) > 10000:
+            cutoff = now - _AUTH_STATUS_STALE_GRACE
+            for uid in [u for u, v in _auth_status_cache.items() if v[2] < cutoff]:
+                _auth_status_cache.pop(uid, None)
+
+
+def _get_cached_auth_status(user_id):
+    """Return (account_status, token_version) if cached within the grace window, else None."""
+    with _auth_status_lock:
+        entry = _auth_status_cache.get(user_id)
+    if not entry:
+        return None
+    account_status, token_version, cached_at = entry
+    if time.monotonic() - cached_at > _AUTH_STATUS_STALE_GRACE:
+        return None
+    return (account_status, token_version)
+
+
+def _clear_auth_status_cache():
+    """Test helper — drop all cached auth statuses so tests start clean."""
+    with _auth_status_lock:
+        _auth_status_cache.clear()
+
+
+# ---------------------------------------------------------------------------
 # Auth decorators
 # ---------------------------------------------------------------------------
 
@@ -407,10 +458,15 @@ def require_auth(f):
         except jwt.InvalidTokenError:
             return jsonify({"error": "Invalid token. Please sign in again."}), 401
 
-        # Reject disabled accounts and revoked tokens even when the JWT is valid.
-        # Fail open (pass through) only if the DB check itself errors, so a DB
-        # hiccup does not lock out all users. A definite mismatch fails closed.
-        _revoked = False
+        # Enforce account status and token revocation on every request. To close
+        # the fail-open hole (a DB error must not let a disabled/revoked user in)
+        # without mass-logging-out active users on a brief DB blip, we fall back
+        # to a short-lived cached status on a DB error and fail CLOSED (503) only
+        # when nothing is cached. See _cache_auth_status above.
+        account_status = None
+        stored_tv = None
+        have_status = False
+        _conn = None
         try:
             from core.database import get_db_connection
 
@@ -422,24 +478,45 @@ def require_auth(f):
             )
             _row = _cur.fetchone()
             _cur.close()
-            if _row and _row[0] == "disabled":
-                return jsonify({"error": "Account is disabled. Contact support."}), 403
-            if _row and _row[0] == "pending_approval":
-                return (
-                    jsonify(
-                        {
-                            "error": "Account pending approval. An administrator will review your request shortly."
-                        }
-                    ),
-                    403,
-                )
-            # Token revocation: the token's tv claim must match the stored counter.
-            if _row and _row[1] is not None and int(_row[1]) != int(payload.get("tv", 0)):
-                _revoked = True
+            if _row is None:
+                # Valid signature, but the user no longer exists — reject.
+                return jsonify({"error": "Invalid token. Please sign in again."}), 401
+            account_status, stored_tv = _row[0], _row[1]
+            have_status = True
+            _cache_auth_status(g.user_id, account_status, stored_tv)
         except Exception:
-            pass  # fail open on DB error
+            # DB unreachable: don't leave a pooled conn in an aborted txn.
+            if _conn is not None:
+                try:
+                    _conn.rollback()
+                except Exception:
+                    pass
+            cached = _get_cached_auth_status(g.user_id)
+            if cached is not None:
+                account_status, stored_tv = cached
+                have_status = True
 
-        if _revoked:
+        if not have_status:
+            # No DB and no recent cached status → fail closed rather than open.
+            logger.warning("Auth status unavailable for user %s; failing closed", g.user_id)
+            return (
+                jsonify({"error": "Service temporarily unavailable. Please try again."}),
+                503,
+            )
+
+        if account_status == "disabled":
+            return jsonify({"error": "Account is disabled. Contact support."}), 403
+        if account_status == "pending_approval":
+            return (
+                jsonify(
+                    {
+                        "error": "Account pending approval. An administrator will review your request shortly."
+                    }
+                ),
+                403,
+            )
+        # Token revocation: the token's tv claim must match the stored counter.
+        if stored_tv is not None and int(stored_tv) != int(payload.get("tv", 0)):
             return jsonify({"error": "Session expired. Please sign in again."}), 401
 
         return f(*args, **kwargs)
