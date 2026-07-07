@@ -122,11 +122,11 @@ def extract_text_from_pdf_bytes(pdf_bytes):
         str: Extracted text from all pages, or None if extraction fails
     """
     try:
-        import PyPDF2
+        import pypdf
         from io import BytesIO
 
         pdf_file = BytesIO(pdf_bytes)
-        pdf_reader = PyPDF2.PdfReader(pdf_file)
+        pdf_reader = pypdf.PdfReader(pdf_file)
 
         text_content = []
         for page_num in range(len(pdf_reader.pages)):
