@@ -83,7 +83,9 @@ def detect_role_from_email(email):
     if not email:
         return "student"
     email_lower = email.lower()
-    if email_lower.endswith("@myanalytiq.org"):
+    # Both .org and .com map to superadmin during and after the .org → .com
+    # domain migration; either address grants superadmin access.
+    if email_lower.endswith("@myanalytiq.org") or email_lower.endswith("@myanalytiq.com"):
         return "superadmin"
     return "student"  # Default to student
 

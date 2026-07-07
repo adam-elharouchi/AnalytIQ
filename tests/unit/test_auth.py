@@ -22,6 +22,43 @@ def _make_bcrypt_hash(password):
 
 
 # ---------------------------------------------------------------------------
+# Role detection
+# ---------------------------------------------------------------------------
+
+class TestDetectRoleFromEmail:
+    """Both @myanalytiq.org and @myanalytiq.com map to superadmin so that the
+    existing .org admin accounts keep working during and after the domain
+    migration to .com."""
+
+    def test_org_email_is_superadmin(self):
+        from core.auth import detect_role_from_email
+
+        assert detect_role_from_email("admin@myanalytiq.org") == "superadmin"
+
+    def test_com_email_is_superadmin(self):
+        from core.auth import detect_role_from_email
+
+        assert detect_role_from_email("admin@myanalytiq.com") == "superadmin"
+
+    def test_case_insensitive(self):
+        from core.auth import detect_role_from_email
+
+        assert detect_role_from_email("Admin@MyAnalytIQ.COM") == "superadmin"
+        assert detect_role_from_email("Admin@MyAnalytIQ.ORG") == "superadmin"
+
+    def test_other_domain_is_student(self):
+        from core.auth import detect_role_from_email
+
+        assert detect_role_from_email("user@example.com") == "student"
+
+    def test_empty_email_is_student(self):
+        from core.auth import detect_role_from_email
+
+        assert detect_role_from_email("") == "student"
+        assert detect_role_from_email(None) == "student"
+
+
+# ---------------------------------------------------------------------------
 # POST /api/users/signup
 # ---------------------------------------------------------------------------
 

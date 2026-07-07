@@ -168,7 +168,7 @@ def signup():
                         f"<li><strong>Email:</strong> {user[2]}</li>"
                         f"<li><strong>Role:</strong> {user_role}</li>"
                         f"</ul>"
-                        f"<p>Log in to the <a href='https://myanalytiq.org/superadmin-dashboard.html'>"
+                        f"<p>Log in to the <a href='https://myanalytiq.com/superadmin-dashboard.html'>"
                         f"Superadmin Dashboard</a> → Pending Approvals to review.</p>"
                     ),
                 )
@@ -421,7 +421,7 @@ def forgot_password():
 
             frontend_url = config.FRONTEND_URL
             if not frontend_url and request.host_url and "onrender.com" in request.host_url:
-                frontend_url = "https://www.myanalytiq.org"
+                frontend_url = "https://www.myanalytiq.com"
             base_url = (frontend_url or request.host_url).rstrip("/") + "/"
             reset_link = f"{base_url}reset-password.html?token={token}&email={email}"
             _send_reset_email(email, user_row[1], reset_link)
