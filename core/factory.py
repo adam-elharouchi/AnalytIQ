@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import logging
 import os
+import secrets
 import uuid
 
 import config
@@ -248,12 +249,21 @@ def register_request_hooks(app) -> None:
     @app.before_request
     def assign_request_id():
         g.request_id = str(uuid.uuid4())
+        # Per-request CSP nonce. Exposed to templates as {{ csp_nonce }} and
+        # embedded in the CSP header (see after_request) so inline <script> tags
+        # can be allow-listed by nonce instead of 'unsafe-inline'.
+        g.csp_nonce = secrets.token_urlsafe(16)
         try:
             import sentry_sdk
 
             sentry_sdk.set_tag("request_id", g.request_id)
         except Exception:
             pass
+
+    @app.context_processor
+    def inject_csp_nonce():
+        """Make the per-request CSP nonce available to every Jinja template."""
+        return {"csp_nonce": getattr(g, "csp_nonce", "")}
 
     def _get_cors_origin():
         origin = request.headers.get("Origin", "")
@@ -326,15 +336,23 @@ def register_request_hooks(app) -> None:
         # scripts or framing:
         #   object-src 'none'  → blocks <object>/<embed>/plugin-based injection
         #   base-uri 'self'    → blocks <base>-tag hijacking of relative URLs
-        # script-src is intentionally NOT enforced yet (the legacy templates use
-        # inline scripts); the Report-Only policy below tracks that for a future
-        # nonce migration and also monitors frame-ancestors for clickjacking.
+        # script-src is intentionally NOT enforced yet (~220 legacy inline event
+        # handlers remain to be refactored); the nonce-based Report-Only policy
+        # below reports every inline <script>/handler that would break under
+        # enforcement, without blocking anything. Once reports are clean, move
+        # the script-src line here to enforce it.
         if "Content-Security-Policy" not in response.headers:
             response.headers["Content-Security-Policy"] = "object-src 'none'; base-uri 'self'"
 
+        # Nonce-based Report-Only policy. Inline <script> tags carry the matching
+        # nonce (see the {{ csp_nonce }} plumbing); external scripts stay allowed
+        # by host ('self' + the CDNs). 'unsafe-inline' is deliberately dropped so
+        # inline event handlers (onclick=...) and any un-nonced inline script
+        # surface as violations to refactor before script-src is enforced.
+        _nonce = getattr(g, "csp_nonce", "")
         response.headers["Content-Security-Policy-Report-Only"] = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' "
+            f"script-src 'self' 'nonce-{_nonce}' "
             "https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; "
             "style-src 'self' 'unsafe-inline'; "
             "img-src 'self' data:; "

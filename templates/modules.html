@@ -149,7 +149,7 @@
 <!-- JS load order: api-helper.js (head) → auth.js → navigation.js -->
   <script src="/static/js/auth.js"></script>
   <script src="/static/js/navigation.js"></script>
-  <script>
+  <script nonce="{{ csp_nonce }}">
     // Require authentication
     document.addEventListener('DOMContentLoaded', function() {
       const authManager = new AuthManager();
@@ -158,7 +158,7 @@
       }
     });
   </script>
-  <script>
+  <script nonce="{{ csp_nonce }}">
     function expandModule(button) {
       const moduleCard = button.closest('.module-card');
       const details = moduleCard.querySelector('.module-details');

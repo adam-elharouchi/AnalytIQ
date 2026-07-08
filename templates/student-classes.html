@@ -136,7 +136,7 @@
 <script src="/static/js/auth.js"></script>
 <script src="/static/js/navigation.js"></script>
 <script src="/static/js/student-classes.js"></script>
-<script>
+<script nonce="{{ csp_nonce }}">
   document.addEventListener('DOMContentLoaded', function () {
     const authManager = new AuthManager();
     if (!authManager.requireAuth()) return;

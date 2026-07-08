@@ -46,7 +46,7 @@
     </button>
   </div>
 
-  <script>
+  <script nonce="{{ csp_nonce }}">
     /* ------------------------------------------------------------------
        Impersonation exit — callable from any page.
        Restores the original superadmin session and returns to the dashboard.
@@ -121,7 +121,7 @@
               display:flex; flex-direction:column; pointer-events:none;">
   </div>
 
-  <script>
+  <script nonce="{{ csp_nonce }}">
     /* Reposition announcement container below the impersonation bar (if shown),
        and update body paddingTop to keep page content clear of both bars. */
     function _updatePageTopOffset() {

@@ -58,7 +58,7 @@
 
 <script src="/static/js/auth.js"></script>
 <script src="/static/js/navigation.js"></script>
-<script>
+<script nonce="{{ csp_nonce }}">
   // Require authentication for entire website
   document.addEventListener('DOMContentLoaded', function () {
     const authManager = new AuthManager();
