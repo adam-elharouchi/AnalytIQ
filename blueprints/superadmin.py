@@ -24,7 +24,7 @@ from core.auth import (
     get_user_token_version,
     bump_user_token_version,
 )
-from core.audit import audit
+from core.audit import audit, audit_commit
 from core.database import get_db_connection
 from core.extensions import csrf_exempt, rate_limit
 
@@ -1228,6 +1228,10 @@ def export_user_data(user_id):
         ]
 
         cur.close()
+
+        # FERPA: an admin exporting another user's education records is a
+        # disclosure — record who accessed whose data.
+        audit_commit(conn, "EXPORT_USER_DATA", resource_type="user", resource_id=user_id)
 
         payload = _json.dumps(user_data, indent=2, default=str)
         safe_name = user_data["email"].replace("@", "_").replace(".", "_")

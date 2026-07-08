@@ -64,6 +64,11 @@ ACTIONS = {
     "TRANSFER_CLASS",
     # Content Import
     "IMPORT_CHAPTER",
+    # Read / disclosure of education records (FERPA §99.32 disclosure record).
+    # When user_id (the actor) == resource_id it is a self-access, not a
+    # disclosure; when they differ, one user accessed another's records.
+    "EXPORT_USER_DATA",
+    "VIEW_STUDENT_RECORD",
 }
 
 
@@ -125,3 +130,29 @@ def audit(conn, action, *, resource_type=None, resource_id=None, details=None):
 
     except Exception as exc:
         logger.warning("audit() failed for action=%s: %s", action, exc)
+
+
+def audit_commit(conn, action, *, resource_type=None, resource_id=None, details=None):
+    """Record a read/disclosure audit row and commit it on its own.
+
+    ``audit()`` shares the caller's write transaction, but read endpoints (a data
+    export, viewing a student's record) have no pending business write to commit
+    alongside. This helper writes the audit row and commits it, and — like
+    ``audit()`` — never lets an audit-layer failure disrupt the response: a failed
+    INSERT or commit is logged and rolled back, not raised.
+    """
+    try:
+        audit(
+            conn,
+            action,
+            resource_type=resource_type,
+            resource_id=resource_id,
+            details=details,
+        )
+        conn.commit()
+    except Exception as exc:
+        logger.warning("audit_commit() failed for action=%s: %s", action, exc)
+        try:
+            conn.rollback()
+        except Exception:
+            pass
