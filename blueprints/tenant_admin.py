@@ -28,7 +28,7 @@ import logging
 from flask import Blueprint, jsonify, request, g
 
 from core.auth import require_auth, require_tenant_admin, create_jwt_token
-from core.audit import audit
+from core.audit import audit, audit_commit
 from core.database import get_db_connection
 from core.extensions import csrf_exempt, rate_limit
 
@@ -569,6 +569,11 @@ def export_user_data(user_id):
         ]
 
         cur.close()
+
+        # FERPA: a tenant admin exporting another user's education records is a
+        # disclosure — record who accessed whose data.
+        audit_commit(conn, "EXPORT_USER_DATA", resource_type="user", resource_id=user_id)
+
         export = {
             "user": user_data,
             "owned_classes": owned_classes,

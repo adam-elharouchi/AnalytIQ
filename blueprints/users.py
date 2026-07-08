@@ -24,7 +24,7 @@ from flask import Blueprint, g, jsonify, request
 import config
 import core.cache as cache
 import core.pagination as utils
-from core.audit import audit
+from core.audit import audit, audit_commit
 from core.auth import (
     bump_user_token_version,
     hash_password,
@@ -316,6 +316,10 @@ def export_my_data():
         "conversations",
         lambda: _rows("SELECT * FROM conversations WHERE user_id = %s LIMIT 500", (user_id,)),
     )
+
+    # FERPA: record the disclosure. This is a self-access (actor == subject),
+    # but it is still a record of who exported education data and when.
+    audit_commit(conn, "EXPORT_USER_DATA", resource_type="user", resource_id=user_id)
 
     payload = _json.dumps(data, indent=2, default=str)
     email = (data.get("account") or {}).get("email") or user_id

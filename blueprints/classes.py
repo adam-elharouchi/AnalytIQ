@@ -12,7 +12,7 @@ from werkzeug.utils import secure_filename
 import core.cache as cache
 import config
 import core.pagination as utils
-from core.audit import audit
+from core.audit import audit, audit_commit
 from core.auth import require_auth, require_role, validate_fields
 from core.database import get_db_connection
 from core.extensions import csrf_exempt
@@ -715,6 +715,18 @@ def get_student_progress(student_id):
                 }
                 for row in rows
             ]
+
+        # FERPA: a professor/admin viewing an individual student's grades is a
+        # disclosure of that student's education records — record it. Skip the
+        # (unusual) case where the caller is looking at their own record.
+        if str(student_id) != str(user_id):
+            audit_commit(
+                conn,
+                "VIEW_STUDENT_RECORD",
+                resource_type="user",
+                resource_id=student_id,
+                details={"class_id": class_id} if class_id else None,
+            )
 
         return (
             jsonify(
