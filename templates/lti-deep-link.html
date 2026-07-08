@@ -153,7 +153,7 @@
   <input type="hidden" name="title"      id="titleInput"     value="" />
 </form>
 
-<script>
+<script nonce="{{ csp_nonce }}">
   var TOOL_URL = {{ tool_url | tojson }};
   var selectedChapterId   = null;
   var selectedChapterTitle = null;

@@ -120,7 +120,7 @@
   <script src="/static/js/api-helper.js"></script>
   <script src="/static/js/ai-agent.js"></script>
   <script src="/static/js/code-assistant.js"></script>
-  <script>
+  <script nonce="{{ csp_nonce }}">
     // Require authentication for code assistant
     document.addEventListener('DOMContentLoaded', function () {
       const authManager = new AuthManager();

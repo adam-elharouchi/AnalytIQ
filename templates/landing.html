@@ -998,7 +998,7 @@
     </div>
   </footer>
 
-  <script>
+  <script nonce="{{ csp_nonce }}">
     async function handleDemo() {
       const input = document.getElementById('demo-email');
       const email = input.value.trim();

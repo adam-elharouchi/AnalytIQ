@@ -61,7 +61,7 @@
     <div class="error-box" id="errorBox"></div>
   </div>
 
-  <script>
+  <script nonce="{{ csp_nonce }}">
     (function () {
       var token    = {{ jwt_token | tojson }};
       var refresh  = {{ refresh_token | tojson }};
