@@ -1744,7 +1744,9 @@
 
       } catch (error) {
         console.error('Error:', error);
-        container.innerHTML = `<div class="loading-state"><p>Error loading PDF: ${error.message}</p><button class="btn btn-primary" onclick="javascript:history.back()" style="margin-top: 1rem;">Go Back</button></div>`;
+        container.innerHTML = `<div class="loading-state"><p>Error loading PDF: ${error.message}</p><button class="btn btn-primary go-back-btn" style="margin-top: 1rem;">Go Back</button></div>`;
+        const _gb = container.querySelector('.go-back-btn');
+        if (_gb) _gb.addEventListener('click', function () { history.back(); });
       }
     }
 

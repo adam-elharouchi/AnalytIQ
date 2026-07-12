@@ -100,6 +100,13 @@ function setupEventListeners() {
       await saveSettings();
     });
   }
+
+  // CSP: wire the data + danger-zone buttons here instead of inline onclick.
+  const exportBtn = document.getElementById('export-data-btn');
+  if (exportBtn) exportBtn.addEventListener('click', exportMyData);
+
+  const deleteBtn = document.getElementById('delete-account-btn');
+  if (deleteBtn) deleteBtn.addEventListener('click', deleteAccount);
 }
 
 // Handle profile picture upload
