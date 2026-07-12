@@ -37,7 +37,7 @@
                  padding:0.15rem 0.6rem; border-radius:4px; font-size:0.8rem;">
       Session expires in &lt;5 min
     </span>
-    <button onclick="window._exitImpersonation()"
+    <button id="exit-impersonation-btn"
             style="background:rgba(255,255,255,0.15); color:#fff;
                    border:1px solid rgba(255,255,255,0.45); padding:0.3rem 0.9rem;
                    border-radius:0.375rem; cursor:pointer; font-weight:600;
@@ -65,6 +65,12 @@
       localStorage.removeItem('impersonation_started_at');
       window.location.href = '/superadmin-dashboard';
     };
+
+    /* CSP: wire the exit button here instead of an inline onclick attribute. */
+    (function () {
+      var _exitBtn = document.getElementById('exit-impersonation-btn');
+      if (_exitBtn) _exitBtn.addEventListener('click', window._exitImpersonation);
+    }());
 
     /* Activate the bar if an impersonation session is in progress */
     (function () {
@@ -160,6 +166,13 @@
           var container = document.getElementById('announcement-banners');
           if (!container || !data.announcements || !data.announcements.length) return;
 
+          // CSP: one delegated listener instead of an inline onclick on each
+          // dynamically-created dismiss button.
+          container.addEventListener('click', function (e) {
+            var b = e.target.closest('.ann-dismiss-btn');
+            if (b) _dismissAnnouncement(b);
+          });
+
           var colorMap = {
             info:    '#2569f4',
             warning: '#f59e0b',
@@ -181,7 +194,7 @@
               + '<strong>' + escapeAnnHtml(ann.title) + '</strong>'
               + ' \u2014 ' + escapeAnnHtml(ann.message)
               + '</span>'
-              + '<button onclick="_dismissAnnouncement(this)"'
+              + '<button class="ann-dismiss-btn"'
               + ' style="background:rgba(255,255,255,0.15);color:#fff;'
               + 'border:1px solid rgba(255,255,255,0.45);padding:0.3rem 0.9rem;'
               + 'border-radius:0.375rem;cursor:pointer;font-weight:600;white-space:nowrap;"'

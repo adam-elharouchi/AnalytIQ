@@ -51,3 +51,20 @@ class TestResetPasswordPageHandlers:
         assert 'onsubmit="handleResetPassword' not in html
         # The form the inline script wires to must exist.
         assert 'id="resetPasswordForm"' in html
+
+
+class TestBaseTemplateHandlers:
+    """base.html is shared by every page; its 2 inline handlers were refactored."""
+
+    def test_no_inline_handlers_in_base_chrome(self, client):
+        # /login extends base.html, so its rendered output includes base chrome.
+        html = client.get("/login").get_data(as_text=True)
+        assert 'onclick="window._exitImpersonation' not in html
+        assert 'onclick="_dismissAnnouncement' not in html
+
+    def test_base_wiring_anchors_present(self, client):
+        html = client.get("/login").get_data(as_text=True)
+        # Static button wired by id; dynamic dismiss buttons carry the class the
+        # delegated listener targets.
+        assert 'id="exit-impersonation-btn"' in html
+        assert 'class="ann-dismiss-btn"' in html
