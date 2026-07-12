@@ -89,6 +89,16 @@
 
     const navigationGrid = document.getElementById('pageNavigationGrid');
 
+    // CSP: nav cards remember which dashboard tab to open via data-* attributes;
+    // one delegated listener writes the hint to sessionStorage before navigation
+    // (replaces the per-card inline click handlers).
+    if (navigationGrid) {
+      navigationGrid.addEventListener('click', function (e) {
+        const card = e.target.closest('[data-tab-key]');
+        if (card) sessionStorage.setItem(card.dataset.tabKey, card.dataset.tabVal);
+      });
+    }
+
     // ── Icon SVGs ────────────────────────────────────────────────
     const ICON_TENANTS = `<svg viewBox="0 0 24 24"><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 2 7 22 7"/></svg>`;
     const ICON_USERS   = `<svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`;
@@ -107,13 +117,13 @@
           <p>Configure LTI tool integrations, manage institutional tenants, and oversee global campus connectivity.</p>
         </a>
 
-        <a href="/superadmin-dashboard" class="page-nav-card" onclick="sessionStorage.setItem('sa_tab', 'users')">
+        <a href="/superadmin-dashboard" class="page-nav-card" data-tab-key="sa_tab" data-tab-val="users">
           <span class="page-nav-icon">${ICON_USERS}</span>
           <h2>User Administration</h2>
           <p>Perform global user searches across all environments, manage account disabling, and utilize secure impersonation.</p>
         </a>
 
-        <a href="/superadmin-dashboard" class="page-nav-card" onclick="sessionStorage.setItem('sa_tab', 'health')">
+        <a href="/superadmin-dashboard" class="page-nav-card" data-tab-key="sa_tab" data-tab-val="health">
           <span class="page-nav-icon">${ICON_SETTINGS}</span>
           <h2>System Settings</h2>
           <p>Monitor platform health, API rate limits, audit logging streams, and global server configurations.</p>
@@ -128,13 +138,13 @@
           <p>View tenant metrics, manage approvals, track activity, and oversee your organization's learning environment.</p>
         </a>
 
-        <a href="/tenant-admin-dashboard" class="page-nav-card" onclick="sessionStorage.setItem('ta_tab', 'users-section')">
+        <a href="/tenant-admin-dashboard" class="page-nav-card" data-tab-key="ta_tab" data-tab-val="users-section">
           <span class="page-nav-icon">${ICON_USERS}</span>
           <h2>User Management</h2>
           <p>Search, manage, and configure roles for all users within your organization.</p>
         </a>
 
-        <a href="/tenant-admin-dashboard" class="page-nav-card" onclick="sessionStorage.setItem('ta_tab', 'sso-config-section')">
+        <a href="/tenant-admin-dashboard" class="page-nav-card" data-tab-key="ta_tab" data-tab-val="sso-config-section">
           <span class="page-nav-icon">${ICON_SETTINGS}</span>
           <h2>SSO & Access</h2>
           <p>Configure Single Sign-On providers, manage identity integrations, and control access policies.</p>

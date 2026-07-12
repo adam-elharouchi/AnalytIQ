@@ -976,7 +976,7 @@
       <div id="form-wrap">
         <div class="cta-form">
           <input type="email" id="demo-email" class="cta-input" placeholder="your.email@university.edu" />
-          <button class="btn-white" onclick="handleDemo()">Book Demo &rarr;</button>
+          <button class="btn-white" id="book-demo-btn">Book Demo &rarr;</button>
         </div>
         <div class="cta-fine">No commitment. No procurement. We&rsquo;ll reach out within 24 hours.</div>
       </div>
@@ -1030,6 +1030,9 @@
     document.getElementById('demo-email').addEventListener('keydown', e => {
       if (e.key === 'Enter') handleDemo();
     });
+
+    // CSP: wire the demo button here instead of an inline onclick attribute.
+    document.getElementById('book-demo-btn').addEventListener('click', handleDemo);
 
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {

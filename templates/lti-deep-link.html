@@ -140,8 +140,8 @@
 
 <div class="actions">
   <span id="status">No chapter selected</span>
-  <button class="btn-secondary" onclick="window.history.back()">Cancel</button>
-  <button class="btn-primary" id="submitBtn" disabled onclick="submitDeepLink()">
+  <button class="btn-secondary" id="cancelBtn">Cancel</button>
+  <button class="btn-primary" id="submitBtn" disabled>
     Add to LMS Course
   </button>
 </div>
@@ -215,6 +215,10 @@
   function escHtml(str) {
     return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
+
+  // CSP: wire the action buttons here instead of inline onclick attributes.
+  document.getElementById('cancelBtn').addEventListener('click', function () { window.history.back(); });
+  document.getElementById('submitBtn').addEventListener('click', submitDeepLink);
 </script>
 </body>
 </html>
