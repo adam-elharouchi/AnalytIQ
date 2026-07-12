@@ -465,6 +465,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // Load SSO provider buttons on the login page
   if (window.location.pathname.includes('/login')) {
     loadSSOProviders();
+    wireLoginControls();
   }
 
   // If not authenticated and trying to access any page except login, redirect to login
@@ -477,6 +478,37 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 });
+
+/**
+ * Wire up the login page's controls with addEventListener instead of inline
+ * on* attributes, so the page works under an enforced CSP (no 'unsafe-inline').
+ * Every lookup is guarded so this is a no-op on pages without these elements.
+ */
+function wireLoginControls() {
+  document.querySelectorAll('.login-tab').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      showTab(btn.dataset.tab, btn);
+    });
+  });
+
+  var signinForm = document.getElementById('signinForm');
+  if (signinForm) signinForm.addEventListener('submit', handleSignIn);
+
+  var signupForm = document.getElementById('signupForm');
+  if (signupForm) signupForm.addEventListener('submit', handleSignUp);
+
+  var forgotLink = document.getElementById('forgotPasswordLink');
+  if (forgotLink) forgotLink.addEventListener('click', showForgotPasswordModal);
+
+  var forgotForm = document.getElementById('forgotPasswordForm');
+  if (forgotForm) forgotForm.addEventListener('submit', handleForgotPassword);
+
+  document
+    .querySelectorAll('#forgotPasswordCloseBtn, #forgotPasswordCancelBtn')
+    .forEach(function (b) {
+      b.addEventListener('click', closeForgotPasswordModal);
+    });
+}
 
 // Forgot Password Functions
 function showForgotPasswordModal(event) {
