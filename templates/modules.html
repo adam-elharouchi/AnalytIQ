@@ -19,7 +19,7 @@
         
         <div class="module-actions">
           <a href="/chapter-02" class="btn btn-primary">View Chapter</a>
-          <button class="btn btn-primary" onclick="expandModule(this)">View Details</button>
+          <button class="btn btn-primary js-expand-module">View Details</button>
         </div>
         <div class="module-details" style="display: none;">
           <h3>Key Topics Covered:</h3>
@@ -41,7 +41,7 @@
         
         <div class="module-actions">
           <a href="/chapter-04" class="btn btn-primary">View Chapter</a>
-          <button class="btn btn-primary" onclick="expandModule(this)">View Details</button>
+          <button class="btn btn-primary js-expand-module">View Details</button>
         </div>
         <div class="module-details" style="display: none;">
           <h3>Key Topics Covered:</h3>
@@ -63,7 +63,7 @@
         
         <div class="module-actions">
           <a href="/chapter-07" class="btn btn-primary">View Chapter</a>
-          <button class="btn btn-primary" onclick="expandModule(this)">View Details</button>
+          <button class="btn btn-primary js-expand-module">View Details</button>
         </div>
         <div class="module-details" style="display: none;">
           <h3>Key Topics Covered:</h3>
@@ -85,7 +85,7 @@
         
         <div class="module-actions">
           <a href="/chapter-08" class="btn btn-primary">View Chapter</a>
-          <button class="btn btn-primary" onclick="expandModule(this)">View Details</button>
+          <button class="btn btn-primary js-expand-module">View Details</button>
         </div>
         <div class="module-details" style="display: none;">
           <h3>Key Topics Covered:</h3>
@@ -107,7 +107,7 @@
         
         <div class="module-actions">
           <a href="/chapter-12" class="btn btn-primary">View Chapter</a>
-          <button class="btn btn-primary" onclick="expandModule(this)">View Details</button>
+          <button class="btn btn-primary js-expand-module">View Details</button>
         </div>
         <div class="module-details" style="display: none;">
           <h3>Key Topics Covered:</h3>
@@ -129,7 +129,7 @@
         
         <div class="module-actions">
           <a href="/chapter-23" class="btn btn-primary">View Chapter</a>
-          <button class="btn btn-primary" onclick="expandModule(this)">View Details</button>
+          <button class="btn btn-primary js-expand-module">View Details</button>
         </div>
         <div class="module-details" style="display: none;">
           <h3>Key Topics Covered:</h3>
@@ -170,5 +170,10 @@
         button.textContent = 'View Details';
       }
     }
+
+    // CSP: wire the "View Details" buttons here instead of inline onclick.
+    document.querySelectorAll('.js-expand-module').forEach(function (b) {
+      b.addEventListener('click', function () { expandModule(b); });
+    });
   </script>
 {% endblock %}

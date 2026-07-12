@@ -270,9 +270,9 @@
 
     <!-- Tabs -->
     <div class="tabs" role="tablist">
-      <button class="tab-btn active" role="tab" onclick="ltiShowTab('tab-tool-config', this)">Tool Info</button>
-      <button class="tab-btn" role="tab" onclick="ltiShowTab('tab-platforms', this)">LMS Platforms</button>
-      <button class="tab-btn" role="tab" onclick="ltiShowTab('tab-register', this)">Register Platform</button>
+      <button class="tab-btn active" role="tab" data-lti-tab="tab-tool-config">Tool Info</button>
+      <button class="tab-btn" role="tab" data-lti-tab="tab-platforms">LMS Platforms</button>
+      <button class="tab-btn" role="tab" data-lti-tab="tab-register">Register Platform</button>
     </div>
 
     <!-- ================================================================== -->
@@ -288,31 +288,31 @@
         <label>JWKS URL (public key — platform verifies our tokens)</label>
         <div class="url-row">
           <code id="jwksUrl"></code>
-          <button class="copy-btn" onclick="copyField('jwksUrl')">Copy</button>
+          <button class="copy-btn" data-copy-field="jwksUrl">Copy</button>
         </div>
 
         <label>Login Initiation URL</label>
         <div class="url-row">
           <code id="loginUrl"></code>
-          <button class="copy-btn" onclick="copyField('loginUrl')">Copy</button>
+          <button class="copy-btn" data-copy-field="loginUrl">Copy</button>
         </div>
 
         <label>Launch / Redirect URI</label>
         <div class="url-row">
           <code id="launchUrl"></code>
-          <button class="copy-btn" onclick="copyField('launchUrl')">Copy</button>
+          <button class="copy-btn" data-copy-field="launchUrl">Copy</button>
         </div>
 
         <label>Deep Link (Content Selection) URL</label>
         <div class="url-row">
           <code id="deepLinkUrl"></code>
-          <button class="copy-btn" onclick="copyField('deepLinkUrl')">Copy</button>
+          <button class="copy-btn" data-copy-field="deepLinkUrl">Copy</button>
         </div>
 
         <label>Key ID (kid)</label>
         <div class="url-row">
           <code id="keyId"></code>
-          <button class="copy-btn" onclick="copyField('keyId')">Copy</button>
+          <button class="copy-btn" data-copy-field="keyId">Copy</button>
         </div>
       </div>
     </div>
@@ -381,7 +381,7 @@
         </div>
 
         <div style="margin-top:1.25rem">
-          <button class="btn-primary" onclick="registerPlatform()">Save Platform</button>
+          <button class="btn-primary" id="registerPlatformBtn">Save Platform</button>
         </div>
       </div>
     </div>
@@ -472,7 +472,7 @@
               '<div class="config-meta">Issuer: ' + escHtml(cfg.issuer) + '</div>' +
               '<div class="config-meta">Client ID: ' + escHtml(cfg.client_id) + '</div>' +
               '</div>' +
-              '<button class="delete-btn" onclick="deletePlatform(\'' + cfg.config_id + '\', this)">Delete</button>';
+              '<button class="delete-btn" data-config-id="' + escHtml(cfg.config_id) + '">Delete</button>';
             list.appendChild(li);
           });
         })
@@ -568,6 +568,24 @@
     function escHtml(str) {
       return String(str)
         .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // CSP: wire tabs, copy buttons, register, and delegated delete here instead
+    // of inline on* attributes.
+    document.querySelectorAll('.tab-btn[data-lti-tab]').forEach(function (btn) {
+      btn.addEventListener('click', function () { ltiShowTab(btn.dataset.ltiTab, btn); });
+    });
+    document.querySelectorAll('.copy-btn[data-copy-field]').forEach(function (btn) {
+      btn.addEventListener('click', function () { copyField(btn.dataset.copyField); });
+    });
+    var _regBtn = document.getElementById('registerPlatformBtn');
+    if (_regBtn) _regBtn.addEventListener('click', registerPlatform);
+    var _configList = document.getElementById('configList');
+    if (_configList) {
+      _configList.addEventListener('click', function (e) {
+        var b = e.target.closest('.delete-btn');
+        if (b) deletePlatform(b.dataset.configId, b);
+      });
     }
 
     // Load tool info on first paint

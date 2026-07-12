@@ -17,6 +17,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Load existing chapters
     loadExistingChapters();
+
+    // CSP: wire the action controls here instead of inline on* attributes.
+    const goBackLink = document.getElementById('goBackLink');
+    if (goBackLink) goBackLink.addEventListener('click', goBack);
+
+    document.querySelectorAll('input[name="chapterSource"]').forEach((radio) => {
+        radio.addEventListener('change', () => toggleChapterSource(radio.value));
+    });
+
+    const selectPdfBtn = document.getElementById('selectPdfBtn');
+    if (selectPdfBtn) {
+        selectPdfBtn.addEventListener('click', () => document.getElementById('fileInput').click());
+    }
+
+    const fileInput = document.getElementById('fileInput');
+    if (fileInput) fileInput.addEventListener('change', handleFileSelect);
+
+    const generateBtn = document.getElementById('generateBtn');
+    if (generateBtn) generateBtn.addEventListener('click', generateFromExisting);
+
+    const restartBtn = document.getElementById('restartBtn');
+    if (restartBtn) restartBtn.addEventListener('click', restartProcess);
+
+    const saveBtn = document.getElementById('saveBtn');
+    if (saveBtn) saveBtn.addEventListener('click', saveAll);
 });
 
 let currentClassId = new URLSearchParams(window.location.search).get('class_id');

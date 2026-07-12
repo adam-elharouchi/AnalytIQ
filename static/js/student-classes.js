@@ -267,3 +267,15 @@ document.addEventListener('keydown', function (event) {
     hideJoinClassDrawer();
   }
 });
+
+// CSP: wire the join-class drawer triggers here instead of inline on* attributes.
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('.js-show-join-class').forEach(function (el) {
+    el.addEventListener('click', showJoinClassDrawer);
+  });
+  document.querySelectorAll('.js-hide-join-class').forEach(function (el) {
+    el.addEventListener('click', hideJoinClassDrawer);
+  });
+  const joinClassForm = document.getElementById('joinClassForm');
+  if (joinClassForm) joinClassForm.addEventListener('submit', handleJoinClass);
+});

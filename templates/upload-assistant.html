@@ -159,7 +159,7 @@
   <main class="assistant-container">
     <!-- Header -->
     <div style="margin-bottom: 2rem;">
-      <a href="#" onclick="goBack()"
+      <a href="#" id="goBackLink"
         style="color: var(--text-secondary, #64748b); text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
         <span>←</span> Back to Class
       </a>
@@ -194,7 +194,7 @@
           <label
             style="flex: 1; display: flex; align-items: center; gap: 0.75rem; padding: 1rem; border: 2px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.5rem; cursor: pointer; transition: all 0.2s;"
             id="existingChapterOption">
-            <input type="radio" name="chapterSource" value="existing" onchange="toggleChapterSource('existing')"
+            <input type="radio" name="chapterSource" value="existing" 
               style="cursor: pointer;">
             <span>
               <strong style="display: block; color: var(--text-primary, #f0f4ff);">Existing Chapter</strong>
@@ -204,7 +204,7 @@
           <label
             style="flex: 1; display: flex; align-items: center; gap: 0.75rem; padding: 1rem; border: 2px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.5rem; cursor: pointer; transition: all 0.2s;"
             id="newChapterOption">
-            <input type="radio" name="chapterSource" value="new" checked onchange="toggleChapterSource('new')"
+            <input type="radio" name="chapterSource" value="new" checked 
               style="cursor: pointer;">
             <span>
               <strong style="display: block; color: var(--text-primary, #f0f4ff);">New Chapter</strong>
@@ -244,15 +244,15 @@
           <div style="font-size: 3rem; margin-bottom: 1rem;"></div>
           <h3 style="margin-bottom: 0.5rem; color: var(--text-primary, #f0f4ff);">Upload Chapter PDF</h3>
           <p style="color: #64748b; margin-bottom: 1.5rem;">Drag and drop your PDF here, or click to browse</p>
-          <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">Select PDF
+          <button class="btn btn-primary" id="selectPdfBtn">Select PDF
             File</button>
-          <input type="file" id="fileInput" accept=".pdf" style="display: none" onchange="handleFileSelect(event)">
+          <input type="file" id="fileInput" accept=".pdf" style="display: none" >
         </div>
       </div>
 
       <!-- Generate Button for Existing Chapter -->
       <div id="existingChapterActions" style="display: none; margin-top: 2rem;">
-        <button class="btn btn-primary" onclick="generateFromExisting()"
+        <button class="btn btn-primary" id="generateBtn"
           style="width: 100%; padding: 1rem; font-size: 1.1rem;">
           Generate Exercises from Selected Chapter
         </button>
@@ -291,8 +291,8 @@
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
         <h2 style="margin: 0; color: var(--text-primary, #f0f4ff);">Review Generated Exercises</h2>
         <div style="display: flex; gap: 0.5rem;">
-          <button class="btn btn-secondary" onclick="restartProcess()">Start Over</button>
-          <button id="saveBtn" class="btn btn-primary" onclick="saveAll()">Save to Class</button>
+          <button class="btn btn-secondary" id="restartBtn">Start Over</button>
+          <button id="saveBtn" class="btn btn-primary">Save to Class</button>
         </div>
       </div>
 

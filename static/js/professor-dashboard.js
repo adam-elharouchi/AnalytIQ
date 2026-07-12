@@ -327,3 +327,15 @@ document.addEventListener('keydown', function (event) {
     hideCreateClassModal();
   }
 });
+
+// CSP: wire the create-class modal triggers here instead of inline on* attributes.
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('.js-show-create-class').forEach(function (el) {
+    el.addEventListener('click', showCreateClassModal);
+  });
+  document.querySelectorAll('.js-hide-create-class').forEach(function (el) {
+    el.addEventListener('click', hideCreateClassModal);
+  });
+  const createClassForm = document.getElementById('createClassForm');
+  if (createClassForm) createClassForm.addEventListener('submit', handleCreateClass);
+});
