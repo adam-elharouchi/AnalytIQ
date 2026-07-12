@@ -918,6 +918,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // CSP: wire class-code copy, tab buttons, leaderboard sub-tabs, and the
+  // exercise selector here instead of inline on* attributes.
+  const copyBtn = document.getElementById('copyCodeBtn');
+  if (copyBtn) copyBtn.addEventListener('click', copyClassCodeToClipboard);
+
+  document.querySelectorAll('.terminal-tab-btn[data-tab]').forEach((btn) => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  });
+
+  document.querySelectorAll('.sub-tab-button[data-lb-view]').forEach((btn) => {
+    btn.addEventListener('click', () => switchLeaderboardView(btn.dataset.lbView));
+  });
+
+  const lbSelect = document.getElementById('studentLbExerciseSelect');
+  if (lbSelect) {
+    lbSelect.addEventListener('change', () => loadStudentExerciseLeaderboard(lbSelect.value));
+  }
+
   // Close embedded playground
   const closeBtn = document.getElementById('closePlaygroundBtn');
   if (closeBtn) {

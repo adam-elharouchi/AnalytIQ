@@ -11,16 +11,16 @@
     
     <div class="search-bar">
       <label for="searchInput" class="sr-only">Search resources</label>
-      <input type="text" id="searchInput" placeholder="Search resources..." onkeyup="filterResources()" aria-label="Search resources" />
+      <input type="text" id="searchInput" placeholder="Search resources..." aria-label="Search resources" />
     </div>
-    
-    <div class="resource-categories">
-      <button class="category-btn active" onclick="filterByCategory('all', this)">All</button>
-      <button class="category-btn" onclick="filterByCategory('articles', this)">Articles</button>
-      <button class="category-btn" onclick="filterByCategory('videos', this)">Videos</button>
-      <button class="category-btn" onclick="filterByCategory('tools', this)">Tools</button>
 
-      <button class="category-btn" onclick="filterByCategory('datasets', this)">Datasets</button>
+    <div class="resource-categories">
+      <button class="category-btn active" data-category="all">All</button>
+      <button class="category-btn" data-category="articles">Articles</button>
+      <button class="category-btn" data-category="videos">Videos</button>
+      <button class="category-btn" data-category="tools">Tools</button>
+
+      <button class="category-btn" data-category="datasets">Datasets</button>
     </div>
     
     <div class="resources-grid" id="resourcesGrid">
@@ -172,5 +172,14 @@
         }
       });
     }
+
+    // CSP: wire search + category filters here instead of inline on* attributes.
+    const _searchInput = document.getElementById('searchInput');
+    if (_searchInput) _searchInput.addEventListener('keyup', filterResources);
+    document.querySelectorAll('.category-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        filterByCategory(btn.dataset.category, btn);
+      });
+    });
   </script>
 {% endblock %}

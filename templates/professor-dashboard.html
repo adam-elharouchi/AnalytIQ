@@ -24,7 +24,7 @@
       </div>
     </div>
 
-    <div class="workspace-header-action" onclick="showCreateClassModal()" style="cursor: pointer;">
+    <div class="workspace-header-action js-show-create-class" style="cursor: pointer;">
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(37,105,244,0.8)" stroke-width="1.5" style="margin-bottom: 0.5rem;">
         <path d="M12 5v14M5 12h14"/>
       </svg>
@@ -57,7 +57,7 @@
         <div>
           <span style="color: var(--color-success); margin-right: 0.5rem;">➜</span>
           <span style="color: var(--color-primary); margin-right: 0.5rem;">~</span>
-          <button onclick="showCreateClassModal()"
+          <button class="js-show-create-class"
             style="font-family: var(--font-mono); padding: 0.5rem 1rem; font-size: 0.9rem; background: rgba(37,105,244,0.15); color: var(--color-primary); border: 1px solid var(--color-primary); border-radius: 0.375rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; transition: all 0.2s;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
             Create First Class
@@ -71,18 +71,18 @@
   <div id="classesGrid" style="display: none;"></div>
 
   <!-- Drawer Overlay -->
-  <div class="student-drawer-overlay" id="drawerOverlay" onclick="hideCreateClassModal()"></div>
+  <div class="student-drawer-overlay js-hide-create-class" id="drawerOverlay"></div>
 
   <!-- Create Class Drawer -->
   <div class="student-join-drawer" id="createClassModal" role="dialog" aria-modal="true" aria-labelledby="createClassModalTitle">
     <div class="drawer-header">
       <h2 id="createClassModalTitle">Create New Class</h2>
-      <button onclick="hideCreateClassModal()" aria-label="Close dialog"
+      <button class="js-hide-create-class" aria-label="Close dialog"
         style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b; transition: color 0.2s; line-height: 1;">&times;</button>
     </div>
 
     <div class="drawer-body">
-      <form id="createClassForm" onsubmit="handleCreateClass(event)">
+      <form id="createClassForm">
         <div style="margin-bottom: 1.5rem;">
           <label for="className">Class Name *</label>
           <input type="text" id="className" required placeholder="e.g., Business Analytics 101" autocomplete="off" />
@@ -106,7 +106,7 @@
           style="display: none; margin-bottom: 1.5rem; background: rgba(220,38,38,0.1); border: 1px solid rgba(220,38,38,0.3); color: #f87171; padding: 1rem; border-radius: 0.5rem; font-size: 0.875rem;"></div>
 
         <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 2rem;">
-          <button type="button" onclick="hideCreateClassModal()"
+          <button type="button" class="js-hide-create-class"
             style="background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; padding: 0.65rem 1.25rem; border-radius: 0.375rem; cursor: pointer; font-size: 0.875rem; transition: all 0.2s;">
             Cancel
           </button>
