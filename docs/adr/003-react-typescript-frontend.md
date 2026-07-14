@@ -1,7 +1,21 @@
 # ADR-003: React + TypeScript Frontend (Strangler-Fig Migration)
 
-**Status:** Accepted
+**Status:** Superseded (2026-07-13) — the React/TypeScript frontend was removed and never wired into production serving.
 **Date:** 2026-03-22
+
+---
+
+> **Superseded (2026-07-13).** This migration was reversed. Commit `61fef88`
+> (2026-03-25, "feat: remove React, add Student Portfolio feature") removed the
+> React serving logic (`_serve_react()`, `_REACT_ROUTES`, `_REACT_DIR`) from
+> `core/factory.py`, `render.yaml`, and the dev launch config, returning the app
+> to pure Flask + Jinja2. The `frontend/` sources and `static/react/` build
+> output later reappeared in the tree via a merge but were never re-wired into
+> any route or deployment, so they became dead weight that was maintained by
+> mistake. The July 12 2026 audit confirmed this, and both directories — along
+> with their CI, Makefile, and dependabot hooks — were deleted. The decision
+> below is retained as a historical record; it does **not** describe the current
+> architecture (server-rendered Jinja2 + vanilla JS).
 
 ---
 

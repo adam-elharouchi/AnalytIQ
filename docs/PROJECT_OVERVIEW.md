@@ -18,10 +18,10 @@ AnalytIQ is a modern, AI-augmented Learning Management System (LMS) and interact
 
 ## 🏗️ 2. System Architecture & The "How It Works" Flow
 
-AnalytIQ uses a **Flask Blueprint API backend** + **React 18 SPA frontend**, following a strangler-fig migration from the original Jinja2/vanilla JS architecture. Static/informational pages still use Jinja2; all interactive user-facing pages have been migrated to React.
+AnalytIQ uses a **Flask Blueprint API backend** + a **server-rendered Jinja2 + vanilla-JS frontend**. Every page is a Jinja2 template served by Flask; interactivity is layered on with vanilla-JS modules (`static/js/`) that call the JSON API.
 
 ### The Request Lifecycle (A Deep Dive)
-1. **Client Interaction:** A user clicks a button (e.g., "Submit Code"). The React frontend calls `apiClient` (a typed Axios-style wrapper in `frontend/src/api/client.ts`).
+1. **Client Interaction:** A user clicks a button (e.g., "Submit Code"). A vanilla-JS page module calls the shared `authFetch` wrapper (`static/js/api-helper.js`).
 2. **Token Injection:** `apiClient` reads the JWT from `localStorage` and attaches it as `Authorization: Bearer <token>` to every request.
 3. **Network Transit & CORS:** The browser fires a preflight `OPTIONS` request. `core/factory.py` handles CORS globally via a `before_request` hook.
 4. **Backend Gateway (`app.py` → `core/factory.py`):**
@@ -37,39 +37,28 @@ AnalytIQ uses a **Flask Blueprint API backend** + **React 18 SPA frontend**, fol
 8. **Heavy Processing (The AI Fork):**
    - *If the request requires complex AI (e.g., parsing a 50-page PDF):* The backend enqueues a Celery task via Redis. The user receives a `task_id` (HTTP 202 Accepted) and the frontend polls `GET /api/tasks/<task_id>` until complete.
    - *If it's a fast task (like grading code):* The backend synchronously calls the Gemini API, formats the response, and returns JSON.
-9. **Client Response:** TanStack Query caches the JSON response; React re-renders only the affected components.
+9. **Client Response:** The page module receives the JSON response and updates the affected DOM nodes.
 
 ---
 
 ## 🛠️ 3. The Exhaustive Tech Stack
 
 ### 🖥️ Frontend layer (The Visual Interface)
-AnalytIQ is in a **strangler-fig migration** from vanilla JS + Jinja2 to React + TypeScript. Both
-frontends coexist; Flask routes determine which one renders.
+AnalytIQ is a **server-rendered Jinja2 application** with vanilla-JS progressive enhancement.
+Every page is a Jinja2 template that extends `base.html`; there is no SPA framework and no
+client-side build step. Flask's catch-all route (`core/factory.py → serve_frontend`) maps a
+clean URL to a `.html` template.
 
-#### React frontend (`frontend/`) — primary interface
-*   **React 18 + TypeScript + Vite 6:** All interactive pages are served as a React SPA
-    (`static/react/index.html`). TanStack Query v5 manages data fetching with 30 s stale time.
-    React Router v6 handles client-side navigation.
-*   **Migrated pages (14 total):** `/login`, `/classes`, `/classes/:classId`, `/chapter/:chapterId`,
-    `/exercise/:exerciseId`, `/dashboard`, `/professor-class/:classId`, `/admin` (superadmin +
-    tenant_admin), `/profile`, `/reset-password`, `/code-assistant`, `/upload-assistant`.
-*   **Auth:** `AuthContext` + `useAuth()` hook; JWT stored in `localStorage`; 401 interceptor in
-    `src/api/client.ts` redirects to `/login?reason=session_expired` (skipped for `/signin`
-    and `/signup` to allow wrong-password error display).
-*   **Route guards:** `<PrivateRoute roles={[...]}>` redirects to `/login` if unauthenticated or
-    unauthorized.
-*   **Lazy loading:** Every page is `React.lazy()`-wrapped so only the current page's JS bundle
-    is fetched.
-
-#### Legacy frontend (`templates/` + `static/js/`) — static/informational pages only
-*   **HTML5 / Jinja2:** `landing.html`, `contact.html`, `privacy.html`, `terms.html`,
-    and the LTI templates still render server-side (low interactivity; React migration not
-    required).
+*   **HTML5 / Jinja2:** `landing.html`, the student/professor portal pages (`student-classes.html`,
+    `student-class.html`, `chapter-view.html`, `professor-dashboard.html`, `professor-class.html`,
+    `upload-assistant.html`, `code-assistant.html`), the auth shells, the LTI templates, and the
+    legal/informational pages (`contact.html`, `privacy.html`, `terms.html`) all render server-side.
 *   **CSS3 (Custom Styling):** No Bootstrap or Tailwind. Built from scratch with CSS Variables
     (`:root`), Flexbox, Grid, and glassmorphism panels in `static/css/styles.css`.
-*   **JS modules** (`api-helper.js`, `ui-states.js`, `offline-detector.js`, etc.) are still loaded
-    by the Jinja base template for the remaining legacy pages.
+*   **JS modules** (`static/js/api-helper.js`, `auth.js`, `ui-states.js`, `offline-detector.js`,
+    the per-page `student-*.js` / `professor-*.js` modules, etc.) are loaded by the Jinja base
+    template. They call the JSON API through the shared `authFetch` wrapper in `api-helper.js`,
+    which injects the JWT Bearer header and handles 401 expiry.
 
 ### 🧠 Backend Layer (The Brain)
 *   **Python 3.x:** The core programming language, chosen for its vast data-science/AI ecosystem and readable syntax.

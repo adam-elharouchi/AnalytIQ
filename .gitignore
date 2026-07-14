@@ -16,11 +16,6 @@ __pycache__/
 *.pyc
 *.pyo
 
-# Node / Frontend
-node_modules/
-frontend/node_modules/
-# static/react/ intentionally NOT ignored — committed so Render doesn't need Node.js at deploy time
-
 # Coverage artifacts
 .coverage
 coverage.xml

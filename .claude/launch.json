@@ -8,12 +8,6 @@
       "port": 5001
     },
     {
-      "name": "Vite Frontend",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["--prefix", "frontend", "run", "dev"],
-      "port": 3000
-    },
-    {
       "name": "Celery Worker",
       "runtimeExecutable": "/bin/bash",
       "runtimeArgs": ["-c", "cd /Users/aelharouchi/Documents/GitHub/AnalytIQ/.claude/worktrees/fervent-keller && python3 -m celery -A workers.celery_app.celery_app worker --loglevel=info --concurrency=2"],
