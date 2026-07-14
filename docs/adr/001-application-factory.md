@@ -35,7 +35,7 @@ startup concern:
 | `register_request_hooks(app)` | before/after request: CORS, headers, request-ID |
 | `register_error_handlers(app)` | Global exception handler |
 | `register_blueprints(app)` | Domain blueprint registration |
-| `register_frontend_routes(app)` | SPA catch-all + React route handling |
+| `register_frontend_routes(app)` | Jinja2 template catch-all + static file serving |
 | `register_api_versioning(app)` | `/api/v1/*` aliases |
 | `run_migrations(app)` | Apply pending SQL migrations at startup |
 

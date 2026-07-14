@@ -1,4 +1,4 @@
-.PHONY: help dev services stop flower frontend frontend-dev frontend-build frontend-typecheck test test-unit test-integration lint format typecheck migrate shell clean
+.PHONY: help dev services stop flower test test-unit test-integration lint format typecheck migrate shell clean
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Help
@@ -28,22 +28,6 @@ dev: services  ## Start services + Flask dev server
 
 stop:  ## Stop Docker services
 	docker-compose down
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Frontend (React + TypeScript)
-# ─────────────────────────────────────────────────────────────────────────────
-
-frontend-dev:  ## Start Vite dev server (proxies /api to Flask on :5001)
-	cd frontend && npm run dev
-
-frontend-build:  ## Build React app to static/react/
-	cd frontend && npm run build
-
-frontend-typecheck:  ## Run TypeScript type check on frontend
-	cd frontend && npm run typecheck
-
-frontend:  ## Install frontend deps + build
-	cd frontend && npm install && npm run build
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Testing
