@@ -28,8 +28,6 @@ _DONE = [
     "chapter-view.html",
     "lti-deep-link.html",
     "professor-dashboard.html",
-    "modules.html",
-    "resources.html",
     "student-classes.html",
     "student-class.html",
     "upload-assistant.html",

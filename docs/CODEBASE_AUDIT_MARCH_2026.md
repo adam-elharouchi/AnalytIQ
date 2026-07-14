@@ -107,7 +107,7 @@ AnalytIQ/
 │   ├── 006_audit_log.sql          # password_resets, audit_log tables
 │   ├── 007_exercise_test_cases.sql# class_exercises test_cases JSONB, function_name, language
 │   └── 008_tenant_email_domain.sql# tenants email_domain column with unique index
-├── templates/                     # 26 Jinja2/HTML templates (served by Flask)
+├── templates/                     # 22 Jinja2/HTML templates (served by Flask)
 ├── js/                            # 21 vanilla JavaScript modules
 ├── tests/
 │   ├── conftest.py                # Pytest fixtures: app, client, mock_db, mock_redis, etc.
@@ -166,7 +166,7 @@ AnalytIQ/
 
 **Logging:** python-json-logger 2.0.7 for structured JSON logs. Each log record includes a `request_id` injected by `_RequestIdFilter`.
 
-**Frontend:** Vanilla JavaScript (ES5/ES6 mix, no build step, no bundler). 26 HTML templates rendered by Flask/Jinja2. 21 JS modules loaded via `<script>` tags.
+**Frontend:** Vanilla JavaScript (ES5/ES6 mix, no build step, no bundler). 22 HTML templates rendered by Flask/Jinja2. 21 JS modules loaded via `<script>` tags.
 
 ---
 
@@ -699,7 +699,7 @@ Flask serves all HTML templates via Jinja2 (`render_template`). A catch-all rout
 
 There is no build step, no webpack, no minification. All JS files are loaded via `<script>` tags in HTML. Load order matters and is not enforced by a module system.
 
-### 10.2 Templates (26 HTML files in templates/)
+### 10.2 Templates (22 HTML files in templates/)
 
 | File | Purpose |
 |------|---------|
@@ -715,20 +715,16 @@ There is no build step, no webpack, no minification. All JS files are loaded via
 | code-assistant.html | Browser code editor + AI chat |
 | practice-playground.html | Standalone exercise practice |
 | upload-assistant.html | PDF upload with exercise generation UI |
-| modules.html | Public exercise module listing |
-| resources.html | Public resources page |
 | superadmin-dashboard.html | Full platform admin UI |
 | tenant-admin-dashboard.html | Tenant-scoped admin UI |
 | lti-setup.html | LTI platform registration UI for professors |
 | lti-launch.html | LTI post-launch auto-redirect page (JS sets localStorage token) |
 | lti-deep-link.html | Chapter selector for LTI deep linking |
 | lti-launch-error.html | Error page for failed LTI launches |
-| autologin.html | Auto-login from token in URL param |
 | reset-password.html | Password reset form |
 | contact.html | Contact form |
 | terms.html | Terms of service |
 | privacy.html | Privacy policy |
-| security-compliance.html | Security/compliance documentation |
 
 ### 10.3 JavaScript Modules (21 files in js/)
 
@@ -1282,7 +1278,7 @@ All Python files under `blueprints/`, `repositories/`, `python/`, and root-level
 - `blueprints/users.py`, `blueprints/chapters.py`, `blueprints/classes.py`, `blueprints/ai.py`, `blueprints/health.py` — these were covered in the previous session summary and not re-read in detail here. Core behavior described in this document is based on that prior read.
 - `blueprints/superadmin.py` was read in sections (lines 1-450 and 450-1250 of 1649); lines 1250-1649 were not read.
 - `blueprints/tenant_admin.py` (1311 lines) was read only by preview due to output size constraints. The route list from the docstring is accurate. Internal implementation details of routes beyond the first ~50 lines were not read.
-- All 26 HTML templates were not read individually (file list was read; content was not).
+- All 22 HTML templates were not read individually (file list was read; content was not).
 - 16 of 21 JS files were not read (`professor-dashboard.js`, `professor-class.js`, `student-class.js`, `student-classes.js`, `code-assistant.js`, `upload-assistant.js`, `profile.js`, `ai-agent.js`, `superadmin.js`, `tenant-admin.js`, `content-import.js`, `offline-detector.js`, `home-animation.js`, `hero-bg-animation.js`, `contact.js`, `ui-states.js`).
 - `tests/` files beyond `conftest.py` were not read (file list was read; individual test content was not).
 - `utils/email_service.py`, `python/pdf_processor.py`, `api_docs.py`, `gunicorn_config.py` were not read.

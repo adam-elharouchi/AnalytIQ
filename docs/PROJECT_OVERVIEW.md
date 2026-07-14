@@ -64,8 +64,8 @@ frontends coexist; Flask routes determine which one renders.
 
 #### Legacy frontend (`templates/` + `static/js/`) — static/informational pages only
 *   **HTML5 / Jinja2:** `landing.html`, `contact.html`, `privacy.html`, `terms.html`,
-    `security-compliance.html`, `resources.html`, LTI templates, and `autologin.html` still
-    render server-side (low interactivity; React migration not required).
+    and the LTI templates still render server-side (low interactivity; React migration not
+    required).
 *   **CSS3 (Custom Styling):** No Bootstrap or Tailwind. Built from scratch with CSS Variables
     (`:root`), Flexbox, Grid, and glassmorphism panels in `static/css/styles.css`.
 *   **JS modules** (`api-helper.js`, `ui-states.js`, `offline-detector.js`, etc.) are still loaded
@@ -220,9 +220,8 @@ AnalytIQ is not a walled garden; it is designed for enterprise university adopti
 │   ├── index.html                 # Marketing Landing Page: High-performance animations, feature breakdowns.
 │   ├── login.html / reset*.html   # Standard Auth UI shells.
 │   ├── profile.html               # User settings and theming preference dropdowns.
-│   ├── contact.html / resources   # Static informational pages.
+│   ├── contact.html               # Static informational page.
 │   ├── privacy.html / terms.*     # Legal and compliance documentation (GDPR, FERPA statements).
-│   ├── security-compliance.html   # Detailed breakdown of data handling for institutional audits.
 │   │
 │   ├── 👨‍🎓 STUDENT PORTAL VIEWS
 │   │   ├── student-classes.html   # The grid dashboard of enrolled courses with progress tracking.

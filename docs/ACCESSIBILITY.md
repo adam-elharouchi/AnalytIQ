@@ -48,10 +48,6 @@ Used in:
 
 ### Forms and Inputs
 
-**`resources.html`**
-- Added `<label for="searchInput" class="sr-only">Search resources</label>`
-- Added `aria-label="Search resources"` to the input
-
 **`code-assistant.html`**
 - Sidebar buttons: `aria-label` on toggle, new conversation, hide sidebar buttons
 - `chatInput` textarea: `aria-label="Chat message"`
