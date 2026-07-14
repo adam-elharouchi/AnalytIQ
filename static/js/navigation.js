@@ -82,10 +82,8 @@ document.addEventListener('DOMContentLoaded', function () {
       `;
     }
   } else {
-    // Not authenticated - show all links including Modules (Practice removed - now integrated into classes)
+    // Not authenticated - show Code (Modules/Resources removed - now integrated into classes; Practice removed)
     commonLinks = `
-      <li><a href="/modules" ${currentPage === 'modules' ? 'class="active"' : ''}>Modules</a></li>
-      <li><a href="/resources" ${currentPage === 'resources' ? 'class="active"' : ''}>Resources</a></li>
       <li><a href="/code-assistant" ${currentPage === 'code-assistant' ? 'class="active"' : ''}>Code</a></li>
     `;
   }
