@@ -228,6 +228,13 @@ FEATURE_SSO = os.getenv("FEATURE_SSO", "False").lower() == "true"
 # flag (default False) so enforcement can be turned on — and instantly reverted —
 # from the Render env without a redeploy.
 CSP_ENFORCE = os.getenv("CSP_ENFORCE", "False").lower() == "true"
+
+# When True (default), the app applies pending DB migrations on startup — the
+# historical behaviour, safe because it runs under a Postgres advisory lock.
+# Set to False once migrations run in a dedicated deploy step (H-8): run
+# `python db_migrate.py` as the release/preDeployCommand (see render.yaml) and the
+# app no longer migrates on every worker boot.
+RUN_MIGRATIONS_ON_BOOT = os.getenv("RUN_MIGRATIONS_ON_BOOT", "True").lower() == "true"
 # Dedicated key for encrypting stored SSO client secrets (Fernet). Falls back to
 # SECRET_KEY when unset. Set a distinct value so rotating SECRET_KEY/JWT does not
 # invalidate stored SSO secrets. Changing it requires re-entering client secrets.
