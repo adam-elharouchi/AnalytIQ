@@ -4,6 +4,11 @@ services:
     name: analytiq
     env: python
     buildCommand: pip install -r requirements.txt
+    # Apply DB migrations ONCE per deploy, before the new version goes live (H-8).
+    # It exits non-zero on a failed migration, which blocks the deploy instead of
+    # shipping code against a schema that never applied. After confirming this
+    # runs, set RUN_MIGRATIONS_ON_BOOT=false so workers stop migrating at boot.
+    preDeployCommand: python db_migrate.py
     startCommand: gunicorn -c gunicorn.conf.py app:app
     healthCheckPath: /api/health
     envVars:

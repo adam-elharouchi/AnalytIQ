@@ -543,7 +543,15 @@ def register_api_versioning(app) -> None:
 
 
 def run_migrations(app) -> None:
-    """Apply pending SQL migrations at startup (idempotent — safe to call repeatedly)."""
+    """Apply pending SQL migrations at startup (idempotent — safe to call repeatedly).
+
+    Gated behind config.RUN_MIGRATIONS_ON_BOOT (default True). Set it to False once
+    migrations run in a dedicated deploy step (`python db_migrate.py`, e.g. Render
+    preDeployCommand) so the app no longer migrates on every worker boot (H-8).
+    """
+    if not config.RUN_MIGRATIONS_ON_BOOT:
+        logger.info("Startup migrations skipped (RUN_MIGRATIONS_ON_BOOT=false)")
+        return
     try:
         from core.database import get_db_connection
         from db_migrate import run_migrations as _run
