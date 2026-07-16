@@ -170,7 +170,7 @@ function renderConversationHistory() {
 
   list.innerHTML = filteredConversations.map(conv => `
     <div class="conversation-item ${conv.id === currentConversationId ? 'active' : ''}">
-      <div class="conversation-item-content" onclick="loadConversation('${conv.id}')">
+      <div class="conversation-item-content" data-conv-action="load" data-conv-id="${conv.id}">
         <div class="conversation-item-title">
           ${escapeHtml(conv.title)}
         </div>
@@ -178,7 +178,7 @@ function renderConversationHistory() {
       </div>
       <div class="conversation-item-actions">
         <button class="conversation-action-btn archive-btn"
-                onclick="event.stopPropagation(); archiveConversation('${conv.id}')"
+                data-conv-action="archive" data-conv-id="${conv.id}"
                 title="${conv.archived ? 'Unarchive' : 'Archive'}">
           ${conv.archived
             ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.9"/></svg>'
@@ -186,7 +186,7 @@ function renderConversationHistory() {
           }
         </button>
         <button class="conversation-action-btn delete-btn"
-                onclick="event.stopPropagation(); deleteConversation('${conv.id}')"
+                data-conv-action="delete" data-conv-id="${conv.id}"
                 title="Delete">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
         </button>
@@ -359,16 +359,16 @@ function startNewConversation() {
           </div>
           <div class="conversation-starters">
             <div class="starter-grid">
-              <button class="starter-btn" onclick="useStarter('Analyze sales data and create visualizations')">
+              <button class="starter-btn" data-starter="Analyze sales data and create visualizations">
                 Analyze sales data and create visualizations
               </button>
-              <button class="starter-btn" onclick="useStarter('Build a predictive model for customer churn')">
+              <button class="starter-btn" data-starter="Build a predictive model for customer churn">
                 Build a predictive model for customer churn
               </button>
-              <button class="starter-btn" onclick="useStarter('Perform statistical analysis on revenue trends')">
+              <button class="starter-btn" data-starter="Perform statistical analysis on revenue trends">
                 Perform statistical analysis on revenue trends
               </button>
-              <button class="starter-btn" onclick="useStarter('Create a dashboard for business metrics')">
+              <button class="starter-btn" data-starter="Create a dashboard for business metrics">
                 Create a dashboard for business metrics
               </button>
             </div>
@@ -2083,16 +2083,16 @@ function clearChat() {
           </div>
           <div class="conversation-starters">
             <div class="starter-grid">
-              <button class="starter-btn" onclick="useStarter('Create a function to calculate factorial')">
+              <button class="starter-btn" data-starter="Create a function to calculate factorial">
                 Create a function to calculate factorial
               </button>
-              <button class="starter-btn" onclick="useStarter('Write a REST API endpoint')">
+              <button class="starter-btn" data-starter="Write a REST API endpoint">
                 Write a REST API endpoint
               </button>
-              <button class="starter-btn" onclick="useStarter('Debug and fix errors in my code')">
+              <button class="starter-btn" data-starter="Debug and fix errors in my code">
                 Debug and fix errors
               </button>
-              <button class="starter-btn" onclick="useStarter('Create a histogram visualization')">
+              <button class="starter-btn" data-starter="Create a histogram visualization">
                 Create a histogram visualization
               </button>
             </div>
@@ -2216,9 +2216,30 @@ document.addEventListener('DOMContentLoaded', function () {
   document.querySelectorAll('.sidebar-tab[data-conv-tab]').forEach(function (btn) {
     btn.addEventListener('click', function () { switchConversationTab(btn.dataset.convTab); });
   });
-  document.querySelectorAll('.starter-btn[data-starter]').forEach(function (btn) {
-    btn.addEventListener('click', function () { useStarter(btn.dataset.starter); });
-  });
+  // Starter buttons live in #chatMessages and are re-rendered at runtime, so
+  // delegate rather than binding the current nodes.
+  const chatMessagesEl = document.getElementById('chatMessages');
+  if (chatMessagesEl) {
+    chatMessagesEl.addEventListener('click', function (e) {
+      const btn = e.target.closest('.starter-btn[data-starter]');
+      if (btn) useStarter(btn.dataset.starter);
+    });
+  }
+
+  // Conversation list is rebuilt on every render — one delegated listener on the
+  // static container. closest() picks the innermost action, so the archive/delete
+  // buttons no longer need event.stopPropagation() to beat the row's load click.
+  const convList = document.getElementById('conversationList');
+  if (convList) {
+    convList.addEventListener('click', function (e) {
+      const el = e.target.closest('[data-conv-action]');
+      if (!el) return;
+      const id = el.dataset.convId;
+      if (el.dataset.convAction === 'load') loadConversation(id);
+      else if (el.dataset.convAction === 'archive') archiveConversation(id);
+      else if (el.dataset.convAction === 'delete') deleteConversation(id);
+    });
+  }
 
   const chatInputEl = document.getElementById('chatInput');
   if (chatInputEl) chatInputEl.addEventListener('keydown', handleKeyDown);
