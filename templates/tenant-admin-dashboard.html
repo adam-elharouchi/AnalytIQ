@@ -320,32 +320,32 @@
                 <span class="terminal-tab-num">01</span> Overview
             </button>
             <button class="terminal-tab-btn" data-target="analytics-section"
-                onclick="window.tenantAdminApp && window.tenantAdminApp.loadAnalytics()">
+                data-ta-action="loadAnalytics">
                 <span class="terminal-tab-num">02</span> Analytics
             </button>
             <button class="terminal-tab-btn" data-target="users-section">
                 <span class="terminal-tab-num">03</span> Users
             </button>
             <button class="terminal-tab-btn" data-target="classes-admin-section"
-                onclick="window.tenantAdminApp && window.tenantAdminApp.loadAllClasses()">
+                data-ta-action="loadAllClasses">
                 <span class="terminal-tab-num">04</span> Classes
             </button>
             <button class="terminal-tab-btn" data-target="sso-config-section"
-                onclick="window.tenantAdminApp && window.tenantAdminApp.loadSSOProviders()">
+                data-ta-action="loadSSOProviders">
                 <span class="terminal-tab-num">05</span> SSO Config
             </button>
             <button class="terminal-tab-btn" data-target="approvals-section"
-                onclick="window.tenantAdminApp && window.tenantAdminApp.loadPendingApprovals()">
+                data-ta-action="loadPendingApprovals">
                 <span class="terminal-tab-num">06</span> Approvals
                 <span id="approvals-badge" style="display:none; background:var(--color-error); color:#fff;
                     font-size:0.68rem; font-weight:700; padding:1px 6px; border-radius:9999px; margin-left:2px;">0</span>
             </button>
             <button class="terminal-tab-btn" data-target="audit-section"
-                onclick="window.tenantAdminApp && window.tenantAdminApp.loadAuditLog()">
+                data-ta-action="loadAuditLog">
                 <span class="terminal-tab-num">07</span> Audit Log
             </button>
             <button class="terminal-tab-btn" data-target="announcements-section"
-                onclick="window.tenantAdminApp && window.tenantAdminApp.loadAnnouncements()">
+                data-ta-action="loadAnnouncements">
                 <span class="terminal-tab-num">08</span> Announcements
             </button>
         </div>
@@ -395,7 +395,7 @@
 
                     <!-- SSO Providers -->
                     <div class="bento-card bento-span-6 neon-hover" style="cursor:pointer;"
-                        onclick="document.querySelector('[data-target=sso-config-section]').click(); window.tenantAdminApp && window.tenantAdminApp.loadSSOProviders();">
+                        data-ta-goto="sso-config-section" data-ta-action="loadSSOProviders">
                         <div class="bento-card-header">
                             <h3>SSO Providers</h3>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
@@ -407,7 +407,7 @@
                     <!-- Pending Approvals -->
                     <div class="bento-card bento-span-6"
                         style="border-left: 3px solid var(--color-error); cursor: pointer;"
-                        onclick="document.querySelector('[data-target=approvals-section]').click(); window.tenantAdminApp && window.tenantAdminApp.loadPendingApprovals();">
+                        data-ta-goto="approvals-section" data-ta-action="loadPendingApprovals">
                         <div class="bento-card-header">
                             <h3 style="color: #ef4444;">Pending Approvals</h3>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -453,7 +453,7 @@
                 </div>
 
                 <div style="margin-top:1.5rem; text-align:right;">
-                    <button class="btn btn-secondary" onclick="window.tenantAdminApp && window.tenantAdminApp.loadAnalytics()">Refresh</button>
+                    <button class="btn btn-secondary" data-ta-action="loadAnalytics">Refresh</button>
                 </div>
             </section>
 
@@ -507,9 +507,9 @@
                     </select>
 
                     <button class="btn btn-primary" style="white-space: nowrap;"
-                        onclick="window.tenantAdminApp.loadUsers()">Search</button>
+                        data-ta-action="loadUsers">Search</button>
                     <button class="btn btn-secondary" style="white-space: nowrap;"
-                        onclick="document.getElementById('user-search-input').value = ''; document.getElementById('user-filter-role').value = ''; document.getElementById('user-filter-status').value = ''; window.tenantAdminApp.loadUsers(1);">Clear</button>
+                        data-ta-action="clearUserFilters">Clear</button>
                 </div>
 
                 <div class="table-container">
@@ -547,7 +547,7 @@
                         class="form-control"
                         style="flex:2;min-width:220px;padding:0.75rem 1rem;border-radius:0.5rem;background:var(--bg-dark);border:1px solid var(--border-color);color:var(--text-color);">
                     <button class="btn btn-primary" style="white-space:nowrap;"
-                        onclick="window.tenantAdminApp && window.tenantAdminApp.loadAllClasses()">Search</button>
+                        data-ta-action="loadAllClasses">Search</button>
                 </div>
 
                 <div class="table-container">
@@ -576,7 +576,7 @@
                         <h1>SSO Configuration</h1>
                         <p>Manage Single Sign-On providers for your organization.</p>
                     </div>
-                    <button class="btn btn-primary" onclick="window.tenantAdminApp && window.tenantAdminApp.showSSOProviderModal()">
+                    <button class="btn btn-primary" data-ta-action="showSSOProviderModal">
                         Add Provider
                     </button>
                 </div>
@@ -674,7 +674,7 @@
                             <input type="date" id="audit-to" style="width:50%; padding:0.75rem; border:1px solid var(--border-color); border-radius:0.5rem; background:var(--bg-dark); color:var(--text-color); font-family:var(--font-mono); font-size:0.75rem;" />
                         </div>
                     </div>
-                    <button class="btn btn-secondary" onclick="window.tenantAdminApp && window.tenantAdminApp.loadAuditLog(1)">Apply Filter</button>
+                    <button class="btn btn-secondary" data-ta-action="loadAuditLog" data-ta-args="[1]">Apply Filter</button>
                 </div>
 
                 <div class="table-container">
@@ -744,7 +744,7 @@
                     </div>
                     <div style="margin-top:1rem;text-align:right;">
                         <button class="btn btn-primary"
-                            onclick="window.tenantAdminApp && window.tenantAdminApp.createAnnouncement()">Post Announcement</button>
+                            data-ta-action="createAnnouncement">Post Announcement</button>
                     </div>
                 </div>
 
@@ -778,7 +778,7 @@
     <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="sso-modal-title" style="max-width:560px;">
         <div class="modal-header">
             <h2 id="sso-modal-title">SSO Provider</h2>
-            <button class="modal-close" onclick="window.tenantAdminApp && window.tenantAdminApp.closeSSOProviderModal()" aria-label="Close">&times;</button>
+            <button class="modal-close" data-ta-action="closeSSOProviderModal" aria-label="Close">&times;</button>
         </div>
         <div class="modal-body">
             <input type="hidden" id="sso-provider-id" value="">
@@ -834,8 +834,8 @@
             </div>
             <div id="sso-modal-error" class="error-message" style="display:none;margin-top:1rem;"></div>
             <div style="display:flex;gap:1rem;justify-content:flex-end;margin-top:1.5rem;">
-                <button class="btn btn-secondary" onclick="window.tenantAdminApp && window.tenantAdminApp.closeSSOProviderModal()">Cancel</button>
-                <button class="btn btn-primary" onclick="window.tenantAdminApp && window.tenantAdminApp.saveSSOProvider()">Save Provider</button>
+                <button class="btn btn-secondary" data-ta-action="closeSSOProviderModal">Cancel</button>
+                <button class="btn btn-primary" data-ta-action="saveSSOProvider">Save Provider</button>
             </div>
         </div>
     </div>
@@ -846,7 +846,7 @@
     <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="user-modal-title" style="max-width:480px;">
         <div class="modal-header">
             <h2 id="user-modal-title">User Actions</h2>
-            <button class="modal-close" onclick="window.tenantAdminApp && window.tenantAdminApp.closeUserModal()" aria-label="Close">&times;</button>
+            <button class="modal-close" data-ta-action="closeUserModal" aria-label="Close">&times;</button>
         </div>
         <div class="modal-body">
             <p id="user-modal-name" style="font-weight:600;font-size:1.1rem;margin-bottom:0.25rem;"></p>
@@ -861,30 +861,30 @@
                         <option value="tenant_admin">Tenant Admin</option>
                     </select>
                     <button class="btn btn-sm btn-secondary"
-                        onclick="window.tenantAdminApp && window.tenantAdminApp.changeRole()">Change Role</button>
+                        data-ta-action="changeRole">Change Role</button>
                 </div>
 
                 <hr style="border-color:var(--border-color);opacity:0.4;">
 
                 <button class="btn btn-secondary"
-                    onclick="window.tenantAdminApp && window.tenantAdminApp.toggleStatus()">
+                    data-ta-action="toggleStatus">
                     <span id="user-modal-status-btn-label">Toggle Status</span>
                 </button>
                 <button class="btn btn-secondary"
-                    onclick="window.tenantAdminApp && window.tenantAdminApp.forcePasswordReset()">
+                    data-ta-action="forcePasswordReset">
                     Force Password Reset
                 </button>
                 <button class="btn btn-secondary"
-                    onclick="window.tenantAdminApp && window.tenantAdminApp.impersonateUser()">
+                    data-ta-action="impersonateUser">
                     Impersonate
                 </button>
                 <button class="btn btn-secondary"
-                    onclick="window.tenantAdminApp && window.tenantAdminApp.exportUser()">
+                    data-ta-action="exportUser">
                     Export Data (GDPR)
                 </button>
                 <hr style="border-color:var(--border-color);opacity:0.4;">
                 <button class="btn btn-danger"
-                    onclick="window.tenantAdminApp && window.tenantAdminApp.deleteUser()">
+                    data-ta-action="deleteUser">
                     Delete User
                 </button>
             </div>
