@@ -4,6 +4,19 @@
  * No tenant management, announcements, or platform-settings tabs.
  */
 
+/**
+ * Serialise handler arguments into a data-ta-args attribute.
+ *
+ * Pass RAW values (u.name, not a pre-escaped safeName): JSON.stringify preserves
+ * types (numbers/booleans stay numbers/booleans) and escapeHtml then makes the
+ * payload attribute-safe. The browser decodes the entities back on read, so
+ * dataset.taArgs parses to the original values — escaping something twice here
+ * would corrupt names like "Bob & Alice".
+ */
+function taArgs(...args) {
+    return escapeHtml(JSON.stringify(args));
+}
+
 class TenantAdminDashboard {
     constructor() {
         const _base = window.API_BASE_URL || '/api';
@@ -185,6 +198,20 @@ class TenantAdminDashboard {
     // Users
     // ============================================================
 
+    /**
+     * Reset the user search/role/status filters and reload page 1.
+     * Extracted from a compound inline onclick on the Clear button (CSP).
+     */
+    clearUserFilters() {
+        const search = document.getElementById('user-search-input');
+        const role   = document.getElementById('user-filter-role');
+        const status = document.getElementById('user-filter-status');
+        if (search) search.value = '';
+        if (role)   role.value = '';
+        if (status) status.value = '';
+        this.loadUsers(1);
+    }
+
     async loadUsers(page = 1) {
         try {
             const q      = document.getElementById('user-search-input')?.value || '';
@@ -246,26 +273,26 @@ class TenantAdminDashboard {
                 <td style="padding:0.75rem 1rem;">
                     <div class="icon-btn-row">
                         <button class="icon-btn" title="Manage User"
-                            onclick="window.tenantAdminApp.openUserModal('${safeId}','${safeName}','${safeEmail}','${safeRole}','${safeStatus}')">
+                            data-ta-action="openUserModal" data-ta-args="${taArgs(u.user_id, u.name, u.email, u.role, u.account_status)}">
                             <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
                         </button>
                         <button class="icon-btn ${u.account_status === 'disabled' ? 'icon-btn-success' : 'icon-btn-amber'}"
                             title="${u.account_status === 'disabled' ? 'Enable Account' : 'Disable Account'}"
-                            onclick="window.tenantAdminApp.quickToggleStatus('${safeId}','${safeStatus}')">
+                            data-ta-action="quickToggleStatus" data-ta-args="${taArgs(u.user_id, u.account_status)}">
                             ${u.account_status === 'disabled'
                                 ? `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="10 8 16 12 10 16 10 8"/></svg>`
                                 : `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="10" y1="15" x2="10" y2="9"/><line x1="14" y1="15" x2="14" y2="9"/></svg>`}
                         </button>
                         <button class="icon-btn" title="Reset Password"
-                            onclick="window.tenantAdminApp.quickPasswordReset('${safeId}')">
+                            data-ta-action="quickPasswordReset" data-ta-args="${taArgs(u.user_id)}">
                             <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
                         </button>
                         <button class="icon-btn" title="Export Data"
-                            onclick="window.tenantAdminApp.quickExportUser('${safeId}')">
+                            data-ta-action="quickExportUser" data-ta-args="${taArgs(u.user_id)}">
                             <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                         </button>
                         <button class="icon-btn icon-btn-danger" title="Delete User"
-                            onclick="window.tenantAdminApp.quickDeleteUser('${safeId}','${safeName}')">
+                            data-ta-action="quickDeleteUser" data-ta-args="${taArgs(u.user_id, u.name)}">
                             <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
                         </button>
                     </div>
@@ -280,10 +307,10 @@ class TenantAdminDashboard {
         if (!pager) return;
         if (!totalPages || totalPages <= 1) { pager.innerHTML = ''; return; }
         const prev = currentPage > 1
-            ? `<button class="btn btn-secondary" onclick="window.tenantAdminApp.loadUsers(${currentPage - 1})">← Prev</button>`
+            ? `<button class="btn btn-secondary" data-ta-action="loadUsers" data-ta-args="${taArgs(currentPage - 1)}">← Prev</button>`
             : '';
         const next = currentPage < totalPages
-            ? `<button class="btn btn-secondary" onclick="window.tenantAdminApp.loadUsers(${currentPage + 1})">Next →</button>`
+            ? `<button class="btn btn-secondary" data-ta-action="loadUsers" data-ta-args="${taArgs(currentPage + 1)}">Next →</button>`
             : '';
         pager.innerHTML = `${prev}<span style="display:flex;align-items:center;padding:0 1rem;color:var(--text-muted);">Page ${currentPage} of ${totalPages}</span>${next}`;
     }
@@ -531,11 +558,11 @@ class TenantAdminDashboard {
                     <td style="padding:1rem;color:var(--text-muted);font-size:0.9rem;">${date}</td>
                     <td style="padding:1rem;text-align:right;display:flex;gap:0.5rem;justify-content:flex-end;">
                         <button class="btn btn-sm" style="background:var(--color-success, #10b981);color:#fff;border:none;"
-                            onclick="window.tenantAdminApp.approveUser('${u.user_id}','${escapeHtml(u.name).replace(/'/g,"\\'")}')">
+                            data-ta-action="approveUser" data-ta-args="${taArgs(u.user_id, u.name)}">
                             Approve
                         </button>
                         <button class="btn btn-sm btn-danger"
-                            onclick="window.tenantAdminApp.denyUser('${u.user_id}','${escapeHtml(u.name).replace(/'/g,"\\'")}')">
+                            data-ta-action="denyUser" data-ta-args="${taArgs(u.user_id, u.name)}">
                             Deny
                         </button>
                     </td>
@@ -606,17 +633,17 @@ class TenantAdminDashboard {
                     <td style="padding:1rem;text-align:center;">${c.chapter_count || 0}</td>
                     <td style="padding:1rem;text-align:right;display:flex;gap:0.4rem;justify-content:flex-end;">
                         <button class="btn btn-sm btn-secondary"
-                            onclick="window.tenantAdminApp.transferClass('${c.class_id}','${safeName}')">Transfer</button>
+                            data-ta-action="transferClass" data-ta-args="${taArgs(c.class_id, c.name)}">Transfer</button>
                         <button class="btn btn-sm btn-danger"
-                            onclick="window.tenantAdminApp.deleteClass('${c.class_id}','${safeName}')">Delete</button>
+                            data-ta-action="deleteClass" data-ta-args="${taArgs(c.class_id, c.name)}">Delete</button>
                     </td>
                 </tr>`;
             }).join('');
 
             const pager = document.getElementById('classes-admin-pagination');
             if (pager) {
-                const prev = page > 1 ? `<button class="btn btn-secondary" onclick="window.tenantAdminApp.loadAllClasses(${page-1})">← Prev</button>` : '';
-                const next = page < (data.pages || 1) ? `<button class="btn btn-secondary" onclick="window.tenantAdminApp.loadAllClasses(${page+1})">Next →</button>` : '';
+                const prev = page > 1 ? `<button class="btn btn-secondary" data-ta-action="loadAllClasses" data-ta-args="${taArgs(page - 1)}">← Prev</button>` : '';
+                const next = page < (data.pages || 1) ? `<button class="btn btn-secondary" data-ta-action="loadAllClasses" data-ta-args="${taArgs(page + 1)}">Next →</button>` : '';
                 const info = `<span style="display:flex;align-items:center;color:var(--text-muted);font-size:0.85rem;">Page ${page} of ${data.pages || 1} (${data.total || classes.length} classes)</span>`;
                 pager.innerHTML = `${prev}${info}${next}`;
             }
@@ -684,9 +711,9 @@ class TenantAdminDashboard {
                     <td style="padding:1rem;">${statusBadge}</td>
                     <td style="padding:1rem;text-align:right;display:flex;gap:0.4rem;justify-content:flex-end;">
                         <button class="btn btn-sm btn-secondary"
-                            onclick="window.tenantAdminApp.editSSOProvider('${p.provider_id}')">Edit</button>
+                            data-ta-action="editSSOProvider" data-ta-args="${taArgs(p.provider_id)}">Edit</button>
                         <button class="btn btn-sm btn-danger"
-                            onclick="window.tenantAdminApp.deleteSSOProvider('${p.provider_id}','${escapeHtml(p.provider_name).replace(/'/g,"\\'")}')">Delete</button>
+                            data-ta-action="deleteSSOProvider" data-ta-args="${taArgs(p.provider_id, p.provider_name)}">Delete</button>
                     </td>
                 </tr>`;
             }).join('');
@@ -866,10 +893,10 @@ class TenantAdminDashboard {
         if (pager) {
             const totalStr = `<span style="color:var(--text-muted);font-size:0.85rem;">${(total || 0).toLocaleString()} entries</span>`;
             const prev = currentPage > 1
-                ? `<button class="btn btn-secondary" style="padding:0.3rem 0.75rem" onclick="window.tenantAdminApp.loadAuditLog(${currentPage - 1})">← Prev</button>`
+                ? `<button class="btn btn-secondary" style="padding:0.3rem 0.75rem" data-ta-action="loadAuditLog" data-ta-args="${taArgs(currentPage - 1)}">← Prev</button>`
                 : '';
             const next = currentPage < pages
-                ? `<button class="btn btn-secondary" style="padding:0.3rem 0.75rem" onclick="window.tenantAdminApp.loadAuditLog(${currentPage + 1})">Next →</button>`
+                ? `<button class="btn btn-secondary" style="padding:0.3rem 0.75rem" data-ta-action="loadAuditLog" data-ta-args="${taArgs(currentPage + 1)}">Next →</button>`
                 : '';
             pager.innerHTML = `${prev} ${totalStr} ${next}`;
         }
@@ -907,11 +934,11 @@ class TenantAdminDashboard {
                     <td style="padding:1rem;text-align:right;">
                         <div class="icon-btn-row" style="justify-content:flex-end;">
                             <button class="btn btn-sm btn-secondary"
-                                onclick="window.tenantAdminApp.toggleAnnouncement('${escapeHtml(a.id)}', ${!a.is_active})">
+                                data-ta-action="toggleAnnouncement" data-ta-args="${taArgs(a.id, !a.is_active)}">
                                 ${a.is_active ? 'Deactivate' : 'Activate'}
                             </button>
                             <button class="btn btn-sm btn-danger"
-                                onclick="window.tenantAdminApp.deleteAnnouncement('${escapeHtml(a.id)}')">
+                                data-ta-action="deleteAnnouncement" data-ta-args="${taArgs(a.id)}">
                                 Delete
                             </button>
                         </div>
@@ -985,4 +1012,34 @@ class TenantAdminDashboard {
 window.tenantAdminApp = null;
 document.addEventListener('DOMContentLoaded', () => {
     window.tenantAdminApp = new TenantAdminDashboard();
+
+    // CSP: every control carries data-ta-action="<method>" (+ optional
+    // data-ta-args JSON) instead of an inline onclick. One delegated listener
+    // dispatches them, which also covers rows rendered after page load.
+    // Only methods that actually exist on the dashboard object are callable.
+    document.addEventListener('click', (e) => {
+        const el = e.target.closest('[data-ta-action]');
+        if (!el) return;
+        const app = window.tenantAdminApp;
+        if (!app) return;
+
+        // Some controls also switch to a section first (was a compound handler).
+        if (el.dataset.taGoto) {
+            const tab = document.querySelector(`[data-target="${el.dataset.taGoto}"]`);
+            if (tab) tab.click();
+        }
+
+        const fn = app[el.dataset.taAction];
+        if (typeof fn !== 'function') return;
+
+        let args = [];
+        if (el.dataset.taArgs) {
+            try {
+                args = JSON.parse(el.dataset.taArgs);
+            } catch (_) {
+                args = [];
+            }
+        }
+        fn.apply(app, args);
+    });
 });
