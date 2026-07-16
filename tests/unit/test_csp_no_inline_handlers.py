@@ -43,12 +43,13 @@ _DONE_TEMPLATES = [
     "practice-playground.html",
     "code-assistant.html",
     "tenant-admin-dashboard.html",
+    "superadmin-dashboard.html",
 ]
 
 # JS modules refactored so far. Many build HTML via innerHTML template literals,
 # so their handlers must become delegated listeners on a stable container.
-# Still outstanding (not yet in this list): superadmin.js, professor-class.js
-# (and their templates) — the last two dashboards.
+# Still outstanding (not yet in this list): professor-class.js (and its
+# template) — the last dashboard.
 _DONE_JS = [
     "navigation.js",
     "code-assistant.js",
@@ -58,6 +59,7 @@ _DONE_JS = [
     "student-class.js",
     "content-import.js",
     "tenant-admin.js",
+    "superadmin.js",
 ]
 
 
