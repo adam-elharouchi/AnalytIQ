@@ -330,36 +330,48 @@ def register_request_hooks(app) -> None:
                     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
                     response.headers["Pragma"] = "no-cache"
 
-        # Minimal ENFORCED CSP, applied wherever a view has not set its own
-        # stricter policy (e.g. the sandboxed chapter-HTML response). Both
-        # directives are safe to enforce globally — they do not depend on inline
-        # scripts or framing:
-        #   object-src 'none'  → blocks <object>/<embed>/plugin-based injection
-        #   base-uri 'self'    → blocks <base>-tag hijacking of relative URLs
-        # script-src is intentionally NOT enforced yet (~220 legacy inline event
-        # handlers remain to be refactored); the nonce-based Report-Only policy
-        # below reports every inline <script>/handler that would break under
-        # enforcement, without blocking anything. Once reports are clean, move
-        # the script-src line here to enforce it.
-        if "Content-Security-Policy" not in response.headers:
-            response.headers["Content-Security-Policy"] = "object-src 'none'; base-uri 'self'"
-
-        # Nonce-based Report-Only policy. Inline <script> tags carry the matching
-        # nonce (see the {{ csp_nonce }} plumbing); external scripts stay allowed
-        # by host ('self' + the CDNs). 'unsafe-inline' is deliberately dropped so
-        # inline event handlers (onclick=...) and any un-nonced inline script
-        # surface as violations to refactor before script-src is enforced.
+        # ---- Content-Security-Policy ----
+        # object-src 'none'  → blocks <object>/<embed>/plugin-based injection
+        # base-uri 'self'    → blocks <base>-tag hijacking of relative URLs
+        # These two are always enforced (they don't depend on inline scripts).
+        #
+        # script-src: the CSP Phase 2 refactor removed every inline event handler
+        # and javascript: URI and nonced every inline <script>, so a nonce-based
+        # script-src is now safe to enforce. Because flipping the whole app's
+        # script policy is outward-facing, it is gated behind config.CSP_ENFORCE
+        # (default False) so it can be toggled from the Render env without a
+        # redeploy and reverted instantly if a page misbehaves:
+        #   - CSP_ENFORCE off → script-src stays Report-Only (nothing blocked).
+        #   - CSP_ENFORCE on  → script-src moves into the enforced policy.
+        # No 'strict-dynamic', so external scripts stay allowed by host
+        # ('self' + the three CDNs actually used); no 'unsafe-inline', so only
+        # nonced inline scripts run.
         _nonce = getattr(g, "csp_nonce", "")
-        response.headers["Content-Security-Policy-Report-Only"] = (
-            "default-src 'self'; "
+        _script_src = (
             f"script-src 'self' 'nonce-{_nonce}' "
-            "https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; "
+            "https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com"
+        )
+
+        if "Content-Security-Policy" not in response.headers:
+            _enforced = "object-src 'none'; base-uri 'self'"
+            if config.CSP_ENFORCE:
+                _enforced += "; " + _script_src
+            response.headers["Content-Security-Policy"] = _enforced
+
+        # Report-Only monitors the directives that are NOT enforced yet (default/
+        # style/img/connect/font/frame-ancestors), plus script-src while
+        # CSP_ENFORCE is off so violations keep surfacing pre-flip.
+        _report_only = "default-src 'self'; "
+        if not config.CSP_ENFORCE:
+            _report_only += _script_src + "; "
+        _report_only += (
             "style-src 'self' 'unsafe-inline'; "
             "img-src 'self' data:; "
             "connect-src 'self'; "
             "font-src 'self'; "
             "frame-ancestors 'none'"
         )
+        response.headers["Content-Security-Policy-Report-Only"] = _report_only
         response.headers["X-Request-ID"] = getattr(g, "request_id", "")
         return response
 

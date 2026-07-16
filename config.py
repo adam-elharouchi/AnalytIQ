@@ -221,6 +221,13 @@ SUPABASE_BUCKET = os.getenv("SUPABASE_BUCKET", "pdfs")
 # ============================================================================
 
 FEATURE_SSO = os.getenv("FEATURE_SSO", "False").lower() == "true"
+
+# When True, the nonce-based script-src moves from Report-Only into the ENFORCED
+# CSP (see core/factory.py). Safe only because CSP Phase 2 removed every inline
+# handler / javascript: URI and nonced every inline <script>. Kept a runtime env
+# flag (default False) so enforcement can be turned on — and instantly reverted —
+# from the Render env without a redeploy.
+CSP_ENFORCE = os.getenv("CSP_ENFORCE", "False").lower() == "true"
 # Dedicated key for encrypting stored SSO client secrets (Fernet). Falls back to
 # SECRET_KEY when unset. Set a distinct value so rotating SECRET_KEY/JWT does not
 # invalidate stored SSO secrets. Changing it requires re-entering client secrets.
