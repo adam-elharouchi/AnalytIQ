@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     userMenu = `
       <li class="user-menu">
-        <button class="user-menu-toggle profile-picture-btn" onclick="toggleUserMenu()" title="User Menu" aria-label="User menu" aria-expanded="false" aria-controls="userMenuDropdown">
+        <button class="user-menu-toggle profile-picture-btn" title="User Menu" aria-label="User menu" aria-expanded="false" aria-controls="userMenuDropdown">
           <img src="${avatarSrc}" alt="Profile picture" class="nav-profile-picture" />
         </button>
         <div class="user-menu-dropdown" id="userMenuDropdown">
@@ -40,10 +40,10 @@ document.addEventListener('DOMContentLoaded', function () {
             <span class="user-name">${userName}</span>
           </div>
           <div class="user-menu-divider"></div>
-          <button class="user-menu-item" onclick="handleManageProfile()">
+          <button class="user-menu-item" data-nav-action="manage-profile">
             <span>Manage Profile</span>
           </button>
-          <button class="user-menu-item" onclick="handleSignOut()">
+          <button class="user-menu-item" data-nav-action="sign-out">
             <span>Sign Out</span>
           </button>
         </div>
@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', function () {
       <a href="/home" class="nav-brand" aria-label="AnalytIQ home">
         <span class="logo-analyt" aria-hidden="true">Analyt</span><span class="logo-iq" aria-hidden="true">IQ</span>
       </a>
-      <button class="mobile-menu-toggle" onclick="toggleMobileMenu()" aria-label="Open navigation menu" aria-expanded="false" aria-controls="navLinks">Menu</button>
+      <button class="mobile-menu-toggle" aria-label="Open navigation menu" aria-expanded="false" aria-controls="navLinks">Menu</button>
       <ul class="nav-links" id="navLinks">
         <li><a href="/home" ${currentPage === 'home' ? 'class="active"' : ''}>Home</a></li>
         ${roleLinks}
@@ -104,6 +104,21 @@ document.addEventListener('DOMContentLoaded', function () {
   `;
 
   navbar.innerHTML = navHTML;
+
+  // CSP: the navbar is built via innerHTML, so its controls are wired here
+  // (right after render) instead of with inline on* attributes.
+  const _userToggle = navbar.querySelector('.user-menu-toggle');
+  if (_userToggle) _userToggle.addEventListener('click', toggleUserMenu);
+
+  const _mobileToggle = navbar.querySelector('.mobile-menu-toggle');
+  if (_mobileToggle) _mobileToggle.addEventListener('click', toggleMobileMenu);
+
+  navbar.querySelectorAll('.user-menu-item[data-nav-action]').forEach(function (item) {
+    item.addEventListener('click', function () {
+      if (item.dataset.navAction === 'manage-profile') handleManageProfile();
+      else if (item.dataset.navAction === 'sign-out') handleSignOut();
+    });
+  });
 
   // Update profile picture in navigation if it changes
   if (isAuthenticated) {

@@ -250,9 +250,12 @@ function showProcessError(message) {
     errorDiv.style.border = '1px solid var(--color-error-border, #ef4444)';
     errorDiv.innerHTML = `
         <strong>Error:</strong> ${message}<br>
-        <button onclick="location.reload()" class="btn btn-secondary" style="margin-top: 1rem;">Try Again</button>
+        <button class="js-reload-btn btn btn-secondary" style="margin-top: 1rem;">Try Again</button>
     `;
     processView.appendChild(errorDiv);
+    // CSP: wire the freshly-inserted button instead of an inline onclick.
+    const _reloadBtn = errorDiv.querySelector('.js-reload-btn');
+    if (_reloadBtn) _reloadBtn.addEventListener('click', function () { location.reload(); });
 
     // Mark current stage as failed
     const stages = ['stageUpload', 'stageExtract', 'stageAnalyze'];
@@ -382,9 +385,12 @@ function renderExercises() {
         container.innerHTML = `
             <div style="text-align: center; padding: 2rem; background: #fef3c7; border: 1px solid #f59e0b; border-radius: 0.5rem;">
                 <p style="color: #92400e;">No exercises were generated. Try uploading a different chapter with more content.</p>
-                <button class="btn btn-secondary" onclick="restartProcess()" style="margin-top: 1rem;">Start Over</button>
+                <button class="btn btn-secondary js-restart-btn" style="margin-top: 1rem;">Start Over</button>
             </div>
         `;
+        // CSP: wire the freshly-rendered button instead of an inline onclick.
+        const _restart = container.querySelector('.js-restart-btn');
+        if (_restart) _restart.addEventListener('click', restartProcess);
         return;
     }
 

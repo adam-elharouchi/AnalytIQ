@@ -98,7 +98,7 @@ function renderClasses(classes) {
     return `
       <div class="class-card neon-hover"
         style="${spanStyle} background: var(--color-dark); border-radius: 1rem; border: 1px solid rgba(255,255,255,0.1); overflow: hidden; display: flex; flex-direction: column; cursor: pointer;"
-        onclick="viewClass('${escapeHtml(classItem.class_id)}')">
+        data-class-action="view" data-class-id="${escapeHtml(classItem.class_id)}">
 
         <!-- IDE Tab Header -->
         <div style="background: rgba(0,0,0,0.2); padding: 0.65rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;">
@@ -146,7 +146,7 @@ function renderClasses(classes) {
             <button
               class="btn btn-primary"
               style="width: 100%; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 0.4rem;"
-              onclick="event.stopPropagation(); viewClass('${escapeHtml(classItem.class_id)}')"
+              data-class-action="view" data-class-id="${escapeHtml(classItem.class_id)}"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="pointer-events:none;"><polyline points="9 18 15 12 9 6"/></svg>
               Enter Class
@@ -278,4 +278,14 @@ document.addEventListener('DOMContentLoaded', function () {
   });
   const joinClassForm = document.getElementById('joinClassForm');
   if (joinClassForm) joinClassForm.addEventListener('submit', handleJoinClass);
+
+  // Class cards are rebuilt on every load — delegate on the static grid. closest()
+  // resolves the inner Open button vs the card itself; both open the same class.
+  const classesGridEl = document.getElementById('classesGrid');
+  if (classesGridEl) {
+    classesGridEl.addEventListener('click', function (e) {
+      const el = e.target.closest('[data-class-action="view"]');
+      if (el) viewClass(el.dataset.classId);
+    });
+  }
 });

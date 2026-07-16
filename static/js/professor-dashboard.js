@@ -125,7 +125,7 @@ function renderClasses(classes) {
           <button
             class="btn btn-primary"
             style="flex: 1; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 0.4rem;"
-            onclick="viewClass('${escapeHtml(classItem.class_id)}')"
+            data-class-action="view" data-class-id="${escapeHtml(classItem.class_id)}"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="pointer-events:none;"><polyline points="9 18 15 12 9 6"/></svg>
             Open Class
@@ -133,7 +133,7 @@ function renderClasses(classes) {
           <button
             class="btn btn-secondary"
             style="background: transparent; border-color: rgba(255,255,255,0.1); color: #94a3b8; font-size: 0.82rem; padding: 0.5rem 0.65rem; flex-shrink: 0;"
-            onclick="copyClassCode('${escapeHtml(classItem.class_id)}')"
+            data-class-action="copy" data-class-id="${escapeHtml(classItem.class_id)}"
             title="Copy class code"
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="pointer-events:none;">
@@ -142,7 +142,7 @@ function renderClasses(classes) {
           </button>
           <button
             class="btn btn-secondary"
-            onclick="deleteClass('${escapeHtml(classItem.class_id)}', '${escapeHtml(classItem.name)}')"
+            data-class-action="delete" data-class-id="${escapeHtml(classItem.class_id)}" data-class-name="${escapeHtml(classItem.name)}"
             title="Delete class"
             style="background: transparent; border-color: rgba(239,68,68,0.3); color: #ef4444; font-size: 0.82rem; padding: 0.5rem 0.65rem; flex-shrink: 0;"
           >
@@ -338,4 +338,17 @@ document.addEventListener('DOMContentLoaded', function () {
   });
   const createClassForm = document.getElementById('createClassForm');
   if (createClassForm) createClassForm.addEventListener('submit', handleCreateClass);
+
+  // Class cards are rebuilt on every load — delegate on the static grid.
+  const classesGridEl = document.getElementById('classesGrid');
+  if (classesGridEl) {
+    classesGridEl.addEventListener('click', function (e) {
+      const btn = e.target.closest('[data-class-action]');
+      if (!btn) return;
+      const id = btn.dataset.classId;
+      if (btn.dataset.classAction === 'view') viewClass(id);
+      else if (btn.dataset.classAction === 'copy') copyClassCode(id);
+      else if (btn.dataset.classAction === 'delete') deleteClass(id, btn.dataset.className);
+    });
+  }
 });
