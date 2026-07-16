@@ -94,6 +94,36 @@
   </div>
 
   <style>
+    /* ── Card hover states ──
+       These replace the inline onmouseover/onmouseout handlers that student-class.js
+       used to emit on dynamically-rendered cards (removed for CSP: an enforced
+       script-src blocks inline handlers). !important is required because the cards
+       carry their base values in a style="" attribute, which outranks a stylesheet
+       rule. */
+    .practice-card:hover {
+      transform: translateY(-4px) !important;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4) !important;
+      border-color: rgba(255, 255, 255, 0.2) !important;
+    }
+
+    .chapter-card:hover {
+      transform: translateY(-2px) !important;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35) !important;
+      border-color: rgba(255, 255, 255, 0.18) !important;
+    }
+
+    .resource-card:hover {
+      transform: translateY(-2px) !important;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3) !important;
+      border-color: rgba(255, 255, 255, 0.15) !important;
+    }
+
+    .start-exercise-btn:hover,
+    .js-open-chapter:hover {
+      background: var(--color-primary) !important;
+      color: white !important;
+    }
+
     /* ── Terminal tab active state ── */
     .tab-button.active {
       color: var(--color-primary) !important;
