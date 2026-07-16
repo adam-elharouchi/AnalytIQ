@@ -811,7 +811,7 @@
 <nav class="navbar" id="navbar"></nav>
 
   <!-- Code Assistant Chat Widget -->
-  <button class="chat-widget-button" id="chatWidgetButton" onclick="toggleChatWidget()" title="Ask a question" aria-label="Open Code Assistant">
+  <button class="chat-widget-button js-toggle-chat" id="chatWidgetButton" title="Ask a question" aria-label="Open Code Assistant">
     <span class="logo-iq" aria-hidden="true">IQ</span>
   </button>
 
@@ -819,7 +819,7 @@
     <div class="chat-modal">
       <div class="chat-modal-header">
         <h3>Code Assistant</h3>
-        <button class="chat-modal-close" onclick="toggleChatWidget()" aria-label="Close Code Assistant">×</button>
+        <button class="chat-modal-close js-toggle-chat" aria-label="Close Code Assistant">×</button>
       </div>
       <div class="chat-modal-body">
         <div class="chat-messages" id="chatMessagesContainer">
@@ -835,9 +835,8 @@
           <div class="input-container-compact">
             <div class="input-wrapper">
               <textarea class="chat-input-compact" id="chatInputField" aria-label="Chat message"
-                placeholder="Type your message, paste code, or describe what you need..." rows="2"
-                onkeydown="handlePlaygroundKeyDown(event)"></textarea>
-              <button class="btn-send-compact" id="chatSendButton" onclick="sendPlaygroundChatMessage()"
+                placeholder="Type your message, paste code, or describe what you need..." rows="2"></textarea>
+              <button class="btn-send-compact" id="chatSendButton"
                 title="Send message">Send</button>
             </div>
           </div>
@@ -851,9 +850,7 @@
       <div class="playground-header">
         <h1>Practice Playground</h1>
         <button id="backButton"
-          style="display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); color: #94a3b8; cursor: pointer; padding: 0.5rem 0.875rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 500; transition: all 0.2s;"
-          onmouseover="this.style.background='rgba(255,255,255,0.08)'; this.style.color='#f8fafc';"
-          onmouseout="this.style.background='rgba(255,255,255,0.05)'; this.style.color='#94a3b8';">
+          style="display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); color: #94a3b8; cursor: pointer; padding: 0.5rem 0.875rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 500; transition: all 0.2s;">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
           Back to Exercises
         </button>
@@ -906,16 +903,14 @@
               </div>
               <div class="code-editor-container">
                 <div class="code-editor-line-numbers" id="lineNumbers"></div>
-                <textarea id="codeEditor" class="code-editor" aria-labelledby="codeEditorTitle" placeholder="Write your code here..." spellcheck="false" autocorrect="off" autocapitalize="off" autocomplete="off"
-                  onscroll="syncLineNumbers()" oninput="updateLineNumbers()"
-                  onkeydown="handleCodeEditorKeyDown(event)"></textarea>
+                <textarea id="codeEditor" class="code-editor" aria-labelledby="codeEditorTitle" placeholder="Write your code here..." spellcheck="false" autocorrect="off" autocapitalize="off" autocomplete="off"></textarea>
               </div>
             </div>
           </div>
 
           <div class="playground-actions">
-            <button class="btn-run" id="runBtn" onclick="runCode()">&#9654; Run &amp; Grade</button>
-            <button class="btn-reset" onclick="resetCode()">Reset</button>
+            <button class="btn-run" id="runBtn">&#9654; Run &amp; Grade</button>
+            <button class="btn-reset" id="resetBtn">Reset</button>
           </div>
         </div>
 
@@ -923,7 +918,7 @@
         <div class="output-col">
           <div class="col-header">
             <h3>Output</h3>
-            <button class="output-clear-btn" onclick="clearOutput()">Clear</button>
+            <button class="output-clear-btn" id="clearOutputBtn">Clear</button>
           </div>
           <div class="output-col-body">
             <div class="output-panel" id="outputPanel">
@@ -1399,8 +1394,8 @@
       html += `
         <div class="rating-row">
           <span>Was this exercise helpful?</span>
-          <button class="btn-thumb" id="thumbUp" onclick="rateExercise('up')" title="Helpful">👍</button>
-          <button class="btn-thumb" id="thumbDown" onclick="rateExercise('down')" title="Not helpful">👎</button>
+          <button class="btn-thumb" id="thumbUp" data-rating="up" title="Helpful">👍</button>
+          <button class="btn-thumb" id="thumbDown" data-rating="down" title="Not helpful">👎</button>
         </div>`;
 
       container.innerHTML = html;
@@ -1822,6 +1817,58 @@
       const gp = document.getElementById('gradingPanel');
       gp.style.display = 'none';
       gp.innerHTML = '';
+    }
+
+    // CSP: wire every control here instead of inline on* attributes. Each lookup
+    // is guarded so a missing element is a no-op.
+    document.querySelectorAll('.js-toggle-chat').forEach(function (el) {
+      el.addEventListener('click', toggleChatWidget);
+    });
+
+    const _chatInput = document.getElementById('chatInputField');
+    if (_chatInput) _chatInput.addEventListener('keydown', handlePlaygroundKeyDown);
+
+    const _chatSend = document.getElementById('chatSendButton');
+    if (_chatSend) _chatSend.addEventListener('click', sendPlaygroundChatMessage);
+
+    const _codeEditor = document.getElementById('codeEditor');
+    if (_codeEditor) {
+      _codeEditor.addEventListener('scroll', syncLineNumbers);
+      _codeEditor.addEventListener('input', updateLineNumbers);
+      _codeEditor.addEventListener('keydown', handleCodeEditorKeyDown);
+    }
+
+    const _runBtn = document.getElementById('runBtn');
+    if (_runBtn) _runBtn.addEventListener('click', runCode);
+
+    const _resetBtn = document.getElementById('resetBtn');
+    if (_resetBtn) _resetBtn.addEventListener('click', resetCode);
+
+    const _clearBtn = document.getElementById('clearOutputBtn');
+    if (_clearBtn) _clearBtn.addEventListener('click', clearOutput);
+
+    // The thumbs are rendered into #gradingPanel at runtime by
+    // renderGradingResult(), so this must be a delegated listener on the static
+    // panel — a direct querySelectorAll here would run before they exist.
+    const _gradingPanel = document.getElementById('gradingPanel');
+    if (_gradingPanel) {
+      _gradingPanel.addEventListener('click', function (e) {
+        const btn = e.target.closest('.btn-thumb[data-rating]');
+        if (btn) rateExercise(btn.dataset.rating);
+      });
+    }
+
+    // Back button hover styling (was inline onmouseover/onmouseout).
+    const _backBtn = document.getElementById('backButton');
+    if (_backBtn) {
+      _backBtn.addEventListener('mouseover', function () {
+        _backBtn.style.background = 'rgba(255,255,255,0.08)';
+        _backBtn.style.color = '#f8fafc';
+      });
+      _backBtn.addEventListener('mouseout', function () {
+        _backBtn.style.background = 'rgba(255,255,255,0.05)';
+        _backBtn.style.color = '#94a3b8';
+      });
     }
   </script>
 {% endblock %}
