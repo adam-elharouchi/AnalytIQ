@@ -3,6 +3,20 @@
  * Handles global metrics, tenant management, and user operations across all of AnalytIQ.
  */
 
+/**
+ * Serialise handler arguments into a data-sa-args attribute. Pass RAW values;
+ * JSON.stringify keeps types and escapeHtml makes the payload attribute-safe.
+ * (See taArgs in tenant-admin.js — same contract; do not pre-escape.)
+ */
+function saArgs(...args) {
+    return escapeHtml(JSON.stringify(args));
+}
+
+/** Attribute-safe single value for a data-* payload (e.g. the copy-to-clipboard text). */
+function saAttr(value) {
+    return escapeHtml(String(value == null ? '' : value));
+}
+
 class SuperAdminDashboard {
     constructor() {
         const _base = window.API_BASE_URL || '/api';
@@ -341,17 +355,17 @@ class SuperAdminDashboard {
                     <!-- Actions -->
                     <div style="display: flex; gap: 0.5rem; margin-top: auto; padding-top: 0.25rem; border-top: 1px solid rgba(255,255,255,0.05);">
                         <button class="btn btn-primary" style="flex: 1; font-size: 0.82rem; display: flex; align-items: center; justify-content: center; gap: 0.35rem;"
-                            onclick="window.adminApp.viewTenantUsers('${t.tenant_id}', '${safeName}')">
+                            data-sa-action="viewTenantUsers" data-sa-args="${saArgs(t.tenant_id, t.name)}">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="pointer-events:none;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                             Users
                         </button>
                         <button class="btn btn-secondary" style="font-size: 0.82rem; padding: 0.5rem 0.75rem; background: transparent; border-color: rgba(255,255,255,0.1); color: #94a3b8;"
-                            onclick="window.adminApp.openTenantDetail('${t.tenant_id}', 'details', ${JSON.stringify(t.name)}, ${JSON.stringify(t.lti_issuer)}, ${JSON.stringify(t.email_domain)})"
+                            data-sa-action="openTenantDetail" data-sa-args="${saArgs(t.tenant_id, 'details', t.name, t.lti_issuer, t.email_domain)}"
                             title="Edit tenant">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="pointer-events:none;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                         </button>
                         <button class="btn btn-secondary" style="font-size: 0.82rem; padding: 0.5rem 0.75rem; background: transparent; border-color: rgba(255,255,255,0.1); color: #94a3b8;"
-                            onclick="window.adminApp.toggleTenantStatus('${t.tenant_id}', ${!isActive})"
+                            data-sa-action="toggleTenantStatus" data-sa-args="${saArgs(t.tenant_id, !isActive)}"
                             title="${isActive ? 'Disable tenant' : 'Enable tenant'}">
                             ${isActive
                                 ? '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="pointer-events:none;"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>'
@@ -359,7 +373,7 @@ class SuperAdminDashboard {
                             }
                         </button>
                         <button class="btn btn-secondary" style="font-size: 0.82rem; padding: 0.5rem 0.75rem; background: transparent; border-color: rgba(239,68,68,0.25); color: rgba(239,68,68,0.7);"
-                            onclick="window.adminApp.deleteTenant('${t.tenant_id}', '${safeName}')"
+                            data-sa-action="deleteTenant" data-sa-args="${saArgs(t.tenant_id, t.name)}"
                             title="Delete tenant">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="pointer-events:none;"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
                         </button>
@@ -407,24 +421,24 @@ class SuperAdminDashboard {
                 <td style="padding: 0.75rem 1rem;">
                     <div class="icon-btn-row">
                         ${!u.is_super_admin ? `
-                        <button class="icon-btn icon-btn-green" title="Impersonate" onclick="window.adminApp.impersonateUser('${u.user_id}')">
+                        <button class="icon-btn icon-btn-green" title="Impersonate" data-sa-action="impersonateUser" data-sa-args="${saArgs(u.user_id)}">
                             <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>
                         </button>` : ''}
-                        <button class="icon-btn" title="Change Role" onclick="window.adminApp.changeUserRole('${u.user_id}','${escapeHtml(u.role)}')">
+                        <button class="icon-btn" title="Change Role" data-sa-action="changeUserRole" data-sa-args="${saArgs(u.user_id, u.role)}">
                             <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                         </button>
-                        <button class="icon-btn ${u.account_status === 'disabled' ? 'icon-btn-success' : 'icon-btn-amber'}" title="${u.account_status === 'disabled' ? 'Enable' : 'Disable'}" onclick="window.adminApp.toggleUserStatus('${u.user_id}','${u.account_status === 'disabled' ? 'active' : 'disabled'}')">
+                        <button class="icon-btn ${u.account_status === 'disabled' ? 'icon-btn-success' : 'icon-btn-amber'}" title="${u.account_status === 'disabled' ? 'Enable' : 'Disable'}" data-sa-action="toggleUserStatus" data-sa-args="${saArgs(u.user_id, u.account_status === 'disabled' ? 'active' : 'disabled')}">
                             ${u.account_status === 'disabled'
                                 ? `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="10 8 16 12 10 16 10 8"/></svg>`
                                 : `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="10" y1="15" x2="10" y2="9"/><line x1="14" y1="15" x2="14" y2="9"/></svg>`}
                         </button>
-                        <button class="icon-btn" title="Reset Password" onclick="window.adminApp.forcePasswordReset('${u.user_id}','${safeName}')">
+                        <button class="icon-btn" title="Reset Password" data-sa-action="forcePasswordReset" data-sa-args="${saArgs(u.user_id, u.name)}">
                             <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
                         </button>
-                        <button class="icon-btn" title="Export Data" onclick="window.adminApp.exportUserData('${u.user_id}')">
+                        <button class="icon-btn" title="Export Data" data-sa-action="exportUserData" data-sa-args="${saArgs(u.user_id)}">
                             <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                         </button>
-                        <button class="icon-btn icon-btn-danger" title="Delete User" onclick="window.adminApp.deleteUser('${u.user_id}','${safeName}')">
+                        <button class="icon-btn icon-btn-danger" title="Delete User" data-sa-action="deleteUser" data-sa-args="${saArgs(u.user_id, u.name)}">
                             <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
                         </button>
                     </div>
@@ -437,9 +451,9 @@ class SuperAdminDashboard {
         const paginator = document.getElementById('users-pagination');
         if (paginator) {
             paginator.innerHTML = `
-                <button class="btn btn-secondary" ${currentPage <= 1 ? 'disabled' : ''} onclick="window.adminApp.loadUsers(${currentPage - 1})">Previous</button>
+                <button class="btn btn-secondary" ${currentPage <= 1 ? 'disabled' : ''} data-sa-action="loadUsers" data-sa-args="${saArgs(currentPage - 1)}">Previous</button>
                 <span style="display: flex; align-items: center; padding: 0 1rem;">Page ${currentPage} of ${totalPages}</span>
-                <button class="btn btn-secondary" ${currentPage >= totalPages ? 'disabled' : ''} onclick="window.adminApp.loadUsers(${currentPage + 1})">Next</button>
+                <button class="btn btn-secondary" ${currentPage >= totalPages ? 'disabled' : ''} data-sa-action="loadUsers" data-sa-args="${saArgs(currentPage + 1)}">Next</button>
             `;
         }
     }
@@ -470,7 +484,7 @@ class SuperAdminDashboard {
                 <td style="padding: 1rem;"><div style="font-weight: 500; margin-bottom: 0.25rem;">${escapeHtml(t.subject)}</div><div style="font-size: 0.85rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 300px;">${escapeHtml(t.message)}</div></td>
                 <td style="padding: 1rem; color: var(--text-muted);">${date}</td>
                 <td style="padding: 1rem; text-align: right;">
-                    <select onchange="window.adminApp.updateTicketStatus('${t.id}', this.value)"
+                    <select data-sa-change="updateTicketStatus" data-sa-args="${saArgs(t.id)}" data-sa-arg-value="1"
                         style="padding:0.3rem 0.5rem;border:1px solid var(--border-color);border-radius:0.375rem;background:var(--bg-card);color:var(--text-color);font-size:0.85rem;cursor:pointer;">
                         ${['new','read','resolved','archived'].map(s =>
                             `<option value="${s}" ${(t.status||'new')===s ? 'selected' : ''}>${s}</option>`
@@ -618,7 +632,7 @@ class SuperAdminDashboard {
               ${field('tdLtiAuthTokenUrl', 'Auth Token URL *', cfg.auth_token_url, 'https://…/login/oauth2/token', '')}
               ${field('tdLtiKeySetUrl', 'Key Set URL (JWKS) *', cfg.key_set_url, 'https://…/api/lti/security/jwks', '')}
               <div style="display:flex;justify-content:flex-end;">
-                <button onclick="window.adminApp.saveTenantLtiConfig()"
+                <button data-sa-action="saveTenantLtiConfig"
                   style="padding:0.5rem 1.1rem;border:none;border-radius:0.375rem;background:var(--color-primary,#2569f4);color:#fff;cursor:pointer;font-size:0.85rem;font-weight:600;">
                   Save LTI Config
                 </button>
@@ -703,9 +717,9 @@ class SuperAdminDashboard {
                   ${p.discovery_url ? `<div style="font-size:0.78rem;color:#475569;font-family:var(--font-mono);margin-top:0.2rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(p.discovery_url)}">${escapeHtml(p.discovery_url.length > 55 ? p.discovery_url.substring(0,55)+'…' : p.discovery_url)}</div>` : ''}
                 </div>
                 <div style="display:flex;gap:0.4rem;flex-shrink:0;">
-                  <button onclick="window.adminApp.openTenantSSOForm('${p.provider_id}')"
+                  <button data-sa-action="openTenantSSOForm" data-sa-args="${saArgs(p.provider_id)}"
                     style="padding:0.4rem 0.75rem;border:1px solid rgba(255,255,255,0.1);border-radius:0.35rem;background:transparent;color:#94a3b8;cursor:pointer;font-size:0.8rem;">Edit</button>
-                  <button onclick="window.adminApp.deleteTenantSSOProvider('${p.provider_id}','${escapeHtml(p.provider_name).replace(/'/g,"\\'")}','${document.getElementById('editTenantId').value}')"
+                  <button data-sa-action="deleteTenantSSOProvider" data-sa-args="${saArgs(p.provider_id, p.provider_name, document.getElementById('editTenantId').value)}"
                     style="padding:0.4rem 0.75rem;border:1px solid rgba(239,68,68,0.25);border-radius:0.35rem;background:transparent;color:rgba(239,68,68,0.7);cursor:pointer;font-size:0.8rem;">Delete</button>
                 </div>
               </div>
@@ -921,8 +935,8 @@ class SuperAdminDashboard {
             <div>
               <div style="font-size:0.73rem;color:#64748b;margin-bottom:0.18rem;">${r.label}</div>
               <div style="display:flex;gap:0.4rem;align-items:center;">
-                <input readonly value="${r.value}" style="${inputStyle}" onclick="this.select();" />
-                <button onclick="navigator.clipboard.writeText('${r.value}').then(()=>{this.textContent='✓';setTimeout(()=>this.textContent='Copy',1300);})"
+                <input readonly value="${r.value}" style="${inputStyle}" class="sa-select-on-click" />
+                <button class="sa-copy-btn" data-sa-copy="${saAttr(r.value)}"
                   style="flex-shrink:0;padding:0.38rem 0.6rem;border:1px solid rgba(255,255,255,0.1);border-radius:0.3rem;background:transparent;color:#64748b;cursor:pointer;font-size:0.73rem;">Copy</button>
               </div>
             </div>`).join('');
@@ -1229,10 +1243,10 @@ class SuperAdminDashboard {
         if (pager) {
             const totalStr = `<span style="color:var(--text-muted);font-size:0.85rem;">${total.toLocaleString()} entries</span>`;
             const prev = currentPage > 1
-                ? `<button class="btn btn-secondary" style="padding:0.3rem 0.75rem" onclick="window.adminApp.loadAuditLog(${currentPage - 1})">← Prev</button>`
+                ? `<button class="btn btn-secondary" style="padding:0.3rem 0.75rem" data-sa-action="loadAuditLog" data-sa-args="${saArgs(currentPage - 1)}">← Prev</button>`
                 : '';
             const next = currentPage < pages
-                ? `<button class="btn btn-secondary" style="padding:0.3rem 0.75rem" onclick="window.adminApp.loadAuditLog(${currentPage + 1})">Next →</button>`
+                ? `<button class="btn btn-secondary" style="padding:0.3rem 0.75rem" data-sa-action="loadAuditLog" data-sa-args="${saArgs(currentPage + 1)}">Next →</button>`
                 : '';
             pager.innerHTML = `${prev} ${totalStr} ${next}`;
         }
@@ -1324,11 +1338,11 @@ class SuperAdminDashboard {
                     <td style="padding:1rem;text-align:right;display:flex;gap:0.5rem;justify-content:flex-end;">
                         <button class="btn btn-sm btn-success"
                             style="background:var(--color-success, #10b981);color:#fff;border:none;"
-                            onclick="window.adminApp.approveAdmin('${u.user_id}', ${nameArg})">
+                            data-sa-action="approveAdmin" data-sa-args="${saArgs(u.user_id, u.name)}">
                             Approve
                         </button>
                         <button class="btn btn-sm btn-danger"
-                            onclick="window.adminApp.denyAdmin('${u.user_id}', ${nameArg})">
+                            data-sa-action="denyAdmin" data-sa-args="${saArgs(u.user_id, u.name)}">
                             Deny
                         </button>
                     </td>
@@ -1611,10 +1625,10 @@ class SuperAdminDashboard {
                     <td style="padding:1rem;text-align:center;">${c.chapter_count || 0}</td>
                     <td style="padding:0.75rem 1rem;">
                         <div class="icon-btn-row">
-                            <button class="icon-btn" title="Transfer Ownership" onclick="window.adminApp.transferClass('${c.class_id}','${safeName}')">
+                            <button class="icon-btn" title="Transfer Ownership" data-sa-action="transferClass" data-sa-args="${saArgs(c.class_id, c.name)}">
                                 <svg viewBox="0 0 24 24"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
                             </button>
-                            <button class="icon-btn icon-btn-danger" title="Delete Class" onclick="window.adminApp.deleteClass('${c.class_id}','${safeName}')">
+                            <button class="icon-btn icon-btn-danger" title="Delete Class" data-sa-action="deleteClass" data-sa-args="${saArgs(c.class_id, c.name)}">
                                 <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
                             </button>
                         </div>
@@ -1625,8 +1639,8 @@ class SuperAdminDashboard {
             // Pagination
             const pager = document.getElementById('classes-admin-pagination');
             if (pager) {
-                const prev = page > 1 ? `<button class="btn btn-secondary" onclick="window.adminApp.loadAllClasses(${page-1})">← Prev</button>` : '';
-                const next = page < (data.pages || 1) ? `<button class="btn btn-secondary" onclick="window.adminApp.loadAllClasses(${page+1})">Next →</button>` : '';
+                const prev = page > 1 ? `<button class="btn btn-secondary" data-sa-action="loadAllClasses" data-sa-args="${saArgs(page - 1)}">← Prev</button>` : '';
+                const next = page < (data.pages || 1) ? `<button class="btn btn-secondary" data-sa-action="loadAllClasses" data-sa-args="${saArgs(page + 1)}">Next →</button>` : '';
                 const info = `<span style="display:flex;align-items:center;color:var(--text-muted);font-size:0.85rem;">Page ${page} of ${data.pages || 1} (${data.total || classes.length} classes)</span>`;
                 pager.innerHTML = `${prev}${info}${next}`;
             }
@@ -1750,8 +1764,8 @@ class SuperAdminDashboard {
                     <td style="padding:1rem;">${activeBadge}</td>
                     <td style="padding:1rem;color:var(--text-muted);font-size:0.9rem;">${exp}</td>
                     <td style="padding:1rem;text-align:right;display:flex;gap:0.4rem;justify-content:flex-end;">
-                        <button class="btn btn-sm btn-secondary" onclick="window.adminApp.toggleAnnouncement('${a.id}',${!a.is_active})">${a.is_active ? 'Deactivate' : 'Activate'}</button>
-                        <button class="btn btn-sm btn-danger" onclick="window.adminApp.deleteAnnouncement('${a.id}')">Delete</button>
+                        <button class="btn btn-sm btn-secondary" data-sa-action="toggleAnnouncement" data-sa-args="${saArgs(a.id, !a.is_active)}">${a.is_active ? 'Deactivate' : 'Activate'}</button>
+                        <button class="btn btn-sm btn-danger" data-sa-action="deleteAnnouncement" data-sa-args="${saArgs(a.id)}">Delete</button>
                     </td>
                 </tr>`;
             }).join('');
@@ -1840,7 +1854,7 @@ class SuperAdminDashboard {
                     <td style="padding:0.75rem;color:var(--text-muted);">${escapeHtml(ip.blocked_by_name || ip.blocked_by || '—')}</td>
                     <td style="padding:0.75rem;color:var(--text-muted);">${date}</td>
                     <td style="padding:0.75rem;text-align:right;">
-                        <button class="btn btn-sm btn-danger" onclick="window.adminApp.removeIpBlock('${ip.id}','${escapeHtml(ip.ip_address)}')">Remove</button>
+                        <button class="btn btn-sm btn-danger" data-sa-action="removeIpBlock" data-sa-args="${saArgs(ip.id, ip.ip_address)}">Remove</button>
                     </td>
                 </tr>`;
             }).join('');
@@ -1895,4 +1909,69 @@ class SuperAdminDashboard {
 window.adminApp = null;
 document.addEventListener('DOMContentLoaded', () => {
     window.adminApp = new SuperAdminDashboard();
+
+    const parseArgs = (el) => {
+        if (!el.dataset.saArgs) return [];
+        try {
+            return JSON.parse(el.dataset.saArgs);
+        } catch (_) {
+            return [];
+        }
+    };
+
+    // CSP: all controls use data-sa-* attributes instead of inline handlers.
+    // One delegated click listener covers static chrome and rows rendered later.
+    document.addEventListener('click', (e) => {
+        const app = window.adminApp;
+        if (!app) return;
+
+        // Plain "select the field's text" inputs (formerly a self-select handler).
+        const selectable = e.target.closest('.sa-select-on-click');
+        if (selectable && typeof selectable.select === 'function') selectable.select();
+
+        // Copy-to-clipboard buttons (was an inline navigator.clipboard call).
+        const copyBtn = e.target.closest('[data-sa-copy]');
+        if (copyBtn) {
+            navigator.clipboard.writeText(copyBtn.dataset.saCopy).then(() => {
+                const prev = copyBtn.textContent;
+                copyBtn.textContent = '✓';
+                setTimeout(() => { copyBtn.textContent = prev; }, 1300);
+            });
+        }
+
+        // Close-modal buttons (was inline getElementById(...).style.display='none').
+        const closer = e.target.closest('[data-sa-close]');
+        if (closer) {
+            const modal = document.getElementById(closer.dataset.saClose);
+            if (modal) modal.style.display = 'none';
+        }
+
+        const el = e.target.closest('[data-sa-action],[data-sa-goto]');
+        if (!el) return;
+
+        // Some buttons switch to a section first (was a compound handler).
+        if (el.dataset.saGoto) {
+            const tab = document.querySelector(`[data-target="${el.dataset.saGoto}"]`);
+            if (tab) tab.click();
+        }
+        // data-sa-action may list several methods to call in order.
+        (el.dataset.saAction || '').split(/\s+/).filter(Boolean).forEach((name) => {
+            const fn = app[name];
+            if (typeof fn === 'function') fn.apply(app, parseArgs(el));
+        });
+    });
+
+    // Change events (selects / checkboxes) that carried onchange handlers.
+    document.addEventListener('change', (e) => {
+        const app = window.adminApp;
+        if (!app) return;
+        const el = e.target.closest('[data-sa-change]');
+        if (!el) return;
+        const fn = app[el.dataset.saChange];
+        if (typeof fn !== 'function') return;
+        const args = parseArgs(el);
+        if (el.dataset.saArgValue) args.push(e.target.value);
+        if (el.dataset.saArgChecked) args.push(e.target.checked);
+        fn.apply(app, args);
+    });
 });
