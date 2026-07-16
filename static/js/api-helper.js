@@ -183,7 +183,13 @@ function escapeHtml(text) {
     if (!text) return '';
     const div = document.createElement('div');
     div.textContent = text;
-    return div.innerHTML;
+    // textContent -> innerHTML escapes & < > but NOT quotes. Callers embed the
+    // result inside double-quoted HTML attributes (event handlers built as
+    // strings), so an unescaped " lets user-controlled text break out of the
+    // attribute and inject a new one (stored XSS against admins). Escape it.
+    // Single quotes are deliberately left literal: call sites that build a JS
+    // string still apply their own .replace(/'/g, "\\'") for that context.
+    return div.innerHTML.replace(/"/g, '&quot;');
 }
 
 // Get difficulty color
