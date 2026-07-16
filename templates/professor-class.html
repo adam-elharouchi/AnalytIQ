@@ -47,13 +47,13 @@
         </div>
 
         <div style="display: flex; gap: 0.5rem; align-items: center; flex-shrink: 0; margin-left: 1.5rem;">
-          <button class="btn btn-secondary" onclick="copyClassCodeToClipboard()"
+          <button class="btn btn-secondary" data-pc-fn="copyClassCodeToClipboard"
             style="background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; font-size: 0.8rem; padding: 0.4rem 0.85rem; transition: all 0.2s;">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 0.35rem; vertical-align: middle;">
               <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
             </svg>Copy Code
           </button>
-          <button class="btn btn-primary" onclick="showEditClassModal()"
+          <button class="btn btn-primary" data-pc-fn="showEditClassModal"
             style="font-size: 0.8rem; padding: 0.4rem 0.85rem;">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 0.35rem; vertical-align: middle;">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
@@ -84,25 +84,63 @@
   <!-- Tabs (Pill Style) -->
   <div id="tabsContainer" style="display: none; margin-bottom: 2.5rem;">
     <nav class="terminal-tab-nav">
-      <button class="tab-button terminal-tab-btn active" onclick="switchTab('chapters')" id="tabChapters">
+      <button class="tab-button terminal-tab-btn active" data-pc-fn="switchTab" data-pc-arg="chapters" id="tabChapters">
         <span class="terminal-tab-num">01</span> Chapters
       </button>
-      <button class="tab-button terminal-tab-btn" onclick="switchTab('exercises')" id="tabExercises">
+      <button class="tab-button terminal-tab-btn" data-pc-fn="switchTab" data-pc-arg="exercises" id="tabExercises">
         <span class="terminal-tab-num">02</span> Exercises
       </button>
-      <button class="tab-button terminal-tab-btn" onclick="switchTab('resources')" id="tabResources">
+      <button class="tab-button terminal-tab-btn" data-pc-fn="switchTab" data-pc-arg="resources" id="tabResources">
         <span class="terminal-tab-num">03</span> Resources
       </button>
-      <button class="tab-button terminal-tab-btn" onclick="switchTab('students')" id="tabStudents">
+      <button class="tab-button terminal-tab-btn" data-pc-fn="switchTab" data-pc-arg="students" id="tabStudents">
         <span class="terminal-tab-num">04</span> Students
       </button>
-      <button class="tab-button terminal-tab-btn" onclick="switchTab('progress')" id="tabProgress">
+      <button class="tab-button terminal-tab-btn" data-pc-fn="switchTab" data-pc-arg="progress" id="tabProgress">
         <span class="terminal-tab-num">05</span> Leaderboards
       </button>
     </nav>
   </div>
 
   <style>
+    /* ── Card / button hover states ──
+       These replace inline onmouseover/onmouseout handlers that professor-class.js
+       emitted on dynamically-rendered cards and buttons (removed for CSP: an
+       enforced script-src blocks inline handlers). !important is required because
+       the elements carry their base values in a style="" attribute, which outranks
+       a stylesheet rule. */
+    .chapter-card:hover {
+      transform: translateY(-2px) !important;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35) !important;
+      border-color: rgba(255, 255, 255, 0.18) !important;
+    }
+
+    .practice-card:hover {
+      transform: translateY(-4px) !important;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4) !important;
+      border-color: rgba(255, 255, 255, 0.2) !important;
+    }
+
+    .resource-card:hover {
+      transform: translateY(-2px) !important;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35) !important;
+    }
+
+    .pc-btn-primary:hover {
+      background: var(--color-primary) !important;
+      color: white !important;
+    }
+
+    .pc-btn-ghost:hover {
+      border-color: rgba(255, 255, 255, 0.25) !important;
+      color: #f8fafc !important;
+    }
+
+    .pc-btn-danger:hover {
+      background: rgba(220, 38, 38, 0.1) !important;
+      border-color: rgba(220, 38, 38, 0.5) !important;
+    }
+
     /* ── Terminal tab active state ── */
     .tab-button.active {
       color: var(--color-primary) !important;
@@ -180,13 +218,13 @@
   <div id="tabContentChapters" class="tab-content" style="display: none;">
     <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 1.5rem;">
       <div style="display: flex; gap: 0.5rem;">
-        <button class="btn btn-secondary" onclick="window.contentImporter && window.contentImporter.show()"
+        <button class="btn btn-secondary" data-pc-ci="show"
           style="display: flex; align-items: center; gap: 0.4rem;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
           </svg>Import from Web
         </button>
-        <button class="btn btn-primary" onclick="showUploadChapterModal()"
+        <button class="btn btn-primary" data-pc-fn="showUploadChapterModal"
           style="display: flex; align-items: center; gap: 0.4rem;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M12 5v14M5 12h14"/>
@@ -207,13 +245,13 @@
     <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 1.5rem;">
       <div style="display: flex; gap: 0.5rem;">
         <a href="#"
-          onclick="window.location.href='/upload-assistant?class_id=' + new URLSearchParams(window.location.search).get('class_id')"
+          data-pc-nav-upload="1"
           class="btn btn-secondary" style="display: flex; align-items: center; gap: 0.4rem; text-decoration: none;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
           </svg>Upload Assistant
         </a>
-        <button class="btn btn-primary" onclick="showCreateExerciseModal()"
+        <button class="btn btn-primary" data-pc-fn="showCreateExerciseModal"
           style="display: flex; align-items: center; gap: 0.4rem;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M12 5v14M5 12h14"/>
@@ -232,7 +270,7 @@
   <!-- Resources Tab -->
   <div id="tabContentResources" class="tab-content" style="display: none;">
     <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 1.5rem;">
-      <button class="btn btn-primary" onclick="showAddResourceModal()"
+      <button class="btn btn-primary" data-pc-fn="showAddResourceModal"
         style="display: flex; align-items: center; gap: 0.4rem;">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M12 5v14M5 12h14"/>
@@ -253,7 +291,7 @@
       <div style="display: flex; align-items: center; gap: 0.75rem;">
         <span style="color: #64748b; font-size: 0.875rem;" id="studentsCount">0 students</span>
         <button id="syncLmsBtn" class="btn btn-secondary"
-          style="display: none; font-size: 0.85rem; padding: .4rem .9rem;" onclick="syncLmsRoster()">
+          style="display: none; font-size: 0.85rem; padding: .4rem .9rem;" data-pc-fn="syncLmsRoster">
           Sync from LMS
         </button>
       </div>
@@ -270,9 +308,9 @@
   <div id="tabContentProgress" class="tab-content" style="display: none;">
     <!-- Progress View Sub-Tabs -->
     <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.08);">
-      <button class="sub-tab-button active" onclick="switchProgressView('avgLeaderboard')" id="subTabAvg">Average Score</button>
-      <button class="sub-tab-button" onclick="switchProgressView('exLeaderboard')" id="subTabEx">By Exercise</button>
-      <button class="sub-tab-button" onclick="switchProgressView('table')" id="subTabTable">Detailed Matrix</button>
+      <button class="sub-tab-button active" data-pc-fn="switchProgressView" data-pc-arg="avgLeaderboard" id="subTabAvg">Average Score</button>
+      <button class="sub-tab-button" data-pc-fn="switchProgressView" data-pc-arg="exLeaderboard" id="subTabEx">By Exercise</button>
+      <button class="sub-tab-button" data-pc-fn="switchProgressView" data-pc-arg="table" id="subTabTable">Detailed Matrix</button>
     </div>
 
     <div id="progressOverview">
@@ -290,7 +328,7 @@
         <div style="margin-bottom: 1rem;">
           <label for="leaderboardExerciseSelect"
             style="font-weight: 500; color: #94a3b8; margin-right: 0.5rem; font-size: 0.875rem;">Select Exercise:</label>
-          <select id="leaderboardExerciseSelect" onchange="loadExerciseLeaderboard(this.value)"
+          <select id="leaderboardExerciseSelect" data-pc-change="loadExerciseLeaderboard" data-pc-change-value="1"
             style="padding: 0.4rem 0.75rem; background: rgba(30,41,59,0.8); border: 1px solid rgba(255,255,255,0.1); border-radius: 0.375rem; color: #e2e8f0; font-size: 0.875rem;">
             <option value="">-- Choose an Exercise --</option>
           </select>
@@ -311,11 +349,11 @@
       style="background: var(--bg-card, rgba(26,34,53,0.97)); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); border-radius: 0.75rem; padding: 2rem; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
         <h2 id="uploadChapterModalTitle" style="margin: 0; color: var(--text-primary, #f8fafc);">Upload Chapter</h2>
-        <button onclick="hideUploadChapterModal()" aria-label="Close dialog"
+        <button data-pc-fn="hideUploadChapterModal" aria-label="Close dialog"
           class="modal-close-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
 
-      <form id="uploadChapterForm" onsubmit="handleUploadChapter(event)">
+      <form id="uploadChapterForm" data-pc-submit="handleUploadChapter">
         <div style="margin-bottom: 1.5rem;">
           <label for="chapterTitle"
             style="display: block; margin-bottom: 0.5rem; color: var(--text-primary, #f8fafc); font-weight: 500;">Chapter Title
@@ -359,7 +397,7 @@
         <div id="uploadChapterError" class="error-message" style="display: none; margin-bottom: 1rem;"></div>
 
         <div style="display: flex; gap: 1rem; justify-content: flex-end;">
-          <button type="button" class="btn btn-secondary" onclick="hideUploadChapterModal()">Cancel</button>
+          <button type="button" class="btn btn-secondary" data-pc-fn="hideUploadChapterModal">Cancel</button>
           <button type="submit" class="btn btn-primary">Upload Chapter</button>
         </div>
       </form>
@@ -373,11 +411,11 @@
       style="background: var(--bg-card, rgba(26,34,53,0.97)); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); border-radius: 0.75rem; padding: 2rem; max-width: 500px; width: 90%;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
         <h2 id="editClassModalTitle" style="margin: 0; color: var(--text-primary, #f8fafc);">Edit Class</h2>
-        <button onclick="hideEditClassModal()" aria-label="Close dialog"
+        <button data-pc-fn="hideEditClassModal" aria-label="Close dialog"
           class="modal-close-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
 
-      <form id="editClassForm" onsubmit="handleEditClass(event)">
+      <form id="editClassForm" data-pc-submit="handleEditClass">
         <div style="margin-bottom: 1.5rem;">
           <label for="editClassName"
             style="display: block; margin-bottom: 0.5rem; color: var(--text-primary, #f8fafc); font-weight: 500;">Class Name
@@ -396,7 +434,7 @@
         <div id="editClassError" class="error-message" style="display: none; margin-bottom: 1rem;"></div>
 
         <div style="display: flex; gap: 1rem; justify-content: flex-end;">
-          <button type="button" class="btn btn-secondary" onclick="hideEditClassModal()">Cancel</button>
+          <button type="button" class="btn btn-secondary" data-pc-fn="hideEditClassModal">Cancel</button>
           <button type="submit" class="btn btn-primary">Save Changes</button>
         </div>
       </form>
@@ -448,11 +486,13 @@
     style="background: var(--bg-card, rgba(26,34,53,0.97)); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); border-radius: 0.75rem; padding: 2rem; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
       <h2 id="addResourceModalTitle" style="margin: 0; color: var(--text-primary, #f8fafc);">Add Resource</h2>
-      <button onclick="hideAddResourceModal()" aria-label="Close dialog"
+      <button data-pc-fn="hideAddResourceModal" aria-label="Close dialog"
         class="modal-close-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
 
-    <form id="addResourceForm" onsubmit="handleAddResource(event)">
+    <!-- submit handler is attached programmatically: showAddResourceModal() sets
+         form.onsubmit = createResource (a CSP-safe property assignment). -->
+    <form id="addResourceForm">
       <div style="margin-bottom: 1.5rem;">
         <label for="resourceTitle"
           style="display: block; margin-bottom: 0.5rem; color: var(--text-primary, #f8fafc); font-weight: 500;">Resource Title
@@ -474,7 +514,7 @@
           *</label>
         <select id="resourceType" required
           style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.375rem; font-size: 1rem; background: rgba(17,24,39,0.7); color: var(--text-primary, #f8fafc);"
-          onchange="updateResourceInputType()">
+          data-pc-change="updateResourceInputType">
           <option value="link">Link</option>
           <option value="tool">Tool</option>
           <option value="dataset">Dataset</option>
@@ -496,14 +536,14 @@
           <label
             style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 1rem; border: 2px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.375rem; flex: 1; transition: all 0.2s;"
             id="linkOptionLabel">
-            <input type="radio" name="resourceInputType" value="link" checked onchange="toggleResourceInput()"
+            <input type="radio" name="resourceInputType" value="link" checked data-pc-change="toggleResourceInput"
               id="resourceMethodLink" style="cursor: pointer;" />
             <span>Link/URL</span>
           </label>
           <label
             style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 1rem; border: 2px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 0.375rem; flex: 1; transition: all 0.2s;"
             id="uploadOptionLabel">
-            <input type="radio" name="resourceInputType" value="upload" onchange="toggleResourceInput()"
+            <input type="radio" name="resourceInputType" value="upload" data-pc-change="toggleResourceInput"
               id="resourceMethodUpload" style="cursor: pointer;" />
             <span>Upload File</span>
           </label>
@@ -539,7 +579,7 @@
       </div>
 
       <div style="display: flex; gap: 1rem; justify-content: flex-end;">
-        <button type="button" class="btn btn-secondary" onclick="hideAddResourceModal()">Cancel</button>
+        <button type="button" class="btn btn-secondary" data-pc-fn="hideAddResourceModal">Cancel</button>
         <button type="submit" class="btn btn-primary">Add Resource</button>
       </div>
     </form>
@@ -553,11 +593,11 @@
     style="background: var(--bg-card, rgba(26,34,53,0.97)); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); border-radius: 0.75rem; padding: 2rem; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
       <h2 id="createExerciseModalTitle" style="margin: 0; color: var(--text-primary, #f8fafc);">Create New Exercise</h2>
-      <button onclick="hideCreateExerciseModal()" aria-label="Close dialog"
+      <button data-pc-fn="hideCreateExerciseModal" aria-label="Close dialog"
         class="modal-close-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
 
-    <form id="createExerciseForm" onsubmit="handleCreateExercise(event)">
+    <form id="createExerciseForm" data-pc-submit="handleCreateExercise">
       <div style="margin-bottom: 1.5rem;">
         <label for="exerciseChapter"
           style="display: block; margin-bottom: 0.5rem; color: var(--text-primary, #f8fafc); font-weight: 500;">Chapter *</label>
@@ -611,7 +651,7 @@
       </div>
 
       <div style="display: flex; gap: 1rem; justify-content: flex-end;">
-        <button type="button" class="btn btn-secondary" onclick="hideCreateExerciseModal()">Cancel</button>
+        <button type="button" class="btn btn-secondary" data-pc-fn="hideCreateExerciseModal">Cancel</button>
         <button type="submit" class="btn btn-primary">Create Exercise</button>
       </div>
     </form>
@@ -625,11 +665,11 @@
     style="background: var(--bg-card, rgba(26,34,53,0.97)); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); border-radius: 0.75rem; padding: 2rem; max-width: 600px; width: 90%;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
       <h2 id="editChapterModalTitle" style="margin: 0; color: var(--text-primary, #f8fafc);">Edit Chapter</h2>
-      <button onclick="hideEditChapterModal()" aria-label="Close dialog"
+      <button data-pc-fn="hideEditChapterModal" aria-label="Close dialog"
         class="modal-close-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
 
-    <form id="editChapterForm" onsubmit="handleEditChapter(event)">
+    <form id="editChapterForm" data-pc-submit="handleEditChapter">
       <div style="margin-bottom: 1.5rem;">
         <label for="editChapterTitle"
           style="display: block; margin-bottom: 0.5rem; color: var(--text-primary, #f8fafc); font-weight: 500;">Chapter Title
@@ -648,7 +688,7 @@
       <div id="editChapterError" class="error-message" style="display: none; margin-bottom: 1rem;"></div>
 
       <div style="display: flex; gap: 1rem; justify-content: flex-end;">
-        <button type="button" class="btn btn-secondary" onclick="hideEditChapterModal()">Cancel</button>
+        <button type="button" class="btn btn-secondary" data-pc-fn="hideEditChapterModal">Cancel</button>
         <button type="submit" class="btn btn-primary">Save Changes</button>
       </div>
     </form>
@@ -665,7 +705,7 @@
       exercises will also be deleted. This action cannot be undone.</p>
 
     <div style="display: flex; gap: 1rem; justify-content: center;">
-      <button class="btn btn-secondary" onclick="hideDeleteChapterModal()">Cancel</button>
+      <button class="btn btn-secondary" data-pc-fn="hideDeleteChapterModal">Cancel</button>
       <button id="confirmDeleteChapterBtn" class="btn btn-primary"
         style="background: #ef4444; border-color: #ef4444;">Delete Chapter</button>
     </div>
@@ -701,22 +741,22 @@
     <!-- Header -->
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
       <h2 id="importChapterModalTitle" style="margin:0; color:var(--text-primary, #f0f4ff);">Import Chapter from Web</h2>
-      <button onclick="window.contentImporter && window.contentImporter.hide()" aria-label="Close"
+      <button data-pc-ci="hide" aria-label="Close"
         class="modal-close-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
 
     <!-- Source tabs -->
     <div style="display:flex; gap:0; border-bottom:1px solid rgba(255,255,255,0.08); margin-bottom:1.5rem; overflow-x:auto;">
       <button class="imp-tab-btn imp-tab-active" data-tab="url"
-        onclick="window.contentImporter && window.contentImporter.switchTab('url')">Paste URL</button>
+        data-pc-ci="switchTab" data-pc-arg="url">Paste URL</button>
       <button class="imp-tab-btn" data-tab="pypi"
-        onclick="window.contentImporter && window.contentImporter.switchTab('pypi')">PyPI Docs</button>
+        data-pc-ci="switchTab" data-pc-arg="pypi">PyPI Docs</button>
       <button class="imp-tab-btn" data-tab="openstax"
-        onclick="window.contentImporter && window.contentImporter.switchTab('openstax')">OpenStax</button>
+        data-pc-ci="switchTab" data-pc-arg="openstax">OpenStax</button>
       <button class="imp-tab-btn" data-tab="libretexts"
-        onclick="window.contentImporter && window.contentImporter.switchTab('libretexts')">LibreTexts</button>
+        data-pc-ci="switchTab" data-pc-arg="libretexts">LibreTexts</button>
       <button class="imp-tab-btn" data-tab="oer"
-        onclick="window.contentImporter && window.contentImporter.switchTab('oer')">OER Commons</button>
+        data-pc-ci="switchTab" data-pc-arg="oer">OER Commons</button>
     </div>
 
     <!-- URL tab -->
@@ -725,9 +765,9 @@
       <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;">
         <input type="url" id="impUrlInput" placeholder="https://..."
           style="flex:1;padding:0.65rem;border:1px solid var(--border-color,rgba(255,255,255,0.1));border-radius:0.375rem;font-size:0.95rem;background:rgba(17,24,39,0.7);color:var(--text-primary,#f0f4ff);"
-          onkeydown="if(event.key==='Enter') window.contentImporter && window.contentImporter.previewUrl()" />
+          data-pc-ci-enter="previewUrl" />
         <button class="btn btn-secondary"
-          onclick="window.contentImporter && window.contentImporter.previewUrl()">Preview</button>
+          data-pc-ci="previewUrl">Preview</button>
       </div>
       <span id="impPreviewLoading" style="display:none;font-size:0.85em;color:#64748b;">Fetching…</span>
     </div>
@@ -738,9 +778,9 @@
       <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;">
         <input type="text" id="impPypiPackage" placeholder="e.g. pandas, numpy, scikit-learn"
           style="flex:1;padding:0.65rem;border:1px solid var(--border-color,rgba(255,255,255,0.1));border-radius:0.375rem;font-size:0.95rem;background:rgba(17,24,39,0.7);color:var(--text-primary,#f0f4ff);"
-          onkeydown="if(event.key==='Enter') window.contentImporter && window.contentImporter.previewPypi()" />
+          data-pc-ci-enter="previewPypi" />
         <button class="btn btn-secondary"
-          onclick="window.contentImporter && window.contentImporter.previewPypi()">Fetch Docs</button>
+          data-pc-ci="previewPypi">Fetch Docs</button>
       </div>
       <span id="impPreviewLoading" style="display:none;font-size:0.85em;color:#64748b;">Fetching…</span>
     </div>
@@ -764,9 +804,9 @@
         </select>
         <input type="text" id="impLtQuery" placeholder="e.g. machine learning, statistics"
           style="flex:1;min-width:160px;padding:0.65rem;border:1px solid var(--border-color,rgba(255,255,255,0.1));border-radius:0.375rem;font-size:0.9rem;background:rgba(17,24,39,0.7);color:var(--text-primary,#f0f4ff);"
-          onkeydown="if(event.key==='Enter') window.contentImporter && window.contentImporter.searchLibretexts()" />
+          data-pc-ci-enter="searchLibretexts" />
         <button class="btn btn-secondary"
-          onclick="window.contentImporter && window.contentImporter.searchLibretexts()">Search</button>
+          data-pc-ci="searchLibretexts">Search</button>
       </div>
       <div id="impLtResults" class="imp-scroll"></div>
     </div>
@@ -777,9 +817,9 @@
       <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem;">
         <input type="text" id="impOerQuery" placeholder="e.g. data science, business analytics"
           style="flex:1;padding:0.65rem;border:1px solid var(--border-color,rgba(255,255,255,0.1));border-radius:0.375rem;font-size:0.9rem;background:rgba(17,24,39,0.7);color:var(--text-primary,#f0f4ff);"
-          onkeydown="if(event.key==='Enter') window.contentImporter && window.contentImporter.searchOer()" />
+          data-pc-ci-enter="searchOer" />
         <button class="btn btn-secondary"
-          onclick="window.contentImporter && window.contentImporter.searchOer()">Search</button>
+          data-pc-ci="searchOer">Search</button>
       </div>
       <div id="impOerResults" class="imp-scroll"></div>
     </div>
@@ -817,9 +857,9 @@
       <div style="display:flex;gap:1rem;justify-content:flex-end;align-items:center;">
         <span id="impImportLoading" style="display:none;font-size:0.85em;color:#64748b;">Importing…</span>
         <button class="btn btn-secondary"
-          onclick="window.contentImporter && window.contentImporter.hide()">Cancel</button>
+          data-pc-ci="hide">Cancel</button>
         <button id="impImportBtn" class="btn btn-primary"
-          onclick="window.contentImporter && window.contentImporter.importChapter()">Import Chapter</button>
+          data-pc-ci="importChapter">Import Chapter</button>
       </div>
     </div>
 

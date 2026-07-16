@@ -3,6 +3,15 @@
 
 // API_BASE_URL is defined in api-helper.js
 
+/**
+ * Serialise handler arguments into a data-pc-args attribute. Pass RAW values;
+ * JSON.stringify + escapeHtml keeps types and makes the payload attribute-safe.
+ * (Same contract as taArgs/saArgs on the other dashboards — do not pre-escape.)
+ */
+function pcArgs(...args) {
+    return escapeHtml(JSON.stringify(args));
+}
+
 let currentClassId = null;
 let currentClassData = null;
 let loadedResources = []; // Store loaded resources for edit functionality
@@ -90,7 +99,7 @@ async function loadClassData(classId) {
       <div style="text-align: center; padding: 3rem;">
         <h2 style="margin-bottom: 0.5rem;">Error Loading Class</h2>
         <p style="color: #64748b; margin-bottom: 1.5rem;">${error.message}</p>
-        <button class="btn btn-primary" onclick="window.location.href='/professor-dashboard'">Back to Dashboard</button>
+        <button class="btn btn-primary" data-pc-nav="/professor-dashboard">Back to Dashboard</button>
       </div>
     `;
   }
@@ -203,7 +212,7 @@ async function loadChapters() {
       uiStates.showEmpty(chaptersList, 'No chapters yet', 'Upload your first chapter to get started.');
     } else {
       chaptersList.innerHTML = chapters.map(chapter => `
-        <div class="chapter-card bento-card" style="border-radius: 1rem; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 1.25rem; overflow: hidden; display: flex; flex-direction: column; transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 32px rgba(0,0,0,0.35)'; this.style.borderColor='rgba(255,255,255,0.18)';" onmouseout="this.style.transform=''; this.style.boxShadow=''; this.style.borderColor='rgba(255,255,255,0.1)';">
+        <div class="chapter-card bento-card" style="border-radius: 1rem; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 1.25rem; overflow: hidden; display: flex; flex-direction: column; transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;">
           <!-- IDE Tab Header -->
           <div style="background: rgba(0,0,0,0.2); padding: 0.65rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;">
             <div style="display: flex; align-items: center; gap: 0.75rem; font-family: var(--font-mono); font-size: 0.8rem; color: #64748b;">
@@ -220,24 +229,18 @@ async function loadChapters() {
             </div>
             <div style="display: flex; gap: 0.5rem; flex-shrink: 0;">
               ${chapter.pdf_url || chapter.pdf_filename ? `
-              <a href="chapter-view?chapter_id=${encodeURIComponent(chapter.chapter_id)}&class_id=${encodeURIComponent(currentClassId)}"
-                style="text-decoration: none; padding: 0.55rem 1rem; background: rgba(37,105,244,0.1); border: 1px solid var(--color-primary); color: var(--color-primary); border-radius: 0.5rem; font-family: var(--font-mono); font-size: 0.82rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.4rem; transition: background 0.2s;"
-                onmouseover="this.style.background='var(--color-primary)'; this.style.color='white';"
-                onmouseout="this.style.background='rgba(37,105,244,0.1)'; this.style.color='var(--color-primary)';">
+              <a class="pc-btn-primary" href="chapter-view?chapter_id=${encodeURIComponent(chapter.chapter_id)}&class_id=${encodeURIComponent(currentClassId)}"
+                style="text-decoration: none; padding: 0.55rem 1rem; background: rgba(37,105,244,0.1); border: 1px solid var(--color-primary); color: var(--color-primary); border-radius: 0.5rem; font-family: var(--font-mono); font-size: 0.82rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.4rem; transition: background 0.2s;">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                 View PDF
               </a>` : ''}
-              <button onclick="showEditChapterModal('${chapter.chapter_id}')"
-                style="padding: 0.55rem 0.85rem; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; border-radius: 0.5rem; font-size: 0.82rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem; transition: all 0.2s;"
-                onmouseover="this.style.borderColor='rgba(255,255,255,0.25)'; this.style.color='#f8fafc';"
-                onmouseout="this.style.borderColor='rgba(255,255,255,0.1)'; this.style.color='#94a3b8';">
+              <button class="pc-btn-ghost" data-pc-fn="showEditChapterModal" data-pc-args="${pcArgs(chapter.chapter_id)}"
+                style="padding: 0.55rem 0.85rem; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; border-radius: 0.5rem; font-size: 0.82rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem; transition: all 0.2s;">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 Edit
               </button>
-              <button onclick="showDeleteChapterModal('${chapter.chapter_id}')"
-                style="padding: 0.55rem 0.85rem; background: transparent; border: 1px solid rgba(220,38,38,0.3); color: #ef4444; border-radius: 0.5rem; font-size: 0.82rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem; transition: all 0.2s;"
-                onmouseover="this.style.background='rgba(220,38,38,0.1)'; this.style.borderColor='rgba(220,38,38,0.5)';"
-                onmouseout="this.style.background='transparent'; this.style.borderColor='rgba(220,38,38,0.3)';">
+              <button class="pc-btn-danger" data-pc-fn="showDeleteChapterModal" data-pc-args="${pcArgs(chapter.chapter_id)}"
+                style="padding: 0.55rem 0.85rem; background: transparent; border: 1px solid rgba(220,38,38,0.3); color: #ef4444; border-radius: 0.5rem; font-size: 0.82rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem; transition: all 0.2s;">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
                 Delete
               </button>
@@ -251,7 +254,7 @@ async function loadChapters() {
     chaptersList.innerHTML = `
       <div style="text-align: center; padding: 3rem; background: rgba(220,38,38,0.1); border: 1px solid rgba(220,38,38,0.3); border-radius: 0.5rem;">
         <p style="color: #f87171;">Error loading chapters: ${escapeHtml(error.message)}</p>
-        <button class="btn btn-primary" onclick="loadChapters()" style="margin-top: 1rem;">Retry</button>
+        <button class="btn btn-primary" data-pc-fn="loadChapters" style="margin-top: 1rem;">Retry</button>
       </div>
     `;
   }
@@ -618,7 +621,7 @@ async function loadExercises() {
                   ${chapterData.exercises.map(exercise => {
             const diffColor = exercise.difficulty === 'hard' ? '#ef4444' : exercise.difficulty === 'medium' ? '#f59e0b' : '#10b981';
             return `
-                    <div class="practice-card bento-card" style="background: rgba(30,41,59,0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 1rem; border: 1px solid rgba(255,255,255,0.1); overflow: hidden; display: flex; flex-direction: column; transition: all 0.2s;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 12px 40px rgba(0,0,0,0.4)'; this.style.borderColor='rgba(255,255,255,0.2)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'; this.style.borderColor='rgba(255,255,255,0.1)';">
+                    <div class="practice-card bento-card" style="background: rgba(30,41,59,0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 1rem; border: 1px solid rgba(255,255,255,0.1); overflow: hidden; display: flex; flex-direction: column; transition: all 0.2s;">
                       <div style="padding: 1.5rem; flex: 1; display: flex; flex-direction: column;">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem; gap: 0.5rem;">
                           <h3 style="margin: 0; color: #f8fafc; font-size: 1.05rem; font-weight: 600; line-height: 1.3;">${escapeHtml(exercise.title)}</h3>
@@ -626,24 +629,18 @@ async function loadExercises() {
                         </div>
                         <p style="color: #94a3b8; font-size: 0.875rem; margin: 0 0 1.25rem 0; line-height: 1.5; flex: 1;">${exercise.description ? escapeHtml(exercise.description) : 'Practice exercise.'}</p>
                         <div style="display: flex; gap: 0.5rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.06);">
-                          <button onclick="startExerciseFromClass('${escapeHtml(exercise.exercise_id)}', '${escapeHtml(exercise.chapter_id)}', '${escapeHtml(exercise.title)}')"
-                            style="flex: 1; background: rgba(37,105,244,0.1); border: 1px solid var(--color-primary); color: var(--color-primary); font-family: var(--font-mono); font-weight: 600; padding: 0.6rem; border-radius: 0.5rem; cursor: pointer; font-size: 0.82rem; display: flex; align-items: center; justify-content: center; gap: 0.4rem; transition: all 0.2s;"
-                            onmouseover="this.style.background='var(--color-primary)'; this.style.color='white';"
-                            onmouseout="this.style.background='rgba(37,105,244,0.1)'; this.style.color='var(--color-primary)';">
+                          <button class="pc-btn-primary" data-pc-fn="startExerciseFromClass" data-pc-args="${pcArgs(exercise.exercise_id, exercise.chapter_id, exercise.title)}"
+                            style="flex: 1; background: rgba(37,105,244,0.1); border: 1px solid var(--color-primary); color: var(--color-primary); font-family: var(--font-mono); font-weight: 600; padding: 0.6rem; border-radius: 0.5rem; cursor: pointer; font-size: 0.82rem; display: flex; align-items: center; justify-content: center; gap: 0.4rem; transition: all 0.2s;">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                             Execute
                           </button>
-                          <button onclick="editExercise('${escapeHtml(exercise.exercise_id)}')"
-                            style="padding: 0.6rem 0.75rem; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; border-radius: 0.5rem; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 0.3rem; transition: all 0.2s; flex-shrink: 0;"
-                            onmouseover="this.style.borderColor='rgba(255,255,255,0.25)'; this.style.color='#f8fafc';"
-                            onmouseout="this.style.borderColor='rgba(255,255,255,0.1)'; this.style.color='#94a3b8';">
+                          <button class="pc-btn-ghost" data-pc-fn="editExercise" data-pc-args="${pcArgs(exercise.exercise_id)}"
+                            style="padding: 0.6rem 0.75rem; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; border-radius: 0.5rem; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 0.3rem; transition: all 0.2s; flex-shrink: 0;">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                             Edit
                           </button>
-                          <button onclick="deleteExercise('${escapeHtml(exercise.exercise_id)}', '${escapeHtml(exercise.title)}')"
-                            style="padding: 0.6rem 0.75rem; background: transparent; border: 1px solid rgba(220,38,38,0.3); color: #ef4444; border-radius: 0.5rem; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 0.3rem; transition: all 0.2s; flex-shrink: 0;"
-                            onmouseover="this.style.background='rgba(220,38,38,0.1)'; this.style.borderColor='rgba(220,38,38,0.5)';"
-                            onmouseout="this.style.background='transparent'; this.style.borderColor='rgba(220,38,38,0.3)';">
+                          <button class="pc-btn-danger" data-pc-fn="deleteExercise" data-pc-args="${pcArgs(exercise.exercise_id, exercise.title)}"
+                            style="padding: 0.6rem 0.75rem; background: transparent; border: 1px solid rgba(220,38,38,0.3); color: #ef4444; border-radius: 0.5rem; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 0.3rem; transition: all 0.2s; flex-shrink: 0;">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
                             Delete
                           </button>
@@ -664,7 +661,7 @@ async function loadExercises() {
     exercisesList.innerHTML = `
       <div style="text-align: center; padding: 3rem; background: rgba(220,38,38,0.1); border: 1px solid rgba(220,38,38,0.3); border-radius: 0.5rem;">
         <p style="color: #f87171;">Error loading exercises: ${escapeHtml(error.message)}</p>
-        <button class="btn btn-primary" onclick="loadExercises()" style="margin-top: 1rem;">Retry</button>
+        <button class="btn btn-primary" data-pc-fn="loadExercises" style="margin-top: 1rem;">Retry</button>
       </div>
     `;
   }
@@ -1085,7 +1082,7 @@ async function loadResources() {
           }
 
           return `
-                  <div class="resource-card" style="background: var(--bg-card); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 1.5rem; box-shadow: var(--shadow-card, 0 4px 16px rgba(0,0,0,0.3)); transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 32px rgba(0,0,0,0.35)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow-card, 0 4px 16px rgba(0,0,0,0.3))';">
+                  <div class="resource-card" style="background: var(--bg-card); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 1.5rem; box-shadow: var(--shadow-card, 0 4px 16px rgba(0,0,0,0.3)); transition: transform 0.2s, box-shadow 0.2s;">
                     <div style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 0.75rem;">${typeLabel}</div>
                     <h3 style="margin: 0 0 0.5rem 0;font-size: 1.125rem;">${escapeHtml(resource.title)}</h3>
                     <p style="color: #64748b; margin: 0 0 1rem 0; font-size: 0.875rem; line-height: 1.5;">${escapeHtml(resource.description || '')}</p>
@@ -1113,7 +1110,7 @@ async function loadResources() {
     resourcesList.innerHTML = `
       <div style="text-align: center; padding: 3rem; background: rgba(220,38,38,0.1); border: 1px solid rgba(220,38,38,0.3); border-radius: 0.5rem;">
         <p style="color: #f87171;">Error loading resources: ${escapeHtml(error.message)}</p>
-        <button class="btn btn-primary" onclick="loadResources()" style="margin-top: 1rem;">Retry</button>
+        <button class="btn btn-primary" data-pc-fn="loadResources" style="margin-top: 1rem;">Retry</button>
       </div>
     `;
   }
@@ -2397,6 +2394,58 @@ document.addEventListener('DOMContentLoaded', () => {
         openEditResourceModal(resourceId);
       }
     }
+
+    // ---- CSP: data-pc-* delegated dispatch (replaces inline on* handlers) ----
+    // data-pc-fn names a top-level function in this file; the values are all
+    // author-controlled (never user data), so window[name] lookup is safe.
+    const navEl = e.target.closest('[data-pc-nav]');
+    if (navEl) { window.location.href = navEl.dataset.pcNav; return; }
+
+    const ciEl = e.target.closest('[data-pc-ci]');
+    if (ciEl) {
+      const m = window.contentImporter && window.contentImporter[ciEl.dataset.pcCi];
+      if (typeof m === 'function') m.call(window.contentImporter, ciEl.dataset.pcArg);
+      return;
+    }
+
+    const fnEl = e.target.closest('[data-pc-fn]');
+    if (fnEl) {
+      const fn = window[fnEl.dataset.pcFn];
+      if (typeof fn !== 'function') return;
+      let args = [];
+      if (fnEl.dataset.pcArgs) {
+        try { args = JSON.parse(fnEl.dataset.pcArgs); } catch (_) { args = []; }
+      } else if (fnEl.dataset.pcArg !== undefined) {
+        args = [fnEl.dataset.pcArg];
+      }
+      fn.apply(null, args);
+    }
+  });
+
+  // Enter-to-submit inputs (formerly inline Enter-key handlers on search fields).
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter') return;
+    const el = e.target.closest('[data-pc-ci-enter]');
+    if (!el) return;
+    const m = window.contentImporter && window.contentImporter[el.dataset.pcCiEnter];
+    if (typeof m === 'function') m.call(window.contentImporter);
+  });
+
+  // Change events on selects/radios (formerly inline change handlers).
+  document.addEventListener('change', (e) => {
+    const el = e.target.closest('[data-pc-change]');
+    if (!el) return;
+    const fn = window[el.dataset.pcChange];
+    if (typeof fn !== 'function') return;
+    fn.apply(null, el.dataset.pcChangeValue ? [e.target.value] : []);
+  });
+
+  // Form submits (formerly inline submit handlers).
+  document.addEventListener('submit', (e) => {
+    const form = e.target.closest('[data-pc-submit]');
+    if (!form) return;
+    const fn = window[form.dataset.pcSubmit];
+    if (typeof fn === 'function') fn(e);
   });
 });
 

@@ -44,12 +44,14 @@ _DONE_TEMPLATES = [
     "code-assistant.html",
     "tenant-admin-dashboard.html",
     "superadmin-dashboard.html",
+    "professor-class.html",
 ]
 
 # JS modules refactored so far. Many build HTML via innerHTML template literals,
 # so their handlers must become delegated listeners on a stable container.
-# Still outstanding (not yet in this list): professor-class.js (and its
-# template) — the last dashboard.
+# All templates and JS modules are now handler-free — see the coverage-complete
+# assertions below. Once every file is in these lists, script-src can be moved
+# from Report-Only into the enforced CSP.
 _DONE_JS = [
     "navigation.js",
     "code-assistant.js",
@@ -60,6 +62,7 @@ _DONE_JS = [
     "content-import.js",
     "tenant-admin.js",
     "superadmin.js",
+    "professor-class.js",
 ]
 
 
