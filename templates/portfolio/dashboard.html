@@ -4,6 +4,10 @@
 
 {% block extra_head %}
 <script src="/static/js/navigation.js?v=2.6"></script>
+<style>
+  /* Replaces an inline onmouseover/onmouseout border highlight (removed for CSP). */
+  .pf-item-card:hover { border-color: rgba(37, 105, 244, 0.35) !important; }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -23,14 +27,14 @@
         <p class="workspace-header-desc" id="portfolioDesc">Build your coding portfolio and share it with the world.</p>
       </div>
       <div id="portfolioShareBtn" style="display:none; margin-top:1rem;">
-        <button onclick="copyPortfolioLink()" class="btn btn-secondary" style="font-size:0.85rem;">
+        <button data-pa="copyPortfolioLink" class="btn btn-secondary" style="font-size:0.85rem;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:0.4rem;vertical-align:middle;"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
           Share Portfolio
         </button>
       </div>
     </div>
 
-    <div class="workspace-header-action" onclick="openNewProjectModal()" style="cursor:pointer;">
+    <div class="workspace-header-action" data-pa="openNewProjectModal" style="cursor:pointer;">
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(37,105,244,0.8)" stroke-width="1.5" style="margin-bottom:0.5rem;">
         <path d="M12 5v14M5 12h14"/>
       </svg>
@@ -47,7 +51,7 @@
       </svg>
       <h2 style="color:#f8fafc; margin-bottom:0.75rem;">Set Up Your Portfolio</h2>
       <p style="color:#94a3b8; margin-bottom:2rem; line-height:1.6;">Your portfolio is a public page where you can showcase your class exercises and personal projects. Share it with employers and recruiters.</p>
-      <button onclick="createPortfolio()" class="btn btn-primary" style="padding:0.75rem 2rem; font-size:1rem;">Create My Portfolio</button>
+      <button data-pa="createPortfolio" class="btn btn-primary" style="padding:0.75rem 2rem; font-size:1rem;">Create My Portfolio</button>
     </div>
   </div>
 
@@ -62,15 +66,15 @@
 
     <!-- Action Bar -->
     <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1.5rem; flex-wrap:wrap;">
-      <button onclick="openNewProjectModal()" class="btn btn-primary" style="display:flex;align-items:center;gap:0.4rem;">
+      <button data-pa="openNewProjectModal" class="btn btn-primary" style="display:flex;align-items:center;gap:0.4rem;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
         Start New Project
       </button>
-      <button onclick="openImportModal()" class="btn btn-secondary" style="display:flex;align-items:center;gap:0.4rem;">
+      <button data-pa="openImportModal" class="btn btn-secondary" style="display:flex;align-items:center;gap:0.4rem;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
         Add from Class
       </button>
-      <button onclick="openExternalLinkModal()" class="btn btn-secondary" style="display:flex;align-items:center;gap:0.4rem;">
+      <button data-pa="openExternalLinkModal" class="btn btn-secondary" style="display:flex;align-items:center;gap:0.4rem;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
         Add External Link
       </button>
@@ -84,16 +88,16 @@
 
     <!-- Filter Tabs -->
     <div class="terminal-tab-nav" style="margin-bottom:1.5rem;justify-content:flex-start;flex-wrap:nowrap;overflow-x:auto;">
-      <button class="terminal-tab-btn active" onclick="filterItems('all')" id="tabAll">
+      <button class="terminal-tab-btn active" data-pa="filterItems" data-pa-arg="all" id="tabAll">
         <span class="terminal-tab-num">1</span> All
       </button>
-      <button class="terminal-tab-btn" onclick="filterItems('class_exercise')" id="tabClass">
+      <button class="terminal-tab-btn" data-pa="filterItems" data-pa-arg="class_exercise" id="tabClass">
         <span class="terminal-tab-num">2</span> Class Exercises
       </button>
-      <button class="terminal-tab-btn" onclick="filterItems('personal_project')" id="tabPersonal">
+      <button class="terminal-tab-btn" data-pa="filterItems" data-pa-arg="personal_project" id="tabPersonal">
         <span class="terminal-tab-num">3</span> Personal Projects
       </button>
-      <button class="terminal-tab-btn" onclick="filterItems('external_link')" id="tabExternal">
+      <button class="terminal-tab-btn" data-pa="filterItems" data-pa-arg="external_link" id="tabExternal">
         <span class="terminal-tab-num">4</span> External Links
       </button>
     </div>
@@ -114,11 +118,11 @@
 </main>
 
 <!-- ══ New Project Drawer ══ -->
-<div class="student-drawer-overlay" id="newProjectOverlay" onclick="closeNewProjectModal()"></div>
+<div class="student-drawer-overlay" id="newProjectOverlay" data-pa="closeNewProjectModal"></div>
 <div class="student-join-drawer" id="newProjectDrawer" role="dialog" aria-modal="true">
   <div class="drawer-header">
     <h2>Start New Project</h2>
-    <button onclick="closeNewProjectModal()" aria-label="Close"
+    <button data-pa="closeNewProjectModal" aria-label="Close"
       style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#64748b;line-height:1;">&times;</button>
   </div>
   <div class="drawer-body">
@@ -142,21 +146,21 @@
     </div>
     <div id="newProjectError" style="display:none;margin-bottom:1rem;background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.3);color:#f87171;padding:0.875rem;border-radius:0.5rem;font-size:0.875rem;"></div>
     <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
-      <button type="button" onclick="closeNewProjectModal()"
+      <button type="button" data-pa="closeNewProjectModal"
         style="background:transparent;border:1px solid rgba(255,255,255,0.1);color:#94a3b8;padding:0.65rem 1.25rem;border-radius:0.375rem;cursor:pointer;font-size:0.875rem;">
         Cancel
       </button>
-      <button onclick="submitNewProject()" id="createProjectBtn" class="btn btn-primary">Create Project</button>
+      <button data-pa="submitNewProject" id="createProjectBtn" class="btn btn-primary">Create Project</button>
     </div>
   </div>
 </div>
 
 <!-- ══ Import Exercises Drawer ══ -->
-<div class="student-drawer-overlay" id="importOverlay" onclick="closeImportModal()"></div>
+<div class="student-drawer-overlay" id="importOverlay" data-pa="closeImportModal"></div>
 <div class="student-join-drawer" id="importDrawer" role="dialog" aria-modal="true" style="display:flex;flex-direction:column;">
   <div class="drawer-header">
     <h2>Add from Class</h2>
-    <button onclick="closeImportModal()" aria-label="Close"
+    <button data-pa="closeImportModal" aria-label="Close"
       style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#64748b;line-height:1;">&times;</button>
   </div>
   <div class="drawer-body" style="flex:1;overflow-y:auto;">
@@ -166,16 +170,16 @@
   </div>
   <div style="padding:1.25rem 2rem;border-top:1px solid rgba(255,255,255,0.05);flex-shrink:0;">
     <div id="importError" style="display:none;margin-bottom:0.75rem;background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.3);color:#f87171;padding:0.875rem;border-radius:0.5rem;font-size:0.875rem;"></div>
-    <button onclick="submitImport()" id="importBtn" class="btn btn-primary" style="width:100%;" disabled>Import Selected</button>
+    <button data-pa="submitImport" id="importBtn" class="btn btn-primary" style="width:100%;" disabled>Import Selected</button>
   </div>
 </div>
 
 <!-- ══ External Link Drawer ══ -->
-<div class="student-drawer-overlay" id="externalLinkOverlay" onclick="closeExternalLinkModal()"></div>
+<div class="student-drawer-overlay" id="externalLinkOverlay" data-pa="closeExternalLinkModal"></div>
 <div class="student-join-drawer" id="externalLinkDrawer" role="dialog" aria-modal="true">
   <div class="drawer-header">
     <h2>Add External Link</h2>
-    <button onclick="closeExternalLinkModal()" aria-label="Close"
+    <button data-pa="closeExternalLinkModal" aria-label="Close"
       style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#64748b;line-height:1;">&times;</button>
   </div>
   <div class="drawer-body">
@@ -193,11 +197,11 @@
     </div>
     <div id="extError" style="display:none;margin-bottom:1rem;background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.3);color:#f87171;padding:0.875rem;border-radius:0.5rem;font-size:0.875rem;"></div>
     <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
-      <button type="button" onclick="closeExternalLinkModal()"
+      <button type="button" data-pa="closeExternalLinkModal"
         style="background:transparent;border:1px solid rgba(255,255,255,0.1);color:#94a3b8;padding:0.65rem 1.25rem;border-radius:0.375rem;cursor:pointer;font-size:0.875rem;">
         Cancel
       </button>
-      <button onclick="submitExternalLink()" class="btn btn-primary">Add Link</button>
+      <button data-pa="submitExternalLink" class="btn btn-primary">Add Link</button>
     </div>
   </div>
 </div>
@@ -205,7 +209,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
+<script nonce="{{ csp_nonce }}">
 const API = window.API_BASE || '';
 let portfolioProfile = null;
 let portfolioItems = [];
@@ -292,15 +296,14 @@ function renderItemCard(item) {
   const source = item.source_class_name || (item.item_type === 'personal_project' ? 'Personal Project' : 'External');
   const tags = (item.tags || []).slice(0, 3).map(t => `<span style="background:rgba(255,255,255,0.06);border-radius:0.25rem;padding:0.15rem 0.5rem;font-size:0.75rem;color:#94a3b8;">${escHtml(t)}</span>`).join('');
   const pinIcon = item.is_pinned ? '<span style="color:#f59e0b;font-size:0.75rem;">📌</span>' : '';
-  const editLink = item.item_type === 'personal_project' ? `<a href="/portfolio/projects/${item.id}/edit" style="color:var(--color-primary);font-size:0.8rem;text-decoration:none;">Open Editor →</a>` : '';
+  const editLink = item.item_type === 'personal_project' ? `<a href="/portfolio/projects/${encodeURIComponent(item.id)}/edit" style="color:var(--color-primary);font-size:0.8rem;text-decoration:none;">Open Editor →</a>` : '';
   const score = item.show_score && item.score != null ? `<span style="color:#10b981;font-size:0.8rem;">${Math.round(item.score)}%</span>` : '';
   const statusBadge = item.item_type === 'personal_project' && item.project_status === 'draft'
     ? '<span style="background:rgba(245,158,11,0.15);color:#fcd34d;border-radius:0.25rem;padding:0.1rem 0.5rem;font-size:0.72rem;border:1px solid rgba(245,158,11,0.3);">Draft</span>'
     : '';
 
   return `
-    <div style="background:var(--bg-card,rgba(34,44,62,0.82));border:1px solid rgba(255,255,255,0.08);border-radius:0.75rem;padding:1.25rem;display:flex;flex-direction:column;gap:0.75rem;transition:border-color 0.2s;"
-         onmouseover="this.style.borderColor='rgba(37,105,244,0.35)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
+    <div class="pf-item-card" style="background:var(--bg-card,rgba(34,44,62,0.82));border:1px solid rgba(255,255,255,0.08);border-radius:0.75rem;padding:1.25rem;display:flex;flex-direction:column;gap:0.75rem;transition:border-color 0.2s;">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.5rem;">
         <div style="display:flex;align-items:center;gap:0.5rem;flex:1;min-width:0;">
           ${pinIcon}
@@ -318,10 +321,10 @@ function renderItemCard(item) {
         <div style="display:flex;align-items:center;gap:0.75rem;">
           ${score}
           ${editLink}
-          <button onclick="deleteItem('${item.id}')" style="background:none;border:none;color:#64748b;cursor:pointer;padding:0.2rem;" title="Remove">
+          <button data-pa="deleteItem" data-pa-arg="${escHtml(item.id)}" style="background:none;border:none;color:#64748b;cursor:pointer;padding:0.2rem;" title="Remove">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
           </button>
-          <button onclick="togglePin('${item.id}', ${item.is_pinned})" style="background:none;border:none;color:${item.is_pinned?'#f59e0b':'#64748b'};cursor:pointer;padding:0.2rem;" title="${item.is_pinned?'Unpin':'Pin'}">
+          <button data-pa="togglePin" data-pa-args="${escHtml(JSON.stringify([item.id, item.is_pinned]))}" style="background:none;border:none;color:${item.is_pinned?'#f59e0b':'#64748b'};cursor:pointer;padding:0.2rem;" title="${item.is_pinned?'Unpin':'Pin'}">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="${item.is_pinned?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
           </button>
         </div>
@@ -411,7 +414,7 @@ async function openImportModal() {
     }
     listEl.innerHTML = exercises.map(ex => `
       <label>
-        <input type="checkbox" value="${ex.exercise_id}" onchange="toggleImportSelect(this)" />
+        <input type="checkbox" value="${ex.exercise_id}" data-pa-change="toggleImportSelect" />
         <div class="ex-info">
           <div class="ex-title">${escHtml(ex.title)}</div>
           <div class="ex-meta">${escHtml(ex.class_name||'')}${ex.chapter_name?' · '+escHtml(ex.chapter_name):''}</div>
@@ -530,5 +533,30 @@ async function togglePin(itemId, isPinned) {
 function escHtml(s) {
   return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-</script>
+
+    // CSP: delegated dispatch for data-pa* attributes (replaces inline on* handlers).
+    // data-pa values are author-controlled, so window[name] lookup is safe.
+    (function () {
+      function _args(el) {
+        if (el.dataset.paArgs) { try { return JSON.parse(el.dataset.paArgs); } catch (_) { return []; } }
+        if (el.dataset.paArg !== undefined) return [el.dataset.paArg];
+        return [];
+      }
+      document.addEventListener('click', function (e) {
+        var el = e.target.closest('[data-pa]');
+        if (!el) return;
+        var fn = window[el.dataset.pa];
+        if (typeof fn !== 'function') return;
+        var args = _args(el);
+        if (el.hasAttribute('data-pa-self')) args = [el].concat(args);
+        fn.apply(null, args);
+      });
+      document.addEventListener('change', function (e) {
+        var el = e.target.closest('[data-pa-change]');
+        if (!el) return;
+        var fn = window[el.dataset.paChange];
+        if (typeof fn === 'function') fn(e.target);
+      });
+    })();
+  </script>
 {% endblock %}

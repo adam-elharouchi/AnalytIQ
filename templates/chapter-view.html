@@ -811,7 +811,7 @@
 <nav class="navbar" id="navbar"></nav>
 
   <main class="chapter-container">
-    <a href="javascript:history.back()" class="back-button">
+    <a href="#" id="chapterBackLink" class="back-button">
       <span>←</span>
       <span>Back</span>
     </a>
@@ -925,6 +925,12 @@
   <script src="/static/js/auth.js"></script>
   <script src="/static/js/navigation.js"></script>
   <script nonce="{{ csp_nonce }}">
+    // CSP: back link wired here instead of an inline history.back() href.
+    (function () {
+      var _back = document.getElementById('chapterBackLink');
+      if (_back) _back.addEventListener('click', function (e) { e.preventDefault(); history.back(); });
+    })();
+
     let currentChapterId = null;
     let currentClassId = null;
     let currentUserId = null;
