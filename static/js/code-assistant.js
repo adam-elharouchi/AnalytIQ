@@ -2205,6 +2205,36 @@ function useStarter(prompt) {
 document.addEventListener('DOMContentLoaded', function () {
   updateLanguage();
 
+  // CSP: wire the page controls here instead of inline on* attributes. Every
+  // lookup is guarded so this is a no-op where an element isn't present.
+  document.querySelectorAll('.js-toggle-sidebar').forEach(function (el) {
+    el.addEventListener('click', toggleSidebar);
+  });
+  document.querySelectorAll('.js-new-conversation').forEach(function (el) {
+    el.addEventListener('click', startNewConversation);
+  });
+  document.querySelectorAll('.sidebar-tab[data-conv-tab]').forEach(function (btn) {
+    btn.addEventListener('click', function () { switchConversationTab(btn.dataset.convTab); });
+  });
+  document.querySelectorAll('.starter-btn[data-starter]').forEach(function (btn) {
+    btn.addEventListener('click', function () { useStarter(btn.dataset.starter); });
+  });
+
+  const chatInputEl = document.getElementById('chatInput');
+  if (chatInputEl) chatInputEl.addEventListener('keydown', handleKeyDown);
+
+  const sendBtn = document.getElementById('sendMessageBtn');
+  if (sendBtn) sendBtn.addEventListener('click', sendMessage);
+
+  const fileUploadEl = document.getElementById('fileUpload');
+  if (fileUploadEl) fileUploadEl.addEventListener('change', handleFileUpload);
+
+  const geminiSelect = document.getElementById('geminiModelSelect');
+  if (geminiSelect) geminiSelect.addEventListener('change', updateGeminiModel);
+
+  const langSelect = document.getElementById('languageSelect');
+  if (langSelect) langSelect.addEventListener('change', updateLanguage);
+
   // Load saved AI provider (Gemini is the only supported provider)
   const savedProvider = localStorage.getItem('aiProvider') || 'gemini';
   aiProvider = savedProvider;
