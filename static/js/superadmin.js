@@ -1252,6 +1252,80 @@ class SuperAdminDashboard {
         }
     }
 
+    // Export the audit log (respecting the active filters) as a CSV download.
+    async exportAuditLogCsv() {
+        // Mirror the filters used by the Audit Log query panel / loadAuditLog().
+        const action = document.getElementById('audit-action-filter')?.value || '';
+        const resource = document.getElementById('audit-resource-filter')?.value || '';
+        const from = document.getElementById('audit-from')?.value || '';
+        const to = document.getElementById('audit-to')?.value || '';
+
+        const buildParams = (page) => {
+            const params = new URLSearchParams({ page, limit: 100 });
+            if (action) params.set('action', action);
+            if (resource) params.set('resource_type', resource);
+            if (from) params.set('from', from);
+            if (to) params.set('to', to);
+            return params;
+        };
+
+        try {
+            // The endpoint caps at 100 rows/page, so gather every page (bounded
+            // by a safety cap so an enormous log can't hang the browser).
+            const MAX_PAGES = 100; // ~10k rows
+            const first = await authFetch(`${this.baseAdminUrl}/audit?${buildParams(1)}`);
+            const firstData = await first.json();
+            if (!first.ok) throw new Error(firstData.error || 'Failed to load audit log');
+
+            let entries = firstData.entries || [];
+            const totalPages = Math.min(firstData.pages || 1, MAX_PAGES);
+            for (let page = 2; page <= totalPages; page++) {
+                const res = await authFetch(`${this.baseAdminUrl}/audit?${buildParams(page)}`);
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Failed to load audit log');
+                entries = entries.concat(data.entries || []);
+            }
+
+            if (!entries.length) {
+                showError('No audit entries match the current filters.');
+                return;
+            }
+
+            // Quote every cell and double internal quotes (RFC 4180).
+            const cell = (v) => {
+                if (v === null || v === undefined) return '""';
+                const s = typeof v === 'object' ? JSON.stringify(v) : String(v);
+                return `"${s.replace(/"/g, '""')}"`;
+            };
+            const header = ['Timestamp', 'Action', 'Actor Name', 'Actor Email', 'Actor ID',
+                'Resource Type', 'Resource ID', 'IP Address', 'Details'];
+            const rows = entries.map((e) => [
+                e.created_at, e.action, e.actor_name, e.actor_email, e.actor_id,
+                e.resource_type, e.resource_id, e.ip_address, e.details,
+            ].map(cell).join(','));
+            // Prepend a BOM so Excel detects UTF-8; use CRLF line endings.
+            const csv = '﻿' + [header.map(cell).join(','), ...rows].join('\r\n');
+
+            // Trigger the download (same approach as exportUserData).
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `audit-log-${new Date().toISOString().slice(0, 10)}.csv`;
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 100);
+
+            const capped = (firstData.pages || 1) > MAX_PAGES;
+            showSuccess(`Exported ${entries.length} audit ${entries.length === 1 ? 'entry' : 'entries'}` +
+                (capped ? ` (capped at first ${MAX_PAGES} pages).` : '.'));
+        } catch (err) {
+            showError(err.message || 'Audit log export failed.');
+        }
+    }
+
     // ==========================================
     // Support Ticket Status Update
     // ==========================================
