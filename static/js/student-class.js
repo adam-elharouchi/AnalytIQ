@@ -55,7 +55,7 @@ async function loadClassData(classId) {
     loadingState.innerHTML = `
       <h2 style="margin-bottom: 0.5rem;">Error Loading Class</h2>
       <p style="color: #64748b; margin-bottom: 1.5rem;">${error.message}</p>
-      <button class="btn btn-primary" onclick="window.location.href='/student-classes'">Back to Classes</button>
+      <button class="btn btn-primary" data-nav="/student-classes">Back to Classes</button>
     `;
   }
 }
@@ -231,7 +231,7 @@ async function loadChapters() {
     chaptersList.innerHTML = `
       <div style="text-align: center; padding: 3rem; background: rgba(220,38,38,0.1); border: 1px solid rgba(220,38,38,0.3); border-radius: 0.5rem; color: #f87171;">
         <p>Error loading chapters: ${escapeHtml(error.message)}</p>
-        <button class="btn btn-primary" onclick="loadChapters()" style="margin-top: 1rem;">Retry</button>
+        <button class="btn btn-primary" data-retry="chapters" style="margin-top: 1rem;">Retry</button>
       </div>
     `;
   }
@@ -322,7 +322,7 @@ async function loadExercises() {
                 ${chapterData.exercises.map(exercise => {
         const diffColor = exercise.difficulty === 'hard' ? '#ef4444' : exercise.difficulty === 'medium' ? '#f59e0b' : '#10b981';
         return `
-                  <div class="practice-card bento-card" style="background: rgba(30,41,59,0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 1rem; border: 1px solid rgba(255,255,255,0.1); overflow: hidden; display: flex; flex-direction: column; transition: all 0.2s;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 12px 40px rgba(0,0,0,0.4)'; this.style.borderColor='rgba(255,255,255,0.2)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'; this.style.borderColor='rgba(255,255,255,0.1)';">
+                  <div class="practice-card bento-card" style="background: rgba(30,41,59,0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 1rem; border: 1px solid rgba(255,255,255,0.1); overflow: hidden; display: flex; flex-direction: column; transition: all 0.2s;">
                     <div style="padding: 1.5rem; flex: 1; display: flex; flex-direction: column;">
                       <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem; gap: 0.5rem;">
                         <h3 style="margin: 0; color: #f8fafc; font-size: 1.05rem; font-weight: 600; line-height: 1.3;">${escapeHtml(exercise.title)}</h3>
@@ -336,9 +336,7 @@ async function loadExercises() {
                           data-title="${escapeHtml(exercise.title)}"
                           data-description="${escapeHtml(exercise.description || '')}"
                           data-difficulty="${escapeHtml(exercise.difficulty || 'medium')}"
-                          style="flex: 1; background: rgba(37,105,244,0.1); border: 1px solid var(--color-primary); color: var(--color-primary); font-family: var(--font-mono); font-weight: 600; padding: 0.6rem; border-radius: 0.5rem; cursor: pointer; font-size: 0.82rem; display: flex; align-items: center; justify-content: center; gap: 0.4rem; transition: all 0.2s;"
-                          onmouseover="this.style.background='var(--color-primary)'; this.style.color='white';"
-                          onmouseout="this.style.background='rgba(37,105,244,0.1)'; this.style.color='var(--color-primary)';">
+                          style="flex: 1; background: rgba(37,105,244,0.1); border: 1px solid var(--color-primary); color: var(--color-primary); font-family: var(--font-mono); font-weight: 600; padding: 0.6rem; border-radius: 0.5rem; cursor: pointer; font-size: 0.82rem; display: flex; align-items: center; justify-content: center; gap: 0.4rem; transition: all 0.2s;">
                           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                           Execute
                         </button>
@@ -358,7 +356,7 @@ async function loadExercises() {
     exercisesList.innerHTML = `
       <div style="text-align: center; padding: 3rem; background: rgba(220,38,38,0.1); border: 1px solid rgba(220,38,38,0.3); border-radius: 0.5rem; color: #f87171;">
         <p>Error loading exercises: ${escapeHtml(error.message)}</p>
-        <button class="btn btn-primary" onclick="loadExercises()" style="margin-top: 1rem;">Retry</button>
+        <button class="btn btn-primary" data-retry="exercises" style="margin-top: 1rem;">Retry</button>
       </div>
     `;
   }
@@ -387,7 +385,7 @@ async function renderChapters(chapters) {
     const isTargetChapter = scrollToChapterId === chapter.chapter_id;
 
     chaptersHTML += `
-      <div class="chapter-card bento-card" id="${chapterIdAttr}" style="border-radius: 1rem; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 1.25rem; overflow: hidden; display: flex; flex-direction: column; transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s; ${isTargetChapter ? 'border-color: var(--color-primary); box-shadow: 0 0 20px rgba(37, 105, 244, 0.4);' : ''}" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 32px rgba(0,0,0,0.35)'; this.style.borderColor='rgba(255,255,255,0.18)';" onmouseout="this.style.transform=''; this.style.boxShadow=''; this.style.borderColor='rgba(255,255,255,0.1)';">
+      <div class="chapter-card bento-card" id="${chapterIdAttr}" style="border-radius: 1rem; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 1.25rem; overflow: hidden; display: flex; flex-direction: column; transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s; ${isTargetChapter ? 'border-color: var(--color-primary); box-shadow: 0 0 20px rgba(37, 105, 244, 0.4);' : ''}">
 
         <!-- IDE Tab Header -->
         <div style="background: rgba(0,0,0,0.2); padding: 0.65rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;">
@@ -406,10 +404,8 @@ async function renderChapters(chapters) {
           </div>
           <div style="display: flex; gap: 0.5rem; flex-shrink: 0;">
             ${chapter.pdf_url || chapter.pdf_filename ? `
-            <a href="chapter-view?chapter_id=${encodeURIComponent(chapter.chapter_id)}&class_id=${encodeURIComponent(currentClassId)}"
-               style="text-decoration: none; padding: 0.55rem 1rem; background: rgba(37,105,244,0.1); border: 1px solid var(--color-primary); color: var(--color-primary); border-radius: 0.5rem; font-family: var(--font-mono); font-size: 0.82rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.4rem; transition: background 0.2s;"
-               onmouseover="this.style.background='var(--color-primary)'; this.style.color='white';"
-               onmouseout="this.style.background='rgba(37,105,244,0.1)'; this.style.color='var(--color-primary)';">
+            <a class="js-open-chapter" href="chapter-view?chapter_id=${encodeURIComponent(chapter.chapter_id)}&class_id=${encodeURIComponent(currentClassId)}"
+               style="text-decoration: none; padding: 0.55rem 1rem; background: rgba(37,105,244,0.1); border: 1px solid var(--color-primary); color: var(--color-primary); border-radius: 0.5rem; font-family: var(--font-mono); font-size: 0.82rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.4rem; transition: background 0.2s;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
               Open Chapter
             </a>` : ''}
@@ -629,7 +625,7 @@ async function loadResources() {
           }
 
           return `
-                  <div class="resource-card" style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 4px 16px rgba(0,0,0,0.2); transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 24px rgba(0,0,0,0.3)'; this.style.borderColor='rgba(255,255,255,0.15)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 16px rgba(0,0,0,0.2)'; this.style.borderColor='rgba(255,255,255,0.08)';">
+                  <div class="resource-card" style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 4px 16px rgba(0,0,0,0.2); transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;">
                     <div style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 0.75rem;">${typeLabel}</div>
                     <h3 style="margin: 0 0 0.5rem 0; font-size: 1.125rem; color: #f8fafc;">${escapeHtml(resource.title)}</h3>
                     <p style="color: #94a3b8; margin: 0 0 1rem 0; font-size: 0.875rem; line-height: 1.5;">${escapeHtml(resource.description || '')}</p>
@@ -652,7 +648,7 @@ async function loadResources() {
     resourcesList.innerHTML = `
       <div style="text-align: center; padding: 3rem; background: rgba(220,38,38,0.1); border: 1px solid rgba(220,38,38,0.3); border-radius: 0.5rem; color: #f87171;">
         <p>Error loading resources: ${escapeHtml(error.message)}</p>
-        <button class="btn btn-primary" onclick="loadResources()" style="margin-top: 1rem;">Retry</button>
+        <button class="btn btn-primary" data-retry="resources" style="margin-top: 1rem;">Retry</button>
       </div>
     `;
   }
@@ -707,7 +703,7 @@ async function loadStudents() {
     studentsList.innerHTML = `
       <div style="text-align: center; padding: 3rem; background: rgba(220,38,38,0.1); border: 1px solid rgba(220,38,38,0.3); border-radius: 0.5rem; color: #f87171;">
         <p>Error loading students: ${escapeHtml(error.message)}</p>
-        <button class="btn btn-primary" onclick="loadStudents()" style="margin-top: 1rem;">Retry</button>
+        <button class="btn btn-primary" data-retry="students" style="margin-top: 1rem;">Retry</button>
       </div>
     `;
     studentsCount.textContent = '0 students';
@@ -916,6 +912,20 @@ document.addEventListener('DOMContentLoaded', () => {
         startExercise(exerciseId, chapterId, title, description, difficulty);
       }
     }
+
+    // CSP: error-state Retry / Back buttons are rendered at runtime into several
+    // different containers, so they ride this same body-level delegation.
+    const retryBtn = e.target.closest('[data-retry]');
+    if (retryBtn) {
+      const which = retryBtn.dataset.retry;
+      if (which === 'chapters') loadChapters();
+      else if (which === 'exercises') loadExercises();
+      else if (which === 'resources') loadResources();
+      else if (which === 'students') loadStudents();
+    }
+
+    const navBtn = e.target.closest('[data-nav]');
+    if (navBtn) window.location.href = navBtn.dataset.nav;
   });
 
   // CSP: wire class-code copy, tab buttons, leaderboard sub-tabs, and the

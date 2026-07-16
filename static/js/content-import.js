@@ -20,6 +20,17 @@ class ContentImporter {
     this.previewData = null; // payload to send on import
     this._openstaxLoaded = false;
     this._ltLibsLoaded = false;
+
+    // CSP: the import cards are rendered at runtime into several containers, so
+    // one delegated listener replaces the inline onclick attributes they carried.
+    document.addEventListener('click', (e) => {
+      const el = e.target.closest('[data-imp-action]');
+      if (!el) return;
+      const action = el.dataset.impAction;
+      if (action === 'openToc') this.openOpenstaxToc(el.dataset.slug, el.dataset.title);
+      else if (action === 'backToBooks') this.backToOpenstaxBooks();
+      else if (action === 'selectUrl') this.selectUrl(el.dataset.url, el.dataset.title);
+    });
   }
 
   // -------------------------------------------------------------------------
@@ -173,7 +184,7 @@ class ContentImporter {
       container.innerHTML = data.books
         .map(
           b =>
-            `<div class="imp-card" onclick="window.contentImporter.openOpenstaxToc('${b.slug}','${this._esc(b.title)}')">
+            `<div class="imp-card" data-imp-action="openToc" data-slug="${this._escAttr(b.slug)}" data-title="${this._escAttr(b.title)}">
                <strong>${b.title}</strong>
                ${b.description ? `<p class="imp-card-desc">${b.description}</p>` : ''}
              </div>`
@@ -197,13 +208,13 @@ class ContentImporter {
       const items = data.toc || [];
       panel.innerHTML =
         `<button class="btn btn-secondary" style="margin-bottom:1rem"
-           onclick="window.contentImporter.backToOpenstaxBooks()">← Back to Books</button>
+           data-imp-action="backToBooks">← Back to Books</button>
          <h4 style="margin:0 0 1rem">${title}</h4>` +
         (items.length
           ? items
               .map(
                 p =>
-                  `<div class="imp-card" onclick="window.contentImporter.selectUrl('${p.url}','${this._esc(p.title)}')">
+                  `<div class="imp-card" data-imp-action="selectUrl" data-url="${this._escAttr(p.url)}" data-title="${this._escAttr(p.title)}">
                      ${p.title}
                    </div>`
               )
@@ -258,7 +269,7 @@ class ContentImporter {
         resultsEl.innerHTML = data.results
           .map(
             r =>
-              `<div class="imp-card" onclick="window.contentImporter.selectUrl('${r.url}','${this._esc(r.title)}')">
+              `<div class="imp-card" data-imp-action="selectUrl" data-url="${this._escAttr(r.url)}" data-title="${this._escAttr(r.title)}">
                  <strong>${r.title || r.url}</strong>
                </div>`
           )
@@ -293,7 +304,7 @@ class ContentImporter {
         resultsEl.innerHTML = data.results
           .map(
             r =>
-              `<div class="imp-card" onclick="window.contentImporter.selectUrl('${r.url}','${this._esc(r.title)}')">
+              `<div class="imp-card" data-imp-action="selectUrl" data-url="${this._escAttr(r.url)}" data-title="${this._escAttr(r.title)}">
                  <strong>${r.title}</strong>
                  ${r.description ? `<p class="imp-card-desc">${r.description}</p>` : ''}
                  ${r.license ? `<span class="imp-badge">${r.license}</span>` : ''}
@@ -343,8 +354,13 @@ class ContentImporter {
     if (el) el.style.display = on ? 'inline' : 'none';
   }
 
-  /** Escape single quotes so title can be embedded in onclick="..." strings */
-  _esc(str) {
-    return (str || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  /** Escape a value for safe embedding in an HTML attribute (data-* payloads). */
+  _escAttr(str) {
+    return (str || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   }
 }
