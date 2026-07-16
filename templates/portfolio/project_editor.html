@@ -227,12 +227,12 @@
     </a>
     <span id="projectTitleLabel" style="color:#f8fafc;font-weight:600;font-size:0.95rem;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
     <span class="save-indicator" id="saveIndicator">All changes saved</span>
-    <button onclick="saveCode()" id="saveBtn" class="btn btn-secondary" style="font-size:0.85rem;padding:0.4rem 0.85rem;">Save</button>
-    <button onclick="runCode()" id="runBtn" class="btn btn-primary" style="font-size:0.85rem;padding:0.4rem 0.85rem;display:flex;align-items:center;gap:0.4rem;">
+    <button data-pa="saveCode" id="saveBtn" class="btn btn-secondary" style="font-size:0.85rem;padding:0.4rem 0.85rem;">Save</button>
+    <button data-pa="runCode" id="runBtn" class="btn btn-primary" style="font-size:0.85rem;padding:0.4rem 0.85rem;display:flex;align-items:center;gap:0.4rem;">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
       Run
     </button>
-    <button onclick="publishProject()" id="publishBtn" class="btn btn-secondary" style="font-size:0.85rem;padding:0.4rem 0.85rem;" title="Add to portfolio">
+    <button data-pa="publishProject" id="publishBtn" class="btn btn-secondary" style="font-size:0.85rem;padding:0.4rem 0.85rem;" title="Add to portfolio">
       Publish
     </button>
   </div>
@@ -264,7 +264,7 @@
         <span style="color:#f8fafc;font-size:0.875rem;font-weight:600;">Code Assistant</span>
         <span id="aiLangBadge" style="background:rgba(37,105,244,0.15);color:var(--color-primary);border-radius:0.25rem;padding:0.1rem 0.5rem;font-size:0.72rem;border:1px solid rgba(37,105,244,0.2);"></span>
       </div>
-      <button onclick="clearAiHistory()" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:0.75rem;" title="Clear conversation">Clear</button>
+      <button data-pa="clearAiHistory" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:0.75rem;" title="Clear conversation">Clear</button>
     </div>
     <div class="ai-messages" id="aiMessages">
       <div class="ai-msg-model">👋 I'm your coding partner for this project. Ask me anything — I can write code, debug errors, suggest architecture, or explain concepts. No restrictions here.</div>
@@ -273,8 +273,8 @@
       <div style="display:flex;gap:0.5rem;align-items:flex-end;">
         <textarea id="aiInput" placeholder="Ask anything about your code..." rows="2"
                   style="flex:1;padding:0.6rem 0.75rem;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:0.5rem;color:#f8fafc;font-size:0.875rem;resize:none;font-family:inherit;"
-                  onkeydown="if(event.key==='Enter'&&(event.ctrlKey||event.metaKey)){sendAiMessage();event.preventDefault();}"></textarea>
-        <button onclick="sendAiMessage()" id="aiSendBtn" style="background:var(--color-primary);border:none;border-radius:0.5rem;padding:0.6rem 0.85rem;color:#fff;cursor:pointer;white-space:nowrap;font-size:0.85rem;">Send</button>
+                  data-pa-ctrlenter="sendAiMessage"></textarea>
+        <button data-pa="sendAiMessage" id="aiSendBtn" style="background:var(--color-primary);border:none;border-radius:0.5rem;padding:0.6rem 0.85rem;color:#fff;cursor:pointer;white-space:nowrap;font-size:0.85rem;">Send</button>
       </div>
       <p style="color:#475569;font-size:0.72rem;margin:0.4rem 0 0;">Ctrl+Enter to send</p>
     </div>
@@ -284,7 +284,7 @@
   <div class="editor-output" id="outputPanel">
     <div style="padding:0.5rem 1rem;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.06);">
       <span style="color:#94a3b8;font-size:0.8rem;font-family:var(--font-mono);">▶ Output</span>
-      <button onclick="clearOutput()" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:0.75rem;">Clear</button>
+      <button data-pa="clearOutput" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:0.75rem;">Clear</button>
     </div>
     <pre id="outputContent" style="margin:0;padding:0.75rem 1rem;font-family:var(--font-mono);font-size:0.825rem;color:#94a3b8;white-space:pre-wrap;word-break:break-word;">Ready to run.</pre>
   </div>
@@ -299,7 +299,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
+<script nonce="{{ csp_nonce }}">
 const ITEM_ID = {{ item_id | tojson }};
 const API = window.API_BASE || '';
 let projectData = null;
@@ -517,7 +517,41 @@ function clearAiHistory() {
   const container = document.getElementById('aiMessages');
   container.innerHTML = '<div class="ai-msg-model">Conversation cleared. What are you working on?</div>';
 }
-</script>
+
+    // CSP: delegated dispatch for data-pa* attributes (replaces inline on* handlers).
+    // data-pa values are author-controlled, so window[name] lookup is safe.
+    (function () {
+      function _args(el) {
+        if (el.dataset.paArgs) { try { return JSON.parse(el.dataset.paArgs); } catch (_) { return []; } }
+        if (el.dataset.paArg !== undefined) return [el.dataset.paArg];
+        return [];
+      }
+      document.addEventListener('click', function (e) {
+        var el = e.target.closest('[data-pa]');
+        if (!el) return;
+        var fn = window[el.dataset.pa];
+        if (typeof fn !== 'function') return;
+        var args = _args(el);
+        if (el.hasAttribute('data-pa-self')) args = [el].concat(args);
+        fn.apply(null, args);
+      });
+      document.addEventListener('change', function (e) {
+        var el = e.target.closest('[data-pa-change]');
+        if (!el) return;
+        var fn = window[el.dataset.paChange];
+        if (typeof fn === 'function') fn(e.target);
+      });
+    })();
+
+    // CSP: Ctrl/Cmd+Enter submit (was an inline onkeydown on the AI input).
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter' || !(e.ctrlKey || e.metaKey)) return;
+      var el = e.target.closest('[data-pa-ctrlenter]');
+      if (!el) return;
+      var fn = window[el.dataset.paCtrlenter];
+      if (typeof fn === 'function') { fn(); e.preventDefault(); }
+    });
+  </script>
 <style>
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 </style>

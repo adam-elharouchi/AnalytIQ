@@ -110,7 +110,7 @@
           <div style="color:#64748b;font-size:0.8rem;">Anyone with the link can view your portfolio</div>
         </div>
         <label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer;">
-          <input type="checkbox" id="settingPublic" style="opacity:0;width:0;height:0;" onchange="updateToggle(this)" />
+          <input type="checkbox" id="settingPublic" style="opacity:0;width:0;height:0;" data-pa-change="updateToggle" />
           <span id="toggleSlider" style="position:absolute;top:0;left:0;right:0;bottom:0;background:#334155;border-radius:24px;transition:background 0.2s;">
             <span style="position:absolute;height:18px;width:18px;left:3px;bottom:3px;background:white;border-radius:50%;transition:transform 0.2s;" id="toggleKnob"></span>
           </span>
@@ -120,7 +120,7 @@
 
     <!-- Save & Danger Zone -->
     <div style="display:flex;flex-direction:column;gap:0.75rem;margin-bottom:2rem;">
-      <button onclick="saveSettings()" id="saveBtn" class="btn btn-primary" style="width:100%;padding:0.75rem;font-size:1rem;">Save Changes</button>
+      <button data-pa="saveSettings" id="saveBtn" class="btn btn-primary" style="width:100%;padding:0.75rem;font-size:1rem;">Save Changes</button>
       <p id="saveMsg" style="color:#10b981;font-size:0.85rem;text-align:center;display:none;"></p>
       <p id="saveErr" style="color:#ef4444;font-size:0.85rem;text-align:center;display:none;"></p>
     </div>
@@ -128,7 +128,7 @@
     <div style="background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.2);border-radius:0.75rem;padding:1.25rem;">
       <h3 style="color:#fca5a5;font-size:0.9rem;font-weight:600;margin:0 0 0.5rem;">Delete Portfolio</h3>
       <p style="color:#94a3b8;font-size:0.85rem;margin:0 0 1rem;line-height:1.5;">This permanently deletes your portfolio and all items. This cannot be undone.</p>
-      <button onclick="deletePortfolio()" style="background:rgba(239,68,68,0.15);color:#fca5a5;border:1px solid rgba(239,68,68,0.3);padding:0.5rem 1.25rem;border-radius:0.375rem;cursor:pointer;font-size:0.875rem;">Delete Portfolio</button>
+      <button data-pa="deletePortfolio" style="background:rgba(239,68,68,0.15);color:#fca5a5;border:1px solid rgba(239,68,68,0.3);padding:0.5rem 1.25rem;border-radius:0.375rem;cursor:pointer;font-size:0.875rem;">Delete Portfolio</button>
     </div>
 
   </div><!-- end right column -->
@@ -138,7 +138,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
+<script nonce="{{ csp_nonce }}">
 const API = window.API_BASE || '';
 let profileData = null;
 
@@ -238,5 +238,30 @@ async function deletePortfolio() {
     window.location.href = '/portfolio';
   } catch(e) { alert('Failed to delete portfolio.'); }
 }
-</script>
+
+    // CSP: delegated dispatch for data-pa* attributes (replaces inline on* handlers).
+    // data-pa values are author-controlled, so window[name] lookup is safe.
+    (function () {
+      function _args(el) {
+        if (el.dataset.paArgs) { try { return JSON.parse(el.dataset.paArgs); } catch (_) { return []; } }
+        if (el.dataset.paArg !== undefined) return [el.dataset.paArg];
+        return [];
+      }
+      document.addEventListener('click', function (e) {
+        var el = e.target.closest('[data-pa]');
+        if (!el) return;
+        var fn = window[el.dataset.pa];
+        if (typeof fn !== 'function') return;
+        var args = _args(el);
+        if (el.hasAttribute('data-pa-self')) args = [el].concat(args);
+        fn.apply(null, args);
+      });
+      document.addEventListener('change', function (e) {
+        var el = e.target.closest('[data-pa-change]');
+        if (!el) return;
+        var fn = window[el.dataset.paChange];
+        if (typeof fn === 'function') fn(e.target);
+      });
+    })();
+  </script>
 {% endblock %}
