@@ -1922,7 +1922,10 @@ function formatCodeBlock(code, language) {
 function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text;
-  return div.innerHTML;
+  // textContent -> innerHTML escapes & < > but NOT quotes. Callers embed the
+  // result inside double-quoted HTML attributes, so an unescaped " lets
+  // user-controlled text break out and inject a new attribute (stored XSS).
+  return div.innerHTML.replace(/"/g, '&quot;');
 }
 
 // Add loading message
