@@ -2,7 +2,7 @@ Flask>=3.1.3,<4.0.0            # PYSEC-2026-2151 (Vary: Cookie cache header)
 pandas>=2.0.0,<3.0.0
 numpy>=1.26.0,<3.0.0
 psycopg2-binary>=2.9.10,<3.0.0
-python-dotenv==1.0.0
+python-dotenv>=1.2.2,<2.0.0   # PYSEC-2026-2270 (set_key symlink); fix needs Python >=3.10
 gunicorn>=23.0.0,<24.0.0      # PYSEC-2026-1433/1434 (HTTP request smuggling)
 google-generativeai>=0.3.1
 pypdf>=6.13.3,<7.0.0          # ~35 crafted-PDF DoS advisories (we parse uploads)
@@ -27,6 +27,12 @@ authlib>=1.3.0
 beautifulsoup4>=4.12.0,<5.0.0
 lxml>=6.1.0,<7.0.0            # PYSEC-2026-87 (XXE local-file read at default config)
 markdown>=3.5.0,<4.0.0
+
+# Transitive deps pinned to their fixed versions (their fixes require Python >=3.10,
+# available now that the runtime is 3.11 — see .python-version / PYTHON_VERSION):
+click>=8.3.3                 # PYSEC-2026-2132 (command injection in click.edit)
+requests>=2.33.0             # PYSEC-2026-2275 (predictable temp path in extract_zipped_paths)
+urllib3>=2.7.0               # PYSEC-2026-141/142 (header forwarding / decompression DoS)
 
 # Dev/test tools live in requirements-dev.txt (not shipped to production, and kept
 # out of the gated pip-audit scan). Install them for local dev / CI with:
