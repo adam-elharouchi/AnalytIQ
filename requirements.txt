@@ -1,11 +1,11 @@
-Flask==3.0.0
+Flask>=3.1.3,<4.0.0            # PYSEC-2026-2151 (Vary: Cookie cache header)
 pandas>=2.0.0,<3.0.0
 numpy>=1.26.0,<3.0.0
 psycopg2-binary>=2.9.10,<3.0.0
 python-dotenv==1.0.0
-gunicorn==21.2.0
+gunicorn>=23.0.0,<24.0.0      # PYSEC-2026-1433/1434 (HTTP request smuggling)
 google-generativeai>=0.3.1
-pypdf>=4.0.0,<6.0.0
+pypdf>=6.13.3,<7.0.0          # ~35 crafted-PDF DoS advisories (we parse uploads)
 resend>=1.0.0
 Flask-WTF==1.2.1
 bcrypt==4.1.2
@@ -13,7 +13,7 @@ PyJWT>=2.10.1
 Flask-Limiter==3.5.0
 flask-swagger-ui==4.11.1
 apispec==6.3.1
-marshmallow>=3.19.0
+marshmallow>=3.26.2,<4.0.0    # PYSEC-2026-1605 (Schema.load(many=True) DoS); 3.26.2 is the 3.9-safe fix
 celery==5.3.4
 flower==2.0.1
 redis==5.0.1
@@ -25,16 +25,9 @@ PyLTI1p3>=2.0.0
 cryptography>=41.0.0
 authlib>=1.3.0
 beautifulsoup4>=4.12.0,<5.0.0
-lxml>=5.0.0,<6.0.0
+lxml>=6.1.0,<7.0.0            # PYSEC-2026-87 (XXE local-file read at default config)
 markdown>=3.5.0,<4.0.0
 
-# Testing
-pytest==7.4.3
-pytest-cov==4.1.0
-pytest-mock==3.12.0
-pytest-flask==1.3.0
-
-# Code Quality
-flake8==6.1.0
-black==23.12.1
-mypy==1.7.1
+# Dev/test tools live in requirements-dev.txt (not shipped to production, and kept
+# out of the gated pip-audit scan). Install them for local dev / CI with:
+#     pip install -r requirements-dev.txt
