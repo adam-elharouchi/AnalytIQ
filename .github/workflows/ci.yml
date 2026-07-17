@@ -53,7 +53,8 @@ jobs:
     - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        # requirements-dev.txt pulls in requirements.txt plus the test/lint tools.
+        pip install -r requirements-dev.txt
 
     - name: Run linting (flake8)
       run: |
@@ -103,12 +104,25 @@ jobs:
         bandit -r . --exclude ./.venv,./tests,./scripts,./static -ll -f json -o bandit-report.json
 
     - name: Dependency vulnerability scan (pip-audit)
-      # Non-gating for now — surfaces known CVEs in requirements without blocking.
-      # Flip to a failing gate once the reported advisories are triaged.
-      continue-on-error: true
+      # GATING: fails the build on a known CVE in a production dependency
+      # (requirements.txt only; dev tools live in requirements-dev.txt).
+      #
+      # The --ignore-vuln entries below are advisories whose fix requires Python
+      # >=3.10 (this project runs 3.9) AND which are not exploitable here. REMOVE
+      # them after the Python 3.9 -> 3.11 upgrade lets the fixed versions install:
+      #   PYSEC-2026-2270  python-dotenv  set_key/unset_key symlink — app never writes .env
+      #   PYSEC-2026-2132  click          command injection in click.edit() — never called
+      #   PYSEC-2026-2275  requests       predictable temp path in extract_zipped_paths() — never called
+      #   PYSEC-2026-141   urllib3        cross-origin header forwarding via low-level ProxyManager API — not used
+      #   PYSEC-2026-142   urllib3        decompression DoS on partial reads — not used
       run: |
         pip install pip-audit
-        pip-audit -r requirements.txt --desc
+        pip-audit -r requirements.txt --desc \
+          --ignore-vuln PYSEC-2026-2270 \
+          --ignore-vuln PYSEC-2026-2132 \
+          --ignore-vuln PYSEC-2026-2275 \
+          --ignore-vuln PYSEC-2026-141 \
+          --ignore-vuln PYSEC-2026-142
 
     - name: Upload security report
       uses: actions/upload-artifact@v4
