@@ -84,7 +84,10 @@ if __name__ == "__main__":
     _logger.info("API base URL: http://localhost:%s/api", port)
     _logger.info("Health check: http://localhost:%s/api/health", port)
 
-    host = "0.0.0.0" if os.getenv("FLASK_ENV") == "production" else "127.0.0.1"
+    # Bind all interfaces only in production, where the app runs inside a
+    # container behind Cloudflare/Render (the platform is the network boundary);
+    # localhost-only otherwise. Intentional — not an exposure.
+    host = "0.0.0.0" if os.getenv("FLASK_ENV") == "production" else "127.0.0.1"  # nosec B104
 
     try:
         app.run(debug=debug_mode, port=port, host=host)
