@@ -256,6 +256,61 @@ FEATURE_CACHING = os.getenv("FEATURE_CACHING", "False").lower() == "true"
 
 
 # ============================================================================
+# CODE EXECUTION SANDBOX
+# ============================================================================
+# Student-submitted code (playground "Run" + deterministic grading) executes in
+# services/code_runner.py. C-1 stripped secrets from the child env and pinned a
+# neutral cwd, but that child still runs on the HOST: the Python import blocklist
+# and read-only-open() shims are in-process defences (bypassable via os.system,
+# os.open, ctypes, etc.), and the live "Run" path keeps network open so
+# pd.read_csv(url) works — which also exposes internal network / cloud metadata.
+#
+# SANDBOX_USE_CONTAINER moves that execution into a locked-down, ephemeral
+# container (see services/container_runner.py + docker/sandbox.Dockerfile):
+# --network none, --read-only rootfs, tmpfs scratch, cgroup memory/cpu/pid caps,
+# all caps dropped, no-new-privileges, non-root uid. Kernel-enforced isolation
+# instead of in-process shims.
+#
+# Default False → the current host runner stays in effect until an operator has
+# validated the container path on a Docker-capable host (Render's standard web/
+# worker dynos cannot run Docker — see docs/SANDBOX_CONTAINER.md). If the flag is
+# on but Docker is unavailable, execution FAILS CLOSED (returns an error) rather
+# than silently falling back to the host runner, so enabling it can never give a
+# false sense of isolation.
+SANDBOX_USE_CONTAINER = os.getenv("SANDBOX_USE_CONTAINER", "False").lower() == "true"
+
+# Sandbox image tag (must be built + present on the execution host, or pullable).
+SANDBOX_CONTAINER_IMAGE = os.getenv("SANDBOX_CONTAINER_IMAGE", "analytiq-sandbox:latest")
+
+# Path to the `docker` (or compatible, e.g. `podman`) CLI.
+SANDBOX_CONTAINER_CLI = os.getenv("SANDBOX_CONTAINER_CLI", "docker")
+
+# Optional OCI runtime override, e.g. "runsc" for gVisor kernel isolation. Empty
+# = the daemon default (runc). gVisor is strongly recommended for real untrusted
+# multi-tenant workloads.
+SANDBOX_CONTAINER_RUNTIME = os.getenv("SANDBOX_CONTAINER_RUNTIME", "")
+
+# Docker network mode per execution kind. Grading is deterministic and needs no
+# network, so it defaults to "none" (hard SSRF/exfil block). The live "Run"
+# playground defaults to "none" too — flip SANDBOX_CONTAINER_NETWORK_RUN to a
+# purpose-built egress-filtered network (one that blocks RFC1918 + 169.254.169.254
+# but allows public HTTPS) if you need pd.read_csv(url) back. Do NOT use "bridge"
+# in production: it grants unrestricted egress to the internal network.
+SANDBOX_CONTAINER_NETWORK_TEST = os.getenv("SANDBOX_CONTAINER_NETWORK_TEST", "none")
+SANDBOX_CONTAINER_NETWORK_RUN = os.getenv("SANDBOX_CONTAINER_NETWORK_RUN", "none")
+
+# Resource caps (cgroups). Memory mirrors the in-process RLIMIT_AS ceilings.
+SANDBOX_CONTAINER_MEMORY = os.getenv("SANDBOX_CONTAINER_MEMORY", "512m")
+SANDBOX_CONTAINER_CPUS = os.getenv("SANDBOX_CONTAINER_CPUS", "1.0")
+SANDBOX_CONTAINER_PIDS = int(os.getenv("SANDBOX_CONTAINER_PIDS", 64))
+# Writable tmpfs mounted at /sandbox/scratch (bytes as a docker size string).
+SANDBOX_CONTAINER_TMPFS_SIZE = os.getenv("SANDBOX_CONTAINER_TMPFS_SIZE", "64m")
+# Seconds added to the per-run timeout to allow for container spin-up before the
+# host-side subprocess.run() kill-switch fires.
+SANDBOX_CONTAINER_STARTUP_GRACE = int(os.getenv("SANDBOX_CONTAINER_STARTUP_GRACE", 10))
+
+
+# ============================================================================
 # INPUT FIELD LIMITS
 # ============================================================================
 
@@ -343,6 +398,18 @@ def config_security_warnings():
             warnings.append(
                 "ORIGIN_VERIFY_SECRET is unset — the origin does not verify Cloudflare, "
                 "so CF-Connecting-IP could be spoofed via direct-to-origin requests."
+            )
+        if not SANDBOX_USE_CONTAINER:
+            warnings.append(
+                "SANDBOX_USE_CONTAINER is off — student code runs on the host with only "
+                "in-process import/open shims and (for the Run playground) open network. "
+                "Enable the container sandbox once validated on a Docker-capable host."
+            )
+        elif SANDBOX_CONTAINER_NETWORK_RUN == "bridge":
+            warnings.append(
+                "SANDBOX_CONTAINER_NETWORK_RUN=bridge grants student code unrestricted "
+                "egress to the internal network (SSRF/exfil). Use 'none' or an "
+                "egress-filtered network instead."
             )
     return warnings
 

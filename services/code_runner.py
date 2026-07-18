@@ -28,15 +28,30 @@ Security model
 - JavaScript: --disallow-code-generation-from-strings flag.
 - SQL: sqlite3 in-process + SIGALRM timeout on Unix.
 - R / Java: timeout only.
+
+Execution backend (SANDBOX_USE_CONTAINER)
+─────────────────────────────────────────
+The Python paths (grading + live "Run") can execute inside a locked-down,
+ephemeral container instead of a host subprocess — kernel-enforced isolation
+(no network, read-only rootfs, cgroup memory/cpu/pid caps, dropped caps,
+non-root) in place of the in-process import/open shims, which are bypassable
+(os.system, os.open, ctypes …). Gated behind config.SANDBOX_USE_CONTAINER
+(default off); see services/container_runner.py + docs/SANDBOX_CONTAINER.md.
+The container backend currently covers Python; JS/R/Java grading still uses the
+host subprocess (the sandbox image ships only a Python runtime).
 """
 
 import json
 import logging
 import os
 import re
+import subprocess
 import sys
 import tempfile
 from typing import Any
+
+import config
+from services import container_runner
 
 logger = logging.getLogger(__name__)
 
@@ -53,9 +68,12 @@ MAX_CODE_BYTES = 50_000
 # exfiltrate. We pass an allowlisted, secret-free environment instead and run
 # from a neutral working directory so relative paths cannot reach app source.
 #
-# NOTE: this closes the secret-exposure vector. True isolation (separate
-# locked-down container / microVM, network namespace, seccomp, non-priv uid)
-# remains the recommended long-term hardening — see the security audit.
+# NOTE: this closes the secret-exposure vector for the host backend. True
+# isolation (separate locked-down container / microVM, network namespace,
+# seccomp, non-priv uid) is now available behind config.SANDBOX_USE_CONTAINER
+# (services/container_runner.py); this env allowlist still applies to the host
+# backend and to non-Python languages, which the container backend does not yet
+# cover.
 
 
 def _sandbox_env() -> dict:
@@ -394,22 +412,47 @@ print(json.dumps({{"stdout": _out_buf.getvalue(), "stderr": _err_buf.getvalue()}
 """
 
 
-def _run_python_free(student_code: str, timeout: int) -> dict:
-    """Execute code in the live sandbox; return stdout + stderr."""
-    import subprocess
+# ---------------------------------------------------------------------------
+# Execution backend dispatch (host subprocess  ↔  isolated container)
+# ---------------------------------------------------------------------------
+# _exec_python_harness runs `python <harness> <pre_args…> <code_path>` and
+# returns (stdout, stderr). It is the single seam between the two backends:
+#
+#   host      (default)                 : child subprocess of the worker, guarded
+#                                         by the in-process import/open shims +
+#                                         RLIMIT_* baked into the harness.
+#   container (SANDBOX_USE_CONTAINER)   : the same harness + code, bind-mounted
+#                                         read-only into a locked-down container
+#                                         (see services/container_runner.py).
+#
+# Both raise subprocess.TimeoutExpired on timeout; the container backend also
+# raises container_runner.ContainerUnavailable so callers can FAIL CLOSED rather
+# than fall back to the host and give a false sense of isolation.
 
-    harness = _PY_RUN_HARNESS.format(
-        blocked_set=repr(set(_RUN_BLOCKED_PY_MODULES)),
-    )
+
+def _exec_python_harness(
+    harness: str, student_code: str, pre_args: list, timeout: int, network: str
+) -> tuple:
+    """Run the Python harness against student_code; return (stdout, stderr)."""
+    if config.SANDBOX_USE_CONTAINER:
+        proc = container_runner.run_in_container(
+            files={"harness.py": harness, "code.py": student_code},
+            entry="harness.py",
+            args=[*pre_args, f"{container_runner.MOUNT}/code.py"],
+            timeout=timeout,
+            network=network,
+        )
+        return proc.stdout, proc.stderr
+
+    # Host backend — unchanged behaviour: secret-free env, neutral cwd, RLIMITs.
+    harness_path = None
     code_path = None
-    path = None
     try:
         with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".py", delete=False, prefix="aq_run_"
+            mode="w", suffix=".py", delete=False, prefix="aq_py_"
         ) as f:
             f.write(harness)
-            path = f.name
-
+            harness_path = f.name
         with tempfile.NamedTemporaryFile(
             mode="w", suffix=".py", delete=False, prefix="aq_src_", encoding="utf-8"
         ) as cf:
@@ -417,7 +460,7 @@ def _run_python_free(student_code: str, timeout: int) -> dict:
             code_path = cf.name
 
         proc = subprocess.run(
-            [sys.executable, path, code_path],
+            [sys.executable, harness_path, *pre_args, code_path],
             capture_output=True,
             text=True,
             timeout=timeout,
@@ -425,23 +468,43 @@ def _run_python_free(student_code: str, timeout: int) -> dict:
             env=_SANDBOX_ENV,
             cwd=_SANDBOX_CWD,
         )
-        raw = (proc.stdout or "").strip()
-        if not raw:
-            stderr = (proc.stderr or "")[:2000]
-            return {"stdout": "", "stderr": stderr or "No output.", "timed_out": False}
-        try:
-            data = json.loads(raw)
-            data["timed_out"] = False
-            return data
-        except json.JSONDecodeError:
-            return {"stdout": raw[:5000], "stderr": "", "timed_out": False}
-    except subprocess.TimeoutExpired:
-        return {"stdout": "", "stderr": f"Timed out after {timeout}s.", "timed_out": True}
+        return proc.stdout, proc.stderr
     finally:
-        if path:
-            _rm(path)
+        if harness_path:
+            _rm(harness_path)
         if code_path:
             _rm(code_path)
+
+
+def _run_python_free(student_code: str, timeout: int) -> dict:
+    """Execute code in the live sandbox; return stdout + stderr."""
+    harness = _PY_RUN_HARNESS.format(
+        blocked_set=repr(set(_RUN_BLOCKED_PY_MODULES)),
+    )
+    try:
+        stdout, stderr = _exec_python_harness(
+            harness, student_code, [], timeout, config.SANDBOX_CONTAINER_NETWORK_RUN
+        )
+    except subprocess.TimeoutExpired:
+        return {"stdout": "", "stderr": f"Timed out after {timeout}s.", "timed_out": True}
+    except container_runner.ContainerUnavailable as exc:
+        logger.error("Code sandbox container unavailable (run): %s", exc)
+        return {
+            "stdout": "",
+            "stderr": "The code sandbox is temporarily unavailable. Please try again later.",
+            "timed_out": False,
+        }
+
+    raw = (stdout or "").strip()
+    if not raw:
+        stderr = (stderr or "")[:2000]
+        return {"stdout": "", "stderr": stderr or "No output.", "timed_out": False}
+    try:
+        data = json.loads(raw)
+        data["timed_out"] = False
+        return data
+    except json.JSONDecodeError:
+        return {"stdout": raw[:5000], "stderr": "", "timed_out": False}
 
 
 def run_code(student_code: str, language: str = "python", timeout: int = 15) -> dict:
@@ -478,49 +541,27 @@ def run_code(student_code: str, language: str = "python", timeout: int = 15) -> 
 
 
 def _run_python(student_code: str, fn_name: str, tc: dict, timeout: int) -> dict:
-    import subprocess
-
     # The harness no longer embeds student code via repr() — it reads it from a
-    # dedicated temp file (argv[3]).  This avoids repr/format edge cases that
+    # dedicated temp file (last argv).  This avoids repr/format edge cases that
     # corrupted code containing backslashes, Unicode characters (e.g. smart
     # quotes introduced by browser autocorrect in LTI iframes), or other chars
     # that survive .strip() but are not valid Python syntax.
     harness = _PY_HARNESS.format(
         blocked_set=repr(set(BLOCKED_PY_MODULES)),
     )
-
-    code_path = None
-    path = None
+    # Grading is deterministic and network-independent → hard network block in
+    # container mode (SANDBOX_CONTAINER_NETWORK_TEST defaults to "none").
+    pre_args = [json.dumps(tc.get("input", {})), fn_name or ""]
     try:
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".py", delete=False, prefix="aq_py_"
-        ) as f:
-            f.write(harness)
-            path = f.name
-
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".py", delete=False, prefix="aq_src_", encoding="utf-8"
-        ) as cf:
-            cf.write(student_code)
-            code_path = cf.name
-
-        proc = subprocess.run(
-            [sys.executable, path, json.dumps(tc.get("input", {})), fn_name or "", code_path],
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-            stdin=subprocess.DEVNULL,
-            env=_SANDBOX_ENV,
-            cwd=_SANDBOX_CWD,
+        stdout, stderr = _exec_python_harness(
+            harness, student_code, pre_args, timeout, config.SANDBOX_CONTAINER_NETWORK_TEST
         )
-        return _parse_proc(proc.stdout, proc.stderr)
     except subprocess.TimeoutExpired:
         return {"timed_out": True}
-    finally:
-        if path:
-            _rm(path)
-        if code_path:
-            _rm(code_path)
+    except container_runner.ContainerUnavailable as exc:
+        logger.error("Code sandbox container unavailable (grading): %s", exc)
+        return {"error": "runtime_missing", "message": "The code sandbox is unavailable."}
+    return _parse_proc(stdout, stderr)
 
 
 # ---------------------------------------------------------------------------
