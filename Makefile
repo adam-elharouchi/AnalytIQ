@@ -1,4 +1,4 @@
-.PHONY: help dev services stop flower test test-unit test-integration lint format typecheck migrate shell clean
+.PHONY: help dev services stop flower test test-unit test-integration lint format typecheck migrate shell clean sandbox-image
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Help
@@ -89,3 +89,6 @@ clean:  ## Remove cache files and coverage artifacts
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 	find . -name "*.pyc" -delete 2>/dev/null || true
 	rm -rf .coverage htmlcov/ .pytest_cache/ .mypy_cache/
+
+sandbox-image:  ## Build the locked-down code-execution sandbox image (SANDBOX_USE_CONTAINER)
+	docker build -f docker/sandbox.Dockerfile -t $${SANDBOX_CONTAINER_IMAGE:-analytiq-sandbox:latest} docker/
