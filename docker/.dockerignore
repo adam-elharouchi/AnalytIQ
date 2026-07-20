@@ -1,0 +1,3 @@
+# The sandbox image needs NO build context — it installs pip packages only and
+# must never contain app source, secrets, or the .git history. Exclude everything.
+*
