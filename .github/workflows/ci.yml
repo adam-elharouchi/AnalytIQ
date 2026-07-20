@@ -97,11 +97,21 @@ jobs:
       with:
         python-version: '3.11'
     
-    - name: Run security scan (bandit)
-      continue-on-error: true
+    - name: Security scan (bandit) — full report artifact
+      # Non-gating: captures ALL findings (incl. LOW) for periodic review. Config
+      # (exclude_dirs + the documented B608 skip) lives in pyproject.toml.
       run: |
         pip install bandit
-        bandit -r . --exclude ./.venv,./tests,./scripts,./static -ll -f json -o bandit-report.json
+        bandit -c pyproject.toml -r . -f json -o bandit-report.json || true
+
+    - name: Security scan (bandit) — GATING on MEDIUM+ severity
+      # Fails the build on any MEDIUM- or HIGH-severity finding. The triage that
+      # got this to zero (all 19 B608 audited as parameterized-query false
+      # positives → skipped in config; the single B104 0.0.0.0 bind → nosec'd) is
+      # recorded in pyproject.toml [tool.bandit] and app.py. New MEDIUM+ findings
+      # (shell=True, eval, pickle, yaml.load, weak hash, …) will block CI.
+      run: |
+        bandit -c pyproject.toml -r . --severity-level medium
 
     - name: Dependency vulnerability scan (pip-audit)
       # GATING: fails the build on a known CVE in a production dependency
