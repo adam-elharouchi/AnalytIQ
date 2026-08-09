@@ -33,3 +33,17 @@ uploads/*
 # Sensitive documents (credentials removed from history)
 docs/SECURITY_AUDIT_COMPLETE.md
 .claude/worktrees/
+
+# Agent orchestration (ANALYTIQ_AGENT_ORCHESTRATION.md)
+# Digest SMTP credentials — the real file lives at ~/.analytiq_env, never in the repo
+.analytiq_env
+*.analytiq_env
+# Agent output: private canonical numbers, pipeline data, negotiation prep, cron logs
+reports/
+# Adam's personal immigration data (OPT/H-1B, SEVIS, attorney prep)
+hr/
+# Strategy docs: contain the acquisition target range, the walk-away floor, and
+# the acqui-hire posture (guardrail #7). This repo is being prepared for buyer
+# diligence — these must not travel with it. Keep local backups outside the repo.
+ANALYTIQ_AGENT_ORCHESTRATION.md
+PART1_EXECUTION_PLAN.md
