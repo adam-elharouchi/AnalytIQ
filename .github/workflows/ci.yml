@@ -2,7 +2,7 @@ name: AnalytIQ CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, Staging ]
   pull_request:
     branches: [ main ]
 
