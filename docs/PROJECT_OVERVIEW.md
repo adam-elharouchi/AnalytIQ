@@ -26,7 +26,7 @@ AnalytIQ uses a **Flask Blueprint API backend** + a **server-rendered Jinja2 + v
 3. **Network Transit & CORS:** The browser fires a preflight `OPTIONS` request. `core/factory.py` handles CORS globally via a `before_request` hook.
 4. **Backend Gateway (`app.py` → `core/factory.py`):**
    - **Rate Limiting:** `Flask-Limiter` checks (via Redis or Memory) if the user has exceeded their endpoint quota (preventing DDoS or AI abuse).
-   - **CSRF Check:** `Flask-WTF` validates the CSRF token for mutating requests (POST/PUT/DELETE); `@csrf_exempt` is applied to stateless JWT API endpoints.
+   - **CSRF Check:** Not applicable to the API surface. Authentication is header-only (`Authorization: Bearer`), never cookie-based, so no mutating endpoint is CSRF-exploitable; `WTF_CSRF_CHECK_DEFAULT` is `False` and every mutating route carries `@csrf_exempt`. `Flask-WTF` is initialised only so `generate_csrf()` / `GET /api/csrf-token` remain available to any future form-submit route. See `docs/security/JWT_CSRF_MITIGATION.md`.
    - **Error Tracking:** `Sentry SDK` attaches a unique `request_id` context to the transaction.
 5. **Blueprint Routing:** The request hits a specific Flask Blueprint (e.g., `blueprints/exercises.py → submit_exercise()`).
 6. **Authentication Validation (`@require_auth`):** Decodes the JWT, verifies the signature against `config.SECRET_KEY`, checks expiration, and sets `g.user_id`, `g.user_role`, `g.tenant_id`.
@@ -73,7 +73,7 @@ clean URL to a `.html` template.
         *   `lti.py`: Handles complex OAuth2/OIDC flows for LMS integrations.
 *   **Middleware & Security:**
     *   `Flask-Limiter`: Prevents endpoint abuse.
-    *   `Flask-WTF`: Issues and validates CSRF tokens against cross-site attacks.
+    *   `Flask-WTF`: Initialised for CSRF token *issuance* only (`GET /api/csrf-token`). No route is validated against it today — see `docs/security/JWT_CSRF_MITIGATION.md` for why header-only JWT auth closes the CSRF surface without it.
     *   `PyJWT`: Cryptographically signs user sessions (stateless auth).
     *   `Sentry-SDK`: Catches unhandled exceptions, sanitizes Personal Identifiable Information (PII), and alerts developers in real-time.
 
