@@ -494,8 +494,8 @@ def grade_exercise(exercise_id):
                     "total_score": result["total_score"],
                     "correctness_score": result["correctness_score"],
                     "quality_score": result["quality_score"],
-                    "tests_total": 0,
-                    "tests_passed": 0,
+                    "tests_total": result.get("tests_total", 0),
+                    "tests_passed": result.get("tests_passed", 0),
                     "test_results": [
                         {"description": result["feedback"], "passed": result["passed"]}
                     ],
