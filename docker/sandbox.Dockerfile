@@ -39,7 +39,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 RUN pip install --no-cache-dir \
         "pandas==2.2.3" \
         "numpy==2.1.3" \
-        "requests==2.32.4" \
+        "requests==2.33.0" \
     && find /usr/local/lib/python3.11 -name '__pycache__' -type d -prune -exec rm -rf {} + \
     && rm -rf /root/.cache
 
