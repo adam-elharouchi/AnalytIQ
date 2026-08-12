@@ -131,7 +131,11 @@ class SuperAdminDashboard {
                 const data = await res.json();
                 if (data && data.tenants) {
                     this.renderTenants(data.tenants);
-                    this.updateOverviewStats(data.tenants);
+                    // Use the unscoped platform_totals for the Overview headline
+                    // stats — NOT a sum of per-tenant totals, which excludes
+                    // any user/class with tenant_id IS NULL (professors,
+                    // tenant_admins, superadmins). See CANONICAL_NUMBERS.md.
+                    this.updateOverviewStats(data.tenants, data.platform_totals);
                 }
             }
         } catch (error) {
@@ -228,14 +232,23 @@ class SuperAdminDashboard {
     // Rendering
     // ==========================================
 
-    updateOverviewStats(tenants) {
-        let totalUsers = 0;
-        let totalClasses = 0;
-
-        tenants.forEach(t => {
-            totalUsers += t.total_users;
-            totalClasses += t.total_classes;
-        });
+    updateOverviewStats(tenants, platformTotals) {
+        // Canonical platform-wide counts (matches Analytics tab exactly — see
+        // /api/superadmin/tenants "platform_totals" and CANONICAL_NUMBERS.md).
+        // Falls back to summing per-tenant totals only if an older API
+        // response without platform_totals is ever served (should not happen).
+        let totalUsers, totalClasses;
+        if (platformTotals) {
+            totalUsers = platformTotals.total_users;
+            totalClasses = platformTotals.total_classes;
+        } else {
+            totalUsers = 0;
+            totalClasses = 0;
+            tenants.forEach(t => {
+                totalUsers += t.total_users;
+                totalClasses += t.total_classes;
+            });
+        }
 
         document.getElementById('stat-total-tenants').textContent = tenants.length;
         document.getElementById('stat-total-users').textContent = totalUsers;

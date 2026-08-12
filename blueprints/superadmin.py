@@ -42,7 +42,20 @@ bp = Blueprint("superadmin", __name__)
 @require_auth
 @require_super_admin
 def list_tenants():
-    """List all tenants with aggregate statistics."""
+    """List all tenants with aggregate statistics.
+
+    NOTE (2026-08-08, metrics-engineer): `total_users` / `total_classes` on each
+    tenant row are intentionally *tenant-scoped* (users/classes with a matching
+    tenant_id) — that's the correct number for the per-tenant card. They are
+    NOT the platform-wide total, because tenant_id is nullable (professors,
+    tenant_admins, and superadmins are frequently created without a tenant_id —
+    see repositories/auth_repository.insert_user and blueprints/sso.py).
+    Summing these per-tenant numbers therefore silently drops every
+    tenant-less user, which is exactly the root cause of the Overview-vs-
+    Analytics "31 vs 40" discrepancy (see reports/metrics-engineer/CANONICAL_NUMBERS.md).
+    `platform_totals` below is the unscoped, canonical platform-wide count and
+    is what any "Total Users" / "Total Classes" headline stat must use.
+    """
     try:
         conn = get_db_connection()
         cur = conn.cursor()
@@ -58,6 +71,15 @@ def list_tenants():
         """
         )
         rows = cur.fetchall()
+
+        # Platform-wide, unscoped totals — the canonical "total users" / "total
+        # classes" numbers. Must match /api/superadmin/analytics' users.total.
+        cur.execute("SELECT COUNT(*) FROM users")
+        _row = cur.fetchone()
+        platform_total_users = _row[0] if _row else 0
+        cur.execute("SELECT COUNT(*) FROM classes")
+        _row = cur.fetchone()
+        platform_total_classes = _row[0] if _row else 0
         cur.close()
 
         tenants = []
@@ -75,7 +97,18 @@ def list_tenants():
                 }
             )
 
-        return jsonify({"tenants": tenants}), 200
+        return (
+            jsonify(
+                {
+                    "tenants": tenants,
+                    "platform_totals": {
+                        "total_users": platform_total_users,
+                        "total_classes": platform_total_classes,
+                    },
+                }
+            ),
+            200,
+        )
     except Exception as e:
         logger.error("Failed to list tenants: %s", e)
         return jsonify({"error": "Failed to retrieve tenants"}), 500
