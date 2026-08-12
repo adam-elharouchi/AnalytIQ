@@ -49,9 +49,10 @@ echo "=== AnalytIQ daily cycle $(date) ===" >> "$LOG"
 # NOTE: SMTP credentials are deliberately NOT sourced here. This process is an
 # autonomous agent whose output is appended to a repo-local log; per guardrail 3
 # ("no agent handles credentials") they are scoped to the digest subshell below.
-claude -p "You are the Orchestrator. Read ANALYTIQ_AGENT_ORCHESTRATION.md, reports/STATE.md, and PART1_EXECUTION_PLAN.md. Run today's cycle per the Master Timeline. Delegate to subagents as needed. Finish by updating reports/STATE.md and writing reports/ADAM_DAILY.md in the required digest format (Section 7.2)." \
+ORCH_OK=1
+claude -p "You are the Orchestrator. Read ANALYTIQ_AGENT_ORCHESTRATION.md, reports/STATE.md, and PART1_EXECUTION_PLAN.md. Run today's cycle per the Master Timeline. Delegate to subagents as needed. Finish by updating reports/STATE.md and writing reports/ADAM_DAILY.md in the required digest format (Section 7.2). Then publish today's decision sheet as an Artifact per Section 7.4 — one card per open decision, options drawn from the underlying agent reports rather than from the digest summary — and write its URL as the last line of reports/DECISION_SHEET_URL. send_digest.py links whatever is in that file, but ignores it unless it was written today." \
   --permission-mode acceptEdits \
-  >> "$LOG" 2>&1 || echo "ORCHESTRATOR RUN FAILED $(date)" >> "$LOG"
+  >> "$LOG" 2>&1 || { ORCH_OK=0; echo "ORCHESTRATOR RUN FAILED $(date)" >> "$LOG"; }
 
 # Deterministic email step — a script, not an agent. Credentials live only inside
 # this subshell, so they are never present in the agent's environment above.
@@ -74,4 +75,22 @@ if (
   echo "=== cycle completed, digest sent $(date) ===" >> "$LOG"
 else
   echo "DIGEST NOT SENT $(date) — no stamp written; next trigger will retry" >> "$LOG"
+  # A failed cycle must not be silent. Without this, the freshness gate suppresses
+  # the stale digest and the day simply produces no email at all — which is exactly
+  # how Aug 10-11 2026 went unnoticed for two days. send_digest.py caps this at one
+  # notice per day, so the 13:00/19:00 retries don't re-mail the same failure.
+  # Same subshell discipline as the send above: credentials stay out of the agent's
+  # environment and exist only for the duration of this call.
+  if [ "$ORCH_OK" = "0" ]; then
+    REASON="orchestrator run failed — see log tail below (claude -p exited non-zero)"
+  else
+    REASON="orchestrator finished but the digest was not sent — likely a stale or missing ADAM_DAILY.md"
+  fi
+  (
+    set -euo pipefail
+    [ -f "$HOME/.analytiq_env" ] || { echo "cannot send failure notice — ~/.analytiq_env missing"; exit 1; }
+    # shellcheck source=/dev/null
+    source "$HOME/.analytiq_env"
+    python3 scripts/send_digest.py --failure-notice "$REASON" "$LOG"
+  ) >> "$LOG" 2>&1 || echo "FAILURE NOTICE COULD NOT BE SENT $(date)" >> "$LOG"
 fi
