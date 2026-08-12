@@ -1,0 +1,223 @@
+#!/usr/bin/env bash
+#
+# Encrypted, verified, off-provider backup of the AnalytIQ production database.
+#
+# WHY THIS EXISTS: on 2026-08-12 Adam checked the Supabase dashboard and found
+# NO scheduled backups and no point-in-time recovery on the current plan. The
+# recovery point objective was therefore total — losing the database meant
+# losing every class, submission, grade and the fall-semester dataset the exit
+# story depends on. See docs/RUNBOOK.md section 3.
+#
+# DESIGN NOTES
+#
+#   pg_dump runs in Docker, not on the host. There is no pg_dump on this Mac
+#   and no Homebrew to install one, but Docker is already a dependency (see
+#   docker-compose.yml). It is also the better answer: pg_dump refuses to dump
+#   from a server newer than itself, and Supabase upgrades Postgres without
+#   asking us. Bumping PG_IMAGE is a one-line fix; re-installing a host
+#   toolchain is not. If a host pg_dump ever exists it is used in preference.
+#
+#   Credentials never enter argv. A connection URI passed as an argument is
+#   visible to every user on the machine via `ps`. The URI is parsed into
+#   components and the password travels in PGPASSWORD, exported into the
+#   container by name (`--env PGPASSWORD`) so the value itself is never written
+#   on a command line.
+#
+#   Custom format (-Fc), not plain SQL. It compresses, restores selectively,
+#   and — the point here — `pg_restore --list` can read its table of contents,
+#   which is how each backup is verified before the old ones are swept.
+#
+#   Every run verifies. A dump that has never been read back is a file, not a
+#   backup. Each run decrypts its own output and lists the archive contents; if
+#   that fails the run fails loudly and old backups are NOT deleted.
+#
+# USAGE
+#   ./scripts/backup_db.sh              # dump, encrypt, verify, sweep old
+#   ./scripts/backup_db.sh --list       # show what backups exist
+#   ./scripts/backup_db.sh --verify-only FILE
+#   ./scripts/backup_db.sh --restore-cmd FILE   # print the restore recipe
+#
+# CONFIG (all optional except the passphrase)
+#   BACKUP_PASSPHRASE  REQUIRED. Put it in ~/.analytiq_env next to the SMTP
+#                      creds. LOSING IT MAKES EVERY BACKUP UNREADABLE — store a
+#                      copy in a password manager, not only on this machine.
+#   BACKUP_DIR         default ~/AnalytIQ-backups (deliberately outside the repo)
+#   RETAIN_DAYS        default 14
+#   PG_IMAGE           default postgres:17-alpine
+#   DATABASE_URL       read from the environment, else from the repo .env
+#
+set -euo pipefail
+
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+BACKUP_DIR="${BACKUP_DIR:-$HOME/AnalytIQ-backups}"
+RETAIN_DAYS="${RETAIN_DAYS:-14}"
+PG_IMAGE="${PG_IMAGE:-postgres:17-alpine}"
+STAMP="$(date +%Y%m%d-%H%M%S)"
+LOG="$BACKUP_DIR/backup.log"
+
+log() { printf '%s  %s\n' "$(date '+%Y-%m-%d %H:%M:%S %z')" "$*" | tee -a "$LOG" >&2; }
+die() { log "FAILED: $*"; exit 1; }
+
+mkdir -p "$BACKUP_DIR"
+chmod 700 "$BACKUP_DIR"
+
+# --- credentials -------------------------------------------------------------
+# Sourced, never echoed. ~/.analytiq_env is the established home for secrets on
+# this machine (orchestration doc section 7.1) and is outside the repo.
+if [ -f "$HOME/.analytiq_env" ]; then
+  # shellcheck source=/dev/null
+  source "$HOME/.analytiq_env"
+fi
+
+if [ -z "${DATABASE_URL:-}" ] && [ -f "$REPO/.env" ]; then
+  DATABASE_URL="$(grep -E '^DATABASE_URL=' "$REPO/.env" | head -1 | cut -d= -f2- | tr -d '"'"'"'')"
+fi
+
+# --- subcommands that need no database ---------------------------------------
+case "${1:-}" in
+  --list)
+    printf '%-38s %10s  %s\n' "BACKUP" "SIZE" "TAKEN"
+    shopt -s nullglob
+    for f in "$BACKUP_DIR"/analytiq-*.dump.enc; do
+      printf '%-38s %10s  %s\n' "$(basename "$f")" \
+        "$(du -h "$f" | cut -f1)" "$(date -r "$f" '+%Y-%m-%d %H:%M')"
+    done
+    exit 0
+    ;;
+  --restore-cmd)
+    [ -n "${2:-}" ] || die "--restore-cmd needs a backup file"
+    cat <<RECIPE
+Restore recipe for $(basename "$2")
+
+  1. Decrypt (you will be prompted for BACKUP_PASSPHRASE):
+       openssl enc -d -aes-256-cbc -pbkdf2 -iter 600000 \\
+         -in "$2" -out /tmp/analytiq-restore.dump
+
+  2. Inspect before you touch anything — confirm it is the data you expect:
+       docker run --rm -v /tmp:/t $PG_IMAGE pg_restore --list /t/analytiq-restore.dump | head -40
+
+  3. Restore into a SCRATCH database first. Never restore straight over
+     production; a bad restore is worse than the outage it was meant to fix.
+       docker run --rm -v /tmp:/t --env PGPASSWORD $PG_IMAGE \\
+         pg_restore -h HOST -U USER -d SCRATCH_DB --clean --if-exists /t/analytiq-restore.dump
+
+  4. Only once the scratch copy is verified, repeat step 3 against the real
+     target, and record the elapsed time in docs/RUNBOOK.md as the measured RTO.
+
+  5. Shred the plaintext when finished:
+       rm -P /tmp/analytiq-restore.dump
+RECIPE
+    exit 0
+    ;;
+esac
+
+[ -n "${BACKUP_PASSPHRASE:-}" ] || die "BACKUP_PASSPHRASE is not set. Add it to ~/.analytiq_env. Without it there is no encryption key and no backup."
+[ "${#BACKUP_PASSPHRASE}" -ge 16 ] || die "BACKUP_PASSPHRASE is shorter than 16 characters. This is the only thing standing between a stolen backup file and every student record in it."
+
+# --- verify-only path --------------------------------------------------------
+verify_archive() {
+  local enc="$1" plain
+  plain="$(mktemp -t analytiq-verify)"
+  # shellcheck disable=SC2064
+  trap "rm -f -- '$plain'" RETURN
+
+  openssl enc -d -aes-256-cbc -pbkdf2 -iter 600000 \
+    -pass env:BACKUP_PASSPHRASE -in "$enc" -out "$plain" \
+    || { log "  decrypt failed"; return 1; }
+
+  local toc
+  toc="$(docker run --rm -v "$(dirname "$plain")":/v "$PG_IMAGE" \
+          pg_restore --list "/v/$(basename "$plain")" 2>/dev/null | grep -c 'TABLE DATA' || true)"
+
+  if [ "${toc:-0}" -lt 1 ]; then
+    log "  archive decrypted but contains no TABLE DATA entries — treating as corrupt"
+    return 1
+  fi
+  log "  verified: archive readable, $toc tables with data"
+  return 0
+}
+
+if [ "${1:-}" = "--verify-only" ]; then
+  [ -n "${2:-}" ] || die "--verify-only needs a backup file"
+  log "verifying $2"
+  verify_archive "$2" && { log "OK"; exit 0; } || die "verification failed"
+fi
+
+# --- parse the connection URI ------------------------------------------------
+[ -n "${DATABASE_URL:-}" ] || die "DATABASE_URL is not set (checked the environment and $REPO/.env)"
+
+eval "$(python3 - "$DATABASE_URL" <<'PY'
+import sys, urllib.parse as u
+p = u.urlparse(sys.argv[1])
+if not p.hostname:
+    sys.exit("could not parse DATABASE_URL")
+def q(s): return "'" + str(s).replace("'", "'\\''") + "'"
+print(f"PGHOST={q(p.hostname)}")
+print(f"PGPORT={q(p.port or 5432)}")
+print(f"PGUSER={q(u.unquote(p.username or ''))}")
+print(f"PGDATABASE={q((p.path or '/postgres').lstrip('/') or 'postgres')}")
+print(f"PGPASSWORD={q(u.unquote(p.password or ''))}")
+PY
+)" || die "could not parse DATABASE_URL"
+export PGHOST PGPORT PGUSER PGDATABASE PGPASSWORD
+
+case "$PGHOST" in
+  localhost|127.0.0.1|*.local)
+    log "NOTE: DATABASE_URL points at $PGHOST — this is a LOCAL database, not production."
+    log "      Backing it up anyway, but this is almost certainly not what you want scheduled."
+    ;;
+esac
+
+OUT="$BACKUP_DIR/analytiq-$STAMP.dump.enc"
+log "starting backup of $PGDATABASE at $PGHOST -> $(basename "$OUT")"
+
+# --- dump + encrypt in one stream --------------------------------------------
+# Piped, so the plaintext dump never lands on disk. set -o pipefail means a
+# pg_dump failure fails the run rather than yielding an encrypted empty file.
+if command -v pg_dump >/dev/null 2>&1; then
+  log "  using host pg_dump ($(pg_dump --version | awk '{print $NF}'))"
+  DUMP=(pg_dump --format=custom --no-owner --no-acl --compress=6)
+else
+  log "  using $PG_IMAGE (no host pg_dump)"
+  # A container's "localhost" is the container, not the Mac. Remote hosts
+  # (Supabase, the real case) work on default bridge networking and need no
+  # special handling; only a local database does. --network host is deliberately
+  # not used — it is a no-op for reaching the host on Docker Desktop for macOS.
+  case "$PGHOST" in
+    localhost|127.0.0.1)
+      log "  remapping $PGHOST -> host.docker.internal for the container"
+      export PGHOST=host.docker.internal
+      ;;
+  esac
+  DUMP=(docker run --rm
+        --env PGHOST --env PGPORT --env PGUSER --env PGDATABASE --env PGPASSWORD
+        "$PG_IMAGE" pg_dump --format=custom --no-owner --no-acl --compress=6)
+fi
+
+if ! "${DUMP[@]}" 2>>"$LOG" \
+     | openssl enc -aes-256-cbc -pbkdf2 -iter 600000 -salt \
+         -pass env:BACKUP_PASSPHRASE -out "$OUT"; then
+  rm -f -- "$OUT"
+  die "pg_dump failed — no backup written. Check $LOG. If the error mentions a server version mismatch, raise PG_IMAGE to match Supabase's Postgres version."
+fi
+
+chmod 600 "$OUT"
+SIZE=$(du -h "$OUT" | cut -f1)
+BYTES=$(wc -c < "$OUT" | tr -d ' ')
+[ "$BYTES" -gt 4096 ] || { rm -f -- "$OUT"; die "backup is only $BYTES bytes — implausibly small, treating as failed"; }
+log "  wrote $SIZE"
+
+# --- verify before trusting it -----------------------------------------------
+if ! verify_archive "$OUT"; then
+  log "VERIFICATION FAILED — keeping the file for inspection and NOT sweeping old backups."
+  exit 1
+fi
+
+# --- retention sweep ---------------------------------------------------------
+# Only reached when this run produced a verified backup, so a run of failures
+# can never age out the last good copy.
+SWEPT=$(find "$BACKUP_DIR" -maxdepth 1 -name 'analytiq-*.dump.enc' -type f -mtime "+$RETAIN_DAYS" -print -delete | wc -l | tr -d ' ')
+[ "$SWEPT" -gt 0 ] && log "  swept $SWEPT backup(s) older than $RETAIN_DAYS days"
+
+KEPT=$(find "$BACKUP_DIR" -maxdepth 1 -name 'analytiq-*.dump.enc' -type f | wc -l | tr -d ' ')
+log "done — $KEPT backup(s) on hand in $BACKUP_DIR"

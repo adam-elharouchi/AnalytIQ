@@ -141,8 +141,28 @@ files applied by `db_migrate.py`.
 
 ## 3. Restore (database backup/restore)
 
-**This is the most important section and the one this agent could NOT fully substantiate from the
-repository. Do not trust it blindly — verify before you need it.**
+> ## ⛔ ANSWERED 2026-08-12 — THERE ARE NO BACKUPS
+>
+> Adam checked the Supabase dashboard on 2026-08-12. The result:
+>
+> - **No scheduled backups are configured.** None. Not "daily with short retention" — none.
+> - **Point-in-time recovery is not offered on the current plan.**
+>
+> **There is therefore no restore procedure, because there is nothing to restore from.**
+> Everything below this box was written while the answer was unknown; read it as the
+> investigation, not as a procedure. The RPO is total: if the database is lost or
+> corrupted right now, every class, enrollment, chapter, exercise, submission, grade and
+> AI conversation is gone permanently, and the fall-semester dataset that the entire exit
+> story depends on goes with it.
+>
+> This also contradicts a live claim: `docs/PROJECT_OVERVIEW.md` states Supabase "handles
+> backups." On the current plan it does not. That line needs the same correction treatment
+> as the privacy-policy claims fixed on 2026-08-12.
+>
+> **Until this is fixed, the honest answer to a buyer's diligence question "what is your
+> backup and recovery posture" is "we have none."**
+
+**Everything below was the pre-answer investigation. Retained for context.**
 
 What the repo says:
 - `docs/PROJECT_OVERVIEW.md`: "**Database Host:** Supabase (Managed PostgreSQL). It handles
@@ -162,12 +182,28 @@ What this means operationally:
 - **[UNKNOWN — not in repo]** Whether there is any additional backup (e.g. a scheduled `pg_dump`
   to external storage) outside of whatever Supabase does automatically.
 
-**This is flagged as a Blocker in the accompanying session report — Adam needs to log into the
-Supabase dashboard (Project Settings → Database → Backups, or equivalent for the current Supabase
-UI) and confirm: (a) the plan tier, (b) what backup type is enabled and its retention window, (c)
-whether point-in-time recovery is available, and (d) how to actually trigger a restore from the
-dashboard. Until that's done, do not assume backups exist beyond whatever Supabase's default for
-the account's tier provides.**
+**This was flagged as a Blocker and is now answered — see the box at the top of this section.
+The answer was "no backups at all."**
+
+### 3.1 What to do about it (open — 2026-08-12)
+
+Two routes, not mutually exclusive. The second is free and can be running tonight.
+
+**a. Upgrade the Supabase plan.** Paid tiers add scheduled backups, and PITR above that.
+This is the low-effort route and it puts recovery in the same place as the data. Cost is a
+monthly bill; the question is whether the tier that includes PITR is worth it before there
+is revenue.
+
+**b. Scheduled `pg_dump` to external storage.** A cron or launchd job running `pg_dump`
+against `DATABASE_URL`, encrypted, written somewhere off Supabase, with a retention sweep.
+Free, fully under our control, and has the side benefit of being a *portable* backup rather
+than one locked to the provider — which is worth something in an acquisition where the
+buyer will ask exactly this. Needs writing; nothing like it exists in `scripts/` today.
+
+**Whichever route: a backup that has never been restored is not a backup.** Schedule one
+test restore into a scratch project and record the date and elapsed time here. That
+recorded number is the RTO; without it the field stays UNKNOWN no matter what the dashboard
+says.
 
 What IS substantiated: the schema itself is fully reproducible from source. `migrations/*.sql`
 (currently `001`–`013`, see `migrations/` directory) plus `db_migrate.py` can rebuild an empty

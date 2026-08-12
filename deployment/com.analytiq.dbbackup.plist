@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Daily encrypted database backup.
+
+  Deliberately a SEPARATE launchd job from com.analytiq.dailycycle. Backups must
+  not depend on the orchestrator working — the whole point is that they keep
+  running on the days everything else is broken, and the daily cycle has failed
+  on five separate days this month.
+
+  Runs at 03:00 and again at 12:30. The second slot is not redundancy for its own
+  sake: this is a laptop that sleeps, and the 03:00 run is missed whenever the lid
+  is shut overnight (launchd does not reliably replay calendar triggers missed
+  during sleep). 12:30 is a time the machine is realistically awake.
+
+  Install:
+    cp deployment/com.analytiq.dbbackup.plist ~/Library/LaunchAgents/
+    launchctl bootstrap gui/$UID ~/Library/LaunchAgents/com.analytiq.dbbackup.plist
+
+  Check:
+    launchctl print gui/$UID/com.analytiq.dbbackup | grep -E 'runs|last exit'
+    ./scripts/backup_db.sh --list
+
+  Uninstall:
+    launchctl bootout gui/$UID/com.analytiq.dbbackup
+
+  NOTE: BACKUP_PASSPHRASE is NOT in this file. It is read from ~/.analytiq_env by
+  the script itself, so this plist carries no secret and is safe to commit.
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.analytiq.dbbackup</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>-lc</string>
+    <string>cd "$HOME/Documents/GitHub/AnalytIQ/AnalytIQ Repo" &amp;&amp; ./scripts/backup_db.sh</string>
+  </array>
+
+  <key>StartCalendarInterval</key>
+  <array>
+    <dict>
+      <key>Hour</key><integer>3</integer>
+      <key>Minute</key><integer>0</integer>
+    </dict>
+    <dict>
+      <key>Hour</key><integer>12</integer>
+      <key>Minute</key><integer>30</integer>
+    </dict>
+  </array>
+
+  <key>StandardOutPath</key>
+  <string>/tmp/analytiq_backup.out</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/analytiq_backup.err</string>
+
+  <!-- Docker Desktop lives in /usr/local/bin or /opt/homebrew/bin depending on
+       install; both are listed so `docker` resolves under launchd's minimal PATH. -->
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+
+  <key>RunAtLoad</key>
+  <false/>
+</dict>
+</plist>

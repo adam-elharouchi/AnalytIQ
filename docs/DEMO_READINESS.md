@@ -368,8 +368,18 @@ success).
 
 Record the result here once measured:
 
-> **Measured loop time:** _not yet recorded — run the sequence above and
-> fill this in._
+> **Measured loop time: 1.261 seconds** (`real 0m1.261s`), measured by Adam on
+> 2026-08-12 against a local Docker Postgres per §0. `/tmp/grade_result.json`
+> confirmed `"total_score": 100` and `"passed": true`, so this is a real pass,
+> not a fast failure.
+>
+> Against the 60-second target that is ~48x headroom. Two caveats before this
+> number is quoted anywhere: it was measured against **local** Postgres on the
+> same machine, so it contains no network latency to Supabase and no cold-start
+> — production will be slower. And the graded exercise runs against seeded test
+> cases via local code execution, so **no Gemini call is on this path**; a live
+> demo that generates exercises from an uploaded PDF will include a Gemini
+> round-trip (~3-6s per chunk) that this measurement does not cover.
 
 ---
 
