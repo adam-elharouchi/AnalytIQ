@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+ "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>com.analytiq.dailycycle</string>
+  <key>ProgramArguments</key><array>
+    <string>/bin/bash</string>
+    <string>/Users/aelharouchi/Documents/GitHub/AnalytIQ/AnalytIQ Repo/scripts/daily_cycle.sh</string>
+  </array>
+  <!-- Fires at the top of every hour; daily_cycle.sh decides which hours count
+       (SLOTS="8 13 19", local time) and no-ops silently on the rest.
+
+       This used to be three StartCalendarInterval entries at 08:00/13:00/19:00.
+       launchd resolves those against the timezone that was current when the job
+       was loaded and never re-resolves them, so after the move from Boston to
+       Casablanca they fired at 13:00/18:00/00:00 local for four days — the
+       morning slot became a midnight one that the sleeping laptop kept missing.
+       An hourly tick is immune to that: it means the same thing in every zone
+       used here, and the script reads local `date` itself. It also lets a slot
+       missed while the Mac was asleep run at the first tick after it wakes. -->
+  <key>StartCalendarInterval</key><array>
+    <dict>
+      <key>Minute</key><integer>0</integer>
+    </dict>
+  </array>
+  <key>StandardErrorPath</key><string>/tmp/analytiq_cycle.err</string>
+  <key>StandardOutPath</key><string>/tmp/analytiq_cycle.out</string>
+  <key>EnvironmentVariables</key><dict>
+    <key>PATH</key><string>/Users/aelharouchi/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+  </dict>
+</dict></plist>
