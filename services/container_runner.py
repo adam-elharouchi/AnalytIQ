@@ -87,7 +87,10 @@ def build_argv(
         network,
         "--read-only",
         "--tmpfs",
-        f"/tmp:rw,noexec,nosuid,nodev,size={config.SANDBOX_CONTAINER_TMPFS_SIZE}",
+        # nosec B108 - this "/tmp" is a path INSIDE the container, not on the
+        # host: it declares a tmpfs mount that is itself a hardening measure
+        # (noexec, nosuid, nodev, size-capped). No host temp file is involved.
+        f"/tmp:rw,noexec,nosuid,nodev,size={config.SANDBOX_CONTAINER_TMPFS_SIZE}",  # nosec B108
         "--memory",
         config.SANDBOX_CONTAINER_MEMORY,
         # Equal memory-swap => zero swap; the cap is real RAM, not RAM+swap.
@@ -106,7 +109,9 @@ def build_argv(
         "-v",
         f"{host_dir}:{MOUNT}:ro",
         "-w",
-        "/tmp",
+        # nosec B108 - container-internal working directory (the tmpfs mounted
+        # above), not a host path.
+        "/tmp",  # nosec B108
         # Neutral, secret-free env (mirrors code_runner's _SANDBOX_ENV intent).
         # --network none already blocks exfil; this keeps interpreter config sane.
         "-e",
@@ -131,7 +136,11 @@ def _write_inputs(host_dir: str, files: Mapping[str, str]) -> None:
     uid 10001 cannot traverse. Relax to world-readable (the dir is a throwaway
     holding only the student's own code + the public harness — no secrets).
     """
-    os.chmod(host_dir, 0o755)
+    # nosec B103 - 0o755 is required, not accidental: the container runs as uid
+    # 10001 and cannot traverse the 0o700 TemporaryDirectory owned by the host
+    # app uid. The directory is a per-run throwaway containing only the student's
+    # own submission and the public test harness, so world-readable costs nothing.
+    os.chmod(host_dir, 0o755)  # nosec B103
     for name, content in files.items():
         # Reject path traversal in filenames; callers pass fixed basenames.
         if os.path.sep in name or name in (".", ".."):
