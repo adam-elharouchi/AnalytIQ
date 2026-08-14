@@ -31,7 +31,7 @@ markdown>=3.5.0,<4.0.0
 # Transitive deps pinned to their fixed versions (their fixes require Python >=3.10,
 # available now that the runtime is 3.11 — see .python-version / PYTHON_VERSION):
 click>=8.3.3                 # PYSEC-2026-2132 (command injection in click.edit)
-requests>=2.33.0             # PYSEC-2026-2275 (predictable temp path in extract_zipped_paths)
+requests>=2.34.2             # PYSEC-2026-2275 (predictable temp path in extract_zipped_paths)
 urllib3>=2.7.0               # PYSEC-2026-141/142 (header forwarding / decompression DoS)
 
 # Dev/test tools live in requirements-dev.txt (not shipped to production, and kept
