@@ -51,7 +51,7 @@ violations.
 
 **Positive**
 - A single `config.py` is the authoritative list of every env var the app uses.
-- `validate_config()` runs at startup and fails fast if required vars are absent.
+- `validate_config()` is defined and exercised by `tests/unit/test_config_deep.py`, but is not called from application startup — nothing in `core/factory.py` or `app.py` invokes it, and it returns an error list rather than raising, so it would not fail-fast even if wired up. `config_security_warnings()` (`core/factory.py:87`) is the control that actually runs at startup today; see `docs/SECURITY.md` §1.
 - Tests patch `config.GEMINI_API_KEY` (the attribute), not `os.getenv`
   (the call site), making patches stable across refactors.
 - `RESEND_API_KEY` and `FRONTEND_URL` were added to `config.py` as part of

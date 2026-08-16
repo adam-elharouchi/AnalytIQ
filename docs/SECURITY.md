@@ -8,8 +8,14 @@ Last updated: 2026-03-22
 
 - **Mechanism:** JWT Bearer tokens, algorithm HS256 (`config.JWT_ALGORITHM`).
 - **Expiry:** 168 hours (7 days) by default; overridden via `JWT_EXPIRY_HOURS` env var.
-- **Secret:** `JWT_SECRET_KEY` env var (falls back to `SECRET_KEY`; must not use the dev
-  default in production — `validate_config()` enforces this).
+- **Secret:** `JWT_SECRET_KEY` env var (falls back to `SECRET_KEY`). `config.validate_config()`
+  contains a check that `SECRET_KEY` is not the dev-default string in production, but that
+  function is never called by application code (`config.py:359` — only exercised by
+  `tests/unit/test_config_deep.py`) and does not run at startup. The control that does run at
+  startup is `config_security_warnings()` (`core/factory.py:87`), which separately flags —
+  as a non-fatal, logged warning, not a fail-fast check — the related case where
+  `JWT_SECRET_KEY == SECRET_KEY` in production. It does not check for the dev-default secret
+  value itself.
 - **Token payload:** `user_id`, `role`, `iat`, `exp`; optionally `name` and `email`.
 - **Transport:** `Authorization: Bearer <token>` header only; no cookies.
 

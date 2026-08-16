@@ -35,7 +35,7 @@ exercise generation and grading.
 
 ```
 app.py                    # create_app() — calls core/factory.py helpers in sequence
-config.py                 # All env vars + validate_config(); only file that calls os.getenv()
+config.py                 # All env vars; only file that calls os.getenv(). config_security_warnings() runs at startup (core/factory.py:87, non-fatal); validate_config() is defined but not called by app code (tests only).
 db_migrate.py             # Migration runner (applies migrations/ SQL files)
 gunicorn.conf.py          # Gunicorn production config
 Procfile                  # web + worker process definitions
@@ -242,7 +242,7 @@ they are skipped in CI unless the workflow provides a real Postgres URL.
 | Decision                              | Rationale                                                       |
 |---------------------------------------|-----------------------------------------------------------------|
 | Application Factory (`core/factory.py`) | Each startup concern is independently readable and testable; eliminates circular imports |
-| Config centralization (`config.py`)   | Single source of truth; `validate_config()` fails fast on startup; test patches are stable |
+| Config centralization (`config.py`)   | Single source of truth; `config_security_warnings()` logs non-fatal warnings at startup (`core/factory.py:87`); `validate_config()` is defined but not called by app code (tests only — see `docs/SECURITY.md` §1); test patches are stable |
 | Monolith → 12+ Blueprints             | Per-domain ownership without micro-service overhead             |
 | Repository layer (no ORM)             | Fine-grained SQL control; avoids N+1 and ORM magic              |
 | `core/` / `services/` / `workers/`   | Clear import direction: blueprints → repositories → DB; services stay framework-free |

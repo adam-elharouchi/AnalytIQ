@@ -51,7 +51,10 @@ set -euo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BACKUP_DIR="${BACKUP_DIR:-$HOME/AnalytIQ-backups}"
 RETAIN_DAYS="${RETAIN_DAYS:-14}"
-PG_IMAGE="${PG_IMAGE:-postgres:17-alpine}"
+# Pinned by digest, not by the mutable :17-alpine tag, so a silently-republished
+# tag cannot change what runs against the database. Resolved 2026-08-16; update
+# deliberately when a newer Postgres patch release is wanted.
+PG_IMAGE="${PG_IMAGE:-postgres:17-alpine@sha256:18cfe3ef5e6815560c98237d6216d1e5119702fb0f3894c8785dd58b8bbe5d73}"
 STAMP="$(date +%Y%m%d-%H%M%S)"
 LOG="$BACKUP_DIR/backup.log"
 
@@ -114,10 +117,21 @@ esac
 [ -n "${BACKUP_PASSPHRASE:-}" ] || die "BACKUP_PASSPHRASE is not set. Add it to ~/.analytiq_env. Without it there is no encryption key and no backup."
 [ "${#BACKUP_PASSPHRASE}" -ge 16 ] || die "BACKUP_PASSPHRASE is shorter than 16 characters. This is the only thing standing between a stolen backup file and every student record in it."
 
+# Files that must not survive this script. verify_archive()'s RETURN trap already
+# covers the normal path; this covers INT/TERM, where a decrypted plaintext dump of
+# every student record could otherwise be left in /tmp.
+CLEANUP_PATHS=()
+cleanup_tmp() {
+  [ "${#CLEANUP_PATHS[@]}" -gt 0 ] && rm -f -- "${CLEANUP_PATHS[@]}" 2>/dev/null
+  return 0
+}
+trap cleanup_tmp EXIT INT TERM
+
 # --- verify-only path --------------------------------------------------------
 verify_archive() {
   local enc="$1" plain
   plain="$(mktemp -t analytiq-verify)"
+  CLEANUP_PATHS+=("$plain")
   # shellcheck disable=SC2064
   trap "rm -f -- '$plain'" RETURN
 
@@ -146,9 +160,11 @@ fi
 # --- parse the connection URI ------------------------------------------------
 [ -n "${DATABASE_URL:-}" ] || die "DATABASE_URL is not set (checked the environment and $REPO/.env)"
 
-eval "$(python3 - "$DATABASE_URL" <<'PY'
-import sys, urllib.parse as u
-p = u.urlparse(sys.argv[1])
+export DATABASE_URL
+
+eval "$(python3 - <<'PY'
+import os, sys, urllib.parse as u
+p = u.urlparse(os.environ["DATABASE_URL"])
 if not p.hostname:
     sys.exit("could not parse DATABASE_URL")
 def q(s): return "'" + str(s).replace("'", "'\\''") + "'"

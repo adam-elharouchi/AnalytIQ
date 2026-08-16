@@ -45,8 +45,11 @@ Source for the table above: `render.yaml`, `Procfile`, `docs/ARCHITECTURE.md`, `
 
 ### External dependencies the platform cannot live without
 
-1. **PostgreSQL / Supabase** — hard dependency. `config.validate_config()` refuses to start
-   without `DATABASE_URL`. If Supabase is down, the app is down (health check fails, see §5).
+1. **PostgreSQL / Supabase** — hard dependency. There is no startup check that refuses to
+   boot without `DATABASE_URL` (`config.validate_config()` is defined but never called
+   outside tests — `config.py:359`). In practice the app still fails hard on first use:
+   `core/database.py`'s connection pool raises when it can't connect. If Supabase is down,
+   the app is down (health check fails, see §5).
 2. **Gemini API** — soft-critical. Exercise generation and AI chat fail without it, but the rest
    of the app (login, playground, existing exercises) keeps working. `blueprints/health.py` marks
    this non-critical.
@@ -194,11 +197,27 @@ This is the low-effort route and it puts recovery in the same place as the data.
 monthly bill; the question is whether the tier that includes PITR is worth it before there
 is revenue.
 
-**b. Scheduled `pg_dump` to external storage.** A cron or launchd job running `pg_dump`
-against `DATABASE_URL`, encrypted, written somewhere off Supabase, with a retention sweep.
-Free, fully under our control, and has the side benefit of being a *portable* backup rather
-than one locked to the provider — which is worth something in an acquisition where the
-buyer will ask exactly this. Needs writing; nothing like it exists in `scripts/` today.
+**b. Scheduled `pg_dump` to external storage — WRITTEN 2026-08-13, NOT YET OPERATIONAL.**
+`scripts/backup_db.sh` dumps, encrypts (AES-256-CBC/PBKDF2), verifies, and sweeps on a
+retention window, and `deployment/com.analytiq.dbbackup.plist` schedules it for 12:30 daily.
+Neither is running. The launchd job has not been installed, `BACKUP_PASSPHRASE` is not set in
+`~/.analytiq_env`, and no backup has ever been produced — `~/AnalytIQ-backups/` holds one log
+whose only two lines are the script correctly refusing to write an unencrypted dump. **Until
+both steps below are done, the recovery point objective is total loss, exactly as it was
+before the script existed.** There is also an unrecorded precondition: this Mac has no host
+`pg_dump`, so every run shells out to `docker run postgres:17-alpine` and needs Docker Desktop
+running at 12:30. (A 03:00 trigger was dropped on 2026-08-13 for that reason — closed lid,
+Docker down, a guaranteed daily error line.)
+
+To make it real:
+1. Set `BACKUP_PASSPHRASE` (16+ chars) in `~/.analytiq_env`. It is a credential; no agent
+   touches it.
+2. `cp deployment/com.analytiq.dbbackup.plist ~/Library/LaunchAgents/ && launchctl bootstrap
+   gui/$UID ~/Library/LaunchAgents/com.analytiq.dbbackup.plist`
+3. Run `./scripts/backup_db.sh` once and confirm a `.dump.enc` appears.
+
+Free, fully under our control, and portable rather than provider-locked — which is worth
+something in an acquisition where the buyer will ask exactly this.
 
 **Whichever route: a backup that has never been restored is not a backup.** Schedule one
 test restore into a scratch project and record the date and elapsed time here. That

@@ -7,10 +7,19 @@
   running on the days everything else is broken, and the daily cycle has failed
   on five separate days this month.
 
-  Runs at 03:00 and again at 12:30. The second slot is not redundancy for its own
-  sake: this is a laptop that sleeps, and the 03:00 run is missed whenever the lid
-  is shut overnight (launchd does not reliably replay calendar triggers missed
-  during sleep). 12:30 is a time the machine is realistically awake.
+  Runs at 12:30, once. It used to also run at 03:00; Adam dropped that trigger on
+  2026-08-13, and the reason is worth keeping: this Mac has no host pg_dump, so
+  every run shells out to `docker run postgres:17-alpine`. At 03:00 the lid is
+  shut and Docker Desktop is down, so that trigger could only ever produce a daily
+  error line — noise that teaches you to ignore the log this job writes.
+
+  CAVEAT, same root cause as B1: launchd resolves the Hour below in the timezone
+  that was current when this job was bootstrapped, and never re-resolves it. Cross
+  five zones and 12:30 becomes 07:30 or 17:30 — and 12:30 was chosen precisely
+  because the machine is realistically awake then. After any move, re-bootstrap
+  (Uninstall then Install below). If that bites more than once, give this job the
+  same treatment as scripts/daily_cycle.sh: an hourly tick plus a slot check the
+  script evaluates against local time.
 
   Install:
     cp deployment/com.analytiq.dbbackup.plist ~/Library/LaunchAgents/
@@ -41,10 +50,6 @@
 
   <key>StartCalendarInterval</key>
   <array>
-    <dict>
-      <key>Hour</key><integer>3</integer>
-      <key>Minute</key><integer>0</integer>
-    </dict>
     <dict>
       <key>Hour</key><integer>12</integer>
       <key>Minute</key><integer>30</integer>

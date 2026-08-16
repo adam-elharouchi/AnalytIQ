@@ -143,7 +143,7 @@ AnalytIQ is not a walled garden; it is designed for enterprise university adopti
 ### Deployment & CI/CD Strategy
 *   **Hosting Context:** Entirely serverless/managed infrastructure.
 *   **Application Server:** **Render (Web Services)** running Gunicorn (a Python WSGI HTTP Server). Gunicorn manages multiple worker processes (gevent/sync) to handle concurrent web traffic.
-*   **Database Host:** **Supabase (Managed PostgreSQL)**. It handles backups, replication, and provides a powerful SQL editor.
+*   **Database Host:** **Supabase (Managed PostgreSQL)**. Provides replication and a SQL editor; scheduled backups are not enabled on the current plan. First-party backups are handled by `scripts/backup_db.sh` (added 2026-08-13; see `docs/RUNBOOK.md` §3).
 *   **Cache/Queue Host:** **Render (Managed Redis)**. Handles session caching, rate-limit counters, and the Celery broker queue.
 *   **Continuous Integration (CI):** GitHub Actions. On every commit/PR:
     1. Lints the Python code (`flake8`/`black`).
@@ -160,7 +160,7 @@ AnalytIQ is not a walled garden; it is designed for enterprise university adopti
 │
 ├── ⚙️ ROOT CONFIGURATION & APPLICATION ENTRY
 │   ├── app.py                     # create_app() entry point; delegates startup to core/factory.py.
-│   ├── config.py                  # Single source of truth for all env vars; validate_config() fails fast on startup.
+│   ├── config.py                  # Single source of truth for all env vars. config_security_warnings() logs non-fatal warnings at startup (core/factory.py:87); validate_config() is defined but not called by app code today (tests only).
 │   ├── Procfile                   # Boot commands for Render: web (gunicorn) + worker (celery).
 │   ├── requirements.txt           # Python dependency lockfile (Flask, psycopg2-binary, pyjwt, celery, etc.).
 │   └── tests/                     # pytest suite: unit/ (mock DB) + integration/ (live DB + Redis).
