@@ -153,8 +153,14 @@ RESUME_PROMPT="Your previous run was cut off part-way, either by a network error
 # today — and not by exit status. A run that wrote the digest and then dropped
 # its connection has done the job; one that exited 0 without writing a brief
 # has not, and is worth another attempt.
+# Deliberately re-reads the date instead of using $DATE, which is pinned when the
+# process starts. A cycle that starts on one day and finishes on the next would
+# otherwise compare the new brief against the old date and conclude it had failed
+# — which is exactly what happened on 2026-08-14: attempt 1 wrote a brief dated
+# Aug 15, this check measured it against Aug 14, and two further orchestrator
+# sessions were burned re-doing work that was already done. (B21)
 digest_is_todays() {
-  [ -f reports/ADAM_DAILY.md ] && [ "$(date -r reports/ADAM_DAILY.md +%F)" = "$DATE" ]
+  [ -f reports/ADAM_DAILY.md ] && [ "$(date -r reports/ADAM_DAILY.md +%F)" = "$(date +%F)" ]
 }
 
 # A capped attempt. macOS ships no coreutils `timeout`, and a plain timeout would
@@ -265,7 +271,12 @@ if (
   source "$HOME/.analytiq_env"
   python3 scripts/send_digest.py
 ) >> "$LOG" 2>&1; then
-  touch "$STAMP"
+  # Dated at write time, not at process start, for the same reason as
+  # digest_is_todays above: a cycle that sends its digest after midnight has
+  # completed *today*, and stamping yesterday would leave today's slots unsuppressed
+  # and re-run the whole cycle. Fixing only the check and not the stamp would have
+  # been a subtler bug than the one it replaced. (B21)
+  touch "reports/cron/.completed-$(date +%F)"
   echo "=== cycle completed, digest sent $(date) ===" >> "$LOG"
 else
   echo "DIGEST NOT SENT $(date) — no stamp written; next slot will retry" >> "$LOG"
