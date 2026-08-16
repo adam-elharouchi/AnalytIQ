@@ -82,6 +82,25 @@ def configure_app(app) -> None:
     app.config["UPLOAD_FOLDER"] = config.UPLOAD_FOLDER
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
+    # Fail fast on a misconfigured production boot (B14, approved 2026-08-13).
+    # validate_config() has existed since the config centralization ADR and has
+    # never had a caller outside tests, while five documents credited it with
+    # exactly this behaviour. This is the wiring those documents described.
+    #
+    # Production only, and deliberately so. FEATURE_AI_EXERCISES defaults to True,
+    # so validate_config() reports a missing GEMINI_API_KEY as an error — and CI
+    # sets no GEMINI_API_KEY. Raising unconditionally would fail every CI run and
+    # every developer's first boot rather than catching a bad deploy. In production
+    # a missing key means the core feature is dead on arrival and refusing to start
+    # is the honest outcome; anywhere else it is noise that trains people to ignore
+    # startup errors.
+    _config_errors = config.validate_config()
+    if _config_errors:
+        for _error in _config_errors:
+            logger.error("Config error: %s", _error)
+        if config.ENV == "production":
+            raise RuntimeError("Refusing to start, misconfigured: " + "; ".join(_config_errors))
+
     # Surface non-fatal security warnings (coupled secrets, missing origin verify).
     try:
         for _warning in config.config_security_warnings():
