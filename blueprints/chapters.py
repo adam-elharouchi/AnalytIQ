@@ -116,9 +116,15 @@ def validate_pdf_file(file):
 def _auto_generate_exercises(
     conn, pdf_text, chapter_id, chapter_title, class_id, source_content_type=None, tenant_id=None
 ):
-    """Generate exercises from chapter text. Returns count generated (0 on any failure)."""
+    """Generate exercises from chapter text.
+
+    Returns (count_generated, content_warning). count is 0 on any failure.
+    content_warning is None unless config.FEATURE_PDF_CHUNKING is on AND the
+    chapter still exceeded config.PDF_MAX_CHUNKS after chunking — see
+    reports/product-engineer/PDF_TRUNCATION_FIX_PLAN.md part (b).
+    """
     if not pdf_text or not generate_exercises_from_pdf_content:
-        return 0
+        return 0, None
     try:
         api_key = config.GEMINI_API_KEY
         if not api_key:
@@ -126,8 +132,9 @@ def _auto_generate_exercises(
         exercises = generate_exercises_from_pdf_content(
             pdf_text, chapter_title, api_key, source_content_type=source_content_type
         )
+        content_warning = getattr(exercises, "content_warning", None)
         if not exercises:
-            return 0
+            return 0, content_warning
         for idx, exercise in enumerate(exercises, 1):
             exercise_id = f"{chapter_id}_ex_{idx}_{int(datetime.now().timestamp() * 1000)}"
             chapter_repo.insert_exercise(
@@ -159,10 +166,10 @@ def _auto_generate_exercises(
             if gen_event_id:
                 flywheel_repo.update_exercise_generation_event_id(conn, exercise_id, gen_event_id)
         conn.commit()
-        return len(exercises)
+        return len(exercises), content_warning
     except Exception as e:
         logger.warning("Could not generate exercises: %s", e)
-        return 0
+        return 0, None
 
 
 def _get_cors_origin(req):
@@ -297,8 +304,9 @@ def upload_chapter(class_id):
             details={"class_id": class_id},
         )
         exercises_generated = 0
+        content_warning = None
         if exercise_mode == "auto":
-            exercises_generated = _auto_generate_exercises(
+            exercises_generated, content_warning = _auto_generate_exercises(
                 conn,
                 pdf_text,
                 chapter_id_result,
@@ -324,6 +332,10 @@ def upload_chapter(class_id):
                     "pdf_text_extracted": pdf_text is not None,
                     "exercise_mode": exercise_mode,
                     "exercises_generated": exercises_generated,
+                    # null unless config.FEATURE_PDF_CHUNKING is on AND content still
+                    # exceeded config.PDF_MAX_CHUNKS after chunking (see
+                    # reports/product-engineer/PDF_TRUNCATION_FIX_PLAN.md part (b)).
+                    "content_warning": content_warning,
                     "success": True,
                 }
             ),
@@ -518,6 +530,8 @@ def generate_exercises_for_chapter(chapter_id):
             logger.error("Failed to generate exercises: %s", e, exc_info=True)
             return jsonify({"error": "Failed to generate exercises. Please try again."}), 500
 
+        content_warning = getattr(exercises, "content_warning", None)
+
         if not exercises:
             return jsonify({"error": "No exercises were generated"}), 400
 
@@ -565,6 +579,10 @@ def generate_exercises_for_chapter(chapter_id):
                     "success": True,
                     "exercises_generated": exercises_generated,
                     "chapter_id": chapter_id,
+                    # null unless config.FEATURE_PDF_CHUNKING is on AND content still
+                    # exceeded config.PDF_MAX_CHUNKS after chunking (see
+                    # reports/product-engineer/PDF_TRUNCATION_FIX_PLAN.md part (b)).
+                    "content_warning": content_warning,
                 }
             ),
             201,

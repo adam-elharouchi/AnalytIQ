@@ -226,15 +226,19 @@ def _md_to_html(md_text: str) -> str:
         return f"<pre>{_html_mod.escape(md_text)}</pre>"
 
 
-def _auto_exercises(conn, text: str, chapter_id: str, title: str, class_id: str) -> int:
-    """Delegate to chapters blueprint's private exercise generator."""
+def _auto_exercises(conn, text: str, chapter_id: str, title: str, class_id: str):
+    """Delegate to chapters blueprint's private exercise generator.
+
+    Returns (count_generated, content_warning) — see
+    blueprints/chapters.py::_auto_generate_exercises.
+    """
     try:
         from blueprints.chapters import _auto_generate_exercises
 
         return _auto_generate_exercises(conn, text, chapter_id, title, class_id)
     except Exception as exc:
         logger.warning("Auto-exercise generation skipped: %s", exc)
-        return 0
+        return 0, None
 
 
 # ---------------------------------------------------------------------------
@@ -588,9 +592,12 @@ def import_as_chapter(class_id: str):
         )
 
         exercises_generated = 0
+        content_warning = None
         plain_text = result.get("text", "")
         if exercise_mode == "auto" and plain_text:
-            exercises_generated = _auto_exercises(conn, plain_text, chapter_id, title, class_id)
+            exercises_generated, content_warning = _auto_exercises(
+                conn, plain_text, chapter_id, title, class_id
+            )
 
         conn.commit()
 
@@ -611,6 +618,10 @@ def import_as_chapter(class_id: str):
                     "pdf_url": pdf_url,
                     "source": data.get("source", ""),
                     "exercises_generated": exercises_generated,
+                    # null unless config.FEATURE_PDF_CHUNKING is on AND content still
+                    # exceeded config.PDF_MAX_CHUNKS after chunking (see
+                    # reports/product-engineer/PDF_TRUNCATION_FIX_PLAN.md part (b)).
+                    "content_warning": content_warning,
                     "success": True,
                 }
             ),

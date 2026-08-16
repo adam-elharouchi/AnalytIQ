@@ -45,6 +45,19 @@ MAX_PDF_SIZE_BYTES = MAX_PDF_SIZE_MB * 1024 * 1024
 # Allowed Extensions
 ALLOWED_EXTENSIONS = {"pdf", "csv", "xlsx", "xls", "json", "txt", "ipynb", "docx"}
 
+# PDF chunked extraction (see reports/product-engineer/PDF_TRUNCATION_FIX_PLAN.md).
+# PDF_CHUNK_SIZE is unchanged from the pre-fix single-slice truncation limit, so a
+# chapter that fits in one chunk gets byte-identical prompt behavior to before this
+# fix. PDF_CHUNK_OVERLAP keeps content that straddles a chunk boundary from being
+# lost from both chunks. PDF_MAX_CHUNKS caps total chunks per chapter to protect API
+# cost and the demo's 60-second budget; content beyond the cap triggers the visible
+# content_warning instead of being silently dropped. All three are env-overridable,
+# following the MAX_PDF_SIZE_MB pattern above, so they can be tuned without a
+# code change. Gated behind FEATURE_PDF_CHUNKING (see FEATURE FLAGS below).
+PDF_CHUNK_SIZE = int(os.getenv("PDF_CHUNK_SIZE", 10_000))
+PDF_CHUNK_OVERLAP = int(os.getenv("PDF_CHUNK_OVERLAP", 500))
+PDF_MAX_CHUNKS = int(os.getenv("PDF_MAX_CHUNKS", 6))
+
 # PDF Validation
 PDF_HEADER_CHECK_BYTES = 1024
 PDF_CONTENT_SAMPLE_BYTES = 10240  # 10KB for malicious content detection
@@ -193,6 +206,13 @@ FEATURE_EMAIL_NOTIFICATIONS = os.getenv("FEATURE_EMAIL", "False").lower() == "tr
 FEATURE_ANALYTICS = os.getenv("FEATURE_ANALYTICS", "True").lower() == "true"
 FEATURE_CSRF_PROTECTION = os.getenv("FEATURE_CSRF", "True").lower() == "true"
 FEATURE_ASYNC_TASKS = os.getenv("FEATURE_ASYNC_TASKS", "False").lower() == "true"
+# Chunked PDF extraction (services/exercise_generator.py). DEFAULTS TO OFF —
+# merging the code that reads this flag must not change production behavior;
+# a dense chapter keeps silently truncating at PDF_CHUNK_SIZE until Adam
+# explicitly flips this to True in a specific, approved deploy. See
+# reports/product-engineer/PDF_TRUNCATION_FIX_PLAN.md and the regression test
+# tests/unit/test_pdf_truncation_regression.py.
+FEATURE_PDF_CHUNKING = os.getenv("FEATURE_PDF_CHUNKING", "False").lower() == "true"
 
 
 # ============================================================================

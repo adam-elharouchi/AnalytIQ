@@ -49,6 +49,10 @@ let generatedExercises = [];
 let uploadedFile = null;
 let selectedChapterId = null; // For existing chapter selection
 let chapterSource = 'new'; // 'new' or 'existing'
+// Set from the generate-exercises API response's `content_warning` field
+// (null unless the chapter still exceeded the chunk cap after chunked
+// extraction — see reports/product-engineer/PDF_TRUNCATION_FIX_PLAN.md part (b)).
+let contentWarning = null;
 
 function goBack() {
     window.location.href = `professor-class?class_id=${currentClassId}`;
@@ -146,6 +150,7 @@ async function processExistingChapter(chapterId) {
     }
 
     const genData = await response.json();
+    contentWarning = genData.content_warning || null;
 
     if (!genData.exercises_generated || genData.exercises_generated === 0) {
         throw new Error('No exercises were generated. Please check if the chapter has valid content.');
@@ -348,6 +353,7 @@ async function processUpload(file, title) {
     }
 
     const genData = await response.json();
+    contentWarning = genData.content_warning || null;
 
     if (!genData.exercises_generated || genData.exercises_generated === 0) {
         throw new Error('No exercises were generated. Please check if the chapter has valid content.');
@@ -378,11 +384,32 @@ async function processUpload(file, title) {
     }, 500);
 }
 
+// Persistent amber banner shown at the top of the exercise-review screen
+// when the backend's `content_warning` field is non-null — i.e. the chapter
+// still exceeded the chunk cap after chunked extraction, so only part of it
+// was used (see reports/product-engineer/PDF_TRUNCATION_FIX_PLAN.md part (b)).
+// Reuses the same warning style as the "no exercises generated" state below
+// (background:#fef3c7; border:1px solid #f59e0b) so it looks consistent
+// with existing UI rather than bolted on.
+function _renderContentWarningBanner() {
+    if (!contentWarning) return '';
+    const title = escapeHtml(contentWarning.title || 'Large document — partial content used');
+    const message = escapeHtml(contentWarning.message || '');
+    return `
+        <div style="padding: 1rem; margin-bottom: 1.5rem; background: #fef3c7; border: 1px solid #f59e0b; border-radius: 0.5rem;">
+            <p style="color: #92400e; font-weight: 600; margin: 0 0 0.25rem 0;">${title}</p>
+            <p style="color: #92400e; margin: 0;">${message}</p>
+        </div>
+    `;
+}
+
 function renderExercises() {
     const container = document.getElementById('exercisesContainer');
+    const warningBanner = _renderContentWarningBanner();
 
     if (!generatedExercises || generatedExercises.length === 0) {
         container.innerHTML = `
+            ${warningBanner}
             <div style="text-align: center; padding: 2rem; background: #fef3c7; border: 1px solid #f59e0b; border-radius: 0.5rem;">
                 <p style="color: #92400e;">No exercises were generated. Try uploading a different chapter with more content.</p>
                 <button class="btn btn-secondary js-restart-btn" style="margin-top: 1rem;">Start Over</button>
@@ -394,7 +421,7 @@ function renderExercises() {
         return;
     }
 
-    container.innerHTML = generatedExercises.map((ex, idx) => `
+    container.innerHTML = warningBanner + generatedExercises.map((ex, idx) => `
         <div class="exercise-card">
             <div style="margin-bottom: 1rem;">
                 <label style="display: block; font-size: 0.8rem; color: #64748b;">Title</label>
