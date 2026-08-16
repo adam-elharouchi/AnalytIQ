@@ -459,7 +459,7 @@ class TestSuperadminAnalytics:
     def test_returns_200(self, client, mock_db):
         cursor = mock_db.cursor()
         # Query order: roles (fetchall), new_users (fetchone 2-col),
-        #              active (fetchone 2-col), content (fetchone 4-col),
+        #              active (fetchone 2-col), content (fetchone 5-col),
         #              daily_regs (fetchall), top_actions (fetchall)
         cursor.fetchall.side_effect = [
             [("student", 70), ("professor", 30)],  # roles distribution
@@ -467,12 +467,32 @@ class TestSuperadminAnalytics:
             [],  # top_actions
         ]
         cursor.fetchone.side_effect = [
-            (10, 40),          # new users 7d / 30d
-            (8, 35),           # active users 7d / 30d
-            (20, 60, 120, 50), # content: classes, chapters, exercises, completions
+            (10, 40),              # new users 7d / 30d
+            (8, 35),               # active users 7d / 30d
+            (20, 60, 120, 50, 12),  # content: classes, chapters, exercises,
+                                   #          completions, active_classes
         ]
         resp = client.get("/api/superadmin/analytics", headers=AUTH)
         assert resp.status_code == 200
+        assert resp.get_json()["content"]["active_classes"] == 12
+
+    def test_metric_definitions_are_the_approved_ones(self, client, mock_db):
+        """B4, approved 2026-08-13. These two definitions are a business decision,
+        not an implementation detail: active users are those who *authenticated*
+        (users.last_login), not those who happened to write an audit_log row, and an
+        active class needs an enrolment AND recent practice. Both were reverted-by-
+        accident risks precisely because the old versions looked reasonable, so pin
+        them here rather than only in a report."""
+        cursor = mock_db.cursor()
+        cursor.fetchall.side_effect = [[("student", 1)], [], []]
+        cursor.fetchone.side_effect = [(1, 1), (1, 1), (1, 1, 1, 1, 1)]
+        client.get("/api/superadmin/analytics", headers=AUTH)
+        sql = " ".join(str(c) for c in cursor.execute.call_args_list)
+
+        assert "last_login" in sql, "active users must come from users.last_login"
+        assert "class_enrollments" in sql, "active class must require an enrolment"
+        assert "practice_progress pp" in sql, "active class must require recent practice"
+        assert "INTERVAL '30 days'" in sql
 
     def test_student_returns_403(self, client, mock_db):
         resp = client.get("/api/superadmin/analytics", headers=AUTH_STUDENT)

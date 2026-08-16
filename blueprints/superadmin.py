@@ -1445,13 +1445,20 @@ def get_analytics():
         )
         new_users = cur.fetchone()
 
-        # Active users from audit_log
+        # Active users = authenticated in the window (B4a, approved 2026-08-13).
+        # This was COUNT(DISTINCT user_id) over audit_log, which is written only by
+        # mutating actions — grading, class/chapter edits, admin actions. A plain
+        # sign-in writes nothing to it, so a student who practised all week counted
+        # as inactive. users.last_login is written on every sign-in (blueprints/auth.py).
+        # NOTE: this is a strict superset of the old definition, so WAU/MAU will rise
+        # on the next refresh because the definition changed, not because usage grew.
+        # It must be recorded that way in reports/metrics-engineer/CANONICAL_NUMBERS.md.
         cur.execute(
             """
             SELECT
-                COUNT(DISTINCT user_id) FILTER (WHERE created_at >= NOW() - INTERVAL '7 days')  AS active_7d,
-                COUNT(DISTINCT user_id) FILTER (WHERE created_at >= NOW() - INTERVAL '30 days') AS active_30d
-            FROM audit_log
+                COUNT(*) FILTER (WHERE last_login >= NOW() - INTERVAL '7 days')  AS active_7d,
+                COUNT(*) FILTER (WHERE last_login >= NOW() - INTERVAL '30 days') AS active_30d
+            FROM users
             """
         )
         active = cur.fetchone()
@@ -1463,7 +1470,19 @@ def get_analytics():
                 (SELECT COUNT(*) FROM classes)          AS classes,
                 (SELECT COUNT(*) FROM class_chapters)   AS chapters,
                 (SELECT COUNT(*) FROM class_exercises)  AS exercises,
-                (SELECT COUNT(*) FROM practice_progress WHERE completed = TRUE) AS completions
+                (SELECT COUNT(*) FROM practice_progress WHERE completed = TRUE) AS completions,
+                -- Active class = at least one enrollment AND at least one practice
+                -- event in the last 30 days (B4b, approved 2026-08-13). There is no
+                -- is_active column; before this, "2 of 5 active" was a hand-applied
+                -- label rather than a computed number. Enrollment alone was rejected
+                -- as too loose: a class enrolled and unused all term would count.
+                (SELECT COUNT(*) FROM classes c
+                  WHERE EXISTS (SELECT 1 FROM class_enrollments ce
+                                 WHERE ce.class_id = c.class_id)
+                    AND EXISTS (SELECT 1 FROM practice_progress pp
+                                 WHERE pp.class_id = c.class_id
+                                   AND pp.updated_at >= NOW() - INTERVAL '30 days')
+                ) AS active_classes
             """
         )
         content = cur.fetchone()
@@ -1510,6 +1529,7 @@ def get_analytics():
                         "chapters": content[1] if content else 0,
                         "exercises": content[2] if content else 0,
                         "completions": content[3] if content else 0,
+                        "active_classes": content[4] if content else 0,
                     },
                     "daily_registrations": daily_regs,
                     "top_actions": top_actions,
