@@ -195,7 +195,7 @@ run_capped() {
       # killed a perfectly healthy attempt 60 seconds in — before it could write
       # anything — which kept reports stale and killed the next attempt the same
       # way. That deadlock ate every attempt on Aug 17 and Aug 18 2026 (six in a
-      # row, then three more by hand) and would have eaten the 19:00 slot too. (B22)
+      # row, then three more by hand) and would have eaten the 19:00 slot too. (B24)
       since=$started
       if [ -n "$newest" ] && [ "$newest" -gt "$since" ]; then since=$newest; fi
       if [ $(( now - since )) -ge "$idle" ]; then
