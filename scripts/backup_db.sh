@@ -59,7 +59,91 @@ STAMP="$(date +%Y%m%d-%H%M%S)"
 LOG="$BACKUP_DIR/backup.log"
 
 log() { printf '%s  %s\n' "$(date '+%Y-%m-%d %H:%M:%S %z')" "$*" | tee -a "$LOG" >&2; }
-die() { log "FAILED: $*"; exit 1; }
+die() { log "FAILED: $*"; notify_failure "$*"; exit 1; }
+
+# --- failure notification ----------------------------------------------------
+# Authorized by Adam on the 2026-08-18 decision sheet, card 5. This is a SECOND
+# exception to guardrail 5.1 ("no agent sends any external communication"), and it
+# is deliberately built to the same discipline as the first one: a deterministic
+# script rather than an agent free-forming a send, to Adam's own hardcoded address,
+# capped at one notice per day.
+#
+# Why it exists: this job ran once on 2026-08-16, then failed on Aug 16 and Aug 17
+# and told nobody. `launchctl` recorded exit status 1 and nothing else did. A backup
+# that fails silently is worse than no backup, because it looks handled — the same
+# failure shape, and the same fix, as the digest's own failure notice.
+BACKUP_ALERT_TO="adamelharouchi5@gmail.com"   # HARDCODED. Agents may not modify this line.
+
+notify_failure() {
+  local reason="${1:-unknown}"
+  local notified="$BACKUP_DIR/.notified-$(date +%F)"
+  if [ -f "$notified" ]; then
+    log "  failure notice already sent today — not repeating"
+    return 0
+  fi
+  if [ -z "${DIGEST_SMTP_USER:-}" ] || [ -z "${DIGEST_SMTP_PASS:-}" ]; then
+    log "  cannot send failure notice — SMTP credentials not present in ~/.analytiq_env"
+    return 0
+  fi
+  # Credentials are read from the environment inside python and never echoed.
+  if BACKUP_ALERT_REASON="$reason" \
+     BACKUP_ALERT_TO="$BACKUP_ALERT_TO" \
+     BACKUP_ALERT_LOG="$LOG" \
+     BACKUP_ALERT_DIR="$BACKUP_DIR" \
+     python3 -c '
+import os, ssl, smtplib, datetime, pathlib
+from email.mime.text import MIMEText
+
+to      = os.environ["BACKUP_ALERT_TO"]
+reason  = os.environ["BACKUP_ALERT_REASON"]
+logpath = pathlib.Path(os.environ["BACKUP_ALERT_LOG"])
+bdir    = pathlib.Path(os.environ["BACKUP_ALERT_DIR"])
+user    = os.environ["DIGEST_SMTP_USER"]
+pw      = os.environ["DIGEST_SMTP_PASS"]
+today   = datetime.date.today()
+
+dumps = sorted(bdir.glob("analytiq-*.dump.enc"))
+if dumps:
+    newest = max(dumps, key=lambda f: f.stat().st_mtime)
+    age = (datetime.datetime.now() - datetime.datetime.fromtimestamp(newest.stat().st_mtime)).days
+    hold = f"{len(dumps)} backup(s) on hand; newest is {newest.name}, {age} day(s) old."
+else:
+    hold = "THERE IS NO BACKUP ON HAND AT ALL."
+
+tail = ""
+if logpath.exists():
+    tail = "\n".join(logpath.read_text(errors="replace").splitlines()[-20:])
+
+body = (
+    f"AnalytIQ database backup FAILED on {today:%A %B %d, %Y}.\n\n"
+    f"Reason: {reason}\n\n"
+    f"{hold}\n\n"
+    f"This job is scheduled once a day at 12:30 local. If the Mac is asleep at that\n"
+    f"time launchd defers the run until it next wakes, which is how the Aug 16 and\n"
+    f"Aug 17 attempts ended up firing at 17:31 and 17:34 with no network.\n\n"
+    f"To run one by hand:\n"
+    f"    cd ~/Documents/GitHub/AnalytIQ/\"AnalytIQ Repo\"\n"
+    f"    ./scripts/backup_db.sh\n"
+)
+if tail:
+    body += f"\n--- last 20 lines of {logpath} ---\n{tail}\n"
+
+msg = MIMEText(body, "plain", "utf-8")
+msg["Subject"] = f"AnalytIQ — {today:%b %d} — DATABASE BACKUP FAILED"
+msg["From"] = user
+msg["To"] = to
+
+ctx = ssl.create_default_context()
+with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=ctx, timeout=30) as s:
+    s.login(user, pw)
+    s.sendmail(user, [to], msg.as_string())
+'; then
+    touch "$notified"
+    log "  failure notice sent"
+  else
+    log "  failure notice could not be sent (see error above) — not stamping, next run retries"
+  fi
+}
 
 mkdir -p "$BACKUP_DIR"
 chmod 700 "$BACKUP_DIR"
@@ -226,6 +310,7 @@ log "  wrote $SIZE"
 # --- verify before trusting it -----------------------------------------------
 if ! verify_archive "$OUT"; then
   log "VERIFICATION FAILED — keeping the file for inspection and NOT sweeping old backups."
+  notify_failure "archive written but failed verification — kept at $OUT for inspection"
   exit 1
 fi
 
