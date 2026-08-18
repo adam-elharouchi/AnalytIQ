@@ -175,17 +175,31 @@ newest_report_mtime() {
 
 run_capped() {
   local idle="$1"; shift
+  # When THIS attempt began. The silence bound is measured from here, never from
+  # the bare mtime of the newest report — see the window comment below.
+  local started; started=$(date +%s)
   "$@" >> "$LOG" 2>&1 &
   local work=$!
   (
     while kill -0 "$work" 2>/dev/null; do
       sleep 60
       kill -0 "$work" 2>/dev/null || break
-      local now newest reason=""
+      local now newest since reason=""
       now=$(date +%s)
       newest=$(newest_report_mtime)
-      if [ -n "$newest" ] && [ $(( now - newest )) -ge "$idle" ]; then
-        reason="nothing written under reports/ for $(( (now - newest) / 60 ))m"
+      # The silence window opens when the attempt starts, and moves forward only
+      # when the attempt actually writes something. Anchoring on newest_report_mtime
+      # alone was a self-perpetuating trap: at the START of a run the newest report
+      # is from the PREVIOUS cycle, which for a daily job is always more than
+      # IDLE_CAP old. The first poll therefore measured ~a day of "silence" and
+      # killed a perfectly healthy attempt 60 seconds in — before it could write
+      # anything — which kept reports stale and killed the next attempt the same
+      # way. That deadlock ate every attempt on Aug 17 and Aug 18 2026 (six in a
+      # row, then three more by hand) and would have eaten the 19:00 slot too. (B22)
+      since=$started
+      if [ -n "$newest" ] && [ "$newest" -gt "$since" ]; then since=$newest; fi
+      if [ $(( now - since )) -ge "$idle" ]; then
+        reason="nothing written under reports/ for $(( (now - since) / 60 ))m"
       elif [ "$now" -ge "$DEADLINE" ]; then
         reason="cycle deadline reached"
       fi
