@@ -308,8 +308,32 @@ else
   # Retried, because on 2026-08-14 the single attempt hit one ConnectionRefused
   # at 00:28 and gave up — turning a failed cycle into a silent one, which is the
   # failure this whole mechanism exists to prevent.
+  # Wait for SMTP to actually answer before spending an attempt on it. A notice
+  # that fires seconds after the Mac wakes meets a network that is not up yet: on
+  # 2026-08-19 the send failed with ssl.SSLEOFError 47 seconds after a lid wake,
+  # every retry failed inside the same dead window, and the day went silent — the
+  # one outcome this whole notice exists to prevent. Reachability is the thing to
+  # wait on, not a fixed sleep, because the wake could be seconds or minutes old.
+  wait_for_smtp() {
+    local deadline=$(( $(date +%s) + ${1:-300} ))
+    while [ "$(date +%s)" -lt "$deadline" ]; do
+      if python3 -c "import socket,sys
+try:
+    socket.create_connection(('smtp.gmail.com', 465), timeout=10).close()
+except Exception:
+    sys.exit(1)" 2>/dev/null; then
+        return 0
+      fi
+      sleep 15
+    done
+    return 1
+  }
+
   NOTICE_SENT=0
   for n in 1 2 3; do
+    if ! wait_for_smtp 300; then
+      echo "failure notice attempt $n: smtp.gmail.com:465 unreachable after 5m — trying anyway $(date)" >> "$LOG"
+    fi
     if (
       set -euo pipefail
       [ -f "$HOME/.analytiq_env" ] || { echo "cannot send failure notice — ~/.analytiq_env missing"; exit 1; }
@@ -321,7 +345,9 @@ else
       break
     fi
     echo "failure notice attempt $n did not send $(date)" >> "$LOG"
-    if [ "$n" -lt 3 ]; then sleep $((n * 180)); fi
+    # Longer than the old 180/360: a post-wake network outage outlasts three
+    # minutes routinely, and there is no hurry — the notice is already late.
+    if [ "$n" -lt 3 ]; then sleep $((n * 300)); fi
   done
   if [ "$NOTICE_SENT" = "0" ]; then
     echo "FAILURE NOTICE COULD NOT BE SENT $(date) — 3 attempts" >> "$LOG"
