@@ -1,5 +1,17 @@
 PRIVATE — internal drafting file. DRAFT ONLY. Adam personalizes and presses send himself.
 
+**Note added 2026-08-19.** This file is correctly framed as a follow-up to prior contact — the
+original five were contacted by Adam before the agent system existed
+(`ANALYTIQ_AGENT_ORCHESTRATION.md:97`: "5 contacted + 33 identified";
+`PART1_EXECUTION_PLAN.md:36`: "Send updated follow-ups to the original 5"). The real gap is
+narrower than "were they contacted": **the original outreach date is not recorded anywhere in
+this repo**, so the exact day-4/day-9/day-16 intervals in `sales/FOLLOWUP_SEQUENCE.md` cannot be
+computed from it. This Aug 18 follow-up task is now one day overdue and ready to send as-is; the
+finalized, send-ready version (real signature, EDULEARN26 line added as the "here's what's new"
+proof point per `PART1_EXECUTION_PLAN.md:36`'s "Since I last wrote…" framing) is
+`sales/SEND_PACKET_2026-08-19.md`. Any *further* follow-up after that (the day-4/9/16 sequence)
+should be timed from whenever Adam actually presses send today, not from today's date itself.
+
 # Follow-ups to the original five — 2026-08-18
 
 **Version B (no testimonial).** Chosen on today's decision sheet, card 3: no quote is confirmed
