@@ -255,6 +255,29 @@ def _callback_uri(provider_id: str) -> str:
     return f"{base}/api/sso/callback/{provider_id}"
 
 
+def _touch_last_login(conn, user_id):
+    """Record that `user_id` just actually signed in via SSO (mirrors
+    blueprints/auth.py:264 for password sign-in, and blueprints/lti.py's
+    `_touch_last_login` for LTI launch).
+
+    There is exactly one call site for this (`sso_callback`, right after
+    `_upsert_sso_user` resolves the identity), and it always represents the caller's
+    own real sign-in — unlike LTI's roster-sync path, SSO has no bulk
+    upsert-other-users flow, so no "don't call this" carve-out is needed here.
+
+    Non-critical relative to resolving the identity itself, so a failure here is
+    logged and does not roll back the surrounding transaction (the caller commits/
+    rolls back the whole callback as one unit). See B25 in
+    reports/metrics-engineer/CANONICAL_NUMBERS.md.
+    """
+    try:
+        cur_ll = conn.cursor()
+        cur_ll.execute("UPDATE users SET last_login = NOW() WHERE user_id = %s", (user_id,))
+        cur_ll.close()
+    except Exception as e:
+        logger.debug("Non-critical: last_login update failed for SSO user %s: %s", user_id, e)
+
+
 def _upsert_sso_user(conn, provider: dict, claims: dict):
     """
     Find or create a user from OIDC id_token/userinfo claims.
@@ -524,6 +547,7 @@ def sso_callback(provider_id):
             return redirect(f"{login_page}?sso_error=Could+not+establish+a+verified+identity")
 
         user_id, name, email, role, tenant_id = _upsert_sso_user(conn, provider, claims)
+        _touch_last_login(conn, user_id)
         conn.commit()
 
         _tv = get_user_token_version(conn, user_id)

@@ -1449,10 +1449,24 @@ def get_analytics():
         # This was COUNT(DISTINCT user_id) over audit_log, which is written only by
         # mutating actions — grading, class/chapter edits, admin actions. A plain
         # sign-in writes nothing to it, so a student who practised all week counted
-        # as inactive. users.last_login is written on every sign-in (blueprints/auth.py).
-        # NOTE: this is a strict superset of the old definition, so WAU/MAU will rise
-        # on the next refresh because the definition changed, not because usage grew.
-        # It must be recorded that way in reports/metrics-engineer/CANONICAL_NUMBERS.md.
+        # as inactive.
+        #
+        # users.last_login is written on every sign-in path: password sign-in
+        # (blueprints/auth.py:264), LTI launch (blueprints/lti.py, `_touch_last_login`,
+        # called from the real launch and deep-link handlers only — NOT from the NRPS
+        # roster-sync loop, which upserts *other* students who aren't signing in), and
+        # SSO callback (blueprints/sso.py, `_touch_last_login`).
+        #
+        # CORRECTION (B25, 2026-08-19): from 14f7721 (2026-08-16) until the LTI/SSO
+        # writes above were added, this comment was WRONG — last_login had exactly one
+        # writer (blueprints/auth.py's password path), and AnalytIQ's live deployment
+        # (Hult on Canvas/Moodle over LTI 1.3) never uses that path. Measured on live
+        # data 2026-08-18: this query returned WAU=0 / MAU=1 against audit_log's WAU=2
+        # / MAU=6, i.e. last_login was NOT a superset of the old definition — it was
+        # nearly empty. See reports/metrics-engineer/CANONICAL_NUMBERS.md §0 for the
+        # measurement and §3 for the full WAU/MAU definition history. Do not assume
+        # this query is correct again until a fresh refresh confirms non-zero WAU
+        # under real LTI/SSO traffic — the fix above is unmeasured until then.
         cur.execute(
             """
             SELECT

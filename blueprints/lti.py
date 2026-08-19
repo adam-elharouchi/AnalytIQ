@@ -163,6 +163,33 @@ def _build_tool_conf(conn):
     return tc
 
 
+def _touch_last_login(conn, user_id):
+    """Record that `user_id` just actually signed in (mirrors blueprints/auth.py:264
+    for password sign-in).
+
+    Call this ONLY at a real launch performed by the user in question — i.e. the two
+    call sites in this module where `launch_data`/`message_launch` came directly off
+    the request the user is making right now. Do NOT call it from the NRPS roster-sync
+    loop below (`sync_class_members`): that loop calls `_upsert_lti_user` once per
+    *other* student on the class roster to create/enroll their accounts, and none of
+    those students are actually signing in at that moment — stamping last_login there
+    would mark an entire roster "active" every time a professor clicks "sync roster".
+
+    Non-critical relative to resolving the identity itself, so a failure here is
+    logged and does not roll back the surrounding transaction (the caller commits/
+    rolls back the whole launch as one unit). See B25 in
+    reports/metrics-engineer/CANONICAL_NUMBERS.md — this write is what WAU/MAU
+    (`users.last_login`) depends on for the LTI population, which is effectively all
+    real users (Hult runs Canvas/Moodle over LTI 1.3, not password sign-in).
+    """
+    try:
+        cur_ll = conn.cursor()
+        cur_ll.execute("UPDATE users SET last_login = NOW() WHERE user_id = %s", (user_id,))
+        cur_ll.close()
+    except Exception as e:
+        logger.debug("Non-critical: last_login update failed for LTI user %s: %s", user_id, e)
+
+
 def _upsert_lti_user(conn, launch_data):
     """Find or create a user from LTI launch claims.
 
@@ -506,6 +533,7 @@ def lti_launch():
     try:
         user_tuple, jwt_token, refresh_token = _upsert_lti_user(conn, launch_data)
         user_id = user_tuple[0]
+        _touch_last_login(conn, user_id)
 
         # Determine which AnalytIQ class matches this LTI course context
         context_claim = (
@@ -566,6 +594,7 @@ def _handle_deep_link(conn, message_launch, launch_data):
     try:
         user_tuple, _, _ = _upsert_lti_user(conn, launch_data)
         professor_id = user_tuple[0]
+        _touch_last_login(conn, professor_id)
         conn.commit()
     except Exception as e:
         logger.error("Deep link user upsert failed: %s", e)
