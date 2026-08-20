@@ -268,6 +268,41 @@ case "$PGHOST" in
     ;;
 esac
 
+# --- wait for the host before dumping -----------------------------------
+# Same fix commit 7c299d2 applied to the failure-notice path in
+# daily_cycle.sh (wait_for_smtp), ported here because this script has the
+# identical bug independently on the pg_dump path. This schedule fires once
+# a day at 12:30 and, when the Mac was asleep at 12:30, launchd defers the
+# run until the machine wakes — landing seconds after wake, before the
+# network stack is up. Aug 16 (connection refused) and Aug 17 (DNS failure)
+# are exactly that: the host never answered at all. Reachability is the
+# thing to wait on, not a fixed sleep, because the wake could be seconds or
+# minutes old. See B27 and docs/security/B27_BACKUP_SCHEDULE.md.
+#
+# NOTE: this gate does NOT cover the whole B27 failure population. Aug 18
+# and Aug 19 both connected fine — this gate would have passed cleanly on
+# both — and then died several minutes into the dump itself (SSL SYSCALL
+# EOF). That is a different failure shape, handled below by retrying the
+# dump itself rather than by waiting longer here.
+wait_for_host() {
+  local host="$1" port="$2" deadline=$(( $(date +%s) + ${3:-300} ))
+  while [ "$(date +%s)" -lt "$deadline" ]; do
+    if python3 -c "import socket,sys
+try:
+    socket.create_connection(('$host', $port), timeout=10).close()
+except Exception:
+    sys.exit(1)" 2>/dev/null; then
+      return 0
+    fi
+    sleep 15
+  done
+  return 1
+}
+
+if ! wait_for_host "$PGHOST" "$PGPORT" 300; then
+  die "database host unreachable after 300s ($PGHOST:$PGPORT) — likely woke-from-sleep race, not a real outage. If this fires well after a normal wake with the network otherwise confirmed up, treat it as a real connectivity problem instead."
+fi
+
 OUT="$BACKUP_DIR/analytiq-$STAMP.dump.enc"
 log "starting backup of $PGDATABASE at $PGHOST -> $(basename "$OUT")"
 
@@ -294,17 +329,60 @@ else
         "$PG_IMAGE" pg_dump --format=custom --no-owner --no-acl --compress=6)
 fi
 
-if ! "${DUMP[@]}" 2>>"$LOG" \
-     | openssl enc -aes-256-cbc -pbkdf2 -iter 600000 -salt \
-         -pass env:BACKUP_PASSPHRASE -out "$OUT"; then
-  rm -f -- "$OUT"
-  die "pg_dump failed — no backup written. Check $LOG. If the error mentions a server version mismatch, raise PG_IMAGE to match Supabase's Postgres version."
+# Bounded retry around the dump itself, on top of the host gate above. Aug 18
+# and Aug 19 both passed a reachability check and then died 4-6 minutes into
+# the dump on "SSL SYSCALL error: EOF detected" — a network blip (Wi-Fi
+# reassociating, DHCP, a VPN coming up) landing inside the dump window instead
+# of before it, most likely still wake-adjacent but not something a pre-dump
+# gate can see. So: retry the whole pg_dump|openssl pipe, bounded, and never
+# promote a killed or partial attempt — each attempt writes to a private temp
+# file that becomes $OUT only once that attempt has fully succeeded, so a
+# half-written dump can never be mistaken for a finished backup.
+DUMP_TMP="$BACKUP_DIR/.tmp-$STAMP.dump.enc"
+CLEANUP_PATHS+=("$DUMP_TMP")
+DUMP_ATTEMPTS=3
+DUMP_OK=0
+BYTES=0
+for attempt in 1 2 3; do
+  rm -f -- "$DUMP_TMP"
+  if [ "$attempt" -gt 1 ]; then
+    log "  retrying dump (attempt $attempt/$DUMP_ATTEMPTS)"
+    # A short re-check so the eventual failure message (below) can tell a host
+    # that dropped out again from one that was reachable the whole time.
+    wait_for_host "$PGHOST" "$PGPORT" 60 \
+      || log "  host not answering ahead of retry $attempt"
+  fi
+  if "${DUMP[@]}" 2>>"$LOG" \
+       | openssl enc -aes-256-cbc -pbkdf2 -iter 600000 -salt \
+           -pass env:BACKUP_PASSPHRASE -out "$DUMP_TMP"; then
+    chmod 600 "$DUMP_TMP"
+    BYTES=$(wc -c < "$DUMP_TMP" | tr -d ' ')
+    if [ "$BYTES" -gt 4096 ]; then
+      DUMP_OK=1
+      break
+    fi
+    log "  attempt $attempt produced only $BYTES bytes — implausibly small, treating as failed"
+  else
+    log "  attempt $attempt: pg_dump/encrypt pipe failed (see error above)"
+  fi
+  rm -f -- "$DUMP_TMP"
+  [ "$attempt" -lt "$DUMP_ATTEMPTS" ] && sleep $((attempt * 60))
+done
+
+if [ "$DUMP_OK" != "1" ]; then
+  # Name the actual cause rather than letting the generic pg_dump error stand
+  # alone: a reader of this log should be able to tell "host unreachable" from
+  # "connection dropped mid-dump" at a glance, because they point at different
+  # problems (see docs/security/B27_BACKUP_SCHEDULE.md).
+  if wait_for_host "$PGHOST" "$PGPORT" 20; then
+    die "pg_dump failed after $DUMP_ATTEMPTS attempts — the host IS reachable right now, so this is a connection dropping mid-dump (SSL EOF class, B27), not a wake race. Check $LOG. If the error mentions a server version mismatch, raise PG_IMAGE to match Supabase's Postgres version."
+  else
+    die "pg_dump failed after $DUMP_ATTEMPTS attempts and the host is unreachable right now — likely a real outage rather than a transient wake-adjacent blip. Check $LOG."
+  fi
 fi
 
-chmod 600 "$OUT"
+mv -f -- "$DUMP_TMP" "$OUT"
 SIZE=$(du -h "$OUT" | cut -f1)
-BYTES=$(wc -c < "$OUT" | tr -d ' ')
-[ "$BYTES" -gt 4096 ] || { rm -f -- "$OUT"; die "backup is only $BYTES bytes — implausibly small, treating as failed"; }
 log "  wrote $SIZE"
 
 # --- verify before trusting it -----------------------------------------------

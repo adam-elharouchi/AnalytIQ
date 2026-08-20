@@ -1,10 +1,15 @@
 # Site Copy Proposal — myanalytiq.com — 2026-08
 
 **Prepared:** 2026-08-16
-**Status:** PROPOSAL ONLY. Not applied to any template. Adam reviews and approves; Adam (or whoever he delegates the actual edit to) pushes it live. Scheduled for his approval Wed Aug 19 per `PART1_EXECUTION_PLAN.md:38`.
-**Source template used:** `templates/landing.html` (confirmed — this is the only landing page template in `templates/`; `templates/index.html` exists separately and was not the target). All line numbers below refer to `templates/landing.html` as read on 2026-08-16.
+**Corrected:** 2026-08-20 (headless cycle) — §2 rewritten against the live page; see the
+correction note at the top of §2 for what changed and why. Everything else in this file is
+unchanged from 2026-08-16 and has NOT been re-verified against the live page this session
+except where flagged inline below.
+**Status:** PROPOSAL ONLY. Not applied to any template. Adam reviews and approves; Adam (or whoever he delegates the actual edit to) pushes it live. Scheduled for his approval Wed Aug 19 per `PART1_EXECUTION_PLAN.md:38` — that date has passed without a recorded approval; still pending.
+**Source template used:** `templates/landing.html` (confirmed — this is the only landing page template in `templates/`; `templates/index.html` exists separately and was not the target). Line numbers in §1 and §2 were read on 2026-08-16 and are now approximately **13-14 lines stale** relative to the current file — the page changed between then and now (commit `fdde917` rewrote the proof bar; see §2). Line numbers in §4 onward still land correctly as of a spot-check on 2026-08-20 (Problem section starts at line 717 today, matching this doc's citation). **Do not use §1's line numbers to locate the hero-trust text — use `marketing/B26_LANDING_FIX.md`, which cites the verified current line (649).**
 **Positioning source:** `marketing/MESSAGING.md` — read that first. This document applies its priority order (professor time savings → testimonials → student outcomes) to the actual page structure.
 **Guardrail carried through every section below:** no usage numbers, no adoption/growth claims, no unsupported "5 hours a week" as a stated fact, no claim without a cited source.
+**Evidence gate note:** `research/EVIDENCE.md` — the file `.claude/agents/research-academic.md` item 3 names as the evidence gate for every public claim — **does not exist in this repository as of 2026-08-20** (confirmed by direct search, same finding `marketing/MESSAGING.md` §8.1 already recorded on 2026-08-16). Until it exists, every verifiable-fact claim below still has to cite its source inline, per the same section.
 
 ---
 
@@ -12,8 +17,8 @@
 
 | Priority (per MESSAGING.md) | Where it lives today | What changes |
 |---|---|---|
-| 1. Professor time savings | Hero (lines 618–638) — currently leads with speed ("under 60 seconds"), not time savings | Hero headline and sub rewritten to lead with time savings; speed becomes supporting proof, not the lead |
-| — | Proof bar (lines 685–715) — currently shows **private usage numbers** | **Numbers removed entirely** (hard guardrail violation as-is). Replaced with the three approved proof points |
+| 1. Professor time savings | Hero (currently line 628–695; stale by ~14 lines, see header note) — currently leads with speed ("under 60 seconds"), not time savings | Hero headline and sub rewritten to lead with time savings; speed becomes supporting proof, not the lead. **The hero-trust line (currently line 649) also still carries B26's unevidenced "100% organic adoption" — see `marketing/B26_LANDING_FIX.md` for that fix specifically; it is out of scope for the headline rewrite below and must not be treated as fixed by it.** |
+| — | Proof bar (currently lines 697–714) — **[CORRECTED 2026-08-20] no longer shows private usage numbers.** `fdde917` already replaced the four private stat cards with qualitative copy, independently of this document's original recommendation below. See §2 for what's live today and its evidence status. | **Already done — no further action needed on the proof bar itself.** §2 below is corrected to describe the current state instead of a stale "before." |
 | 2. Testimonials | **Does not exist as a section today** | New section proposed, inserted after the proof bar. **Gated** — see §3 below, do not ship until a testimonial is in hand |
 | 3. Student outcomes | Implicit in Problem (717–748) and Features (790–834) sections | Reframed as explicit "what changes for your students" language, still qualitative, no stats |
 | (unchanged) | How It Works (750–788), Compare table (836–883), Pricing (885–969), CTA (971–989), Footer (991–999) | No content changes recommended — already accurate per `PACKET_CLAIM_GAPS.md`'s closed rows (SAML/FERPA wording already corrected 2026-08-12/13). Two small copy nits noted below. |
@@ -22,7 +27,18 @@
 
 ---
 
-## 1. HERO — `templates/landing.html:614–682`
+## 1. HERO — `templates/landing.html:614–682` (as read 2026-08-16; **now stale by ~14 lines — the current line for the hero-trust text below is 649, verified 2026-08-20, not 630-ish as this range would imply**)
+
+**[FLAG, 2026-08-20 — not rewritten, cross-referenced instead]** This section's content still
+matches the live page (checked directly), but its line numbers drifted after `fdde917` touched
+the proof bar below it, and B26 (`reports/STATE.md` §5) tracks the "100% organic adoption" half
+of the hero-trust line quoted just below as its own numbered blocker with a dedicated,
+Adam-facing fix document. Treat `marketing/B26_LANDING_FIX.md` as authoritative for that
+specific line going forward — it verifies the current line number (649), offers two options
+instead of this section's single "After," and was written to ship independently of the full
+hero rewrite proposed here. This section's own hero-headline rewrite (Option A/B below) still
+stands as a separate, broader proposal and has not been re-verified this session beyond the
+"Before" quote matching what's live today.
 
 ### Before (current live copy)
 
@@ -88,9 +104,50 @@ Evidence for every clause: "auto-graded" → `templates/landing.html:804-806` fe
 
 ---
 
-## 2. PROOF BAR — `templates/landing.html:684–715`
+## 2. PROOF BAR — `templates/landing.html:697–714` (verified current line numbers, 2026-08-20)
 
-### Before (current live copy — contains PRIVATE data, must not stay live)
+**[CORRECTION, 2026-08-20] This entire section was written against the pre-`fdde917` page and
+was stale.** The version below (dated 2026-08-16) described the proof bar as still showing raw
+private usage numbers. That is no longer true — `fdde917` already replaced it, independently of
+this document, before this session started. Rewritten below to describe **what's actually live
+on the page today**, per `reports/STATE.md` §3C.4: "It survived `fdde917` (which stripped only
+the numeric proof bar)" — i.e., the proof bar itself was fixed; the still-open problem (B26) is
+a *different* line, in the Hero section, not here. See `marketing/B26_LANDING_FIX.md` for that.
+
+### Currently live (read directly from `templates/landing.html:698–714` on 2026-08-20)
+
+```html
+<div class="proof-label">Built for your classroom</div>
+<div class="proof-stats">
+  <div class="proof-claim">Canvas &amp; Moodle ready<span>LTI 1.3</span></div>
+  <div class="proof-divider"></div>
+  <div class="proof-claim">Refund through week 4<span>No lock-in</span></div>
+  <div class="proof-divider"></div>
+  <div class="proof-claim">Practice built from your own chapters<span>Upload a PDF</span></div>
+</div>
+<div class="proof-divider"></div>
+<div class="proof-school">
+  <div class="school-dot"></div>
+  Active at Hult International Business School
+</div>
+```
+
+### Evidence status of each claim, checked this session
+
+| Claim | Status | Source |
+|---|---|---|
+| "Canvas & Moodle ready · LTI 1.3" | Evidenced | Real AGS grade-passback code, `blueprints/lti.py:899-941`; `reports/security-engineer/PACKET_CLAIM_GAPS.md` "Verified as accurate"; approved proof point, `marketing/MESSAGING.md` §5 |
+| "Refund through week 4 · No lock-in" | Evidenced — this is a real, currently-offered policy, not a usage stat | `sales/ORDER_FORM.md:50-53`, `sales/STRIPE_INVOICE_TEMPLATE.md:45-59`, `sales/MASTER_TEMPLATE.md:37,62` all state the identical no-questions week-4 refund guarantee. Not a claim that needs proving true or false in the evidentiary sense (no metric attached) — it is a commitment Adam has made in every sales draft, so the site copy matches sales terms. **Flag, not a fix:** none of those sales files carry the attorney-review note despite being contract-adjacent language (`sales/STRIPE_INVOICE_TEMPLATE.md:75` does flag "Attorney review of the refund-guarantee language" as still needed) — that review gap is pre-existing and outside this session's scope, noted here only so it isn't lost. |
+| "Practice built from your own chapters · Upload a PDF" | Evidenced — product mechanism, not a stat | Matches the real upload → generate flow described in the hero demo card and `docs/DEMO_READINESS.md`; same category as the approved "demo speed" proof point |
+| "Active at Hult International Business School" | Evidenced | Same source as the Canvas/Moodle/LTI row above |
+
+**No further action needed on the proof bar itself — it is clean.** This corrects the 2026-08-16
+recommendation below, which is now moot as a live-site fix but is kept (not deleted) for the
+record, since it correctly diagnosed the *old* violation and its diagnosis stands as history.
+
+### [SUPERSEDED, kept for record] 2026-08-16 "Before / After" recommendation
+
+The original "Before" this document described was:
 
 ```html
 <div class="proof-label">Live Traction</div>
@@ -104,9 +161,9 @@ Evidence for every clause: "auto-graded" → `templates/landing.html:804-806` fe
 <div class="proof-school"><div class="school-dot"></div>Active at Hult International Business School</div>
 ```
 
-**This is a live guardrail violation today** — these are the exact PRIVATE baseline numbers from `reports/metrics-engineer/CANONICAL_NUMBERS.md` (33 ≈ related to the 31/40 user-count issue documented there), shown to every site visitor. This should be corrected regardless of anything else in this document, independent of the Aug 19 timeline — flagging it here as the most urgent single fix in this whole proposal.
-
-### After
+That was a live guardrail violation at the time (the exact PRIVATE baseline numbers from
+`reports/metrics-engineer/CANONICAL_NUMBERS.md`, shown to every visitor) and the proposed
+"After" was:
 
 ```html
 <div class="proof-label">Where It's Live</div>
@@ -119,11 +176,18 @@ Evidence for every clause: "auto-graded" → `templates/landing.html:804-806` fe
 </div>
 ```
 
-(`.proof-n`/`.proof-l` styling swapped for a simpler text treatment since these are no longer numbers — a developer implementing this should reuse `.proof-school`'s text styling for the three items rather than the big-serif-number `.proof-n` style, which was built for digits.)
+**This is not what shipped.** Whoever implemented `fdde917` wrote different copy (the "Currently
+live" block above) that achieves the same guardrail goal (no private numbers) by a different
+route. Both are evidenced; the live version is simply what's real now. One thing the original
+proposal had that the shipped version lacks: **EDULEARN26 acceptance is not represented anywhere
+on the current live page.** That's a legitimate open opportunity, not a violation — flagged to
+`marketing/B26_LANDING_FIX.md` as a candidate for the separate B26 hero-line fix, and noted here
+as a possible fast-follow addition to this proof bar if Adam wants it back in this row instead.
 
-Every clause sourced: Hult live + LTI 1.3 (verified, see §1). EDULEARN26 abstracts accepted (`.claude/agents/research-academic.md:10` — "the accepted abstracts"; full papers targeted Nov 15, not yet drafted, so say "abstracts accepted," not "papers published").
-
-**Needs Adam:** confirm removal of the four private-number stat cells. This is the one change in this document that should not wait for the Aug 19 window if it can ship sooner — it's an active guardrail breach on the live site today.
+**Needs Adam:** nothing urgent on the proof bar — it's already compliant. If EDULEARN26
+acceptance is wanted on the page at all, decide where (this proof bar, re-adding a 4th
+`proof-claim`, vs. the Hero trust line per `marketing/B26_LANDING_FIX.md` Option (b)) rather than
+both, to avoid repeating the same proof point twice on one page.
 
 ---
 
@@ -240,11 +304,11 @@ These were checked against `PACKET_CLAIM_GAPS.md`'s closed rows and found alread
 
 ## 7. Summary of what Adam is being asked to approve on Aug 19
 
-1. **Urgent, independent of Aug 19 timing:** remove the four private usage-number stat cards from the proof bar (§2). Recommend this ships as soon as possible rather than waiting.
-2. **Hero rewrite** — Option A (§1), ships now with no number claim; Option B held for later once a testimonial supplies "5 hours a week" or a similar figure in their own words.
-3. **Proof bar replacement copy** (§2) — three qualitative proof points, no numbers.
-4. **One-sentence positioning insert** in the Problem section (§4) — low-risk, adds the canonical line verbatim.
-5. **Feature-card copy reframing** (§5) — outcome-first sentence ordering, same underlying claims, no new stats.
-6. **Testimonials section** (§3) — approved in principle, but **blocked from shipping** until a named quote exists. Not part of the Aug 19 deploy.
+1. **[CORRECTED 2026-08-20 — no longer urgent, already resolved]** ~~remove the four private usage-number stat cards from the proof bar (§2)~~. This shipped independently in `fdde917` before this session. **The actual live urgent item now is B26** — `templates/landing.html:649`'s "100% organic adoption" in the Hero trust line, a different line from the one this item originally described. See `marketing/B26_LANDING_FIX.md` for the ready-to-apply diff (two options) — that is the item that should ship as soon as possible, not this one.
+2. **Hero rewrite** — Option A (§1), ships now with no number claim; Option B held for later once a testimonial supplies "5 hours a week" or a similar figure in their own words. **Flag:** §1's proposed Option A hero-trust text ("Live at Hult International Business School · Canvas + Moodle, LTI 1.3") would now be redundant with the live proof bar (§2 below already carries "Canvas & Moodle ready · LTI 1.3" independently) — if Adam approves the full hero rewrite, reconcile the trust-line wording with whichever B26 option (`marketing/B26_LANDING_FIX.md`) he picks, rather than shipping both.
+3. **[CORRECTED 2026-08-20 — already live, not a pending action]** ~~Proof bar replacement copy (§2) — three qualitative proof points, no numbers~~. The live proof bar already has three qualitative proof points, no numbers (§2). Nothing to approve here.
+4. **One-sentence positioning insert** in the Problem section (§4) — low-risk, adds the canonical line verbatim. Not re-verified against the live page this session (§4's content matched what I read on 2026-08-20, so it remains a live, unshipped proposal).
+5. **Feature-card copy reframing** (§5) — outcome-first sentence ordering, same underlying claims, no new stats. The "Before" quote in §5 was re-read directly against the live file this session (`templates/landing.html:804`) and matches word for word; still an unshipped proposal.
+6. **Testimonials section** (§3) — approved in principle, but **blocked from shipping** until a named quote exists. Not part of the Aug 19 deploy. Still zero testimonials in hand as of this session (no new evidence checked; `reports/sales-outreach/TESTIMONIAL_TRACKER.md` was not re-read this session — flagged, not silently assumed unchanged).
 
-Nothing above requires a new claim that lacks a cited source. Everything in §6 (How It Works, Compare, Pricing, CTA, Footer) is recommended unchanged.
+Nothing above requires a new claim that lacks a cited source. Everything in §6 (How It Works, Compare, Pricing, CTA, Footer) is recommended unchanged; Pricing's SAML/FERPA wording was spot-checked against the live file this session (`templates/landing.html:948,950`) and still matches.
