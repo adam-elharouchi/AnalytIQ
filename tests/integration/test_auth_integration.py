@@ -144,7 +144,6 @@ class TestPasswordReset:
         email = f"{uid}@student.hult.edu"
         _insert_user(tx, uid, email)
 
-        auth_repo.ensure_password_resets_table(tx)
         token = "tok_" + uid
         expires = datetime.utcnow() + timedelta(hours=1)
         auth_repo.insert_password_reset_token(tx, email, token, expires)
@@ -159,7 +158,6 @@ class TestPasswordReset:
         email = f"{uid}@student.hult.edu"
         _insert_user(tx, uid, email)
 
-        auth_repo.ensure_password_resets_table(tx)
         token = "tok_expired_" + uid
         past = datetime.utcnow() - timedelta(hours=2)
         auth_repo.insert_password_reset_token(tx, email, token, past)

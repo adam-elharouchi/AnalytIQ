@@ -1,4 +1,4 @@
-.PHONY: help dev services stop flower test test-unit test-integration lint format typecheck migrate shell clean sandbox-image
+.PHONY: help dev services stop flower test test-unit test-integration test-db test-db-reset lint format typecheck migrate shell clean sandbox-image
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Help
@@ -33,14 +33,21 @@ stop:  ## Stop Docker services
 # Testing
 # ─────────────────────────────────────────────────────────────────────────────
 
+# Integration tests build their schema from migrations/ in a disposable
+# database. Override to point somewhere else:
+#   make test-integration TEST_DATABASE_URL=postgresql://.../my_scratch_db
+# sslmode=disable because the pool requires SSL unless told otherwise, and the
+# local postgres container does not speak it.
+TEST_DATABASE_URL ?= postgresql://postgres:postgres@localhost:5432/analytiq_test?sslmode=disable
+
 test:  ## Run full test suite (unit + integration, skip e2e)
 	pytest tests/ -v --ignore=tests/e2e -x
 
 test-unit:  ## Run unit tests only
 	pytest tests/unit/ -v -x
 
-test-integration:  ## Run integration tests (requires live DB + Redis)
-	pytest tests/integration/ -v -x
+test-integration: test-db  ## Run integration tests against a disposable database
+	TEST_DATABASE_URL="$(TEST_DATABASE_URL)" pytest tests/integration/ -v -x
 
 test-e2e:  ## Run end-to-end tests (requires running app)
 	pytest tests/e2e/ -v
@@ -72,8 +79,18 @@ typecheck:  ## Run mypy type checks
 # Database
 # ─────────────────────────────────────────────────────────────────────────────
 
-migrate:  ## Apply pending SQL migrations
+migrate:  ## Build the schema from scratch, or apply pending migrations
 	python3 db_migrate.py
+
+test-db:  ## Create the integration-test database if it does not exist
+	@docker-compose exec -T db psql -U postgres -tc \
+		"SELECT 1 FROM pg_database WHERE datname = 'analytiq_test'" \
+		| grep -q 1 \
+		|| docker-compose exec -T db createdb -U postgres analytiq_test
+
+test-db-reset:  ## Drop and recreate the integration-test database
+	-docker-compose exec -T db dropdb -U postgres --if-exists analytiq_test
+	docker-compose exec -T db createdb -U postgres analytiq_test
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Utilities

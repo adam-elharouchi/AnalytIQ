@@ -72,6 +72,11 @@ jobs:
     - name: Run tests with coverage
       env:
         DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+        # Opts the integration tier in to the postgres service above. test_db
+        # starts empty, so every run proves migrations/ can build the schema
+        # from nothing. sslmode=disable because the connection pool requires SSL
+        # unless told otherwise and the postgres image does not serve it.
+        TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db?sslmode=disable
         REDIS_URL: redis://localhost:6379/0
         FEATURE_CACHING: True
         FEATURE_ASYNC_TASKS: False

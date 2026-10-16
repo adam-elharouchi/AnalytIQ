@@ -45,7 +45,7 @@ def _make_chapter(conn, class_id):
     chapter_repo.insert_chapter(
         conn, chapter_id, class_id,
         title="Test Chapter", description="Desc",
-        chapter_number=1, pdf_url=None, pdf_filename=None, pdf_data=None,
+        chapter_number=1, pdf_url=None, pdf_filename=None, file_bytes=b"",
     )
     return chapter_id
 
@@ -183,7 +183,7 @@ class TestEnrollment:
         class_id = _make_class(tx, prof)
         class_repo.enroll_student(tx, class_id, student)
 
-        classes = class_repo.get_enrolled_classes(tx, student)
+        classes = class_repo.get_enrolled_classes_paginated(tx, student, 50, 0)
         class_ids = [r[0] for r in classes]
         assert class_id in class_ids
 
@@ -230,7 +230,7 @@ class TestChapters:
         chapter_id = _make_chapter(tx, class_id)
         ex_id = _make_exercise(tx, chapter_id, class_id)
 
-        exercises = chapter_repo.get_exercises_for_chapter(tx, chapter_id)
+        exercises = chapter_repo.get_chapter_exercises(tx, chapter_id)
         ex_ids = [r[0] for r in exercises]
         assert ex_id in ex_ids
 
@@ -252,15 +252,10 @@ class TestChapters:
 
 class TestAuditLog:
     def test_audit_creates_row(self, tx):
-        from core.audit import audit, _table_ready
-        import audit as audit_module
-
-        # Force table-creation check to run (in case it's cached as True already).
-        old = audit_module._table_ready
-        audit_module._table_ready = True  # table was created by conftest DDL
+        from core.audit import audit
 
         uid = make_user_id()
-        # Manually set g-like context isn't available outside Flask; audit() handles it.
+        # audit() resolves the Flask request context gracefully when absent.
         audit(tx, "CREATE_CLASS", resource_type="class", resource_id=uid)
 
         with tx.cursor() as cur:
@@ -270,7 +265,6 @@ class TestAuditLog:
             )
             row = cur.fetchone()
 
-        audit_module._table_ready = old
         assert row is not None
         assert row[0] == "CREATE_CLASS"
         assert row[1] == "class"

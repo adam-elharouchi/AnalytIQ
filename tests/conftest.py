@@ -8,6 +8,21 @@ from datetime import datetime
 
 
 # ============================================================================
+# Pin DATABASE_URL before anything can import the application
+# ============================================================================
+# app.py calls load_dotenv() at import time and the app factory builds its
+# connection pool from DATABASE_URL, so a developer whose .env points at the
+# production database would otherwise get a production pool the moment a test
+# module does `from app import app`. load_dotenv() never overrides a variable
+# that is already set, so pinning it here — at conftest import, before any test
+# module is collected — keeps the suite off any real server.
+#
+# Integration tests opt in to a real database with TEST_DATABASE_URL.
+_PLACEHOLDER_DATABASE_URL = "postgresql://test:test@localhost:5432/test_db"
+os.environ["DATABASE_URL"] = os.environ.get("TEST_DATABASE_URL") or _PLACEHOLDER_DATABASE_URL
+
+
+# ============================================================================
 # Environment Setup
 # ============================================================================
 
@@ -15,7 +30,7 @@ from datetime import datetime
 def setup_test_environment():
     """Set up test environment variables"""
     os.environ['FLASK_ENV'] = 'testing'
-    os.environ['DATABASE_URL'] = 'postgresql://test:test@localhost:5432/test_db'
+    os.environ['DATABASE_URL'] = os.environ.get('TEST_DATABASE_URL') or _PLACEHOLDER_DATABASE_URL
     os.environ['REDIS_URL'] = 'redis://localhost:6379/1'
     os.environ['FEATURE_ASYNC_TASKS'] = 'False'
     os.environ['FEATURE_CACHING'] = 'False'
