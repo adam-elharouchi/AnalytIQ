@@ -32,6 +32,14 @@ by `scripts/dump_schema_doc.py`; see the end of this file.
 - `exercise_id` columns outside `class_exercises` are deliberately unconstrained:
   they also hold ids of built-in practice exercises, and recorded events outlive
   the exercises they describe.
+- Every foreign key states an `ON DELETE` action; none is left on PostgreSQL's
+  default `NO ACTION`, which would turn a delete into a foreign-key violation.
+  A column that *belongs to* its parent is `CASCADE`; a column that merely
+  *records who made the row* -- `created_by`, `blocked_by` -- is `SET NULL`, so
+  an announcement, SSO provider, LTI config or blocked address outlives the
+  admin who created it and loses only the attribution. This is what makes a user
+  deletable whatever they left behind, and
+  `tests/integration/test_schema_constraints.py` holds the schema to it.
 
 ## Table index
 
