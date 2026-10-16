@@ -266,8 +266,9 @@ load-tests/             load-testing scenarios
 
 ## Data model
 
-25 tables in PostgreSQL. Full column-level reference in
-[`docs/DATABASE_SCHEMA.md`](docs/DATABASE_SCHEMA.md).
+33 tables in PostgreSQL. Full column-level reference in
+[`docs/DATABASE_SCHEMA.md`](docs/DATABASE_SCHEMA.md), generated from a freshly
+migrated database rather than maintained by hand.
 
 ```
 tenants ──┬── users ──┬── user_profiles / user_settings / user_preferences
@@ -282,13 +283,19 @@ tenants ──┬── users ──┬── user_profiles / user_settings / us
                         ├── class_resources
                         └── class_chapters ── class_exercises
                                                    │
-                                                   ├── exercise_progress
-                                                   │     (per-student scores)
+                                                   ├── practice_progress
+                                                   │     (per-student best score)
+                                                   ├── exercise_attempts
+                                                   │     (every submission)
+                                                   ├── exercise_ratings
                                                    ├── exercise_generation_events
-                                                   └── exercise_outcome_events
-                                                         (the flywheel pair)
+                                                   ├── exercise_outcome_events
+                                                   └── exercise_quality_scores
+                                                         (the AI flywheel)
 
-platform-wide: platform_config · announcements · ip_blocklist
+                 users ── portfolio_profiles ── portfolio_items / portfolio_views
+
+platform-wide: platform_config · announcements · ip_blocklist · contact_submissions
                audit_log (FERPA mutation log) · schema_migrations
 ```
 
@@ -299,11 +306,25 @@ Notable conventions:
 - `password_hash` is NULL for SSO-only and LTI-only accounts.
 - `audit_log` records every mutation for FERPA compliance.
 
-> **Known gap:** the repository cannot currently build a database from scratch. The migrations in
-> `migrations/` only *patch* an existing schema, and the authoritative DDL for `classes`,
-> `class_chapters`, and `class_exercises` lives in `tests/integration/conftest.py`. The working
-> bootstrap order is: that conftest DDL → `db_migrate.py` → seed script. Consolidating this into
-> a real `000_initial_schema.sql` is open work.
+### Building the schema
+
+The schema lives in exactly one place: the numbered SQL files in `migrations/`.
+`000_initial_schema.sql` creates all of it from nothing, and each later migration
+changes it once. So an empty database becomes a working one in one command:
+
+```bash
+createdb analytiq
+DATABASE_URL=postgresql://localhost/analytiq python db_migrate.py
+```
+
+`db_migrate.py` applies the files in numeric order and records each one in
+`schema_migrations`, skipping what is already there — it is the same command
+Render runs as its pre-deploy step, and the same one the integration tests use to
+build their schema. Every migration is idempotent, so re-running it is a no-op
+and an existing database is unaffected by `000`.
+
+Schema changes go in a new numbered file; `000` is frozen history and
+`tests/unit/test_migrations.py` enforces that it only ever creates things.
 
 ## Getting started
 
@@ -332,9 +353,13 @@ cp .env.example .env         # then fill in the required values below
 
 ```bash
 make services      # start PostgreSQL + Redis in Docker (background)
-make migrate       # apply pending SQL migrations
+make migrate       # build the schema (or apply pending migrations)
 make dev           # services + Flask dev server on :5001
 ```
+
+`make services` brings up an empty `analytiq` database; `make migrate` turns it
+into a complete schema — there is no manual DDL step and no seeding required to
+start the app.
 
 In a second terminal, for background tasks:
 
@@ -404,16 +429,19 @@ Everything is read through `config.py`, which exposes `validate_config()` — ca
 ```bash
 make test              # unit + integration (skips e2e)
 make test-unit         # unit only — fully mocked, no services needed
-make test-integration  # needs live PostgreSQL + Redis
+make test-integration  # needs live PostgreSQL (make services)
 make test-e2e          # needs a running app
 make test-cov          # with coverage report
 ```
 
-58 test modules across three tiers:
+Test tiers:
 
 - **`tests/unit/`** — mocks the database through `conftest.py`. Fast, no external services.
-- **`tests/integration/`** — runs against real PostgreSQL and Redis, creating its schema from the
-  `_DDL` block in `tests/integration/conftest.py`.
+- **`tests/integration/`** — runs against real PostgreSQL, building its schema by applying
+  `migrations/` to an empty database. It needs an explicitly disposable database, named by
+  `TEST_DATABASE_URL`; `make test-integration` supplies a local default. Without it the tier
+  skips, so a developer whose `DATABASE_URL` points at a real deployment can never have the
+  suite write to it.
 - **`tests/e2e/`** — drives a running application.
 
 With `TESTING=True`, `require_auth` accepts an `X-Test-User-ID` header to impersonate a user.
