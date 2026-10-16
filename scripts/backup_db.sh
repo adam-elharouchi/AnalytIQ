@@ -309,11 +309,13 @@ log "starting backup of $PGDATABASE at $PGHOST -> $(basename "$OUT")"
 # --- dump + encrypt in one stream --------------------------------------------
 # Piped, so the plaintext dump never lands on disk. set -o pipefail means a
 # pg_dump failure fails the run rather than yielding an encrypted empty file.
+USING_DOCKER=0
 if command -v pg_dump >/dev/null 2>&1; then
   log "  using host pg_dump ($(pg_dump --version | awk '{print $NF}'))"
   DUMP=(pg_dump --format=custom --no-owner --no-acl --compress=6)
 else
   log "  using $PG_IMAGE (no host pg_dump)"
+  USING_DOCKER=1
   # A container's "localhost" is the container, not the Mac. Remote hosts
   # (Supabase, the real case) work on default bridge networking and need no
   # special handling; only a local database does. --network host is deliberately
@@ -327,6 +329,31 @@ else
   DUMP=(docker run --rm
         --env PGHOST --env PGPORT --env PGUSER --env PGDATABASE --env PGPASSWORD
         "$PG_IMAGE" pg_dump --format=custom --no-owner --no-acl --compress=6)
+fi
+
+# --- Docker daemon reachability: a distinct failure class from the retry ----
+# loop below, and deliberately checked BEFORE it, not inside it.
+#
+# 2026-08-22: all three attempts of both scheduled runs (12:34, 13:20-retried,
+# 14:06-retried) failed with "Cannot connect to the Docker daemon at
+# unix:///.../docker.sock" — Docker Desktop was simply not running. The
+# existing retry loop below is built for a connection that drops mid-dump
+# (B27, Aug 18/19/20 SSL EOF class); retrying it is the right move because the
+# dump had already started and a network blip can plausibly clear in a
+# minute. An absent daemon is a different animal — pg_dump inside the
+# container never even starts, so all three retries fail identically and
+# instantly, burning nothing but time and log noise. Retry is right for one
+# class and wrong for the other, so they must not share a code path: this
+# check runs once, before the retry loop, and fails fast on its own message
+# rather than falling into "pg_dump/encrypt pipe failed" and eating 3
+# attempts against a cause retrying cannot fix.
+if [ "$USING_DOCKER" = "1" ]; then
+  if ! command -v docker >/dev/null 2>&1; then
+    die "docker is not installed and there is no host pg_dump — this Mac cannot take a backup at all. Install Docker Desktop (or a host pg_dump), then run ./scripts/backup_db.sh"
+  fi
+  if ! docker info >/dev/null 2>&1; then
+    die "Docker Desktop is not running — start it, then run ./scripts/backup_db.sh"
+  fi
 fi
 
 # Bounded retry around the dump itself, on top of the host gate above. Aug 18
@@ -370,14 +397,20 @@ for attempt in 1 2 3; do
 done
 
 if [ "$DUMP_OK" != "1" ]; then
-  # Name the actual cause rather than letting the generic pg_dump error stand
-  # alone: a reader of this log should be able to tell "host unreachable" from
-  # "connection dropped mid-dump" at a glance, because they point at different
-  # problems (see docs/security/B27_BACKUP_SCHEDULE.md).
+  # Report what the re-probe actually returned — nothing more. Reachability
+  # only tells you whether the host was answering at this instant; it does
+  # NOT identify which failure class produced the three attempts above (that
+  # requires reading the actual pg_dump/openssl error text logged per
+  # attempt, e.g. Docker-daemon-absent vs. SSL EOF mid-dump vs. something
+  # else entirely). 2026-08-22 showed this go wrong: three straight
+  # Docker-daemon-absent failures got a final message that asserted "SSL EOF
+  # class, not a wake race" purely because the host happened to be reachable
+  # — a diagnosis the script never actually checked. Don't repeat that: state
+  # the re-probe result, point at the log, and stop there.
   if wait_for_host "$PGHOST" "$PGPORT" 20; then
-    die "pg_dump failed after $DUMP_ATTEMPTS attempts — the host IS reachable right now, so this is a connection dropping mid-dump (SSL EOF class, B27), not a wake race. Check $LOG. If the error mentions a server version mismatch, raise PG_IMAGE to match Supabase's Postgres version."
+    die "pg_dump failed after $DUMP_ATTEMPTS attempts — re-probe says the host IS reachable right now. That rules out a pre-dump wake race, but does NOT by itself identify the cause. Check $LOG for the actual pg_dump/openssl (or Docker daemon) error logged above each attempt line. If the error mentions a server version mismatch, raise PG_IMAGE to match Supabase's Postgres version."
   else
-    die "pg_dump failed after $DUMP_ATTEMPTS attempts and the host is unreachable right now — likely a real outage rather than a transient wake-adjacent blip. Check $LOG."
+    die "pg_dump failed after $DUMP_ATTEMPTS attempts — re-probe says the host is NOT reachable right now, consistent with a real outage or dropped network rather than a one-off blip. Check $LOG."
   fi
 fi
 
