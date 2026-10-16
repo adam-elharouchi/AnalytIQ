@@ -552,10 +552,15 @@ Contribution workflow and conventions: [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## License
 
-[MIT](LICENSE) © 2026 Adam El Harouchi.
+[MIT](LICENSE) © 2026 Adam El Harouchi — for the **software**: source code, configuration,
+migrations, tests, scripts, and technical documentation. You are free to use, copy, modify, and
+distribute it, including commercially, provided the copyright and permission notices are retained.
+It is provided as is, without warranty.
 
-You are free to use, copy, modify, and distribute this software, including commercially, provided
-the copyright notice and permission notice are retained. It is provided as is, without warranty.
+**Two carve-outs.** `sales/` and `research/` are business and research material published for
+reference only — commercial pipeline, outreach drafts, invoice templates, and the internal
+claims-evidence register. **All rights to their contents are reserved and they are not covered by
+the MIT grant.** The licence also conveys no rights to the hosted AnalytIQ service, the AnalytIQ
+name, or the logo.
 
-Note that the licence covers the contents of this repository, not the hosted AnalytIQ service, the
-AnalytIQ name, or the logo.
+See [`LICENSE`](LICENSE) for the full text and scope.

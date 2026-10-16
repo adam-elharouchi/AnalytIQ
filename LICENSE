@@ -19,3 +19,21 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---------------------------------------------------------------------------
+SCOPE OF THIS LICENSE
+
+The MIT licence above applies to the software in this repository: source code,
+configuration, database migrations, tests, scripts, and technical
+documentation.
+
+It does NOT apply to the directories below, which hold business and research
+material published for reference only. All rights to their contents are
+reserved:
+
+    sales/      commercial pipeline, outreach drafts, order and invoice
+                templates
+    research/   internal claims-evidence register
+
+The licence also grants no rights to the hosted AnalytIQ service, the AnalytIQ
+name, or the AnalytIQ logo.
