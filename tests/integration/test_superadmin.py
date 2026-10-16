@@ -13,6 +13,8 @@ on every request, so a token is only accepted for a user that actually exists â€
 which is why the acting users are seeded rather than invented in a JWT.
 """
 
+import uuid
+
 import pytest
 
 from app import app as flask_app
@@ -142,3 +144,60 @@ def test_user_search(client, super_admin_headers):
     assert res.status_code == 200
     assert "users" in res.json
     assert "total" in res.json
+
+
+def test_delete_admin_who_authored_records_keeps_the_records(client, super_admin_headers, db_conn):
+    """The superadmin delete path, like the tenant-admin one, must not trip over authorship.
+
+    ``announcements.created_by`` and ``ip_blocklist.blocked_by`` are attribution,
+    not ownership, and are ``ON DELETE SET NULL``: a platform announcement and a
+    blocked address both outlive the admin who created them. If either were left
+    on PostgreSQL's default ``NO ACTION`` this delete would raise
+    ForeignKeyViolation, and the handler's ``except Exception`` would report it
+    as a bare 500 -- so the assertion on the status code is the point.
+    """
+    author_id = make_user_id()
+    announcement_id = f"inttest_{uuid.uuid4().hex[:12]}"
+    blocked_ip = f"203.0.113.{uuid.uuid4().int % 200 + 1}"
+    _insert_user(db_conn, author_id, "tenant_admin", f"{author_id}@tenant.example.test")
+
+    with db_conn.cursor() as cur:
+        cur.execute(
+            """
+            INSERT INTO announcements (announcement_id, title, message, created_by)
+            VALUES (%s, 'Platform notice', 'Read-only window tonight', %s)
+            """,
+            (announcement_id, author_id),
+        )
+        cur.execute(
+            "INSERT INTO ip_blocklist (ip_address, reason, blocked_by) VALUES (%s, %s, %s)",
+            (blocked_ip, "Integration test", author_id),
+        )
+    db_conn.commit()
+
+    try:
+        res = client.delete(f"/api/superadmin/users/{author_id}", headers=super_admin_headers)
+        assert res.status_code == 200, res.json
+
+        with db_conn.cursor() as cur:
+            cur.execute("SELECT COUNT(*) FROM users WHERE user_id = %s", (author_id,))
+            assert cur.fetchone()[0] == 0
+            cur.execute(
+                """
+                SELECT COUNT(*) FROM announcements
+                WHERE announcement_id = %s AND created_by IS NULL
+                """,
+                (announcement_id,),
+            )
+            assert cur.fetchone()[0] == 1, "the announcement did not survive its author's deletion"
+            cur.execute(
+                "SELECT COUNT(*) FROM ip_blocklist WHERE ip_address = %s AND blocked_by IS NULL",
+                (blocked_ip,),
+            )
+            assert cur.fetchone()[0] == 1, "the blocklist entry did not survive the deletion"
+    finally:
+        with db_conn.cursor() as cur:
+            cur.execute("DELETE FROM ip_blocklist WHERE ip_address = %s", (blocked_ip,))
+            cur.execute("DELETE FROM announcements WHERE announcement_id = %s", (announcement_id,))
+        db_conn.commit()
+        _delete_user(db_conn, author_id)

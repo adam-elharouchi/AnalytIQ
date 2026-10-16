@@ -100,6 +100,14 @@ def _cleanup(conn):
         # classes/users; delete the top-level rows only.
         cur.execute("DELETE FROM classes   WHERE class_id   LIKE 'inttest_%'")
         cur.execute("DELETE FROM users     WHERE user_id    LIKE 'inttest_%'")
+        # Authorship rows survive their author (created_by is ON DELETE SET
+        # NULL), so deleting the test users does not take these with them.
+        cur.execute("DELETE FROM announcements        WHERE announcement_id LIKE 'inttest_%'")
+        cur.execute("DELETE FROM tenant_sso_providers WHERE provider_id     LIKE 'inttest_%'")
+        cur.execute("DELETE FROM lti_configurations   WHERE config_id       LIKE 'inttest_%'")
+        # ip_blocklist has no string id of its own; the tests use TEST-NET-3
+        # (203.0.113.0/24, reserved for documentation) so the sweep can find them.
+        cur.execute("DELETE FROM ip_blocklist WHERE ip_address LIKE '203.0.113.%'")
         cur.execute(
             "DELETE FROM audit_log WHERE user_id LIKE 'inttest_%' OR resource_id LIKE 'inttest_%'"
         )

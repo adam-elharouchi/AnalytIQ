@@ -17,6 +17,8 @@ committed and swept up on teardown, and every id is prefixed ``inttest_`` so the
 session-level cleanup in conftest can finish the job after an interrupted run.
 """
 
+import uuid
+
 import pytest
 
 from app import app as flask_app
@@ -244,4 +246,99 @@ def test_delete_user_outside_tenant_is_rejected(client, tenant_admin_headers, db
     finally:
         with db_conn.cursor() as cur:
             cur.execute("DELETE FROM users WHERE user_id = %s", (outsider_id,))
+        db_conn.commit()
+
+
+def test_delete_admin_who_authored_records_keeps_the_records(client, tenant_admin_headers, db_conn):
+    """An admin who authored tenant records can still be deleted, and the records stay.
+
+    ``announcements.created_by``, ``tenant_sso_providers.created_by``,
+    ``lti_configurations.created_by`` and ``ip_blocklist.blocked_by`` are
+    attribution, not ownership: the announcement outlives the admin who wrote it
+    and the blocked IP outlives the admin who blocked it. All four are
+    ``ON DELETE SET NULL``, so the row survives and loses only the name attached
+    to it.
+
+    Were any of them left on PostgreSQL's default ``NO ACTION``, deleting the
+    user would raise ForeignKeyViolation, the handler would turn it into a
+    generic 500 and the account would be undeletable -- with nothing in the
+    response to say why. Neither delete handler clears these columns by hand, so
+    this test is what holds the schema to it.
+    """
+    author_id = make_user_id()
+    announcement_id = f"inttest_{uuid.uuid4().hex[:12]}"
+    provider_id = f"inttest_{uuid.uuid4().hex[:12]}"
+    config_id = f"inttest_{uuid.uuid4().hex[:12]}"
+    blocked_ip = f"203.0.113.{uuid.uuid4().int % 200 + 1}"
+    _insert_user(db_conn, author_id, "tenant_admin")
+
+    with db_conn.cursor() as cur:
+        cur.execute(
+            """
+            INSERT INTO announcements (announcement_id, title, message, created_by, tenant_id)
+            VALUES (%s, 'Scheduled maintenance', 'Back at 09:00', %s, %s)
+            """,
+            (announcement_id, author_id, TENANT_ID),
+        )
+        cur.execute(
+            """
+            INSERT INTO tenant_sso_providers (provider_id, tenant_id, provider_name,
+                                              provider_type, client_id, client_secret,
+                                              discovery_url, created_by)
+            VALUES (%s, %s, 'Campus Google', 'google', 'client-id', 'secret',
+                    'https://accounts.example.test/.well-known/openid-configuration', %s)
+            """,
+            (provider_id, TENANT_ID, author_id),
+        )
+        cur.execute(
+            """
+            INSERT INTO lti_configurations (config_id, platform_name, issuer, client_id,
+                                            auth_login_url, auth_token_url, key_set_url,
+                                            created_by, tenant_id)
+            VALUES (%s, 'Canvas', %s, 'client-id', 'https://lms.example.test/auth',
+                    'https://lms.example.test/token', 'https://lms.example.test/jwks', %s, %s)
+            """,
+            (config_id, f"https://lms.example.test/{config_id}", author_id, TENANT_ID),
+        )
+        cur.execute(
+            "INSERT INTO ip_blocklist (ip_address, reason, blocked_by) VALUES (%s, %s, %s)",
+            (blocked_ip, "Integration test", author_id),
+        )
+    db_conn.commit()
+
+    try:
+        res = client.delete(f"/api/tenant-admin/users/{author_id}", headers=tenant_admin_headers)
+        assert res.status_code == 200, res.json
+        assert _count(db_conn, "SELECT COUNT(*) FROM users WHERE user_id = %s", (author_id,)) == 0
+
+        # Each record survives, with the attribution dropped rather than the row.
+        for table, id_column, row_id in (
+            ("announcements", "announcement_id", announcement_id),
+            ("tenant_sso_providers", "provider_id", provider_id),
+            ("lti_configurations", "config_id", config_id),
+        ):
+            assert (
+                _count(
+                    db_conn,
+                    f"SELECT COUNT(*) FROM {table} WHERE {id_column} = %s AND created_by IS NULL",
+                    (row_id,),
+                )
+                == 1
+            ), f"{table} row did not survive the delete with a NULL created_by"
+
+        assert (
+            _count(
+                db_conn,
+                "SELECT COUNT(*) FROM ip_blocklist WHERE ip_address = %s AND blocked_by IS NULL",
+                (blocked_ip,),
+            )
+            == 1
+        ), "ip_blocklist entry did not survive the delete with a NULL blocked_by"
+    finally:
+        with db_conn.cursor() as cur:
+            cur.execute("DELETE FROM ip_blocklist WHERE ip_address = %s", (blocked_ip,))
+            cur.execute("DELETE FROM lti_configurations WHERE config_id = %s", (config_id,))
+            cur.execute("DELETE FROM tenant_sso_providers WHERE provider_id = %s", (provider_id,))
+            cur.execute("DELETE FROM announcements WHERE announcement_id = %s", (announcement_id,))
+            cur.execute("DELETE FROM users WHERE user_id = %s", (author_id,))
         db_conn.commit()
