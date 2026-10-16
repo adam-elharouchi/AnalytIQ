@@ -552,7 +552,10 @@ Contribution workflow and conventions: [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## License
 
-No license is currently granted. All rights reserved © Adam El Harouchi.
+[MIT](LICENSE) © 2026 Adam El Harouchi.
 
-The source is published for reference and portfolio purposes. If you want to use, modify, or
-redistribute any part of it, please get in touch first.
+You are free to use, copy, modify, and distribute this software, including commercially, provided
+the copyright notice and permission notice are retained. It is provided as is, without warranty.
+
+Note that the licence covers the contents of this repository, not the hosted AnalytIQ service, the
+AnalytIQ name, or the logo.
