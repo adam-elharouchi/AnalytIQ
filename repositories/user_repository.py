@@ -132,25 +132,20 @@ def update_password_hash(conn, user_id, new_hash):
 
 
 def delete_user(conn, user_id):
-    """Delete a user and their associated rows (mirrors the superadmin cascade).
+    """Delete a user; the schema's ON DELETE actions clear everything they own.
 
-    Child rows are removed before the users row so foreign keys without ON DELETE
-    CASCADE don't block the delete. Newer tables (portfolio, flywheel, sso/lti
-    identities) are assumed to cascade from the users FK; if any do not, add them
-    here and to the superadmin delete.
+    Every foreign key into users.user_id is ON DELETE CASCADE -- their own rows
+    (profile, settings, preferences, conversations, attempts, progress, agent
+    memory/digest, ratings, portfolio, lti sessions), their enrollments, and the
+    classes they own as a professor, whose chapters, exercises and enrollments
+    cascade in turn -- or ON DELETE SET NULL for records they authored, which
+    outlive them with attribution dropped. Listing the child tables here only
+    let the list drift from the schema, so it is gone;
+    tests/integration/test_schema_constraints.py holds every FK to a deliberate
+    ON DELETE action.
     """
     cur = conn.cursor()
-    cur.execute("DELETE FROM class_enrollments WHERE student_id  = %s", (user_id,))
-    cur.execute("DELETE FROM classes           WHERE professor_id = %s", (user_id,))
-    cur.execute("DELETE FROM conversations     WHERE user_id      = %s", (user_id,))
-    cur.execute("DELETE FROM exercise_attempts WHERE user_id      = %s", (user_id,))
-    cur.execute("DELETE FROM practice_progress WHERE user_id      = %s", (user_id,))
-    cur.execute("DELETE FROM ai_agent_memory   WHERE user_id      = %s", (user_id,))
-    cur.execute("DELETE FROM ai_agent_digest   WHERE user_id      = %s", (user_id,))
-    cur.execute("DELETE FROM user_profiles     WHERE user_id      = %s", (user_id,))
-    cur.execute("DELETE FROM user_settings     WHERE user_id      = %s", (user_id,))
-    cur.execute("DELETE FROM user_preferences  WHERE user_id      = %s", (user_id,))
-    cur.execute("DELETE FROM users             WHERE user_id      = %s", (user_id,))
+    cur.execute("DELETE FROM users WHERE user_id = %s", (user_id,))
     cur.close()
 
 
