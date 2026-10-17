@@ -47,11 +47,17 @@ class TestDeleteAccountCascade:
         assert resp.status_code == 200
         assert resp.get_json()["success"] is True
 
-    def test_delete_cascades_child_tables(self, client, mock_db):
+    def test_delete_removes_the_users_row(self, client, mock_db):
+        """The handler deletes the users row and leaves the cascade to the schema.
+
+        Every child table reaches users.user_id through an ON DELETE CASCADE, so
+        the rows go with it. That is asserted against a real database -- not a
+        mock -- by tests/integration/test_schema_constraints.py (every FK has a
+        deliberate ON DELETE action) and the delete-path tests in
+        tests/integration/test_superadmin.py and test_tenant_admin.py.
+        """
         client.delete("/api/users/delete", headers=AUTH)
         executed = " ".join(str(c) for c in mock_db.cursor().execute.call_args_list)
-        assert "class_enrollments" in executed
-        assert "practice_progress" in executed
         assert "DELETE FROM users" in executed
 
     def test_requires_auth(self, client, mock_db):

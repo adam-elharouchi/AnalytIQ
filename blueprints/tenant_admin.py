@@ -615,21 +615,12 @@ def delete_user(user_id):
 
         cur = conn.cursor()
 
-        # 1. Remove student enrollments in other classes
-        cur.execute("DELETE FROM class_enrollments WHERE student_id = %s", (user_id,))
-
-        # 2. Cascade-delete classes the user owns as a professor
-        cur.execute("SELECT class_id FROM classes WHERE professor_id = %s", (user_id,))
-        professor_class_ids = [r[0] for r in cur.fetchall()]
-        for cid in professor_class_ids:
-            cur.execute("DELETE FROM class_enrollments WHERE class_id = %s", (cid,))
-            cur.execute("SELECT chapter_id FROM class_chapters WHERE class_id = %s", (cid,))
-            for (chid,) in cur.fetchall():
-                cur.execute("DELETE FROM class_exercises WHERE chapter_id = %s", (chid,))
-            cur.execute("DELETE FROM class_chapters WHERE class_id = %s", (cid,))
-        cur.execute("DELETE FROM classes WHERE professor_id = %s", (user_id,))
-
-        # 3. Delete the user record
+        # Every foreign key into users.user_id is ON DELETE CASCADE (the user's own
+        # rows, their enrollments, and the classes they own as a professor, whose
+        # chapters/exercises/enrollments cascade in turn) or ON DELETE SET NULL
+        # (records they authored, which outlive them with attribution dropped).
+        # The database does the cascade; tests/integration/test_schema_constraints.py
+        # holds it to that.
         cur.execute("DELETE FROM users WHERE user_id = %s", (user_id,))
         cur.close()
 
